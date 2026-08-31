@@ -1,0 +1,217 @@
+<div class="dash-root">
+
+  <app-abril-page-header
+    [badge]="'SSOMA · ' + anioActual"
+    titulo="Observación Planeada de Tarea"
+    subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
+    [tabs]="tabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()">
+
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+    <div class="w-full">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Proyecto"
+        placeholder="Buscar proyecto..."
+        [options]="proyectos"
+        valueField="projectId"
+        displayField="projectDescription"
+        [value]="filtroProyectoId"
+        [allowClear]="true"
+        (valueChange)="filtroProyectoId = $event; onFiltroChange()">
+      </app-search-select>
+    </div>
+    <div class="w-full">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Año"
+        placeholder="Todos los años"
+        [options]="aniosOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filtroAnio"
+        [allowClear]="true"
+        [sortAlpha]="false"
+        (valueChange)="filtroAnio = $event; onFiltroChange()">
+      </app-search-select>
+    </div>
+  </app-filter-modal>
+
+  <div class="dash-body">
+
+    <!-- SKELETON -->
+    @if (loading) {
+      <div class="kpi-grid">
+        @for (_ of [1,2,3,4,5]; track $index) {
+          <div class="skeleton-card"></div>
+        }
+      </div>
+      <div class="skeleton-body"></div>
+    }
+
+    @if (!loading && data) {
+
+      <!-- ── KPI CARDS ── -->
+      <div class="kpi-grid">
+        <div class="kpi-card" (click)="irALista()">
+          <div class="kpi-icon kpi-icon--blue"><i class="ti ti-clipboard-list"></i></div>
+          <div class="kpi-body">
+            <span class="kpi-val">{{ data.totalOpts }}</span>
+            <span class="kpi-lbl">Total OPTs</span>
+          </div>
+        </div>
+        <div class="kpi-card" (click)="irALista()">
+          <div class="kpi-icon kpi-icon--teal"><i class="ti ti-calendar-month"></i></div>
+          <div class="kpi-body">
+            <span class="kpi-val">{{ data.totalEsteMes }}</span>
+            <span class="kpi-lbl">Este mes</span>
+          </div>
+        </div>
+        <div class="kpi-card" [ngClass]="scoreClass(data.scorePromedioGlobal)">
+          <div class="kpi-icon kpi-icon--green"><i class="ti ti-chart-line"></i></div>
+          <div class="kpi-body">
+            <span class="kpi-val">{{ data.scorePromedioGlobal != null ? (data.scorePromedioGlobal | number:'1.1-1') + '%' : '—' }}</span>
+            <span class="kpi-lbl">Score global</span>
+          </div>
+        </div>
+        <div class="kpi-card" [ngClass]="scoreClass(data.scorePromedioEsteMes)">
+          <div class="kpi-icon kpi-icon--amber"><i class="ti ti-chart-bar"></i></div>
+          <div class="kpi-body">
+            <span class="kpi-val">{{ data.scorePromedioEsteMes != null ? (data.scorePromedioEsteMes | number:'1.1-1') + '%' : '—' }}</span>
+            <span class="kpi-lbl">Score este mes</span>
+          </div>
+        </div>
+        <div class="kpi-card" [class.kpi-card--danger]="data.accionesPendientes > 0">
+          <div class="kpi-icon" [class.kpi-icon--red]="data.accionesPendientes > 0" [class.kpi-icon--green]="!data.accionesPendientes"><i class="ti ti-alert-triangle"></i></div>
+          <div class="kpi-body">
+            <span class="kpi-val">{{ data.accionesPendientes }}</span>
+            <span class="kpi-lbl">Acciones pendientes</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── FILA CHARTS ── -->
+      <div class="charts-row">
+
+        <!-- Tendencia mensual -->
+        <div class="dash-card dash-card--tendencia">
+          <h2 class="dash-card__title"><i class="ti ti-trending-up"></i> Tendencia Mensual — Score %</h2>
+          <div class="tendencia-chart">
+            @for (t of data.tendenciaMensual; track t.mes) {
+              <div class="tend-col">
+                <span class="tend-val">{{ t.scorePromedio != null ? (t.scorePromedio | number:'1.0-0') : '—' }}</span>
+                <div class="tend-bar-wrap">
+                  <div class="tend-bar"
+                    [ngClass]="scoreClass(t.scorePromedio)"
+                    [style.height.px]="t.scorePromedio ? barHeight(t.scorePromedio) : 2">
+                  </div>
+                </div>
+                <div class="tend-line-dot" [ngClass]="scoreClass(t.scorePromedio)"></div>
+                <span class="tend-lbl">{{ t.mesNombre }}</span>
+                <span class="tend-n">{{ t.totalOpts }}x</span>
+              </div>
+            }
+          </div>
+          <div class="chart-legend">
+            <span class="legend-dot score--verde"></span> ≥80%
+            <span class="legend-dot score--amarillo" style="margin-left:10px"></span> ≥60%
+            <span class="legend-dot score--rojo" style="margin-left:10px"></span> &lt;60%
+          </div>
+        </div>
+
+        <!-- Ranking empresas -->
+        @if (data.rankingEmpresas.length) {
+          <div class="dash-card dash-card--ranking">
+            <h2 class="dash-card__title"><i class="ti ti-building"></i> Empresas con menor score</h2>
+            <div class="ranking-list">
+              @for (e of data.rankingEmpresas; track e.empresaId) {
+                <div class="rank-row">
+                  <span class="rank-nombre">{{ e.empresaNombre }}</span>
+                  <div class="rank-bar-track">
+                    <div class="rank-bar"
+                      [ngClass]="scoreClass(e.scorePromedio)"
+                      [style.width.%]="e.scorePromedio ?? 0">
+                    </div>
+                  </div>
+                  <span class="rank-pct" [ngClass]="scoreClass(e.scorePromedio)">
+                    {{ e.scorePromedio != null ? (e.scorePromedio | number:'1.0-0') + '%' : '—' }}
+                  </span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+      </div><!-- /charts-row -->
+
+      <!-- ── TOP RIESGO + ACCIONES ── -->
+      <div class="bottom-row">
+
+        @if (data.topTrabajadoresRiesgo.length) {
+          <div class="dash-card">
+            <h2 class="dash-card__title"><i class="ti ti-user-exclamation"></i> Top trabajadores en riesgo</h2>
+            <table class="dash-table">
+              <thead>
+                <tr>
+                  <th>Trabajador</th>
+                  <th>Empresa</th>
+                  <th class="ta-c">Score</th>
+                  <th class="ta-c">Inseguros</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (t of data.topTrabajadoresRiesgo; track t.trabajadorId) {
+                  <tr>
+                    <td>{{ t.nombreTrabajador }}</td>
+                    <td class="td-muted">{{ t.empresa ?? '—' }}</td>
+                    <td class="ta-c">
+                      <span class="score-chip" [ngClass]="scoreClass(t.scorePromedio)">
+                        {{ t.scorePromedio != null ? (t.scorePromedio | number:'1.0-0') + '%' : '—' }}
+                      </span>
+                    </td>
+                    <td class="ta-c fw-600">{{ t.totalInseguros }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        @if (data.accionesRequeridas.length) {
+          <div class="dash-card">
+            <h2 class="dash-card__title"><i class="ti ti-clipboard-check"></i> Acciones requeridas</h2>
+            <div class="acciones-list">
+              @for (a of data.accionesRequeridas; track a.tipoAccion) {
+                <div class="accion-row">
+                  <span class="accion-nombre">{{ a.tipoAccion }}</span>
+                  <span class="accion-badge">{{ a.cantidad }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+      </div><!-- /bottom-row -->
+
+    }
+
+    <!-- EMPTY -->
+    @if (!loading && !data) {
+      <div class="empty-state">
+        <i class="ti ti-clipboard-list empty-state__icon"></i>
+        <p>No hay OPTs registrados aún.</p>
+        <button type="button" class="btn-primary" (click)="irANuevo()">
+          <i class="ti ti-plus"></i> Nueva OPT
+        </button>
+      </div>
+    }
+
+  </div><!-- /dash-body -->
+
+
+  <app-fab label="Nueva OPT" (clicked)="irANuevo()"></app-fab>
+</div>

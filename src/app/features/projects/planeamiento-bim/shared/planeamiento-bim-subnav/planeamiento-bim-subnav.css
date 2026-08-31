@@ -1,0 +1,40 @@
+.bim-subnav-bar {
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+  padding: 0.5rem 1.5rem;
+}
+
+.bim-subnav-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bim-subnav-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748B;
+  text-decoration: none;
+  background: transparent;
+  transition: all 0.15s ease-in-out;
+}
+
+.bim-subnav-item i {
+  font-size: 0.95rem;
+}
+
+.bim-subnav-item:hover {
+  background: #F1F5F9;
+  color: #1E3A5F;
+}
+
+.bim-subnav-item.active {
+  background: #1E3A5F;
+  color: #FFFFFF;
+  font-weight: 700;
+}

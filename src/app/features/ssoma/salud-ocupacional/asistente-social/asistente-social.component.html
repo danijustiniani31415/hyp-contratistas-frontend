@@ -1,0 +1,135 @@
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Asistente Social"
+  subtitulo="Gestión de casos sociales de trabajadores."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<section class="page-container px-3 py-4 flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- Tabla -->
+  <div class="abril-table-wrap">
+      <table class="abril-table">
+        <colgroup>
+          <col/>
+          <col style="width:110px"/>
+          <col style="width:80px"/>
+          <col style="width:90px"/>
+          <col style="width:100px"/>
+          <col style="width:110px"/>
+          <col style="width:60px"/>
+          <col style="width:36px"/>
+        </colgroup>
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Trabajador</th>
+            <th>Tipo</th>
+            <th class="text-center">Prioridad</th>
+            <th class="text-center">Estado</th>
+            <th>Apertura</th>
+            <th>Empresa</th>
+            <th class="text-center">Seguim.</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of casos" class="row-clickable border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)" (click)="abrirModal(c)">
+            <td class="col-worker">
+              <div class="worker-cell">
+                <span class="worker-name">{{ (c.workerNombre | titleCase) ?? '—' }}</span>
+                <span class="worker-dni">{{ c.workerDni }}</span>
+              </div>
+            </td>
+            <td class="text-gray-500">{{ c.tipoCaso }}</td>
+            <td class="text-center">
+              <span class="badge" [ngClass]="badgeClass(c.prioridad)">{{ c.prioridad }}</span>
+            </td>
+            <td class="text-center">
+              <span class="badge" [ngClass]="estadoClass(c.estado)">{{ c.estado }}</span>
+            </td>
+            <td class="text-gray-500">{{ c.fechaApertura | date:'dd/MM/yyyy' }}</td>
+            <td class="col-truncate text-gray-500">{{ c.empresaNombre ?? '—' }}</td>
+            <td class="col-mono text-center">{{ c.totalSeguimientos }}</td>
+            <td (click)="$event.stopPropagation()">
+              <button class="row-action btn-del" (click)="eliminar(c, $event)" title="Eliminar">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && casos.length === 0">
+            <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">
+              {{ hasFilters ? 'Sin resultados.' : 'Sin casos sociales registrados.' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+  </div>
+
+  <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+    <app-paginator [totalRecords]="totalRecords" [currentPage]="currentPage"
+      [totalPages]="totalPages" (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
+
+  <app-fab label="Nuevo Caso" (clicked)="abrirModal()"></app-fab>
+</section>
+
+@if (modalVisible) {
+  <app-caso-social-modal
+    [casoId]="modalCasoId"
+    (closed)="onModalClosed()"
+    (saved)="onModalSaved()">
+  </app-caso-social-modal>
+}
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Tipo de caso"
+      [options]="tiposOpts"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtros.tipoCaso"
+      placeholder="Todos"
+      (valueChange)="filtros.tipoCaso = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadosOpts"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtros.estado"
+      placeholder="Todos"
+      (valueChange)="filtros.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Prioridad"
+      [options]="prioridadesOpts"
+      valueField="id"
+      displayField="nombre"
+      [sortAlpha]="false"
+      [value]="filtros.prioridad"
+      placeholder="Todas"
+      (valueChange)="filtros.prioridad = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-worker-search-input
+      [selected]="workerFiltroSelected"
+      (selectedChange)="onWorkerFiltroChange($event)">
+    </app-worker-search-input>
+  </div>
+</app-filter-modal>

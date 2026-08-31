@@ -1,0 +1,133 @@
+<app-abril-page-header
+  badge="HABILITACIÓN"
+  titulo="Evaluar Prevencionista / Coordinador SSOMA"
+  subtitulo="Califica al Prevencionista o Coordinador SSOMA asignado a tu proyecto."
+  [tabs]="headerTabs">
+</app-abril-page-header>
+
+<div class="ep-root">
+
+  <!-- LOADING -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <span>Cargando...</span>
+  </div>
+
+  <!-- SIN PERÍODO ACTIVO -->
+  <div class="empty-state" *ngIf="!loading && !inicio?.periodo">
+    <i class="ti ti-calendar-off"></i>
+    <h3>Sin período activo</h3>
+    <p>No hay un período de evaluación abierto en este momento.</p>
+  </div>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div class="ep-content" *ngIf="!loading && inicio?.periodo">
+
+    <!-- PANEL IZQUIERDO: lista de personas a evaluar -->
+    <div class="panel-left">
+      <div class="panel-header">
+        <div class="panel-title">SSOMA a evaluar</div>
+      </div>
+      <div class="period-info" *ngIf="inicio?.periodo">
+        <i class="ti ti-calendar"></i>
+        {{ inicio!.periodo!.nombreMes }} {{ inicio!.periodo!.anio }} ·
+        {{ inicio!.periodo!.diasRestantes }} días restantes
+      </div>
+
+      <!-- Sin personas -->
+      <div class="empty-list" *ngIf="!inicio?.aEvaluar?.length">
+        <i class="ti ti-users-group"></i>
+        <p>No hay Prevencionista o Coordinador SSOMA asignado a tu(s) proyecto(s) este período.</p>
+      </div>
+
+      <!-- Lista -->
+      <div class="contractor-list" *ngIf="inicio?.aEvaluar?.length">
+        <div class="contractor-card"
+          *ngFor="let a of inicio!.aEvaluar"
+          [class.active]="seleccionado?.evaluadoUserId === a.evaluadoUserId && seleccionado?.proyectoId === a.proyectoId"
+          [class.evaluated]="a.yaEvalue"
+          (click)="!a.yaEvalue && seleccionar(a)">
+          <div class="cc-header">
+            <div class="cc-avatar">{{ a.evaluadoNombre.charAt(0) }}</div>
+            <div class="cc-info">
+              <div class="cc-name">{{ a.evaluadoNombre }}</div>
+              <div class="cc-puesto">{{ a.evaluadoPuesto }}</div>
+              <div class="cc-project"><i class="ti ti-building"></i> {{ a.proyectoNombre }}</div>
+            </div>
+          </div>
+          <div class="cc-footer">
+            <span *ngIf="a.yaEvalue" class="cc-evaluado"><i class="ti ti-check"></i> Ya evaluado</span>
+            <span *ngIf="!a.yaEvalue" class="cc-pendiente">Pendiente</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL DERECHO: formulario de evaluación -->
+    <div class="panel-right">
+      <!-- Sin selección -->
+      <div class="empty-form" *ngIf="!seleccionado">
+        <i class="ti ti-arrow-left"></i>
+        <p>Selecciona a quién evaluar</p>
+      </div>
+
+      <!-- Formulario activo -->
+      <div class="eval-form" *ngIf="seleccionado">
+        <div class="ef-header">
+          <div>
+            <div class="ef-title">{{ seleccionado.evaluadoNombre }}</div>
+            <div class="ef-sub">{{ seleccionado.evaluadoPuesto }} · {{ seleccionado.proyectoNombre }}</div>
+          </div>
+          <button class="btn-cambiar" (click)="cambiarSeleccion()">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+
+        <!-- Escala de referencia -->
+        <div class="scale-ref">
+          <span *ngFor="let p of puntajes" class="scale-chip" [ngClass]="'scale-' + p">
+            {{ p }}: {{ puntajeLabel[p] }}
+          </span>
+        </div>
+
+        <!-- Criterios -->
+        <div class="criteria-list">
+          <div class="criterion-row" *ngFor="let d of detalles; let i = index">
+            <div class="cr-num">{{ i + 1 }}</div>
+            <div class="cr-text">{{ d.criterio }}</div>
+            <div class="cr-puntaje">
+              <button *ngFor="let p of puntajes"
+                class="puntaje-btn"
+                [class.selected]="d.puntaje === p"
+                [ngClass]="d.puntaje === p ? 'puntaje-' + p : ''"
+                (click)="setPuntaje(i, p)">
+                {{ p }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comentario + Guardar -->
+        <div class="bottom-bar">
+          <div class="bottom-comentario">
+            <label class="cmt-label">Comentario (opcional)</label>
+            <textarea class="cmt-input" rows="2" [(ngModel)]="comentario"
+              placeholder="Observaciones adicionales..."></textarea>
+          </div>
+          <div class="bottom-actions">
+            <div class="nota-preview" *ngIf="notaCalculada > 0">
+              <span class="np-label">Nota:</span>
+              <span class="np-num" [ngClass]="estadoClase(notaCalculada)">{{ notaCalculada }}</span>
+              <span class="np-estado" [ngClass]="estadoClase(notaCalculada)">{{ estadoLabel(notaCalculada) }}</span>
+            </div>
+            <button class="btn-guardar" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
+              <i class="ti ti-device-floppy"></i>
+              {{ guardando ? 'Guardando...' : 'Registrar evaluación' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

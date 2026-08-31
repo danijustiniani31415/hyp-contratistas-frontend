@@ -1,0 +1,167 @@
+<app-abril-page-header
+  badge="COSTOS"
+  titulo="Adjudicaciones"
+  subtitulo="Gestión de subcontratos y adjudicaciones por proyecto."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: 'Nueva adjudicación', icono: 'ti-plus' }"
+  [botonPrimarioDeshabilitado]="!canCreate"
+  [botonPrimarioTooltip]="canCreate ? 'Crear nueva adjudicación' : 'Solo Oficina Central puede crear adjudicaciones'"
+  (primaryClick)="openCreateModal()">
+</app-abril-page-header>
+
+<div class="bg-white rounded-lg p-5 flex-1 min-h-0 flex flex-col gap-3">
+
+  <!-- ── FILTROS ───────────────────────────────────────────────────── -->
+  <div class="flex flex-wrap gap-4 py-1 items-end">
+
+    <!-- Razón social -->
+    <div class="w-[220px] flex flex-col gap-[6px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Razón social</label>
+      <input
+        type="text"
+        [(ngModel)]="filters.contributorName"
+        (keyup.enter)="search()"
+        placeholder="Buscar…"
+        class="border rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-colors" style="border-color:var(--color-abril-border)" />
+    </div>
+
+    <!-- RUC -->
+    <div class="w-[160px] flex flex-col gap-[6px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">RUC</label>
+      <input
+        type="text"
+        [(ngModel)]="filters.contributorRuc"
+        (keyup.enter)="search()"
+        placeholder="Buscar…"
+        class="border rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-colors" style="border-color:var(--color-abril-border)" />
+    </div>
+
+    <!-- Proyecto -->
+    <div class="w-[220px]">
+      <app-search-select
+        label="Proyecto"
+        placeholder="Todos"
+        [options]="projects"
+        valueField="projectId"
+        displayField="projectDescription"
+        [value]="filters.projectId"
+        (valueChange)="filters.projectId = $event">
+      </app-search-select>
+    </div>
+
+    <!-- Filtros avanzados -->
+    <ng-container *ngIf="showAdvanced">
+
+      <!-- Tipo de contrato -->
+      <div class="w-[200px]">
+        <app-search-select
+          label="Tipo de contrato"
+          placeholder="Todos"
+          [options]="contractTypes"
+          valueField="contractTypeId"
+          displayField="contractTypeDescription"
+          [value]="filters.contractTypeId"
+          (valueChange)="filters.contractTypeId = $event">
+        </app-search-select>
+      </div>
+
+      <!-- Modalidad de contrato -->
+      <div class="w-[200px]">
+        <app-search-select
+          label="Modalidad"
+          placeholder="Todos"
+          [options]="contractModalities"
+          valueField="contractModalityId"
+          displayField="contractModalityDescription"
+          [value]="filters.contractModalityId"
+          (valueChange)="filters.contractModalityId = $event">
+        </app-search-select>
+      </div>
+
+      <!-- Modalidad de pago -->
+      <div class="w-[200px]">
+        <app-search-select
+          label="Modalidad de pago"
+          placeholder="Todos"
+          [options]="paymentMethods"
+          valueField="paymentMethodId"
+          displayField="paymentMethodDescription"
+          [value]="filters.paymentMethodId"
+          (valueChange)="filters.paymentMethodId = $event">
+        </app-search-select>
+      </div>
+
+      <!-- Estado (paso) de la adjudicación -->
+      <div class="w-[220px]">
+        <app-search-select
+          label="Estado"
+          placeholder="Todos"
+          [options]="projectSubContractorStatuses"
+          valueField="projectSubContractorStatusId"
+          displayField="projectSubContractorStatusDescription"
+          [value]="filters.projectSubContractorStatusId"
+          (valueChange)="filters.projectSubContractorStatusId = $event">
+        </app-search-select>
+      </div>
+
+    </ng-container>
+
+    <!-- Botón búsqueda avanzada -->
+    <button type="button" (click)="showAdvanced = !showAdvanced"
+      class="h-[42px] px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 self-end" style="background:var(--color-abril-primary-light); color:var(--color-abril-primary)">
+      <svg class="w-4 h-4" viewBox="0 0 15 15" fill="none">
+        <path fill-rule="evenodd" clip-rule="evenodd"
+          d="M6.417 0v9.167H5.5V11H6.417v3.667H8.25V11h.917V9.167H8.25V0H6.417ZM.917 0v3.668H0V5.5h.917v9.167H2.75V5.5h.917V3.668H2.75V0H.917ZM11.916.0002V5.5h-.917v1.833h.917v7.334h1.834V7.333h.917V5.5h-.917V0l-1.834.0002Z"
+          fill="currentColor"/>
+      </svg>
+      {{ showAdvanced ? 'Ocultar filtros' : 'Búsqueda avanzada' }}
+    </button>
+
+    <!-- Botón buscar -->
+    <button type="button" (click)="search()"
+      class="h-[42px] px-5 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 self-end" style="background:var(--color-abril-primary)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
+      </svg>
+      Buscar
+    </button>
+
+    <!-- Contador -->
+    <span class="ml-auto text-xs text-gray-400 self-end pb-[2px]">{{ totalRecords }} registros</span>
+
+  </div>
+
+  <!-- ── CARDS ─────────────────────────────────────────────────────── -->
+  <div class="flex-1 min-h-0 overflow-y-auto">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pb-1">
+      <app-card
+        *ngFor="let item of items"
+        [item]="item"
+        (cardClick)="openDetail(item)">
+      </app-card>
+    </div>
+  </div>
+
+  <!-- ── PAGINADOR ─────────────────────────────────────────────────── -->
+  <app-paginator
+    [totalRecords]="totalRecords"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    (pageChange)="load($event)">
+  </app-paginator>
+
+</div>
+
+<!-- ── MODALES (fuera del card blanco) ───────────────────────────── -->
+<app-create
+  *ngIf="showCreateModal"
+  (closeModal)="showCreateModal = false"
+  (saved)="load(currentPage)">
+</app-create>
+
+<app-detail
+  *ngIf="selectedItem"
+  [item]="selectedItem"
+  (closeModal)="selectedItem = null"
+  (statusChanged)="onStatusChanged()">
+</app-detail>

@@ -1,0 +1,128 @@
+<app-base-modal [title]="'AGREGAR USUARIO'" width="w-[1000px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-5 mt-4">
+
+    <!-- Datos personales -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- DNI con lupa RENIEC -->
+      <div class="flex flex-col gap-1">
+        <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">DNI</label>
+        <div class="relative">
+          <input
+            type="text"
+            [(ngModel)]="createDto.documentIdentityCode"
+            maxlength="8"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2 pr-9 outline-none focus:border-[#64BC04] focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm"
+            placeholder="Escribe aquí"
+          />
+          <svg
+            (click)="getPersonRENIEC()"
+            class="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-[#64BC04]"
+            width="20" height="20" viewBox="0 0 24 24" fill="currentColor"
+          >
+            <path d="M19.6 21L13.3 14.7C12.8 15.1 12.225 15.4167 11.575 15.65C10.925 15.8833 10.2333 16 9.5 16C7.68333 16 6.146 15.3707 4.888 14.112C3.63 12.8533 3.00067 11.316 3 9.5C2.99933 7.684 3.62867 6.14667 4.888 4.888C6.14733 3.62933 7.68467 3 9.5 3C11.3153 3 12.853 3.62933 14.113 4.888C15.373 6.14667 16.002 7.684 16 9.5C16 10.2333 15.8833 10.925 15.65 11.575C15.4167 12.225 15.1 12.8 14.7 13.3L21 19.6L19.6 21ZM9.5 14C10.75 14 11.8127 13.5627 12.688 12.688C13.5633 11.8133 14.0007 10.7507 14 9.5C13.9993 8.24933 13.562 7.187 12.688 6.313C11.814 5.439 10.7513 5.00133 9.5 5C8.24867 4.99867 7.18633 5.43633 6.313 6.313C5.43967 7.18967 5.002 8.252 5 9.5C4.998 10.748 5.43567 11.8107 6.313 12.688C7.19033 13.5653 8.25267 14.0027 9.5 14Z"/>
+          </svg>
+        </div>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Nombres</label>
+        <input type="text" [(ngModel)]="createDto.firstNames"
+          class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04] focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Primer apellido</label>
+        <input type="text" [(ngModel)]="createDto.firstLastName"
+          class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04] focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Segundo apellido</label>
+        <input type="text" [(ngModel)]="createDto.secondLastName"
+          class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04] focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm" />
+      </div>
+      <div class="flex flex-col gap-1 sm:col-span-2">
+        <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Correo</label>
+        <input type="email" [(ngModel)]="createDto.email"
+          class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04] focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Celular</label>
+        <input type="number" [(ngModel)]="createDto.phoneNumber"
+          class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04] focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Estado inicial</label>
+        <select [(ngModel)]="createDto.active"
+          class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04] focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm cursor-pointer bg-white">
+          <option [ngValue]="true">ACTIVO</option>
+          <option [ngValue]="false">INACTIVO</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Roles -->
+    <div class="flex flex-col gap-2">
+      <div class="flex items-center justify-between">
+        <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Roles asignados</label>
+        <span class="text-[0.7rem] font-bold bg-green-100 text-green-800 border border-green-200 rounded-full px-2 py-0.5">
+          {{ checkedCount }} / {{ roles.length }}
+        </span>
+      </div>
+
+      <!-- Search -->
+      <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-400
+                  focus-within:bg-white focus-within:border-[#64bc04] focus-within:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="flex-shrink-0">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Buscar rol..."
+          [(ngModel)]="searchTerm"
+          class="flex-1 border-0 outline-none bg-transparent text-gray-900 text-sm"
+        />
+      </div>
+
+      <!-- Select all -->
+      <label
+        *ngIf="filteredRoles.length > 0"
+        class="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-b-0 border-gray-200 rounded-t-xl cursor-pointer"
+      >
+        <input
+          type="checkbox"
+          class="accent-[#64bc04] w-4 h-4 flex-shrink-0 cursor-pointer"
+          [checked]="allRolesChecked()"
+          [indeterminate]="someRolesChecked()"
+          (change)="toggleAll($any($event.target).checked)"
+        />
+        <span class="text-[0.78rem] font-bold text-gray-500 uppercase tracking-wide">Seleccionar todos</span>
+      </label>
+
+      <!-- Role list -->
+      <div
+        class="border border-gray-200 overflow-y-auto max-h-[200px] bg-white"
+        [class.rounded-lg]="filteredRoles.length === 0"
+        [class.rounded-b-xl]="filteredRoles.length > 0"
+      >
+        <label
+          *ngFor="let r of filteredRoles; trackBy: trackByRoleId"
+          class="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-green-50 transition-colors"
+        >
+          <input type="checkbox" [(ngModel)]="r.checked" class="accent-[#64bc04] w-4 h-4 flex-shrink-0 cursor-pointer" />
+          <span class="text-[0.85rem] text-gray-700">{{ r.roleDescription }}</span>
+        </label>
+        <p class="text-center text-gray-400 py-6 text-sm" *ngIf="filteredRoles.length === 0">Sin resultados.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="flex justify-center mt-5">
+    <button
+      type="button"
+      (click)="saveUser()"
+      class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer"
+    >
+      <p class="text-white text-lg">Guardar</p>
+    </button>
+  </div>
+</app-base-modal>

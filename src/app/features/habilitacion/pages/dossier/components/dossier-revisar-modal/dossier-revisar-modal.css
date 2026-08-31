@@ -1,0 +1,189 @@
+:host { display: block; }
+
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 200;
+}
+
+.modal-panel {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 201;
+  background: var(--color-background-primary, #fff);
+  border-radius: 14px;
+  width: min(1100px, 96vw);
+  height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.modal-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--color-border-secondary, #e5e7eb);
+  gap: 12px; flex-shrink: 0;
+}
+.modal-title { display: flex; flex-direction: column; gap: 6px; }
+.modal-title-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.modal-title h2 { font-size: 15px; font-weight: 600; margin: 0; }
+.modal-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: .07em;
+  background: #1b3a6b; color: #fff; padding: 3px 8px; border-radius: 4px;
+}
+.modal-close {
+  background: none; border: none; cursor: pointer; flex-shrink: 0;
+  color: var(--color-text-secondary, #6b7280); font-size: 18px; padding: 2px;
+  line-height: 1; border-radius: 6px;
+}
+.modal-close:hover { background: var(--color-background-secondary, #f3f4f6); }
+
+.progress-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--color-text-secondary, #6b7280);
+}
+.progress-track {
+  width: 120px; height: 5px; border-radius: 99px;
+  background: var(--color-border-secondary, #e5e7eb); overflow: hidden;
+}
+.progress-fill { height: 100%; border-radius: 99px; background: #22c55e; }
+
+.obs-rechazado {
+  margin: 10px 20px 0;
+  padding: 10px 14px;
+  background: #fef2f2; color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 8px; font-size: 13px;
+  display: flex; gap: 8px; align-items: flex-start;
+  flex-shrink: 0;
+}
+
+/* Aviso informativo (no error): la semana aún no llega a revisión. */
+.aviso-espera {
+  margin: 10px 20px 0;
+  padding: 10px 14px;
+  background: #eff6ff; color: #1e40af;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px; font-size: 13px;
+  display: flex; gap: 8px; align-items: flex-start;
+  flex-shrink: 0;
+}
+
+.modal-loading {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-secondary, #6b7280); font-size: 14px; gap: 8px;
+}
+
+/* ── Body: lista + preview ── */
+.modal-body {
+  flex: 1; min-height: 0;
+  display: flex; gap: 0;
+}
+
+.docs-list {
+  width: 260px; flex-shrink: 0;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border-right: 1px solid var(--color-border-secondary, #e5e7eb);
+  display: flex; flex-direction: column; gap: 5px;
+}
+
+.doc-row {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 8px 10px; border-radius: 8px;
+  border: 1px solid var(--color-border-tertiary, #e5e7eb);
+  background: var(--color-background-secondary, #f9fafb);
+  cursor: default;
+}
+.doc-row--subido  { border-color: #bbf7d0; background: #f0fdf4; }
+.doc-row--na      { opacity: 0.55; }
+.doc-row--pendiente { background: #fff; }
+.doc-row--observado { border-color: #fed7aa; background: #fffbeb; }
+
+.doc-info { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.doc-tipo { font-size: 12px; font-weight: 600; }
+.chip { font-weight: 600; border-radius: 99px; padding: 2px 9px; }
+.chip-sm { font-size: 10px; padding: 1px 7px; border-radius: 99px; }
+.chip-green  { background: #dcfce7; color: #166534; }
+.chip-blue   { background: #dbeafe; color: #1e40af; }
+.chip-orange { background: #fef3c7; color: #92400e; }
+.chip-red    { background: #fee2e2; color: #991b1b; }
+.chip-gray   { background: #f1f5f9; color: #475569; }
+
+.doc-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+
+.btn-ver {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 3px 9px; border-radius: 5px; font-size: 11px; font-weight: 500;
+  cursor: pointer; border: 1px solid #2D5AA0; color: #2D5AA0; background: #fff;
+}
+.btn-ver:hover { background: #eff6ff; }
+
+/* ── Preview ── */
+.doc-preview {
+  flex: 1; min-width: 0; min-height: 0;
+  display: flex; flex-direction: column;
+  background: #f3f4f6;
+}
+
+.doc-preview-header {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--color-border-secondary, #e5e7eb);
+  background: var(--color-background-primary, #fff);
+  font-size: 13px; font-weight: 500; flex-shrink: 0;
+}
+.doc-preview-nombre { color: var(--color-text-primary, #111); }
+
+.doc-preview iframe {
+  flex: 1; width: 100%; border: 0; display: block;
+  min-height: 0;
+}
+
+.doc-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: var(--color-text-secondary, #9ca3af); font-size: 13px; gap: 4px;
+}
+
+/* ── Observar ── */
+.observar-panel {
+  padding: 12px 20px; flex-shrink: 0;
+  border-top: 1px solid var(--color-border-secondary, #e5e7eb);
+  display: flex; flex-direction: column; gap: 8px;
+  background: #fffbeb;
+}
+.observar-panel .form-label { font-size: 13px; font-weight: 600; color: #92400e; }
+.observar-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ── Footer ── */
+.modal-footer {
+  padding: 10px 20px; flex-shrink: 0;
+  border-top: 1px solid var(--color-border-secondary, #e5e7eb);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--color-background-secondary, #f9fafb);
+}
+.modal-actions { display: flex; gap: 8px; }
+
+.btn-outline-warning {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  cursor: pointer; border: 1px solid #d97706; color: #d97706; background: #fff;
+}
+.btn-outline-warning:hover { background: #fffbeb; }
+
+/* ── Revisión por documento ── */
+.btn-sm { padding: 3px 9px; font-size: 11px; border-radius: 5px; gap: 3px; }
+
+.observar-panel--doc {
+  margin: 0; padding: 8px; border-top: none;
+  border-radius: 6px; background: #fffbeb; border: 1px solid #fde68a;
+}
+.observar-panel--doc textarea { font-size: 12px; }
+
+.obs-rechazado--doc {
+  margin: 0; padding: 6px 10px; font-size: 12px;
+}

@@ -1,0 +1,222 @@
+<app-abril-modal-panel
+  *ngIf="open"
+  titulo="Registrar resultados de EMO"
+  icono="ti-stethoscope"
+  variant="blue"
+  width="820px"
+  (closeModal)="close()">
+
+  <!-- STEPPER -->
+  <div class="stepper">
+    <div class="step" [class.step--active]="step === 1" [class.step--done]="step > 1" (click)="goToStep(1)">
+      <div class="step-circle">
+        <i class="ti ti-check" *ngIf="step > 1"></i>
+        <ng-container *ngIf="step <= 1">1</ng-container>
+      </div>
+      <span class="step-label">Datos</span>
+    </div>
+    <div class="step-line" [class.step-line--done]="step > 1"></div>
+    <div class="step" [class.step--active]="step === 2" [class.step--done]="step > 2" (click)="goToStep(2)">
+      <div class="step-circle">
+        <i class="ti ti-check" *ngIf="step > 2"></i>
+        <ng-container *ngIf="step <= 2">2</ng-container>
+      </div>
+      <span class="step-label">Resultado</span>
+    </div>
+    <div class="step-line" [class.step-line--done]="step > 2"></div>
+    <div class="step" [class.step--active]="step === 3" (click)="goToStep(3)">
+      <div class="step-circle">3</div>
+      <span class="step-label">Exámenes</span>
+    </div>
+  </div>
+
+  <!-- Paso 1: Datos + Worker -->
+  <div class="paso-body" *ngIf="step === 1">
+    <h2 class="paso-title"><i class="ti ti-user"></i> Trabajador</h2>
+
+    <app-worker-search-input
+      color="var(--color-abril-logo-blue)"
+      [selected]="workerSelected"
+      (selectedChange)="onWorkerSelectedChange($event)">
+    </app-worker-search-input>
+
+    <h2 class="paso-title mt-6"><i class="ti ti-clipboard-list"></i> Datos del examen</h2>
+    <div class="form-row">
+      <div class="abril-field">
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Tipo EMO *"
+          [options]="emoTipos"
+          valueField="id"
+          displayField="nombre"
+          [value]="tipoEmoId"
+          placeholder="Selecciona tipo"
+          (valueChange)="tipoEmoId = $event">
+        </app-search-select>
+      </div>
+
+      <div class="abril-field">
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Empresa origen *"
+          [options]="empresas"
+          valueField="id"
+          displayField="nombre"
+          [value]="empresaOrigenId"
+          placeholder="Selecciona empresa"
+          (valueChange)="empresaOrigenId = $event">
+        </app-search-select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="abril-field">
+        <label class="abril-field-label">Fecha EMO *</label>
+        <input type="date" class="abril-field-input" [(ngModel)]="fechaEmo" />
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">N° Informe</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="numeroInforme" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="abril-field">
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Clínica"
+          [options]="clinicas"
+          valueField="id"
+          displayField="nombre"
+          [value]="clinicaId"
+          placeholder="Selecciona clínica"
+          (valueChange)="onClinicaChange($event)">
+        </app-search-select>
+      </div>
+
+      <div class="abril-field">
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Médico"
+          [options]="medicosFiltrados"
+          valueField="id"
+          displayField="apellidoNombre"
+          [value]="medicoId"
+          placeholder="Selecciona médico"
+          (valueChange)="medicoId = $event">
+        </app-search-select>
+      </div>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">URL Resultado</label>
+      <input type="url" class="abril-field-input" placeholder="https://…" [(ngModel)]="urlResultado" />
+    </div>
+  </div>
+
+  <!-- Paso 2: Resultado -->
+  <div class="paso-body" *ngIf="step === 2">
+    <h2 class="paso-title"><i class="ti ti-heartbeat"></i> Aptitud *</h2>
+    <div class="aptitud-grid">
+      <label *ngFor="let a of aptitudes" class="aptitud-option" [class.selected]="aptitud === a">
+        <input type="radio" name="aptitud" [value]="a" [(ngModel)]="aptitud" />
+        <span>{{ a }}</span>
+      </label>
+    </div>
+
+    <div *ngIf="aptitud === 'Observado'" class="interconsulta-box">
+      <label>
+        <input type="checkbox" [(ngModel)]="requiereInterconsulta" />
+        Requiere interconsulta con especialista
+      </label>
+    </div>
+
+    <h2 class="paso-title mt-6"><i class="ti ti-ban"></i> Restricciones</h2>
+
+    <div class="form-row">
+      <div class="abril-field">
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Del catálogo"
+          [options]="restriccionTipos"
+          valueField="id"
+          displayField="descripcion"
+          [value]="restriccionTipoIdSel"
+          placeholder="Selecciona restricción"
+          (valueChange)="restriccionTipoIdSel = $event">
+        </app-search-select>
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">O descripción libre</label>
+        <div class="flex gap-2">
+          <input type="text" class="abril-field-input" placeholder="Descripción" [(ngModel)]="restriccionLibre" />
+          <button type="button" class="btn-secondary" (click)="addRestriccion()">Agregar</button>
+        </div>
+      </div>
+    </div>
+
+    <ul *ngIf="restricciones.length > 0" class="restriction-list">
+      <li *ngFor="let r of restricciones; let i = index">
+        <span>{{ restriccionLabel(r) }}</span>
+        <button type="button" class="btn-remove" (click)="removeRestriccion(i)">×</button>
+      </li>
+    </ul>
+
+    <div class="abril-field mt-6">
+      <label class="abril-field-label">Notas</label>
+      <textarea rows="3" class="abril-field-input" [(ngModel)]="notas"></textarea>
+    </div>
+  </div>
+
+  <!-- Paso 3: Exámenes -->
+  <div class="paso-body" *ngIf="step === 3">
+    <h2 class="paso-title"><i class="ti ti-flask"></i> Resultados de exámenes</h2>
+    <p class="hint">Puedes dejar en blanco los exámenes no realizados.</p>
+
+    <div class="examenes-table-wrapper">
+      <table class="examenes-table">
+        <thead>
+          <tr>
+            <th>Examen</th>
+            <th>Resultado</th>
+            <th>Valor</th>
+            <th>Unidad</th>
+            <th>Observación</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of examenes">
+            <td class="examen-name">{{ e.nombre }}</td>
+            <td><input type="text" class="table-input" [(ngModel)]="e.resultado" /></td>
+            <td><input type="text" class="table-input" [(ngModel)]="e.valor" /></td>
+            <td><input type="text" class="table-input" [(ngModel)]="e.unidad" /></td>
+            <td><input type="text" class="table-input" [(ngModel)]="e.observacion" /></td>
+          </tr>
+          <tr *ngIf="examenes.length === 0">
+            <td colspan="5" class="empty-row">
+              No hay tipos de examen configurados en el catálogo.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+    <div class="footer-nav">
+      <button *ngIf="step > 1" type="button" class="btn-secondary" (click)="prevStep()">
+        <i class="ti ti-chevron-left"></i> Atrás
+      </button>
+      <button *ngIf="step < 3" type="button" class="btn-primary" (click)="nextStep()">
+        Siguiente <i class="ti ti-chevron-right"></i>
+      </button>
+      <button *ngIf="step === 3" type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
+        {{ saving ? 'Guardando…' : 'Registrar EMO' }}
+      </button>
+    </div>
+  </div>
+
+</app-abril-modal-panel>

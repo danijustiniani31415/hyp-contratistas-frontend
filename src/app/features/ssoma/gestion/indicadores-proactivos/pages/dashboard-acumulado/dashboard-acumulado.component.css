@@ -1,0 +1,242 @@
+:host { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+.dash-root { display: flex; flex-direction: column; flex: 1; min-height: 0; background: #ffffff; }
+
+/* ── TOOLBAR ────────────────────────────────────────────────────────────── */
+.dash-toolbar {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;
+  padding: 0 1.25rem; height: 46px; flex-shrink: 0;
+  background: #fff; border-bottom: 1px solid var(--color-abril-border, #e5e7eb);
+}
+.dt-brand { display: flex; align-items: center; gap: 0.6rem; }
+.dt-brand__badge {
+  background: #064e3b; color: #fff; font-size: 0.54rem; font-weight: 900;
+  letter-spacing: 0.12em; padding: 3px 7px; border-radius: 4px;
+}
+.dt-brand__title { font-size: 0.95rem; font-weight: 800; color: #0f172a; }
+.dt-brand__sub   { font-size: 0.66rem; font-weight: 600; color: #475569; }
+.dt-controls { display: flex; align-items: center; gap: 0.35rem; }
+.dt-sel {
+  height: 1.65rem; background: #fff; border: 1px solid var(--color-abril-border-strong, #d1d5db);
+  border-radius: 5px; padding: 0 0.45rem; font-size: 0.7rem; color: #1e293b; outline: none; min-width: 88px;
+}
+.dt-sel--xs { min-width: 56px; }
+.dt-btn {
+  display: flex; align-items: center; gap: 0.2rem; height: 1.65rem; padding: 0 0.65rem;
+  font-size: 0.68rem; font-weight: 700; background: var(--color-abril-primary, #4CAF50); color: #fff;
+  border: none; border-radius: 5px; cursor: pointer;
+}
+.dt-btn:hover { background: var(--color-abril-primary-hover, #43A047); }
+.dt-btn--ghost { background: #fff; color: #334155; border: 1px solid #cbd5e1; }
+.dt-btn--ghost:hover { background: #f1f5f9; }
+
+/* ── BODY + GRID ────────────────────────────────────────────────────────── */
+.dash-body { display: flex; flex-direction: column; flex: 1; overflow-y: auto; padding: 0.55rem 0.65rem; min-height: 0; }
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+    "reactivos   reactivos"
+    "ranking     supervisor"
+    "proactivos  mejores";
+  gap: 0.55rem;
+}
+
+.area-reactivos  { grid-area: reactivos; }
+.area-mejores    { grid-area: mejores; }
+.area-ranking    { grid-area: ranking; }
+.area-proactivos { grid-area: proactivos; }
+.area-supervisor { grid-area: supervisor; }
+
+/* Cuerpo de las cards que solo contienen una gráfica Chart.js */
+.chart-card-body { flex: 1; min-height: 190px; position: relative; padding: 0.5rem 0.7rem 0.4rem; }
+/* Proactivos es el indicador más pedido por gerencia: más alto que el resto */
+.chart-card-body--tall { min-height: 280px; }
+
+/* ── CARD BASE ──────────────────────────────────────────────────────────── */
+.card {
+  background: #fff; border: 1px solid #e4e8f0; border-radius: 10px;
+  display: flex; flex-direction: column;
+  box-shadow: 0 1px 5px rgba(15,23,42,.07);
+}
+.card--ink { border-top: 3px solid #064e3b; }
+
+/* Card header — limpio, sin fondos de color */
+.card-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.32rem 0.75rem; flex-shrink: 0;
+  border-bottom: 1px solid #f1f4f9;
+}
+.chd-label  { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #1e293b; }
+.chd-period { font-size: 0.62rem; font-weight: 600; color: #64748b; }
+.card-hd__right { display: flex; align-items: center; gap: 0.5rem; }
+
+/* Header con descripción de qué mide el indicador, debajo del título */
+.card-hd--stack { flex-direction: column; align-items: stretch; gap: 2px; padding-bottom: 0.4rem; }
+.card-hd__row { display: flex; align-items: center; justify-content: space-between; }
+.chd-desc { font-size: 0.6rem; color: #64748b; line-height: 1.35; }
+.btn-editar-meta {
+  display: flex; align-items: center; gap: 0.2rem;
+  font-size: 0.5rem; font-weight: 700; color: #6366f1;
+  background: #eef2ff; border: 0.5px solid #c7d2fe; border-radius: 5px;
+  padding: 2px 7px; cursor: pointer;
+}
+.btn-editar-meta:hover { background: #e0e7ff; }
+
+/* ── META CHIPS ─────────────────────────────────────────────────────────── */
+.meta-chip {
+  display: inline-block; margin-top: 2px; font-size: 0.44rem; font-weight: 700;
+  padding: 1px 6px; border-radius: 99px; letter-spacing: 0.02em;
+}
+.meta-chip--ok       { background: #dcfce7; color: #166534; }
+.meta-chip--alert    { background: #fee2e2; color: #991b1b; }
+.meta-chip--sin-meta { background: #f1f5f9; color: #94a3b8; }
+
+/* ── MODAL META ─────────────────────────────────────────────────────────── */
+.meta-modal-backdrop {
+  position: fixed; inset: 0; background: rgba(15,23,42,.45);
+  display: flex; align-items: center; justify-content: center; z-index: 200;
+}
+.meta-modal {
+  background: #fff; border-radius: 12px; padding: 1.1rem 1.3rem;
+  width: 320px; box-shadow: 0 12px 40px rgba(0,0,0,.2);
+  display: flex; flex-direction: column; gap: 0.6rem;
+}
+.meta-modal h3 { font-size: 0.85rem; font-weight: 800; color: #0f172a; margin: 0; }
+.meta-modal__hint { font-size: 0.62rem; color: #64748b; margin: 0 0 0.2rem; line-height: 1.4; }
+.meta-modal label { display: flex; flex-direction: column; gap: 3px; font-size: 0.65rem; font-weight: 600; color: #334155; }
+.meta-modal input {
+  height: 2rem; border: 1px solid #e2e8f0; border-radius: 7px; padding: 0 0.6rem;
+  font-size: 0.7rem; outline: none;
+}
+.meta-modal input:focus { border-color: #6366f1; }
+.meta-modal__actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.3rem; }
+.btn-cancelar {
+  background: none; border: 1px solid #e2e8f0; border-radius: 7px;
+  padding: 0.4rem 0.8rem; font-size: 0.68rem; color: #475569; cursor: pointer;
+}
+.btn-guardar {
+  background: #6366f1; color: #fff; border: none; border-radius: 7px;
+  padding: 0.4rem 0.9rem; font-size: 0.68rem; font-weight: 700; cursor: pointer;
+}
+.btn-guardar:hover { background: #4f46e5; }
+
+/* ── REACTIVOS ──────────────────────────────────────────────────────────── */
+/* Todo en UNA sola fila: números grandes | gráfica de Julio | tabla Año+Total.
+   flex-wrap: en pantallas angostas los 3 bloques bajan de línea en vez de
+   recortarse (antes se perdían con la ventana chica). */
+.rx-layout { display: flex; flex-direction: row; flex-wrap: wrap; flex: 1; min-height: 0; }
+
+.rx-totals {
+  display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr);
+  gap: 0.3rem 0.9rem;
+  flex-shrink: 0; width: 210px; padding: 0.4rem 0.6rem;
+  border-right: 1px solid #f1f4f9;
+}
+.rx-kpi { text-align: left; }
+.rx-kpi__n    { font-size: 1.25rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.rx-hht       { font-size: 0.88rem !important; color: #334155; }
+.rx-kpi__lbl  { font-size: 0.5rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 1px; }
+.rx-kpi__form { font-size: 0.46rem; font-weight: 600; color: #64748b; margin-top: 1px; }
+
+/* Gráfica: accidentes + días perdidos DE JULIO, por proyecto */
+.rx-chart-wrap { flex: 1 1 320px; min-width: 260px; display: flex; flex-direction: column; padding: 0.35rem 0.6rem; border-right: 1px solid #f1f4f9; }
+.rx-chart-hd-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.2rem; }
+.rx-chart-hd { font-size: 0.56rem; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.03em; }
+.rx-chart-canvas { flex: 1; min-height: 170px; position: relative; }
+
+.rx-table-wrap { flex: 2 1 420px; min-width: 300px; overflow: auto; padding: 0 0.5rem; }
+.rx-tbl { width: 100%; border-collapse: collapse; }
+.rx-tbl thead tr { background: #f8fafc; position: sticky; top: 0; z-index: 1; }
+.rx-tbl th {
+  padding: 0.26rem 0.3rem; font-size: 0.58rem; font-weight: 800;
+  color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;
+  border-bottom: 1px solid #f1f4f9; text-align: center; white-space: nowrap;
+}
+.rx-tbl th:first-child { text-align: left; }
+.rx-grp-lbl { color: #475569; }
+.rx-grp-lbl--total { color: #92702c; background: #fdf6e3; border: 1px solid #efe0ac; border-radius: 4px; letter-spacing: 0.06em; }
+.rx-tbl tbody tr { border-bottom: 1px solid #f8fafc; }
+.rx-tbl tbody tr:hover { background: #fafbff; }
+.rx-t-nombre { padding: 0.28rem 0.35rem; font-size: 0.71rem; font-weight: 700; color: #1e293b; max-width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rx-t-num    { padding: 0.28rem 0.3rem; font-size: 0.7rem; font-weight: 600; color: #475569; text-align: center; }
+.rx-t-idx    { padding: 0.28rem 0.3rem; font-size: 0.74rem; font-weight: 800; text-align: center; }
+.rx-tbl--grouped td:nth-child(6) { border-left: 1px solid #eef1f7; }
+.rx-t-sub th { font-size: 0.52rem; font-weight: 700; padding-top: 0; color: #94a3b8; }
+.rx-t-sub--total { color: #92702c; background: #fdf6e3; font-weight: 700; }
+.rx--cero  { color: #94a3b8; }
+.rx--ok    { color: #059669; }
+.rx--warn  { color: #d97706; }
+.rx--alert { color: #dc2626; }
+
+/* Bloque "Total proyecto" — dato clave para gerencia, resaltado de forma
+   elegante: tinte champagne suave + borde dorado fino (nada de bloques
+   azules/verdes sólidos, que se veían poco corporativos). El semáforo IA
+   conserva sus colores estándar, que ya contrastan bien sobre fondo claro. */
+.rx-t-num--total { background: #fffdf7; font-weight: 800; color: #1e293b; border-left: 2px solid #d4af37; }
+.rx-t-idx--total { background: #fffdf7; font-size: 0.85rem; font-weight: 900; }
+
+/* ── MEJORES PROYECTOS — cards oscuras, UN SOLO color consistente (no un
+   "circo" de colores distintos por card), 2×2, todo centrado y con el
+   número como protagonista para que impacte al proyectar. ─────────────── */
+.mejores-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr);
+  gap: 0.6rem; flex: 1;
+  padding: 0.6rem 0.75rem;
+}
+.mejor-card {
+  background: linear-gradient(155deg, #0f3d31, #0a2b23);
+  border-radius: 10px; padding: 0.6rem 0.7rem 0.75rem;
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1px;
+}
+.mejor-card__titulo { font-size: 0.56rem; font-weight: 800; color: #cdeee0; letter-spacing: 0.05em; }
+.mejor-card__sub     { font-size: 0.53rem; font-weight: 500; color: #82b3a1; margin-top: 1px; }
+.mejor-card__proyecto { font-size: 0.76rem; font-weight: 700; color: #fff; margin-top: 3px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mejor-card__valor   { font-size: 1.9rem; font-weight: 900; color: #fff; line-height: 1.1; margin-top: 4px; letter-spacing: -0.02em; }
+.mejor-card__valor small { font-size: 0.62rem; font-weight: 700; color: #a7d9c6; margin-left: 2px; }
+.mejor-card__bar {
+  width: 80%; height: 4px; border-radius: 99px; background: rgba(255,255,255,0.14); margin-top: 8px; overflow: hidden;
+}
+.mejor-card__bar-fill { height: 100%; background: #4ade80; border-radius: 99px; }
+
+/* ── RESPONSIVE — antes el contenido se recortaba con la ventana angosta;
+   ahora las cards apilan a una columna y dejan de perderse. ──────────────── */
+@media (max-width: 980px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "reactivos"
+      "ranking"
+      "supervisor"
+      "proactivos"
+      "mejores";
+  }
+}
+
+/* ── EMPTY ──────────────────────────────────────────────────────────────── */
+.dash-empty { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 4rem; color: #94a3b8; text-align: center; }
+.dash-empty .ti { font-size: 3rem; opacity: 0.15; }
+.dash-empty p   { font-size: 0.875rem; }
+
+/* ── IMPRESIÓN / EXPORTAR A PDF — todo en una sola página, sin scroll ────── */
+@media print {
+  @page { size: A4 landscape; margin: 8mm; }
+
+  .no-print { display: none !important; }
+
+  :host, .dash-root { display: block; height: auto; background: #fff; }
+  .dash-toolbar { height: auto; padding: 0 0 4mm; border-bottom: 2px solid #064e3b; }
+  .dt-brand__title { font-size: 15pt; }
+  .dt-brand__sub   { font-size: 9pt; }
+
+  .dash-body { overflow: visible; height: auto; padding: 0; }
+  .dash-grid {
+    height: 178mm;
+    grid-template-rows: 32% 14% 28% 26%;
+    gap: 3mm;
+  }
+
+  .card { box-shadow: none; border: 1px solid #cbd5e1; break-inside: avoid; }
+  .rx-table-wrap { overflow: visible; }
+}

@@ -1,0 +1,188 @@
+<div class="ds-root">
+
+
+  <!-- FILTROS -->
+  <div class="ds-filtros">
+    <div class="ds-filtros__left">
+
+      <div class="f-group">
+        <label class="f-label">Proyecto</label>
+        <app-search-select
+          [options]="proyectos()"
+          valueField="id"
+          displayField="nombre"
+          placeholder="Buscar proyecto..."
+          [value]="proyectoFiltro()"
+          [compact]="true"
+          [showLabel]="false"
+          color="var(--color-abril-primary)"
+          (valueChange)="proyectoFiltro.set($event ? +$event : null)">
+        </app-search-select>
+      </div>
+
+      <div class="f-group">
+        <label class="f-label">Mes</label>
+        <app-search-select
+          [options]="meses"
+          valueField="valor"
+          displayField="nombre"
+          placeholder="Todos los meses"
+          [sortAlpha]="false"
+          [value]="mes()"
+          [compact]="true"
+          [showLabel]="false"
+          color="var(--color-abril-primary)"
+          (valueChange)="mes.set(+$event)">
+        </app-search-select>
+      </div>
+
+      <div class="f-group">
+        <label class="f-label">Año</label>
+        <app-search-select
+          [options]="anios"
+          valueField="valor"
+          displayField="nombre"
+          placeholder="Todos los años"
+          [sortAlpha]="false"
+          [value]="anio()"
+          [compact]="true"
+          [showLabel]="false"
+          color="var(--color-abril-primary)"
+          (valueChange)="anio.set(+$event)">
+        </app-search-select>
+      </div>
+
+      <div class="f-sep"></div>
+
+      <label class="f-check">
+        <input type="checkbox" [ngModel]="verOcultos()" (ngModelChange)="verOcultos.set($event)" />
+        Ver ocultos
+      </label>
+
+      <div class="f-sep"></div>
+
+      <button class="f-btn-pdf" (click)="exportarPdf()" *ngIf="supervisores().length">
+        <i class="ti ti-file-type-pdf"></i> PDF
+      </button>
+
+      <div class="f-sep"></div>
+
+      <div class="f-metas">
+        <span class="f-meta-chip"><i class="ti ti-file-description"></i> RAC: 4</span>
+        <span class="f-meta-chip"><i class="ti ti-eye"></i> OPT: 2</span>
+        <span class="f-meta-chip"><i class="ti ti-clipboard-check"></i> Insp: 2</span>
+        <span class="f-meta-chip"><i class="ti ti-presentation"></i> Charlas: 2</span>
+        <span class="f-meta-chip f-meta-chip--semana"><i class="ti ti-target"></i> Meta: {{ metaSemanal() }}%</span>
+      </div>
+
+      <div class="f-semana" *ngIf="semanaActual()">
+        <i class="ti ti-calendar-week"></i>
+        <span>Sem. {{ semanaActual() }} &nbsp;·&nbsp; Meta esperada: <strong>{{ metaEsperada() }}%</strong></span>
+      </div>
+
+    </div>
+
+    <div class="ds-kpi" *ngIf="supervisores().length">
+      <div class="ds-kpi__num" [ngClass]="promedioClass(promedioProyecto())">
+        {{ promedioProyecto() | number:'1.0-0' }}%
+      </div>
+      <div class="ds-kpi__meta">
+        <div class="ds-kpi__title">Promedio del proyecto</div>
+        <div class="ds-kpi__sub">{{ supervisores().length }} supervisor(es) · {{ nombreMes(mes()) }} {{ anio() }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRID -->
+  <div class="ds-body">
+    <div *ngIf="!supervisores().length" class="ds-empty">
+      <i class="ti ti-users-group"></i>
+      <p>No hay datos para el período seleccionado.</p>
+    </div>
+
+    <div class="ds-grid" *ngIf="supervisores().length">
+      <div *ngFor="let s of supervisores(); let i = index"
+           class="sup-card"
+           [class.sup-card--completo]="s.pctGeneral >= 100"
+           [class.sup-card--oculto]="s.esOculto"
+           [ngClass]="ritmoCardClass(s)">
+
+        <button class="sup-ocultar-btn"
+                *ngIf="s.puedeOcultarse"
+                [title]="s.esOculto ? 'Volver a mostrar en el indicador' : 'Ocultar de este indicador (solo Coordinadores SSOMA)'"
+                (click)="toggleOculto(s)">
+          <i class="ti" [ngClass]="s.esOculto ? 'ti-eye' : 'ti-eye-off'"></i>
+        </button>
+
+        <div class="sup-card__head">
+          <div class="sup-avatar-wrap">
+            <div class="sup-avatar" [ngClass]="colorClass(s.pctGeneral)">
+              {{ iniciales(s.supervisorNombre) }}
+            </div>
+            <div class="sup-trofeo-wrap"
+                 *ngIf="posicionLogro(s) >= 1 && posicionLogro(s) <= 3"
+                 [ngClass]="trofeoClass(posicionLogro(s))"
+                 [title]="posicionLogro(s) + '° en llegar al 100%'">
+              <i class="ti ti-trophy"></i>
+              <span>{{ posicionLogro(s) === 1 ? '1er' : posicionLogro(s) === 2 ? '2do' : '3er' }}</span>
+            </div>
+          </div>
+          <div class="sup-info">
+            <div class="sup-nombre" [title]="s.supervisorNombre">{{ nombreTitleCase(s.supervisorNombre) }}</div>
+            <div class="sup-proyecto"><i class="ti ti-building"></i> {{ s.proyectoNombre }}</div>
+          </div>
+          <div class="sup-pct-badge" [ngClass]="colorClass(s.pctGeneral)">
+            {{ s.pctGeneral | number:'1.0-0' }}%
+          </div>
+        </div>
+
+        <!-- Ritmo semanal -->
+        <div class="sup-ritmo" *ngIf="mostrarRitmo(s)" [ngClass]="ritmoClass(s)">
+          {{ ritmoLabel(s) }}
+        </div>
+
+        <!-- 4 indicadores solo números -->
+        <div class="sup-inds">
+          <div *ngFor="let ind of INDICADORES" class="sup-ind">
+            <span class="sup-ind__name">
+              <i class="ti" [ngClass]="ind.icon"></i> {{ ind.label }}
+            </span>
+            <span class="sup-ind__frac">
+              <strong [class.ind-ok]="pct(s, ind.key) >= 100">{{ actual(s, ind.key) }}</strong>
+              <span class="sep">/</span>{{ meta(s, ind.key) }}
+              <span class="sup-ind__check" *ngIf="pct(s, ind.key) >= 100">✓</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Checks informativos: Lección + Eval. Contratista + Eval. Residente -->
+        <div class="sup-checks-row">
+          <ng-container *ngFor="let c of CHECKS">
+            <div *ngIf="c.key !== 'EvalResidente' || !s.esResidente"
+                 class="sup-check-item" [class.sup-check-item--ok]="hizo(s, c.key)">
+              <i class="ti" [ngClass]="c.icon"></i>
+              <span>{{ c.label }}</span>
+              <i class="ti sup-check-icon" [ngClass]="hizo(s, c.key) ? 'ti-circle-check' : 'ti-circle-x'"></i>
+            </div>
+          </ng-container>
+        </div>
+
+        <div class="sup-fecha-logro" *ngIf="s.fechaLogro100 || tendenciaDelta(s) !== null">
+          <ng-container *ngIf="s.fechaLogro100">
+            <i class="ti ti-calendar-check"></i>
+            Completado el {{ s.fechaLogro100 | date:'d MMM' }}
+          </ng-container>
+          <span class="sup-tend"
+                *ngIf="tendenciaDelta(s) !== null"
+                [class.sup-tend--sube]="tendenciaDelta(s)! > 0"
+                [class.sup-tend--baja]="tendenciaDelta(s)! < 0"
+                [class.sup-tend--igual]="tendenciaDelta(s)! === 0">
+            {{ tendenciaDelta(s)! > 0 ? '▲' : tendenciaDelta(s)! < 0 ? '▼' : '=' }}{{ tendenciaDelta(s)! !== 0 ? (tendenciaDelta(s)! | number:'1.0-1') + '%' : '' }}
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

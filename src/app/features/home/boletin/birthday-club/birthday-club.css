@@ -1,0 +1,100 @@
+/* El estilo estático vive como utilidades de Tailwind en la plantilla. Aquí solo
+   queda el font-family base, la animación del overlay y los estados dinámicos de
+   los días (con su pseudo-elemento de subrayado). */
+
+:host {
+  display: block;
+  font-family: 'Kumbh Sans', sans-serif;
+}
+
+.cumple-overlay {
+  animation: cumple-fade 0.25s ease;
+}
+
+/* Días de relleno (mes anterior/siguiente): atenuados. */
+.fuera {
+  color: #c2cdd8;
+}
+
+/* Días con cumpleaños: el número se resalta. */
+.cumple {
+  font-weight: 800;
+  color: #00529b;
+}
+
+/* Cada cumpleañero es un "rectangulito"; intercalan azul (base) y verde. */
+.rect {
+  width: 15px;
+  height: 5px;
+  border-radius: 3px;
+  background: #1f74c4;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease;
+}
+
+.rect-verde {
+  background: #8bc53f;
+}
+
+.rect:hover {
+  transform: scale(1.25);
+  filter: brightness(1.05);
+}
+
+@keyframes cumple-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Spinner del popover mientras se resuelve la foto pedida a demanda (hover). */
+.cumple-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #cfe0f0;
+  border-top-color: #00529b;
+  border-radius: 50%;
+  animation: cumple-spin 0.7s linear infinite;
+}
+
+@keyframes cumple-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Globos: recorrido constante de 4 nodos, casi en su mismo sitio. */
+.globo {
+  will-change: transform;
+}
+
+.globo-verde {
+  transform: rotate(-12deg);
+  animation: globo-verde-flotar 7s ease-in-out infinite;
+}
+
+.globo-azul {
+  transform: rotate(12deg);
+  animation: globo-azul-flotar 8s ease-in-out infinite;
+}
+
+@keyframes globo-verde-flotar {
+  0%   { transform: translate(0, 0) rotate(-12deg); }
+  25%  { transform: translate(8px, -12px) rotate(-8deg); }
+  50%  { transform: translate(-6px, -18px) rotate(-14deg); }
+  75%  { transform: translate(-10px, -6px) rotate(-10deg); }
+  100% { transform: translate(0, 0) rotate(-12deg); }
+}
+
+@keyframes globo-azul-flotar {
+  0%   { transform: translate(0, 0) rotate(12deg); }
+  25%  { transform: translate(-9px, -10px) rotate(8deg); }
+  50%  { transform: translate(7px, -20px) rotate(15deg); }
+  75%  { transform: translate(11px, -8px) rotate(10deg); }
+  100% { transform: translate(0, 0) rotate(12deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cumple-overlay { animation: none; }
+  .globo-verde,
+  .globo-azul { animation: none; }
+}

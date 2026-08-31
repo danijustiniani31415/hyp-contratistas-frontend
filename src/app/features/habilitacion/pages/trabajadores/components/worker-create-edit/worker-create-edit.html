@@ -1,0 +1,608 @@
+<app-base-modal *ngIf="open" [title]="title" width="w-[860px]" (closeModal)="close()">
+  <div class="form-wrapper" [class.form-loading]="verificandoDni">
+
+    <div *ngIf="loadingDetalle" class="loading-row">Cargando datos del trabajador…</div>
+
+    <ng-container *ngIf="!loadingDetalle">
+
+      <h4 class="section-title">Datos personales</h4>
+      <div class="grid-2">
+        <!-- La clasificación es de solo lectura en edición salvo que la ficha no tenga ninguna:
+             asignar la que falta es seguro, cambiar una ya asignada pasa por "Cambiar obra /
+             puesto de trabajo" (ver clasificacionEditable). -->
+        <div class="col-span-2" *ngIf="!esContratista">
+          <label class="field-label">
+            Clasificación (Obra / Staff / Oficina Central)
+            {{ mode === 'edit' && !clasificacionEditable ? '(solo lectura)' : '' }}
+          </label>
+          <app-search-select
+            [options]="obraOficinaOpciones"
+            valueField="obraOficinaStaffId"
+            displayField="name"
+            [value]="model.obraOficinaStaffId"
+            [showLabel]="false"
+            [sortAlpha]="false"
+            [disabled]="!clasificacionEditable"
+            placeholder="Selecciona obra u oficina"
+            [allowClear]="true"
+            (valueChange)="onObraOficinaSelect($event)"
+          />
+          <p class="field-hint" *ngIf="mode === 'edit' && !clasificacionEditable">
+            Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+          </p>
+          <p class="field-hint" *ngIf="mode === 'edit' && clasificacionEditable">
+            Esta ficha no tiene clasificación: asígnala acá. Una vez asignada solo se cambia con
+            "Cambiar obra / puesto de trabajo".
+          </p>
+        </div>
+        <div>
+          <label class="field-label">Tipo de Documento *</label>
+          <app-search-select
+            [options]="tipoDocumentoOpciones"
+            valueField="value"
+            displayField="label"
+            [value]="model.tipoDocumento"
+            [showLabel]="false"
+            [sortAlpha]="false"
+            [allowClear]="false"
+            [disabled]="dniReadonly"
+            placeholder="Selecciona tipo de documento"
+            (valueChange)="onTipoDocumentoSelect($event)"
+          />
+        </div>
+        <div>
+          <label class="field-label">
+            {{ model.tipoDocumento === 'DNI' ? 'DNI' : 'Carné de Extranjería' }}
+            {{ dniReadonly ? '(solo lectura)' : '*' }}
+          </label>
+          <div class="dni-wrapper">
+            <input
+              type="text"
+              class="field-input"
+              [class.field-readonly]="dniReadonly"
+              [(ngModel)]="model.dni"
+              [readonly]="dniReadonly"
+              [maxlength]="model.tipoDocumento === 'DNI' ? 8 : 12"
+              [placeholder]="model.tipoDocumento === 'DNI' ? '8 dígitos numéricos' : '6-12 caracteres alfanuméricos'"
+              (blur)="onDniBlur()"
+            />
+            <span *ngIf="verificandoDni" class="dni-status checking">Verificando…</span>
+            <span *ngIf="dniVerificado && !verificandoDni" class="dni-status verified">✓ Verificado en RENIEC</span>
+          </div>
+        </div>
+        <div class="col-span-2">
+          <label class="field-label">Apellido / Nombre *</label>
+          <input
+            type="text"
+            class="field-input"
+            [(ngModel)]="model.apellidoNombre"
+            placeholder="Se autocompleta con RENIEC"
+          />
+        </div>
+        <div *ngIf="!esContratista">
+          <label class="field-label">Fecha de nacimiento *</label>
+          <app-date-picker
+            [value]="model.fechaNacimiento || null"
+            [showLabel]="false"
+            [color]="accentColor"
+            (valueChange)="model.fechaNacimiento = $event ?? ''"
+          />
+          <!-- Publica (o no) el cumpleaños en el calendario del boletín. La fecha se guarda
+               igual: desmarcarlo solo lo saca del boletín. -->
+          <label class="check-row">
+            <input type="checkbox" [(ngModel)]="model.mostrarEnBoletin" />
+            <span>Mostrar cumpleaños en el boletín</span>
+          </label>
+        </div>
+        <div>
+          <label class="field-label">Sexo</label>
+          <app-search-select
+            [options]="sexoOpciones"
+            valueField="value"
+            displayField="label"
+            [value]="model.sexo || null"
+            [showLabel]="false"
+            [sortAlpha]="false"
+            placeholder="Sin especificar"
+            [allowClear]="true"
+            (valueChange)="model.sexo = $event ?? ''"
+          />
+        </div>
+        <!-- Obra: el personal sigue siendo el correo obligatorio y el corporativo es opcional,
+             para los obreros que sí tienen cuenta de Abril (capataces, maestros de obra). -->
+        <div *ngIf="esObrero">
+          <label class="field-label">Email personal *</label>
+          <input
+            type="email"
+            class="field-input"
+            [class.field-invalid]="faltaCorreo"
+            [(ngModel)]="model.emailPersonal"
+            placeholder="nombre@gmail.com"
+          />
+        </div>
+        <div *ngIf="esObrero">
+          <label class="field-label">Email corporativo</label>
+          <input
+            type="email"
+            class="field-input"
+            [class.field-invalid]="!!emailError"
+            [(ngModel)]="model.emailCorporativo"
+            (ngModelChange)="onEmailCorporativoInput()"
+            (blur)="onEmailCorporativoBlur()"
+            placeholder="nombre.apellido@abril.pe"
+          />
+          <span *ngIf="verificandoEmail" class="dni-status checking">Verificando en el directorio de Abril…</span>
+          <span *ngIf="!verificandoEmail && emailVerificadoNombre" class="dni-status verified">
+            ✓ {{ emailVerificadoNombre }}
+          </span>
+          <span *ngIf="!verificandoEmail && emailError" class="field-error">{{ emailError }}</span>
+          <span
+            class="field-hint"
+            *ngIf="!verificandoEmail && !emailError && !emailVerificadoNombre"
+          >
+            Opcional: solo si el trabajador tiene cuenta de Abril.
+          </span>
+        </div>
+        <div *ngIf="esStaffOOficina">
+          <label class="field-label">Email corporativo</label>
+          <input
+            type="email"
+            class="field-input"
+            [class.field-invalid]="!!emailError || faltaCorreo"
+            [(ngModel)]="model.emailCorporativo"
+            (ngModelChange)="onEmailCorporativoInput()"
+            (blur)="onEmailCorporativoBlur()"
+            placeholder="nombre.apellido@abril.pe"
+          />
+          <span *ngIf="verificandoEmail" class="dni-status checking">Verificando en el directorio de Abril…</span>
+          <span *ngIf="!verificandoEmail && emailVerificadoNombre" class="dni-status verified">
+            ✓ {{ emailVerificadoNombre }}
+          </span>
+          <span *ngIf="!verificandoEmail && emailError" class="field-error">{{ emailError }}</span>
+        </div>
+        <div *ngIf="esStaffOOficina">
+          <label class="field-label">Email personal</label>
+          <input
+            type="email"
+            class="field-input"
+            [class.field-invalid]="faltaCorreo"
+            [(ngModel)]="model.emailPersonal"
+            placeholder="nombre@gmail.com"
+          />
+        </div>
+        <p
+          class="col-span-2"
+          *ngIf="esStaffOOficina"
+          [class.field-hint]="!faltaCorreo"
+          [class.field-error]="faltaCorreo"
+        >
+          Registra al menos un correo: el corporativo o el personal.
+        </p>
+        <div *ngIf="esStaffOOficina">
+          <label class="field-label">Celular corporativo</label>
+          <input type="text" class="field-input" [(ngModel)]="model.celular" placeholder="999 999 999" />
+        </div>
+      </div>
+
+      <h4 class="section-title">Asignación</h4>
+      <div class="grid-2">
+
+        <!-- ══ CONTRATISTA ══ -->
+        <ng-container *ngIf="esContratista">
+          <div class="col-span-2">
+            <label class="field-label">Empresa</label>
+            <input type="text" class="field-input field-readonly" [value]="empresaContratistaNombre" readonly placeholder="Cargando…" />
+          </div>
+          <div class="col-span-2">
+            <label class="field-label">Proyecto * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+            <app-search-select
+              [options]="proyectos"
+              valueField="proyectoId"
+              displayField="proyectoNombre"
+              [value]="model.proyectoId"
+              [showLabel]="false"
+              [disabled]="mode === 'edit'"
+              placeholder="Buscar proyecto..."
+              [allowClear]="true"
+              (valueChange)="model.proyectoId = $event"
+            />
+            <p class="field-hint" *ngIf="mode === 'edit'">
+              Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+            </p>
+          </div>
+          <div>
+            <label class="field-label">Celular</label>
+            <input type="text" class="field-input" [(ngModel)]="model.celular" placeholder="999 999 999" />
+          </div>
+          <div>
+            <label class="field-label">Email personal *</label>
+            <input
+              type="email"
+              class="field-input"
+              [class.field-invalid]="faltaCorreo"
+              [(ngModel)]="model.emailPersonal"
+              placeholder="nombre@gmail.com"
+            />
+          </div>
+          <div>
+            <label class="field-label">Categoría {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+            <app-search-select
+              [options]="categorias"
+              valueField="id"
+              displayField="nombre"
+              [value]="model.categoriaId"
+              [showLabel]="false"
+              [disabled]="mode === 'edit'"
+              placeholder="Selecciona categoría"
+              [allowClear]="true"
+              (valueChange)="onCategoriaChange($event)"
+            />
+            <span class="field-hint">Solo filtra los puestos. La categoría real la define el puesto.</span>
+          </div>
+          <div>
+            <label class="field-label">Puesto * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+            <app-search-select
+              [options]="puestosFiltrados"
+              valueField="id"
+              displayField="nombre"
+              [value]="model.puestoId"
+              [showLabel]="false"
+              [disabled]="mode === 'edit'"
+              placeholder="Selecciona puesto"
+              [allowClear]="true"
+              (valueChange)="onPuestoChange($event)"
+            />
+            <span class="field-hint">Es el cargo que se muestra, y de él salen los entregables, permisos y filtros internos.</span>
+          </div>
+          <div class="col-span-2" *ngIf="mode === 'edit'">
+            <p class="field-hint">
+              Para cambiar el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+            </p>
+          </div>
+          <div>
+            <label class="field-label">Condición médica *</label>
+            <app-search-select
+              [options]="condicionMedicaContratistaOpciones"
+              valueField="value"
+              displayField="label"
+              [value]="model.condicionMedica || null"
+              [showLabel]="false"
+              [sortAlpha]="false"
+              placeholder="Selecciona condición médica"
+              [allowClear]="true"
+              (valueChange)="model.condicionMedica = $event ?? ''"
+            />
+          </div>
+          <div>
+            <label class="field-label">Fecha de ingreso *</label>
+            <app-date-picker
+              [value]="model.fechaIngreso || null"
+              [showLabel]="false"
+              [color]="accentColor"
+              (valueChange)="model.fechaIngreso = $event ?? ''"
+            />
+          </div>
+          <div>
+            <label class="field-label">Años de experiencia *</label>
+            <input type="number" class="field-input" [(ngModel)]="model.aniosExperiencia" min="0" max="60" placeholder="Ej: 5" />
+          </div>
+        </ng-container>
+
+        <!-- ══ PERSONAL CASA ══ -->
+        <ng-container *ngIf="!esContratista">
+
+          <!-- OBRERO -->
+          <ng-container *ngIf="esObrero">
+            <div class="col-span-2">
+              <label class="field-label">Proyecto {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <app-search-select
+                [options]="proyectos"
+                valueField="projectId"
+                displayField="projectDescription"
+                [value]="model.proyectoId"
+                [showLabel]="false"
+                [disabled]="mode === 'edit'"
+                placeholder="Buscar proyecto..."
+                [allowClear]="true"
+                (valueChange)="model.proyectoId = $event"
+              />
+              <p class="field-hint" *ngIf="mode === 'edit'">
+                Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              </p>
+            </div>
+            <div class="col-span-2">
+              <label class="field-label">Razón social {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <app-search-select
+                [options]="empresas"
+                valueField="id"
+                displayField="razonSocial"
+                [value]="model.empresaId"
+                [showLabel]="false"
+                [disabled]="mode === 'edit'"
+                placeholder="Buscar empresa..."
+                [allowClear]="true"
+                (valueChange)="model.empresaId = $event"
+              />
+              <p class="field-hint" *ngIf="mode === 'edit'">
+                Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              </p>
+            </div>
+            <div>
+              <label class="field-label">Celular</label>
+              <input type="text" class="field-input" [(ngModel)]="model.celular" placeholder="999 999 999" />
+            </div>
+            <div></div>
+            <div>
+              <label class="field-label">Categoría {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <app-search-select
+                [options]="categorias"
+                valueField="id"
+                displayField="nombre"
+                [value]="model.categoriaId"
+                [showLabel]="false"
+                [disabled]="mode === 'edit'"
+                placeholder="Selecciona categoría"
+                [allowClear]="true"
+                (valueChange)="onCategoriaChange($event)"
+              />
+              <span class="field-hint">Solo filtra los puestos. La categoría real la define el puesto.</span>
+            </div>
+            <div>
+              <label class="field-label">Puesto * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <app-search-select
+                [options]="puestosFiltrados"
+                valueField="id"
+                displayField="nombre"
+                [value]="model.puestoId"
+                [showLabel]="false"
+                [disabled]="mode === 'edit'"
+                placeholder="Selecciona puesto"
+                [allowClear]="true"
+                (valueChange)="onPuestoChange($event)"
+              />
+              <span class="field-hint">Es el cargo que se muestra, y de él salen los entregables, permisos y filtros internos.</span>
+            </div>
+            <div class="col-span-2" *ngIf="mode === 'edit'">
+              <p class="field-hint">
+                Para cambiar el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              </p>
+            </div>
+
+            <!-- Jefe del obrero. A diferencia de Staff/Oficina Central acá no hay checkbox: un
+                 obrero no tiene área en el árbol, así que no existe revisor de área que mostrar
+                 por defecto y el desplegable ES el campo. Es opcional; sin jefe elegido el
+                 trabajador cae en el fallback de GTH (ver JefeRevisorResolver en el backend). -->
+            <div class="col-span-2">
+              <label class="field-label">Jefe personalizado</label>
+              <app-search-select
+                [options]="jefesDisponibles"
+                valueField="workerId"
+                displayField="fullName"
+                [value]="model.jefePersonalizadoWorkerId"
+                [showLabel]="false"
+                placeholder="Buscar por nombre o DNI..."
+                [allowClear]="true"
+                (valueChange)="onJefePersonalizadoChange($event)"
+              />
+              <span class="field-hint" *ngIf="jefeSeleccionadoEmail">{{ jefeSeleccionadoEmail }}</span>
+            </div>
+            <div>
+              <label class="field-label">Fecha de ingreso</label>
+              <app-date-picker
+                [value]="model.fechaIngreso || null"
+                [showLabel]="false"
+                [color]="accentColor"
+                (valueChange)="model.fechaIngreso = $event ?? ''"
+              />
+            </div>
+            <div>
+              <label class="field-label">Años de experiencia *</label>
+              <input type="number" class="field-input" [(ngModel)]="model.aniosExperiencia" min="0" max="60" placeholder="Ej: 5" />
+            </div>
+          </ng-container>
+
+          <!-- STAFF / OFICINA CENTRAL -->
+          <ng-container *ngIf="esStaffOOficina">
+            <div class="col-span-2">
+              <label class="field-label">Proyecto {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <app-search-select
+                [options]="proyectos"
+                valueField="projectId"
+                displayField="projectDescription"
+                [value]="model.proyectoId"
+                [showLabel]="false"
+                [disabled]="mode === 'edit'"
+                placeholder="Buscar proyecto..."
+                [allowClear]="true"
+                (valueChange)="model.proyectoId = $event"
+              />
+              <p class="field-hint" *ngIf="mode === 'edit'">
+                Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              </p>
+            </div>
+            <div class="col-span-2">
+              <label class="field-label">Razón social {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <app-search-select
+                [options]="empresas"
+                valueField="id"
+                displayField="razonSocial"
+                [value]="model.empresaId"
+                [showLabel]="false"
+                [disabled]="mode === 'edit'"
+                placeholder="Buscar empresa..."
+                [allowClear]="true"
+                (valueChange)="model.empresaId = $event"
+              />
+              <p class="field-hint" *ngIf="mode === 'edit'">
+                Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              </p>
+            </div>
+            <div>
+              <label class="field-label">Categoría {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <app-search-select
+                [options]="categorias"
+                valueField="id"
+                displayField="nombre"
+                [value]="model.categoriaId"
+                [showLabel]="false"
+                [disabled]="mode === 'edit'"
+                placeholder="Selecciona categoría"
+                [allowClear]="true"
+                (valueChange)="onCategoriaChange($event)"
+              />
+              <span class="field-hint">Solo filtra los puestos. La categoría real la define el puesto.</span>
+            </div>
+            <div>
+              <label class="field-label">Puesto * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <app-search-select
+                [options]="puestosFiltrados"
+                valueField="id"
+                displayField="nombre"
+                [value]="model.puestoId"
+                [showLabel]="false"
+                [disabled]="mode === 'edit'"
+                placeholder="Selecciona puesto"
+                [allowClear]="true"
+                (valueChange)="onPuestoChange($event)"
+              />
+              <span class="field-hint">Es el cargo que se muestra, y de él salen los entregables, permisos y filtros internos.</span>
+            </div>
+            <div class="col-span-2" *ngIf="mode === 'edit'">
+              <p class="field-hint">
+                Para cambiar el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              </p>
+            </div>
+            <!-- Área: desplegables en cascada sobre el árbol de áreas (workers.area_scope_id).
+                 Se guarda el nodo elegido y el backend deriva de ahí la área/subárea legacy. -->
+            <div class="col-span-2" *ngFor="let level of areaLevels; let i = index">
+              <label class="field-label">{{ i === 0 ? 'Área *' : 'Subárea' }}</label>
+              <app-search-select
+                [options]="level.options"
+                valueField="areaScopeId"
+                displayField="areaItemName"
+                [value]="level.selected"
+                [showLabel]="false"
+                [sortAlpha]="false"
+                [placeholder]="
+                  cargandoAreas ? 'Cargando…' : i === 0 ? 'Selecciona área' : 'Selecciona subárea'
+                "
+                [allowClear]="true"
+                (valueChange)="onAreaLevelChange(i, $event)"
+              />
+            </div>
+
+            <!-- Jefe del trabajador: por defecto el revisor que sugiere su área (solo lectura);
+                 con el checkbox se pasa a elegir uno a mano, que se sobrepone a ese. -->
+            <div class="col-span-2">
+              <label class="field-label">{{ model.jefePersonalizado ? 'Jefe personalizado' : 'Jefe / Revisor del área' }}</label>
+
+              <input
+                *ngIf="!model.jefePersonalizado"
+                type="text"
+                class="field-input field-readonly"
+                readonly
+                [value]="revisorNombre || ''"
+                [placeholder]="areaScopeIdElegido ? 'Sin revisor configurado para esta área' : 'Selecciona un área'"
+              />
+
+              <app-search-select
+                *ngIf="model.jefePersonalizado"
+                [options]="jefesDisponibles"
+                valueField="workerId"
+                displayField="fullName"
+                [value]="model.jefePersonalizadoWorkerId"
+                [showLabel]="false"
+                placeholder="Buscar por nombre o DNI..."
+                [allowClear]="true"
+                (valueChange)="onJefePersonalizadoChange($event)"
+              />
+
+              <span class="field-hint" *ngIf="jefeEfectivoEmail">{{ jefeEfectivoEmail }}</span>
+              <span class="field-hint" *ngIf="!model.jefePersonalizado && esRevisorDeSuPropiaArea">
+                Es el revisor de su propia área, así que le corresponde el siguiente revisor válido.
+              </span>
+              <span class="field-hint" *ngIf="!model.jefePersonalizado && areaScopeIdElegido && !revisorNombre">
+                Configúralo en Configuración → Revisores de Áreas.
+              </span>
+
+              <label class="check-row">
+                <input
+                  type="checkbox"
+                  [ngModel]="model.jefePersonalizado"
+                  (ngModelChange)="onJefePersonalizadoToggle($event)"
+                />
+                <span>Jefe personalizado</span>
+              </label>
+              <span class="field-hint">
+                {{ model.jefePersonalizado
+                  ? 'Este jefe se sobrepone al revisor del área en los correos y aprobaciones.'
+                  : 'Márcalo para asignarle un jefe distinto al revisor de su área.' }}
+              </span>
+            </div>
+            <div>
+              <label class="field-label">Fecha de ingreso</label>
+              <app-date-picker
+                [value]="model.fechaIngreso || null"
+                [showLabel]="false"
+                [color]="accentColor"
+                (valueChange)="model.fechaIngreso = $event ?? ''"
+              />
+            </div>
+            <div>
+              <label class="field-label">Años de experiencia *</label>
+              <input type="number" class="field-input" [(ngModel)]="model.aniosExperiencia" min="0" max="60" placeholder="Ej: 5" />
+            </div>
+            <div *ngIf="esOficinaCentral">
+              <label class="check-row">
+                <input type="checkbox" [(ngModel)]="model.sctr" />
+                <span>Requiere SCTR</span>
+              </label>
+            </div>
+          </ng-container>
+
+        </ng-container>
+
+      </div>
+
+      <h4 class="section-title">Estado y notas</h4>
+      <div class="grid-2">
+        <ng-container *ngIf="!esContratista">
+          <div>
+            <label class="check-row" [class.check-row-disabled]="!sctrEditable">
+              <input type="checkbox" id="sctr" [(ngModel)]="model.sctr" [disabled]="!sctrEditable" />
+              <span>Requiere SCTR</span>
+            </label>
+            <span *ngIf="!sctrEditable" class="field-hint">Aplica solo para Oficina Central</span>
+          </div>
+          <div>
+            <label class="field-label">Condición médica</label>
+            <app-search-select
+              [options]="condicionMedicaCasaOpciones"
+              valueField="value"
+              displayField="label"
+              [value]="model.condicionMedica || null"
+              [showLabel]="false"
+              [sortAlpha]="false"
+              placeholder="Selecciona condición médica"
+              [allowClear]="true"
+              (valueChange)="model.condicionMedica = $event ?? ''"
+            />
+          </div>
+        </ng-container>
+        <div class="col-span-2">
+          <label class="field-label">Notas</label>
+          <textarea rows="3" class="field-input" [(ngModel)]="model.notas"></textarea>
+        </div>
+      </div>
+
+    </ng-container>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </footer>
+
+  </div>
+</app-base-modal>

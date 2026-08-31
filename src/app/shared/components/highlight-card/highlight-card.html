@@ -1,0 +1,12 @@
+<article class="highlight-card">
+  <img class="highlight-dog" [src]="img" [alt]="titulo" loading="lazy" />
+
+  <div class="highlight-top"></div>
+
+  <div class="highlight-body">
+    <h3>{{ titulo }}</h3>
+    <p [innerHTML]="descripcion"></p>
+  </div>
+
+  <button type="button" class="highlight-cta" (click)="cta.emit()">{{ ctaLabel }}</button>
+</article>

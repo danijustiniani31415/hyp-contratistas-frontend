@@ -1,0 +1,199 @@
+<div class="detalle-root">
+
+  <!-- HEADER -->
+  <app-abril-page-header
+    badge="SSOMA · OPT"
+    [titulo]="data ? ('OPT #' + data.id) : 'Detalle OPT'"
+    [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+    (secondaryClick)="volver()">
+  </app-abril-page-header>
+
+  <div class="det-body">
+
+    <!-- SKELETON -->
+    @if (loading) {
+      <div class="skeleton-stack">
+        @for (_ of [1,2,3]; track $index) {
+          <div class="skeleton-card"></div>
+        }
+      </div>
+    }
+
+    @if (!loading && data) {
+
+      <!-- ── SCORE GAUGE + META ── -->
+      <div class="top-row">
+
+        <div class="gauge-card">
+          <svg class="gauge-svg" viewBox="0 0 100 100">
+            <circle class="gauge-bg" cx="50" cy="50" r="44"
+              fill="none" stroke="#f0ede8" stroke-width="8" />
+            <circle class="gauge-fill" cx="50" cy="50" r="44"
+              fill="none" stroke-width="8"
+              stroke-linecap="round"
+              [ngClass]="scoreClass(data.scorePct)"
+              [attr.stroke-dasharray]="circumference"
+              [attr.stroke-dashoffset]="scoreDashOffset(data.scorePct)"
+              transform="rotate(-90 50 50)" />
+          </svg>
+          <div class="gauge-center">
+            <span class="gauge-val" [ngClass]="scoreClass(data.scorePct)">
+              {{ data.scorePct !== undefined ? (data.scorePct | number:'1.0-0') + '%' : '—' }}
+            </span>
+            <span class="gauge-lbl">Score</span>
+          </div>
+          <div class="gauge-legend">
+            <span>{{ data.totalSeguros }} seguros</span>
+            <span>{{ data.totalInseguros }} inseguros</span>
+          </div>
+        </div>
+
+        <div class="meta-card">
+          <div class="meta-row">
+            <span class="meta-label"><i class="ti ti-building-skyscraper"></i> Proyecto</span>
+            <span class="meta-value">{{ data.proyectoNombre }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label"><i class="ti ti-calendar"></i> Fecha</span>
+            <span class="meta-value">{{ data.fecha | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label"><i class="ti ti-tag"></i> Tipo</span>
+            <span class="chip-tipo" [class.chip-tipo--planeada]="data.tipoObservacion === 'Planeada'">{{ data.tipoObservacion }}</span>
+          </div>
+          @if (data.petNombre) {
+            <div class="meta-row">
+              <span class="meta-label"><i class="ti ti-file-text"></i> PET</span>
+              <span class="meta-value">{{ data.petNombre }}</span>
+            </div>
+          }
+          @if (data.area) {
+            <div class="meta-row">
+              <span class="meta-label"><i class="ti ti-map-pin"></i> Área</span>
+              <span class="meta-value">{{ data.area }}</span>
+            </div>
+          }
+          @if (data.observadorNombre) {
+            <div class="meta-row">
+              <span class="meta-label"><i class="ti ti-user"></i> Observador</span>
+              <span class="meta-value">{{ data.observadorNombre }} {{ data.observadorCargo ? '— ' + data.observadorCargo : '' }}</span>
+            </div>
+          }
+          <div class="meta-row">
+            <span class="meta-label"><i class="ti ti-toggle-left"></i> ¿Cuenta con PET?</span>
+            <span class="meta-value">{{ data.cuentaConPet ? 'Sí' : 'No' }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label"><i class="ti ti-toggle-left"></i> ¿Se informó?</span>
+            <span class="meta-value">{{ data.seInformaTrabajador ? 'Sí' : 'No' }}</span>
+          </div>
+        </div>
+
+      </div><!-- /top-row -->
+
+      <!-- ── TRABAJADORES ── -->
+      @if (data.trabajadores.length) {
+        <div class="det-card">
+          <h2 class="det-card__title"><i class="ti ti-users"></i> Trabajadores</h2>
+          <div class="trabajadores-grid">
+            @for (t of data.trabajadores; track t.id) {
+              <div class="trab-block">
+                <div class="trab-nombre">{{ t.nombreTrabajador }}</div>
+                <div class="trab-meta">{{ t.dni ?? '—' }}</div>
+                @if (t.tipoTrabajador) { <div class="trab-badge-tipo">{{ t.tipoTrabajador }}</div> }
+                @if (t.tiempoEnObra)   { <div class="trab-extra">Tiempo en obra: {{ t.tiempoEnObra }}</div> }
+                @if (t.aniosExperiencia) { <div class="trab-extra">Exp: {{ t.aniosExperiencia }} años</div> }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ── PASOS ── -->
+      @if (data.pasos.length) {
+        <div class="det-card">
+          <h2 class="det-card__title"><i class="ti ti-list-numbers"></i> Pasos observados</h2>
+          <table class="pasos-table">
+            <thead>
+              <tr>
+                <th class="th-num">#</th>
+                <th>Descripción</th>
+                <th class="ta-c">N</th>
+                <th class="ta-c">Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of data.pasos; track p.id) {
+                <tr [class.row-inseguro]="p.resultado === 'Inseguro'">
+                  <td class="td-num">{{ p.numeroDisplay }}</td>
+                  <td>
+                    <div class="paso-desc">{{ p.descripcion }}</div>
+                    @if (p.desviacionObservada) {
+                      <div class="paso-desv">⚠ {{ p.desviacionObservada }}</div>
+                    }
+                  </td>
+                  <td class="ta-c td-nivel">N{{ p.nivel }}</td>
+                  <td class="ta-c">
+                    <span class="resultado-chip" [ngClass]="resultadoClass(p.resultado)">
+                      {{ p.resultado ?? '—' }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- ── VERIFICACIONES ── -->
+      @if (data.verificaciones.length) {
+        <div class="det-card">
+          <h2 class="det-card__title"><i class="ti ti-clipboard-check"></i> Verificación de entrenamiento</h2>
+          <div class="verif-list">
+            @for (v of data.verificaciones; track v.criterioId) {
+              <div class="verif-row" [class.verif-row--ok]="v.resultado">
+                <i class="ti" [class.ti-circle-check]="v.resultado" [class.ti-circle-x]="!v.resultado"></i>
+                <span>{{ v.pregunta }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ── RETROALIMENTACIÓN ── -->
+      <div class="det-card">
+        <h2 class="det-card__title"><i class="ti ti-messages"></i> Retroalimentación</h2>
+        <div class="retro-grid">
+          <div class="retro-item" [class.retro-item--ok]="data.seFelicito">
+            <i class="ti" [class.ti-thumb-up]="data.seFelicito" [class.ti-thumb-down]="!data.seFelicito"></i>
+            <span>¿Se felicitó?</span>
+          </div>
+          <div class="retro-item" [class.retro-item--ok]="data.seRecibieronComentarios">
+            <i class="ti" [class.ti-message-circle]="data.seRecibieronComentarios" [class.ti-message-off]="!data.seRecibieronComentarios"></i>
+            <span>¿Se recibieron comentarios?</span>
+          </div>
+          <div class="retro-item" [class.retro-item--ok]="data.seRetroalimento">
+            <i class="ti" [class.ti-refresh]="data.seRetroalimento" [class.ti-x]="!data.seRetroalimento"></i>
+            <span>¿Se retroalimentó?</span>
+          </div>
+          <div class="retro-item" [class.retro-item--ok]="data.seObtuvoCCompromiso">
+            <i class="ti" [class.ti-handshake]="data.seObtuvoCCompromiso" [class.ti-x]="!data.seObtuvoCCompromiso"></i>
+            <span>¿Se obtuvo compromiso?</span>
+          </div>
+        </div>
+        @if (data.accionRequerida && data.accionRequerida !== 'Ninguna') {
+          <div class="accion-box">
+            <div class="accion-box__label">Acción requerida</div>
+            <div class="accion-box__val">{{ data.accionRequerida }}</div>
+            @if (data.accionObservacion) {
+              <div class="accion-box__obs">{{ data.accionObservacion }}</div>
+            }
+          </div>
+        }
+      </div>
+
+    }<!-- /data -->
+
+  </div><!-- /det-body -->
+
+</div>

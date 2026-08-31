@@ -1,0 +1,138 @@
+<div class="flex flex-col" [ngClass]="floatingLabel ? 'gap-0' : 'gap-[6px]'" [style.--tp-accent]="color">
+  <!-- Label encima del campo (por defecto) -->
+  <label
+    *ngIf="showLabel && label && !floatingLabel"
+    class="text-sm text-[var(--tp-accent)] font-medium"
+  >
+    {{ label }}<span *ngIf="required" class="text-red-500"> *</span>
+  </label>
+
+  <!-- Contenedor relativo para el label flotante y el desplegable. El `mt-[9px]` es el mismo que
+       usa app-search-select: sin él, un combo y una hora en la misma fila no quedan alineados. -->
+  <div class="relative overflow-visible" [ngClass]="floatingLabel ? 'mt-[9px]' : ''">
+    <!-- Label que corta el borde superior, igual que app-search-select (opt-in) -->
+    <label
+      *ngIf="showLabel && label && floatingLabel"
+      class="absolute -top-[8px] left-[9px] z-[1] px-[4px] text-[11px] font-semibold text-gray-600 pointer-events-none leading-none bg-white"
+    >
+      {{ label }}<span *ngIf="required" class="text-red-500"> *</span>
+    </label>
+
+    <!-- Trigger: input editable (HH:mm) + limpiar + botón de reloj -->
+    <div
+      class="w-full flex items-center gap-[8px] border transition-colors"
+      [ngClass]="[
+        triggerSizeClasses,
+        isOpen ? 'border-[var(--tp-accent)] ring-2 ring-[var(--tp-accent)]/30' : triggerBorderClass,
+        disabled ? 'bg-gray-50' : 'bg-white'
+      ]"
+    >
+      <input
+        type="text"
+        class="w-full min-w-0 bg-transparent focus:outline-none text-gray-800 placeholder-gray-400 disabled:text-gray-400 disabled:cursor-not-allowed"
+        [placeholder]="placeholder"
+        [ngModel]="texto"
+        (ngModelChange)="onTextoChange($event)"
+        (focus)="abrir()"
+        (blur)="confirmarTexto()"
+        (keydown.enter)="onEnter()"
+        [disabled]="disabled"
+        inputmode="numeric"
+        autocomplete="off"
+      />
+      <span
+        *ngIf="allowClear && hasValue && !disabled"
+        (click)="clear($event)"
+        (keydown.enter)="clear($any($event))"
+        tabindex="0"
+        role="button"
+        aria-label="Limpiar hora"
+        title="Limpiar"
+        class="flex-shrink-0 flex items-center justify-center w-[18px] h-[18px] rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors"
+      >
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </span>
+      <button
+        type="button"
+        (click)="togglePanel($event)"
+        title="Abrir selector de hora"
+        aria-label="Abrir selector de hora"
+        [disabled]="disabled"
+        class="flex-shrink-0 flex items-center justify-center text-gray-400 hover:text-gray-600 cursor-pointer transition-colors disabled:cursor-not-allowed disabled:hover:text-gray-400"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Desplegable: `fixed` respecto al viewport (mismo motivo que en date-picker); la posición
+         se recalcula en cada scroll para que acompañe al campo (ver time-picker.ts). -->
+    <div
+      #panel
+      *ngIf="isOpen"
+      class="fixed z-50 w-[176px] bg-white border border-[#D6DEE5] rounded-lg shadow-lg p-2 select-none"
+      [style.top.px]="panelTop"
+      [style.bottom.px]="panelBottom"
+      [style.left.px]="panelLeft"
+    >
+      <div class="flex gap-1">
+        <!-- Columna de horas -->
+        <div class="flex-1 min-w-0 flex flex-col">
+          <span class="text-center text-[11px] font-semibold text-gray-400 pb-1">Hora</span>
+          <div class="tp-col">
+            <button
+              *ngFor="let h of horas"
+              type="button"
+              (click)="seleccionarHora(h)"
+              class="tp-opt"
+              [class.tp-selected]="h === selHora"
+              [class.tp-now]="esHoraActual(h)"
+            >
+              {{ h }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Columna de minutos -->
+        <div class="flex-1 min-w-0 flex flex-col">
+          <span class="text-center text-[11px] font-semibold text-gray-400 pb-1">Min</span>
+          <div class="tp-col">
+            <button
+              *ngFor="let m of minutos"
+              type="button"
+              (click)="seleccionarMinuto(m)"
+              class="tp-opt"
+              [class.tp-selected]="m === selMinuto"
+              [class.tp-now]="esMinutoActual(m)"
+            >
+              {{ m }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pie: ahora / limpiar -->
+      <div
+        class="flex items-center justify-between mt-2 pt-2 border-t"
+        style="border-color: var(--color-abril-border)"
+      >
+        <button type="button" (click)="ahora()" class="tp-footer-btn text-[var(--tp-accent)]">
+          Ahora
+        </button>
+        <button
+          *ngIf="allowClear && hasValue"
+          type="button"
+          (click)="clear($event)"
+          class="tp-footer-btn text-gray-500"
+        >
+          Limpiar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

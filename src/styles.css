@@ -1,0 +1,780 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import 'tailwindcss';
+@import '@tabler/icons-webfont/dist/tabler-icons.min.css';
+
+@theme {
+  /* ── Marca Abril ─────────────────────────────────── */
+  --color-abril-primary:        #4CAF50;
+  --color-abril-primary-hover:  #43A047;
+  --color-abril-primary-light:  #E8F5E9;
+  --color-abril-primary-dark:   #2E7D32;
+
+  /* Verde lima histórico (#64BC04). Se conserva como token con nombre para que
+     siga disponible (loader, gantt, etc.) en vez de quedar como hex suelto.
+     Para labels/acentos preferir --color-abril-primary (verde más oscuro). */
+  --color-abril-lime:           #64BC04;
+  --color-abril-lime-hover:     #59A803;
+  --color-abril-lime-light:     #E5F7D1;
+
+  --color-abril-accent:         #00897B;
+  --color-abril-accent-hover:   #00796B;
+  --color-abril-accent-light:   #E0F2F1;
+
+  /* ── Estándar de formularios y galerías (2026) ──────
+     Fuente única del teal usado en labels flotantes, combobox, botones
+     bulk, thead de tablas y paginador. Cambiar este bloque re-estiliza
+     TODA la app: no usar hex sueltos para este color en componentes nuevos,
+     usar siempre estas variables. */
+  --color-abril-standard:        #0F6E56;
+  --color-abril-standard-hover:  #0B5744;
+  --color-abril-standard-light:  #F0FAF7;
+  --color-abril-standard-border: #CDEBE0;
+  --radius-standard:             7px;
+
+  /* Azul del isotipo del logo (la palabra "ABRIL" en public/images/abril-logo.png),
+     distinto del teal de --color-abril-standard. Confirmado por el usuario: #005d9d.
+     Úsalo solo donde se pida explícitamente "el azul del logo"; el acento oficial de
+     toda la UI sigue siendo --color-abril-standard. Por ahora solo en
+     amonestaciones/pages/nueva/ (panel en prueba) — no propagar a otras páginas
+     hasta confirmación explícita. */
+  --color-abril-logo-blue:        #005D9D;
+  --color-abril-logo-blue-hover:  #004A7D;
+  --color-abril-logo-blue-light:  #E6F0F8;
+
+  /* Azul del título del encabezado de página (app-abril-page-header), tomado
+     del mockup 2026. Distinto del azul del logo: este es el color del texto
+     del título ("Configuración", etc.) que antes era casi negro con serif. */
+  --color-abril-header-title:     #1D62A0;
+
+  /* ── Colores de estado para dashboards (2026) ───────
+     Extraídos del dashboard de Arquitectura Comercial, que tenía estos
+     mismos 5 colores repetidos como hex suelto en 40+ lugares (KPI cards,
+     alertas, badges, gráficos). Única fuente — no volver a hardcodear estos
+     hex en un dashboard nuevo, referenciar la variable. El teal ya
+     existente (--color-abril-standard) se reutiliza para "eficiencia/OK",
+     no se duplica aquí. */
+  --color-status-info:          #1B3A6B; /* navy — totales, progreso, informativo neutro */
+  --color-status-info-light:    #EDF4FB;
+  --color-status-primary:       #2E6DB4; /* azul — en proceso / activo */
+  --color-status-primary-light: #EDF4FB;
+  --color-status-success:       #1B6B3A; /* verde — culminado / OK */
+  --color-status-success-light: #EAF3DE;
+  --color-status-danger:        #C0392B; /* rojo — vencido / crítico */
+  --color-status-danger-light:  #FDF2F2;
+  --color-status-warning:       #D97706; /* ámbar — próximo a vencer / atención */
+  --color-status-warning-light: #FEF3C7;
+  --color-status-pending:       #D4A017; /* dorado — pendiente / sin iniciar */
+  --color-status-pending-light: #FEF9E7;
+
+  /* ── Neutros para dashboards (escala slate) ─────────
+     Misma idea que los --color-status-*: extraídos del dashboard de
+     Arquitectura Comercial (escala "slate" de Tailwind), que es una escala
+     de grises distinta a los --color-abril-* de abajo (esos son para el
+     resto de la app). Única fuente para dashboards nuevos — no hardcodear
+     estos hex de nuevo. */
+  --color-dash-text:          #1E293B; /* texto fuerte: headings, valores grandes */
+  --color-dash-text-muted:    #475569; /* texto secundario */
+  --color-dash-text-subtle:   #64748B; /* texto terciario */
+  --color-dash-text-faint:    #94A3B8; /* texto muy tenue / placeholders */
+  --color-dash-border:        #E2E8F0; /* borde estándar (cards, pills, inputs) */
+  --color-dash-border-soft:   #F1F5F9; /* borde muy sutil (separadores internos) */
+  --color-dash-border-mid:    #C8CEDC; /* borde intermedio (hover de botones) */
+  --color-dash-border-strong: #CBD5E1; /* borde/scroll más marcado */
+  --color-dash-bg-alt:        #F8FAFC; /* fondo alterno de fila/card */
+  --color-dash-page-bg:       #F4F6F9; /* fondo de página del dashboard */
+  --color-dash-accent-deep:   #1E3A5F; /* variante oscura del navy (--color-status-info) para títulos */
+
+  /* ── Neutros ─────────────────────────────────────── */
+  --color-abril-ink:            #0D1B2A;
+  --color-abril-body:           #374151;
+  --color-abril-muted:          #4B5563;
+  --color-abril-placeholder:    #9CA3AF;
+  --color-abril-border:         #E5E7EB;
+  --color-abril-border-strong:  #D1D5DB;
+  --color-abril-surface:        #FFFFFF;
+  --color-abril-bg:             #F3F4F6;
+  --color-abril-bg-alt:         #F9FAFB;
+  --color-abril-page-bg:        #F0F4F1;
+
+  /* ── Sidebar ─────────────────────────────────────── */
+  --color-abril-sidebar-bg:         #0A0F1E;
+  --color-abril-sidebar-text:       #CBD5E1;
+  --color-abril-sidebar-muted:      #64748B;
+  --color-abril-sidebar-active:     #4CAF50;
+  --color-abril-sidebar-hover:      #111827;
+  --color-abril-sidebar-active-bg:  rgba(76,175,80,0.15);
+
+  /* ── Semáforo ────────────────────────────────────── */
+  --color-abril-success:        #16A34A;
+  --color-abril-success-light:  #DCFCE7;
+  --color-abril-success-dark:   #14532D;
+
+  --color-abril-warning:        #D97706;
+  --color-abril-warning-light:  #FEF3C7;
+  --color-abril-warning-dark:   #92400E;
+
+  --color-abril-danger:         #DC2626;
+  --color-abril-danger-light:   #FEE2E2;
+  --color-abril-danger-dark:    #991B1B;
+
+  --color-abril-info:           #2563EB;
+  --color-abril-info-light:     #DBEAFE;
+  --color-abril-info-dark:      #1E40AF;
+
+  /* ── Tipografía ──────────────────────────────────── */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* ── Sombras ─────────────────────────────────────── */
+  --shadow-card:       0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.12);
+  --shadow-dropdown:   0 8px 24px rgba(0,0,0,0.12);
+  --shadow-modal:      0 20px 60px rgba(0,0,0,0.2);
+
+  /* ── Radios ──────────────────────────────────────── */
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   14px;
+  --radius-xl:   20px;
+  --radius-pill: 999px;
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
+.abril-card {
+  background: var(--color-abril-surface);
+  border: 1px solid var(--color-abril-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease;
+}
+.abril-card:hover { box-shadow: var(--shadow-card-hover); }
+
+/* ── Botón primario ─────────────────────────────────────────── */
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 16px; height: 38px;
+  background: var(--color-abril-primary);
+  color: #fff; font-size: 0.875rem; font-weight: 500;
+  border-radius: var(--radius-md); border: none; cursor: pointer;
+  transition: background 0.15s ease;
+}
+.btn-primary:hover { background: var(--color-abril-primary-hover); }
+.btn-primary:disabled { background: var(--color-abril-border-strong); cursor: not-allowed; }
+
+/* ── Botón ghost ────────────────────────────────────────────── */
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 14px; height: 38px;
+  background: transparent;
+  color: var(--color-abril-primary); font-size: 0.875rem; font-weight: 500;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-abril-primary);
+  cursor: pointer; transition: background 0.15s ease;
+}
+.btn-ghost:hover { background: var(--color-abril-primary-light); }
+
+/* ── Botón accent ───────────────────────────────────────────── */
+.btn-accent {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 16px; height: 38px;
+  background: var(--color-abril-accent);
+  color: #fff; font-size: 0.875rem; font-weight: 500;
+  border-radius: var(--radius-md); border: none; cursor: pointer;
+  transition: background 0.15s ease;
+}
+.btn-accent:hover { background: var(--color-abril-accent-hover); }
+
+/* ── Badges de estado ───────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 10px; border-radius: var(--radius-pill);
+  font-size: 0.72rem; font-weight: 600; white-space: nowrap;
+}
+.badge-success  { background: var(--color-abril-success-light);  color: var(--color-abril-success-dark); }
+.badge-warning  { background: var(--color-abril-warning-light);  color: var(--color-abril-warning-dark); }
+.badge-danger   { background: var(--color-abril-danger-light);   color: var(--color-abril-danger-dark); }
+.badge-info     { background: var(--color-abril-info-light);     color: var(--color-abril-info-dark); }
+.badge-neutral  { background: var(--color-abril-bg);             color: var(--color-abril-muted); }
+.badge-primary  { background: var(--color-abril-primary-light);  color: var(--color-abril-primary-dark); }
+
+/* ── Tabla estándar ─────────────────────────────────────────── */
+/* El color de thead (teal, --color-abril-standard*) lo define el bloque
+   ".abril-table thead" más abajo — no redeclarar background/color acá:
+   ".thead tr" tiene más especificidad que ".thead" y le ganaba siempre,
+   pintando el encabezado verde (--color-abril-primary) en vez de teal en
+   TODA tabla de la app, sin importar el orden de las reglas en el archivo. */
+.abril-table { width: 100%; font-size: 0.875rem; border-collapse: collapse; }
+.abril-table th {
+  text-align: left; padding: 10px 16px;
+  font-weight: 600; font-size: 0.8rem;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.abril-table td { padding: 10px 16px; border-bottom: 1px solid var(--color-abril-border); color: var(--color-abril-body); }
+.abril-table tbody tr { transition: background 0.1s; cursor: pointer; }
+
+/* ── Wrapper de tabla estándar ──────────────────────────────────────
+   Antes: `<div class="w-full flex-1 min-h-0 overflow-auto">` (flex-1)
+   alrededor de cada <table>. flex-1 fuerza el wrapper a estirarse y llenar
+   TODO el espacio sobrante del contenedor padre sin importar cuántas filas
+   tenga la tabla — con pocos resultados, eso deja un hueco enorme entre la
+   última fila y la paginación (que queda pegada al fondo del viewport en
+   vez de justo debajo de la tabla). Bug real, no solo estético: se veía
+   "flotando" con cualquier lista corta.
+   flex: 0 1 auto (no crece más allá de su contenido, sí se achica si hace
+   falta) + min-height:0 mantiene el mismo comportamiento de scroll interno
+   para listas largas (sigue cabiendo en el alto disponible del contenedor
+   padre), pero con pocas filas el wrapper ahora abraza su contenido y la
+   paginación queda inmediatamente debajo, no varias pantallas más abajo.
+   Uso: <div class="abril-table-wrap"><table class="abril-table">...</table></div> */
+.abril-table-wrap {
+  width: 100%;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.abril-table tbody tr:hover { background: var(--color-abril-bg-alt); }
+
+/* ── Input estándar ─────────────────────────────────────────── */
+.abril-input {
+  height: 38px; padding: 0 12px; width: 100%;
+  border: 1.5px solid var(--color-abril-border-strong);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem; color: var(--color-abril-ink);
+  background: var(--color-abril-surface);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+.abril-input:focus {
+  border-color: var(--color-abril-primary);
+  box-shadow: 0 0 0 3px rgba(76,175,80,0.15);
+}
+.abril-input::placeholder { color: var(--color-abril-placeholder); }
+
+/* ── Label ──────────────────────────────────────────────────── */
+.abril-label {
+  display: block; margin-bottom: 4px;
+  font-size: 0.78rem; font-weight: 600;
+  color: var(--color-abril-primary-dark);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+
+/* ── Campo de wizard estándar (2026): label flotante que corta el borde
+   superior del input, mismo tratamiento visual que ya usa app-search-select
+   internamente. Único origen de verdad — no reimplementar esto por página
+   (era el bug: RAC/OPT/Inspección/Accidentes tenían 4 copias locales
+   ligeramente distintas, una de ellas con position:relative faltante).
+   Uso: <div class="abril-field"><label class="abril-field-label">X</label>
+   <input class="abril-field-input" ...></div>. Funciona con <input>,
+   <select> y <textarea>. ──────────────────────────────────────────── */
+.abril-field { position: relative; margin-top: 9px; }
+
+.abril-field-label {
+  position: absolute;
+  top: -8px;
+  left: 9px;
+  z-index: 1;
+  background: var(--color-abril-surface, #fff);
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-abril-muted, #4B5563);
+  line-height: 1;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.abril-field-input {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--color-abril-border-strong, #D1D5DB);
+  border-radius: var(--radius-standard, 7px);
+  font-size: 13px;
+  color: var(--color-abril-body, #374151);
+  background: var(--color-abril-surface, #fff);
+  box-sizing: border-box;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.abril-field-input:focus { border-color: var(--color-abril-standard); }
+.abril-field-input::placeholder { color: var(--color-abril-placeholder, #9CA3AF); }
+textarea.abril-field-input { resize: vertical; }
+select.abril-field-input { cursor: pointer; }
+
+/* ── Footer de app-abril-modal-panel / app-base-modal ─────────────────
+   Global (no scoped) a propósito: el contenido de [modalFooter] se proyecta
+   vía <ng-content>, así que un CSS scoped al componente shell (.amp-footer)
+   nunca llega a estos hijos — cada página tenía que reimplementar el flex de
+   reparto (Cancelar izquierda / acción(es) derecha) a mano, y varias
+   referencias (RAC, Amonestaciones) se quedaron sin hacerlo, quedando los
+   botones apilados en vez de en fila. Con esto queda forzado siempre, sin
+   que ninguna página tenga que declararlo ni pueda olvidarlo. */
+[modalFooter] {
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+[modalFooter] .footer-nav,
+[modalFooter] .footer-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ── Botón de acción en tabla (ej. "Ver detalle") y badge de conteo ──
+   Cada lista SSOMA (RAC, OPT, Inspección, Accidentes, Charlas) reinventaba
+   su propio botón de ícono ".btn-icon"/".btn-ver"/".btn-row", cada uno con
+   tamaño/color/hover distinto, y su propio badge de conteo (uno en teal
+   genérico en vez del azul SSOMA). Único origen de verdad ahora.
+   Uso: <button class="abril-action-btn" title="Ver"><i class="ti ti-eye"></i></button>
+        <span class="abril-table-badge">3</span> */
+.abril-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 0.5px solid var(--color-abril-border-strong, #e8e5df);
+  background: #fff;
+  color: #5a5850;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.abril-action-btn:hover { background: #f0ede8; }
+.abril-action-btn--danger { color: #991b1b; }
+.abril-action-btn--danger:hover { background: #fee2e2; border-color: #fca5a5; }
+.abril-action-btn--primary { background: var(--color-abril-logo-blue-light); color: var(--color-abril-logo-blue); border-color: #a9c9e6; }
+.abril-action-btn--primary:hover { background: #d3e6f5; }
+
+.abril-table-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ── Sección de formulario dentro de app-abril-modal-panel (2026) ────
+   Plana, sin caja (sin fondo/borde/radius) — RAC y Accidentes tenían cada
+   uno su propia versión con fondo blanco + borde + border-radius (una
+   "caja" visible), distinta entre sí y distinta de OPT/Inspección/
+   Amonestaciones, que siempre fueron planas. Único origen de verdad ahora:
+   ningún formulario puede volver a envolver una sección en una caja sin
+   forzarlo explícitamente con CSS propio.
+   Uso: <section class="abril-form-section"><h2/h3 class="abril-section-title">
+   <i class="ti ..."></i> Título</h2>...campos...</section> */
+.abril-form-section { display: flex; flex-direction: column; gap: 10px; }
+.abril-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a18;
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 0.5px solid #e8e5df;
+}
+.abril-section-title i { color: var(--color-abril-logo-blue); }
+
+/* ── Page layout ────────────────────────────────────────────── */
+/* ── Footer de app-abril-modal-panel: agrupa botones a la derecha ────
+   Uso: <div class="footer-nav"> dentro del modalFooter proyectado, para
+   Anterior/Siguiente o Guardar borrador/Registrar. El propio shell
+   (.amp-footer, space-between) ya separa esto del Cancelar de la izquierda
+   sin que la página tenga que declarar nada más. Global porque el CSS
+   scoped de app-abril-modal-panel no llega al contenido proyectado vía
+   ng-content (encapsulación de Angular). ─────────────────────────────── */
+.footer-nav { display: flex; gap: 8px; }
+
+/* Uso: <div class="page-wrapper"> + <app-abril-page-header> + <div class="page-body"> */
+.page-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.page-body {
+  padding: 20px;
+  box-sizing: border-box;
+}
+/* Alias legado */
+.page-container { padding: 16px 10px; }
+@media (min-width: 640px) {
+  .page-container { padding: 20px 12px; }
+}
+
+/* ── Scroll horizontal en tablas mobile ─────────────────────── */
+.table-scroll {
+  width: 100%; overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-abril-border);
+}
+
+/* ── Galería/tabla estándar (2026) ─────────────────────────────
+   Clase opcional para <table>: encabezado teal + densidad de fila
+   estándar, sin caja/borde propio (para que la tabla use el máximo
+   ancho). Aplica solo lo que no depende del contenido de cada columna
+   (thead, th, td); el resto (checkboxes, sort, badges) lo define cada
+   página. Cambiar este bloque re-estiliza toda tabla que lo use. */
+.abril-table {
+  width: 100%;
+  font-size: 12px;
+}
+.abril-table thead {
+  background: var(--color-abril-standard-light);
+  color: var(--color-abril-standard);
+}
+.abril-table th {
+  text-align: left;
+  padding: 7px 14px;
+  font-weight: 600;
+}
+.abril-table td {
+  padding: 7px 14px;
+}
+/* Variante opt-in de abril-table: nombres de columna centrados (Gestión
+   Administrativa — Salidas). Debe vivir aquí y no como `text-center` en cada
+   <th>: estas reglas están fuera de @layer, por lo que ganan siempre a las
+   utilities de Tailwind (que sí están en @layer utilities). */
+.abril-table--th-center th {
+  text-align: center;
+}
+
+/* ── Filtros responsive ─────────────────────────────────────── */
+.filter-row {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+}
+@media (max-width: 639px) {
+  .filter-row { gap: 10px; }
+  .filter-row > * { min-width: calc(50% - 5px); flex: 1 1 calc(50% - 5px); }
+  .filter-row > .filter-full { min-width: 100%; flex: 1 1 100%; }
+}
+
+/* HTML: <div class="loader"></div> */
+.loader-overlay {
+  position: fixed;
+  inset: 0; /* top:0 right:0 bottom:0 left:0 */
+  background: rgba(0, 0, 0, 0.1); /* oscurece */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9998;
+}
+
+/* Tu loader actual */
+.loader {
+  width: 50px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 8px solid #64bc04;
+  animation: l20-1 0.8s infinite linear alternate,
+             l20-2 1.6s infinite linear;
+  z-index: 9999;
+}
+@keyframes l20-1 {
+  0% {
+    clip-path: polygon(50% 50%, 0 0, 50% 0%, 50% 0%, 50% 0%, 50% 0%, 50% 0%);
+  }
+  12.5% {
+    clip-path: polygon(50% 50%, 0 0, 50% 0%, 100% 0%, 100% 0%, 100% 0%, 100% 0%);
+  }
+  25% {
+    clip-path: polygon(50% 50%, 0 0, 50% 0%, 100% 0%, 100% 100%, 100% 100%, 100% 100%);
+  }
+  50% {
+    clip-path: polygon(50% 50%, 0 0, 50% 0%, 100% 0%, 100% 100%, 50% 100%, 0% 100%);
+  }
+  62.5% {
+    clip-path: polygon(50% 50%, 100% 0, 100% 0%, 100% 0%, 100% 100%, 50% 100%, 0% 100%);
+  }
+  75% {
+    clip-path: polygon(50% 50%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 50% 100%, 0% 100%);
+  }
+  100% {
+    clip-path: polygon(50% 50%, 50% 100%, 50% 100%, 50% 100%, 50% 100%, 50% 100%, 0% 100%);
+  }
+}
+@keyframes l20-2 {
+  0% {
+    transform: scaleY(1) rotate(0deg);
+  }
+  49.99% {
+    transform: scaleY(1) rotate(135deg);
+  }
+  50% {
+    transform: scaleY(-1) rotate(0deg);
+  }
+  100% {
+    transform: scaleY(-1) rotate(-135deg);
+  }
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-8 {
+  display: -webkit-box;
+  -webkit-line-clamp: 8;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.custom-task .gantt_task_content {
+  background-color: #64BC04;
+  border-color: #64BC04;
+  border-radius: 10px;
+}
+
+
+.gantt_task_line {
+  background: white !important;
+}
+
+.hidden-bandeja { display: none !important; }
+
+/* Gantt task colors - global porque dhtmlx inyecta en el DOM fuera del componente */
+.gantt_task_line.gantt-culminado { background-color: #63bf03 !important; border-color: #4a9002 !important; }
+.gantt_task_line.gantt-culminado .gantt_task_progress { background-color: #4a9002 !important; }
+
+.gantt_task_line.gantt-vencido { background-color: #ef4444 !important; border-color: #cc2222 !important; }
+.gantt_task_line.gantt-vencido .gantt_task_progress { background-color: #cc2222 !important; }
+
+.gantt_task_line.gantt-en-proceso { background-color: #2596be !important; border-color: #1a7a9e !important; }
+.gantt_task_line.gantt-en-proceso .gantt_task_progress { background-color: #1a7a9e !important; }
+
+.gantt_task_line.gantt-pendiente { background-color: #9ca3af !important; border-color: #6b7280 !important; }
+.gantt_task_line.gantt-pendiente .gantt_task_progress { background-color: #6b7280 !important; }
+
+.gantt_task_content { color: #fff !important; font-size: 11px !important; }
+
+/* Milestone-schedule — colores por estado (ms-*) */
+.gantt_task_line.ms-culminado { background-color: #16a34a !important; border-color: #15803d !important; }
+.gantt_task_line.ms-culminado .gantt_task_progress { background-color: #15803d !important; }
+
+.gantt_task_line.ms-en-proceso { background-color: #2563eb !important; border-color: #1d4ed8 !important; }
+.gantt_task_line.ms-en-proceso .gantt_task_progress { background-color: #1d4ed8 !important; }
+
+/* Task bar content (gantt_task_content sits on top of gantt_task_line and needs its own override) */
+.custom-task.ms-culminado .gantt_task_content  { background-color: #16a34a !important; border-color: #15803d !important; }
+.custom-task.ms-en-proceso .gantt_task_content { background-color: #2563eb !important; border-color: #1d4ed8 !important; }
+
+
+/* Today marker */
+.gantt_marker.today-line { background-color: #f59e0b; width: 2px; }
+.gantt_marker.today-line .gantt_marker_content {
+  background: #f59e0b;
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Estado badge — global porque dhtmlx inyecta fuera del scope del componente */
+.estado-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.estado-culminado  { background: #dcfce7; color: #16a34a; }
+.estado-en-proceso { background: #dbeafe; color: #2563eb; }
+
+/* Ensure dhtmlx shows its native horizontal scrollbar */
+.gantt_layout_root { overflow-x: auto !important; }
+
+/* cronograma-actividades — colores de fila por jerarquía (dhtmlx inyecta fuera del scope del componente) */
+app-cronograma-actividades .gantt_row.gantt-cron-row-lvl-0,
+app-cronograma-actividades .gantt_task_row.gantt-cron-row-lvl-0 {
+  background: #1B263B !important;
+}
+app-cronograma-actividades .gantt_row.gantt-cron-row-lvl-0 .gantt_cell,
+app-cronograma-actividades .gantt_row.gantt-cron-row-lvl-0 .gantt_tree_content {
+  color: #E0E1DD !important;
+  font-weight: 700;
+}
+app-cronograma-actividades .gantt_row.gantt-cron-row-lvl-1 { background: #ffffff; font-weight: 600; }
+app-cronograma-actividades .gantt_task_row.gantt-cron-row-lvl-1 { background: #ffffff; }
+app-cronograma-actividades .gantt_row.gantt-cron-row-lvl-2 { background: #f0f4f8; }
+app-cronograma-actividades .gantt_task_row.gantt-cron-row-lvl-2 { background: #f0f4f8; }
+app-cronograma-actividades .gantt_row.gantt-cron-row-lvl-3 { background: #f8fafc; }
+app-cronograma-actividades .gantt_task_row.gantt-cron-row-lvl-3 { background: #f8fafc; }
+/* cronograma-actividades — barras coloreadas por rama (anula el fondo/texto blanco forzado por defecto) */
+app-cronograma-actividades .gantt_task_line {
+  background: var(--dhx-gantt-task-background, #415a77) !important;
+  border-color: var(--dhx-gantt-task-background, #415a77) !important;
+}
+app-cronograma-actividades .gantt_task_content {
+  color: var(--dhx-gantt-task-color, #ffffff) !important;
+}
+/* Barra de avance interna de cada task */
+app-cronograma-actividades .gantt_task_line .gantt_task_progress { opacity: 0.35; }
+
+/* milestone-schedule — compact density */
+app-milestone-schedule .gantt_grid_scale .gantt_grid_head_cell,
+app-milestone-schedule .gantt_grid_data .gantt_cell { font-size: 11px; padding: 0 4px; }
+app-milestone-schedule .gantt_scale_cell,
+app-milestone-schedule .gantt_scale_line { font-size: 11px; }
+app-milestone-schedule .estado-badge { font-size: 0.62rem; padding: 1px 6px; }
+
+/* Milestone circles — global (dhtmlx renders outside Angular component scope) */
+.gantt_task_line.gantt_milestone {
+  overflow: visible !important;
+  background: transparent !important;
+  border: none !important;
+}
+.gantt_task_line.gantt_milestone .gantt_task_content {
+  width: 14px !important;
+  height: 14px !important;
+  border-radius: 50% !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+.gantt_task_line.gantt_milestone.ms-en-proceso .gantt_task_content { background: #2563eb !important; }
+.gantt_task_line.gantt_milestone.ms-culminado .gantt_task_content { background: #16a34a !important; }
+.gantt_tree_content {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.emo-prog-label {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-top: 4px;
+}
+.label-programado    { background: #eff6ff !important; color: #3b82f6 !important; }
+.label-aceptado      { background: #f0fdf4 !important; color: #16a34a !important; }
+.label-atencion      { background: #fefce8 !important; color: #ca8a04 !important; }
+.label-interconsulta { background: #fdf4ff !important; color: #9333ea !important; }
+
+/* ── PASO dashboard — avatar fixed en full-page ───────────────── */
+app-layout .full-page-wrapper app-header {
+  position: fixed !important;
+  top: 12px !important;
+  right: 8px !important;
+  z-index: 999 !important;
+}
+
+app-layout .full-page-wrapper app-header > div {
+  background: transparent !important;
+  padding: 0 !important;
+  height: auto !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+app-layout .full-page-wrapper app-header .shrink-0.relative {
+  width: 40px !important;
+  height: 40px !important;
+  overflow: visible !important;
+}
+
+app-layout .full-page-wrapper app-header .shrink-0.relative img {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  border: 2px solid rgba(255,255,255,.4) !important;
+}
+
+/* ── PASO nav global ──────────────────────────────────────────── */
+app-paso-nav {
+  display: block;
+  flex-shrink: 0;
+}
+app-paso-nav .paso-nav {
+  display: flex !important;
+  gap: 0 !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+app-paso-nav .paso-nav__tab {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 0.65rem 1.1rem !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #9ca3af !important;
+  text-decoration: none !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 3px solid transparent !important;
+  border-radius: 0 !important;
+  margin-bottom: -1px !important;
+}
+app-paso-nav .paso-nav__tab:hover { color: #374151 !important; }
+app-paso-nav .paso-nav__tab.paso-nav__tab--active {
+  color: #111827 !important;
+  font-weight: 700 !important;
+  background: #ffffff !important;
+  border-bottom: 3px solid #16a34a !important;
+  box-shadow: none !important;
+}
+
+app-layout .full-page-wrapper app-header [class*="flex-8"],
+app-layout .full-page-wrapper app-header a[routerlink],
+app-layout .full-page-wrapper app-header img[alt="Logo"],
+app-layout .full-page-wrapper app-header .sm\:hidden {
+  display: none !important;
+}
+
+/* ── SweetAlert2 preset paleta UDP (DESIGN-VICTOR.md §6.9) ────────────
+   Usado por shared/utils/sweetalert-udp.ts. No repetir colores sueltos
+   en llamadas a Swal.fire(): agregar aquí si se necesita un nuevo ícono. */
+.swal-udp-popup {
+  border-radius: 10px !important;
+  font-family: var(--font-sans);
+}
+.swal-udp-title {
+  font-size: 18px !important;
+  color: #1E3A5F !important;
+}
+.swal-udp-text {
+  font-size: 14px !important;
+  color: #64748B !important;
+}
+.swal-udp-popup .swal2-icon.swal2-success {
+  border-color: #1B6B3A !important;
+}
+.swal-udp-popup .swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: #1B6B3A !important;
+}
+.swal-udp-popup .swal2-icon.swal2-success .swal2-success-ring {
+  border-color: rgba(27,107,58,0.3) !important;
+}
+.swal-udp-popup .swal2-icon.swal2-error {
+  border-color: #C0392B !important;
+  color: #C0392B !important;
+}
+.swal-udp-popup .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+  background-color: #C0392B !important;
+}

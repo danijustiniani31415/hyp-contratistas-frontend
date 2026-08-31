@@ -1,0 +1,117 @@
+/* El overlay/panel/header/footer viven en el shell app-abril-modal-panel — no
+   reimplementarlos acá. .abril-field / .abril-field-label / .abril-field-input y
+   .abril-section-title son globales (src/styles.css): tampoco. */
+.abril-section-title:first-child { margin-top: 0; }
+.abril-section-title { margin-top: 18px; }
+
+.abril-field { margin-bottom: 14px; }
+
+/* Correo + fecha de ingreso. `align-items: start` para que el date-picker no se
+   estire al alto de la columna del correo (que además lleva su hint debajo), y
+   la fecha se queda en un ancho fijo porque no necesita más que dd/mm/aaaa. */
+.form-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  align-items: start;
+  gap: 12px 14px;
+  margin-bottom: 14px;
+}
+.form-col { min-width: 0; }
+/* El margen inferior lo lleva la fila; dentro de la columna el hint va pegado
+   a su campo, que es de lo que habla. */
+.form-row .abril-field { margin-bottom: 0; }
+.form-row .campo-hint { margin: 6px 0 0; }
+
+@media (max-width: 520px) {
+  .form-row { grid-template-columns: 1fr; }
+}
+
+/* Resumen de la vacante que ganó el colaborador (todo se lee del requerimiento). */
+.colaborador-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  background: var(--color-abril-logo-blue-light);
+  border: 1px solid var(--color-abril-logo-blue);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 12px 0 4px;
+  font-size: 12px;
+  color: #374151;
+}
+.colaborador-card strong {
+  width: 100%;
+  font-size: 14px;
+  color: var(--color-abril-logo-blue);
+}
+.colaborador-card span { display: inline-flex; align-items: center; gap: 5px; }
+.colaborador-card i { font-size: 13px; opacity: 0.75; }
+
+/* Avisos del modal: el informativo (aún no hay candidatos) y el de alerta (no
+   hay correo en la base maestra, que es lo que bloquea el envío). */
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border-radius: 8px;
+  padding: 10px 13px;
+  margin-bottom: 14px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.aviso i { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+.aviso--vacio {
+  background: #f9fafb;
+  border: 1px solid var(--color-abril-border);
+  color: #4b5563;
+}
+.aviso--alerta {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+/* El texto va SIEMPRE dentro de un <span>: al ser flex, cada nodo suelto del
+   párrafo (incluido un <b> intercalado) se vuelve un ítem propio y el texto se
+   partía en columnas en vez de fluir como un párrafo. */
+.campo-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #6b7280;
+  line-height: 1.4;
+  margin: -6px 0 14px;
+}
+.campo-hint i { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+.campo-hint span { flex: 1 1 auto; min-width: 0; }
+
+/* Separa el selector/preview de la carta del bloque siguiente. */
+app-file-selector,
+app-file-preview { display: block; margin-bottom: 14px; }
+
+/* El contenedor del footer (fondo, borde, padding) vive en el shell
+   app-abril-modal-panel (.amp-footer) — .modal-footer-row solo reparte Cancelar
+   (izquierda) de la acción principal (derecha) dentro de ese footer. */
+.modal-footer-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* Botones (mismo set que el resto de formularios en variante azul). */
+.btn {
+  padding: 9px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--color-abril-logo-blue); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--color-abril-logo-blue-hover); }
+.btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+.btn-secondary:hover:not(:disabled) { background: #e5e7eb; }

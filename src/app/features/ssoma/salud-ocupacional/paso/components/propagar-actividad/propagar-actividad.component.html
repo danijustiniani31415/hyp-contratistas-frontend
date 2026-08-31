@@ -1,0 +1,56 @@
+<app-abril-modal-panel
+  titulo="Propagar actividad"
+  icono="ti-git-branch"
+  variant="blue"
+  width="480px"
+  (closeModal)="cerrado.emit()">
+
+  <!-- Chip actividad -->
+  <div class="prop-actividad-chip">
+    <i class="ti ti-clipboard-list"></i>
+    <span>{{ actividad.nombre }}</span>
+  </div>
+
+  <p class="prop-subtitulo">¿A dónde quieres agregar esta actividad?</p>
+
+  <!-- Radio cards -->
+  <div class="prop-opciones">
+    <div *ngFor="let o of opciones"
+      class="prop-card"
+      [class.prop-card--active]="opcionSeleccionada === o"
+      (click)="opcionSeleccionada = o">
+      <div class="prop-card__radio">
+        <div class="prop-card__dot" [class.prop-card__dot--active]="opcionSeleccionada === o"></div>
+      </div>
+      <div class="prop-card__icon">
+        <i class="ti" [ngClass]="opcionIcono(o)"></i>
+      </div>
+      <div class="prop-card__text">
+        <span class="prop-card__title">{{ opcionTitulo(o) }}</span>
+        <span class="prop-card__desc">{{ opcionDesc(o) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Destinos chips -->
+  <div *ngIf="destinosSeleccionados.length" class="prop-destinos">
+    <span class="prop-destinos__label">Se copiará a:</span>
+    <div class="prop-destinos__chips">
+      <span *ngFor="let d of destinosSeleccionados" class="prop-destino-chip">
+        <i class="ti" [ngClass]="d.esPlantilla ? 'ti-template' : 'ti-building'"></i>
+        {{ d.proyectoNombre ?? d.nombre }}
+        <span *ngIf="!d.esPlantilla" class="prop-destino-anio">{{ d.anio }}</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div modalFooter>
+    <button type="button" class="prop-btn-cancel" (click)="cerrado.emit()">Cancelar</button>
+    <button type="button" class="prop-btn-apply" [disabled]="saving" (click)="aplicar()">
+      <i class="ti" [ngClass]="saving ? 'ti-loader-2 spin' : 'ti-arrow-right'"></i>
+      {{ saving ? 'Aplicando…' : 'Aplicar' }}
+    </button>
+  </div>
+
+</app-abril-modal-panel>

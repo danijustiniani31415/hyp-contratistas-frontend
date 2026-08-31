@@ -1,0 +1,47 @@
+.pgp-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.pgp-thumb {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 0.5px solid #e8e5df;
+}
+.pgp-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.pgp-remove {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: none;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.pgp-add {
+  width: 90px;
+  height: 90px;
+  border-radius: 10px;
+  border: 1.5px dashed #d6d3cd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  color: #78716c;
+  text-align: center;
+  transition: border-color 0.15s, color 0.15s;
+}
+.pgp-add:hover { border-color: var(--pgp-accent, #64bc04); color: var(--pgp-accent, #64bc04); }
+.pgp-add i { font-size: 22px; }
+.pgp-add span { font-size: 11px; font-weight: 500; line-height: 1.2; padding: 0 4px; }

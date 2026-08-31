@@ -1,0 +1,73 @@
+<app-base-modal *ngIf="open" title="Historial de eventos" width="w-[600px]" (closeModal)="close()">
+  <div class="hist-wrapper">
+
+    <div *ngIf="loading" class="hist-state">
+      <span class="hist-spinner"></span>
+      <span>Cargando historial…</span>
+    </div>
+
+    <div *ngIf="!loading && eventos.length === 0" class="hist-state hist-empty">
+      Sin historial registrado.
+    </div>
+
+    <div class="timeline" *ngIf="!loading && eventos.length > 0">
+      <div class="tl-item" *ngFor="let e of eventos; let last = last">
+        <div class="tl-left">
+          <div class="tl-dot" [ngClass]="getDotModifier(e.tipoEvento)">
+            <!-- BAJA -->
+            <svg *ngIf="e.tipoEvento === 'BAJA'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            </svg>
+            <!-- REINGRESO -->
+            <svg *ngIf="e.tipoEvento === 'REINGRESO'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M9 14 4 9l5-5"/>
+              <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+            </svg>
+            <!-- CAMBIO_OBRA -->
+            <svg *ngIf="e.tipoEvento === 'CAMBIO_OBRA'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/>
+              <path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/>
+              <path d="M12 8v8m-3-3 3 3 3-3"/>
+            </svg>
+            <!-- CAMBIO_EMPRESA -->
+            <svg *ngIf="e.tipoEvento === 'CAMBIO_EMPRESA'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+            <!-- DEFAULT -->
+            <svg *ngIf="e.tipoEvento !== 'BAJA' && e.tipoEvento !== 'REINGRESO' && e.tipoEvento !== 'CAMBIO_OBRA' && e.tipoEvento !== 'CAMBIO_EMPRESA'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </div>
+          <div class="tl-line" *ngIf="!last"></div>
+        </div>
+
+        <div class="tl-content">
+          <div class="tl-header">
+            <span class="tl-tipo" [ngClass]="getDotModifier(e.tipoEvento)">{{ formatTipo(e.tipoEvento) }}</span>
+            <span class="tl-fecha">{{ e.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <p class="tl-desc" *ngIf="e.descripcion">{{ e.descripcion }}</p>
+          <div class="tl-cambio" *ngIf="e.proyectoAnterior || e.proyectoNuevo">
+            <span class="tl-lbl">Proyecto</span>
+            <span class="tl-val">{{ e.proyectoAnterior ?? '—' }}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2">
+              <path d="M5 12h14m-7-7 7 7-7 7"/>
+            </svg>
+            <span class="tl-val tl-val--new">{{ e.proyectoNuevo ?? '—' }}</span>
+          </div>
+          <div class="tl-cambio" *ngIf="e.empresaAnterior || e.empresaNueva">
+            <span class="tl-lbl">Empresa</span>
+            <span class="tl-val">{{ e.empresaAnterior ?? '—' }}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2">
+              <path d="M5 12h14m-7-7 7 7-7 7"/>
+            </svg>
+            <span class="tl-val tl-val--new">{{ e.empresaNueva ?? '—' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</app-base-modal>

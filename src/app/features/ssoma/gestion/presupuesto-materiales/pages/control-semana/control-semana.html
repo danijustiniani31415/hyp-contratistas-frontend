@@ -1,0 +1,262 @@
+<div class="page-root">
+  <app-abril-page-header
+    badge="SSOMA · Materiales"
+    [titulo]="tituloProyecto"
+    subtitulo="Control de consumo semanal"
+    [botonSecundario]="{ label: 'Volver al presupuesto', icono: 'ti-arrow-left' }"
+    [hasExtra]="tab === 'semanas'"
+    (secondaryClick)="volver()">
+    <!-- Filtro solo tiene sentido en la pestaña Semanas (historial) -->
+    <app-filter-trigger *ngIf="tab === 'semanas'" tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <!-- Tabs internos -->
+  <div class="tabs-bar">
+    <button [class.tab-activa]="tab === 'dashboard'" (click)="setTab('dashboard')">
+      <i class="ti ti-chart-pie"></i> Dashboard
+    </button>
+    <button [class.tab-activa]="tab === 'semanas'" (click)="setTab('semanas')">
+      <i class="ti ti-calendar-week"></i> Semanas ({{ semanas.length }})
+    </button>
+    <button [class.tab-activa]="tab === 'registro'" (click)="setTab('registro')">
+      <i class="ti ti-pencil"></i> Registrar consumo
+    </button>
+  </div>
+
+  <div class="page-body">
+
+    <!-- ═══ TAB DASHBOARD ════════════════════════════════════════════════════ -->
+    <ng-container *ngIf="tab === 'dashboard'">
+      <div *ngIf="loading" class="loading-msg">Cargando dashboard...</div>
+
+      <ng-container *ngIf="dashboard && !loading">
+        <!-- KPIs -->
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <span class="kpi-lbl">Total presupuestado</span>
+            <span class="kpi-val">S/ {{ dashboard.totalPresupuestado | number:'1.2-2' }}</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-lbl">Total consumido</span>
+            <span class="kpi-val">S/ {{ dashboard.totalConsumido | number:'1.2-2' }}</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-lbl">Saldo disponible</span>
+            <span class="kpi-val" [class.val-neg]="dashboard.totalSaldo < 0">
+              S/ {{ dashboard.totalSaldo | number:'1.2-2' }}
+            </span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-lbl">% consumido</span>
+            <div class="pct-block">
+              <span class="kpi-val">{{ dashboard.pctConsumido | number:'1.1-1' }}%</span>
+              <div class="pct-bar-bg">
+                <div class="pct-bar-fill" [ngClass]="barClass(dashboard.pctConsumido)"
+                     [style.width.%]="pctBar(dashboard.pctConsumido)"></div>
+              </div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-lbl">Semanas registradas</span>
+            <span class="kpi-val">{{ dashboard.semanasRegistradas }}</span>
+          </div>
+          <div class="kpi-card sem-summary">
+            <span class="kpi-lbl">Alertas / Advertencias</span>
+            <div class="sem-counts">
+              <span class="badge-sem sem-alert">{{ dashboard.familiasEnAlerta }} alertas</span>
+              <span class="badge-sem sem-warn">{{ dashboard.familiasEnAdvertencia }} advertencias</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detalle por tipo -->
+        <div *ngFor="let tipo of dashboard.tipos" class="tipo-bloque">
+          <button class="tipo-header" (click)="toggleTipo(tipo.tipoId)">
+            <span class="tipo-nombre">{{ tipo.nombreTipo }}</span>
+            <div class="tipo-bar-mini">
+              <div class="tipo-bar-fill" [ngClass]="barClass(tipo.pctConsumido)"
+                   [style.width.%]="pctBar(tipo.pctConsumido)"></div>
+            </div>
+            <span class="tipo-pct">{{ tipo.pctConsumido | number:'1.1-1' }}%</span>
+            <span class="tipo-saldo">S/ {{ tipo.totalSaldo | number:'1.0-0' }}</span>
+            <i class="ti" [class.ti-chevron-down]="!tipoAbierto.has(tipo.tipoId)"
+                          [class.ti-chevron-up]="tipoAbierto.has(tipo.tipoId)"></i>
+          </button>
+
+          <div *ngIf="tipoAbierto.has(tipo.tipoId)" class="tipo-body">
+            <table class="abril-table dash-table">
+              <thead>
+                <tr>
+                  <th>Familia</th>
+                  <th class="num">Presupuestado</th>
+                  <th class="num">Consumido</th>
+                  <th class="num">Saldo</th>
+                  <th class="num">% consumido</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let f of tipo.familias" [class]="semaforoClass(f.semaforo)">
+                  <td>{{ f.nombreFamilia }}</td>
+                  <td class="num">S/ {{ f.totalPresupuestado | number:'1.2-2' }}</td>
+                  <td class="num">S/ {{ f.totalConsumido | number:'1.2-2' }}</td>
+                  <td class="num" [class.saldo-neg]="f.totalSaldo < 0">
+                    S/ {{ f.totalSaldo | number:'1.2-2' }}
+                  </td>
+                  <td class="num">
+                    <div class="mini-bar-wrap">
+                      <div class="mini-bar-bg">
+                        <div class="mini-bar-fill" [ngClass]="barClass(f.pctConsumido)"
+                             [style.width.%]="pctBar(f.pctConsumido)"></div>
+                      </div>
+                      <span>{{ f.pctConsumido | number:'1.1-1' }}%</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge-semaforo" [ngClass]="semaforoClass(f.semaforo)">
+                      {{ semaforoLabel(f.semaforo) }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- ═══ TAB SEMANAS ══════════════════════════════════════════════════════ -->
+    <ng-container *ngIf="tab === 'semanas'">
+      <!-- Formulario nueva semana -->
+      <div class="form-nueva-semana">
+        <h3 class="form-titulo">Abrir nueva semana de control</h3>
+        <div class="form-fields">
+          <label>Fecha inicio
+            <input type="date" [(ngModel)]="formAbrir.fechaInicio" />
+          </label>
+          <label>Fecha fin
+            <input type="date" [(ngModel)]="formAbrir.fechaFin" />
+          </label>
+          <label class="full-w">Observaciones
+            <input type="text" [(ngModel)]="formAbrir.observaciones" placeholder="Opcional..." />
+          </label>
+        </div>
+        <button class="btn-primary" (click)="abrirSemana()">
+          <i class="ti ti-plus"></i> Abrir semana y registrar
+        </button>
+      </div>
+
+      <!-- Lista de semanas -->
+      <div *ngIf="semanas.length === 0" class="empty-state">
+        <i class="ti ti-calendar-off" style="font-size: 2rem; color: #d1d5db;"></i>
+        <p>No hay semanas registradas aún.</p>
+      </div>
+
+      <div *ngIf="semanas.length > 0 && filteredSemanas.length === 0" class="empty-state">
+        <p>Sin resultados con los filtros aplicados.</p>
+      </div>
+
+      <div *ngFor="let s of pagedSemanas" class="semana-card">
+        <div class="semana-header">
+          <span class="semana-num">Semana #{{ s.semanaNum }}</span>
+          <span class="semana-fechas">{{ s.fechaInicio | date:'dd/MM/yyyy' }} – {{ s.fechaFin | date:'dd/MM/yyyy' }}</span>
+          <span class="badge" [class.badge-ok]="s.estado === 'CERRADO'" [class.badge-warn]="s.estado === 'ABIERTO'">
+            {{ s.estado }}
+          </span>
+          <span class="semana-lineas">{{ s.lineas.length }} líneas</span>
+          <button *ngIf="s.estado === 'ABIERTO'" class="btn-sm btn-outline" (click)="abrirRegistro(s)">
+            <i class="ti ti-pencil"></i> Registrar
+          </button>
+        </div>
+        <p *ngIf="s.observaciones" class="semana-obs">{{ s.observaciones }}</p>
+      </div>
+
+      <div *ngIf="filteredSemanas.length > 0" class="shrink-0 max-w-[440px]">
+        <app-paginator
+          [totalRecords]="filteredSemanas.length"
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          (pageChange)="changePage($event)">
+        </app-paginator>
+      </div>
+    </ng-container>
+
+    <!-- ═══ TAB REGISTRO ═════════════════════════════════════════════════════ -->
+    <ng-container *ngIf="tab === 'registro'">
+      <div *ngIf="!semanaActiva" class="empty-state">
+        <p>Selecciona una semana ABIERTA desde la pestaña Semanas, o abre una nueva.</p>
+        <button class="btn-secondary" (click)="setTab('semanas')">Ir a Semanas</button>
+      </div>
+
+      <ng-container *ngIf="semanaActiva">
+        <div class="registro-header">
+          <div>
+            <strong>Semana #{{ semanaActiva.semanaNum }}</strong>
+            <span class="semana-fechas">
+              {{ semanaActiva.fechaInicio | date:'dd/MM/yyyy' }} – {{ semanaActiva.fechaFin | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+          <div class="registro-actions">
+            <button class="btn-primary" (click)="guardarConsumo()" [disabled]="guardandoConsumo">
+              <i class="ti ti-device-floppy"></i>
+              {{ guardandoConsumo ? 'Guardando...' : 'Guardar consumo' }}
+            </button>
+            <button class="btn-danger" (click)="cerrarSemana()">
+              <i class="ti ti-lock"></i> Cerrar semana
+            </button>
+          </div>
+        </div>
+
+        <table class="abril-table registro-table">
+          <thead>
+            <tr>
+              <th>Familia</th>
+              <th class="num">Cantidad real</th>
+              <th class="num">Precio unit.</th>
+              <th>Notas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let l of lineasRegistro; let i = index">
+              <td>{{ nombreFamilia(l.familiaId) }}</td>
+              <td class="num">
+                <input type="number" [(ngModel)]="lineasRegistro[i].cantidadReal"
+                  min="0" step="0.01" class="input-num" />
+              </td>
+              <td class="num">
+                <input type="number" [(ngModel)]="lineasRegistro[i].precioUnitario"
+                  min="0" step="0.01" class="input-num" placeholder="Presupuestado" />
+              </td>
+              <td>
+                <input type="text" [(ngModel)]="lineasRegistro[i].notas"
+                  class="input-text" placeholder="Opcional..." />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </ng-container>
+    </ng-container>
+
+  </div>
+
+  <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+    <div class="w-full">
+      <app-search-input
+        placeholder="Buscar por N° de semana u observaciones..."
+        [(value)]="searchText"
+        (valueChange)="onFilterChange()"
+        width="100%">
+      </app-search-input>
+    </div>
+    <div class="w-full">
+      <app-search-select
+        label="Estado"
+        [options]="estadoFilterOptions"
+        valueField="value"
+        displayField="label"
+        [value]="estadoFilter"
+        (valueChange)="estadoFilter = $event; onFilterChange()">
+      </app-search-select>
+    </div>
+  </app-filter-modal>
+</div>

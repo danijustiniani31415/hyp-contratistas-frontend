@@ -1,0 +1,112 @@
+<!-- Sección embebida en GaConfiguracion: el header y el disparador de filtros
+     viven en el contenedor (`ga-configuracion`). -->
+<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Trabajador</th>
+          <th>Correo</th>
+          <th class="w-[180px]">Categoría</th>
+          <th class="text-center w-[180px]">Visibilidad</th>
+          <th class="text-center w-[120px]">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of pagedRows" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+          <td class="text-gray-700">{{ r.fullName | titleCase }}</td>
+          <td class="text-gray-700">{{ r.email }}</td>
+          <td class="text-gray-700">{{ r.category || '—' }}</td>
+          <td class="text-center">
+            <span *ngIf="r.areasAsignadas > 0; else automatico"
+              class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium">
+              {{ r.areasAsignadas }} área(s) asignada(s)
+            </span>
+            <ng-template #automatico>
+              <span class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#F3F4F6] text-[#6B7280] italic">
+                Automático (jerarquía)
+              </span>
+            </ng-template>
+          </td>
+          <td class="text-center">
+            <div class="flex items-center justify-center">
+              <button (click)="openEdit(r)" abrilBulkAction="default">
+                Editar
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <tr *ngIf="filteredRows.length === 0">
+          <td colspan="5" class="py-[32px] text-center text-gray-400 text-sm">
+            {{ hasActiveFilter ? 'Sin resultados.' : 'No hay trabajadores con correo @abril.pe.' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredRows.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)"
+    ></app-paginator>
+  </div>
+
+</div>
+
+<app-visibilidad-modal
+  *ngIf="editing"
+  [workerId]="editing.workerId"
+  [workerName]="editing.fullName || ''"
+  (closeModal)="editing = null"
+  (saved)="onSaved()"
+></app-visibilidad-modal>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="flex flex-wrap gap-3">
+    <ng-container *ngFor="let level of areaLevels; let i = index">
+      <div class="w-[220px]">
+        <app-search-select
+          label="Área"
+          [showLabel]="i === 0"
+          [options]="level"
+          valueField="areaScopeId"
+          displayField="name"
+          [value]="selectedAreaNodes[i]?.areaScopeId"
+          (valueChange)="onAreaNodeChange(i, $event)"
+          [fullText]="true"
+          [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'"
+        ></app-search-select>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Categoría del trabajador"
+      [options]="categoriaFilterOptions"
+      valueField="id"
+      displayField="name"
+      [value]="categoriaFilter"
+      (valueChange)="categoriaFilter = $event; onFilterChange()"
+      placeholder="Todas las categorías"
+    ></app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por nombre..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%"
+    ></app-search-input>
+  </div>
+
+</app-filter-modal>

@@ -1,0 +1,191 @@
+<div class="fixed inset-0 z-[1000] overflow-y-auto bg-white flex flex-col">
+
+  <!-- ===================== Shell del boletín (nav + contenido) ===================== -->
+  <!-- Solo Casa logueado puede navegar el boletín; contratistas/visitantes solo ven la portada. -->
+  @if (puedeVerBoletin) {
+  <nav class="flex flex-wrap justify-center gap-1 my-[22px] mx-auto py-2 px-[10px] w-fit max-w-[95%] bg-[#f1f9ff] rounded-full shadow-[0_6px_20px_rgba(0,70,140,0.08)]">
+    @for (tab of tabs; track tab.key) {
+      <button
+        type="button"
+        class="border-0 py-[10px] px-5 rounded-full text-sm font-bold tracking-[0.02em] text-[#00529b] cursor-pointer transition-colors duration-200 hover:bg-[#eef4fb]"
+        [class.activa]="tab.key === 'inicio' ? mostrarPortada : (!mostrarPortada && tabActiva === tab.key)"
+        (click)="seleccionarTab(tab.key)"
+      >
+        {{ tab.label }}
+      </button>
+    }
+  </nav>
+  }
+
+  <div class="flex-1 flex flex-col items-center justify-center px-6 pt-4 pb-20">
+    @if (puedeVerBoletin && !mostrarPortada) {
+    @switch (tabActiva) {
+      @case ('somos-abril') {
+        <div class="grid grid-cols-[repeat(3,320px)] justify-center gap-10 max-w-[1120px] mx-auto 2xl:grid-cols-[repeat(3,380px)] 2xl:gap-12 2xl:max-w-[1320px] max-[900px]:grid-cols-1 max-[900px]:max-w-[420px]">
+          @for (t of tarjetas; track t.titulo; let i = $index) {
+            <article
+              class="relative flex flex-col rounded-2xl shadow-[0_10px_28px_rgba(0,70,140,0.1)] bg-white"
+              [class.card-anim-left]="i === 0"
+              [class.card-anim-up]="i === 1"
+              [class.card-anim-right]="i === 2"
+            >
+              <!-- Perro: se sale por arriba de la tarjeta -->
+              <img class="absolute left-1/2 -translate-x-1/2 top-[-64px] h-[210px] w-auto max-w-none object-contain z-10 [filter:drop-shadow(0_10px_12px_rgba(0,0,0,0.18))] 2xl:top-[-76px] 2xl:h-[250px]"
+                   [src]="t.img" [alt]="t.titulo" loading="lazy" />
+
+              <!-- Franja celeste superior (alta para que el perro no toque el texto) -->
+              <div class="h-[160px] rounded-t-2xl [background:linear-gradient(180deg,#eaf1f8_0%,#dde9f4_100%)] 2xl:h-[190px]"></div>
+
+              <!-- Cuerpo azul -->
+              <div class="flex flex-col items-center gap-3 flex-1 pt-[22px] px-6 pb-[50px] bg-[#00529b] rounded-b-2xl text-center 2xl:gap-4 2xl:pt-[26px] 2xl:px-8 2xl:pb-[60px]">
+                <h3 class="m-0 text-white text-[22px] font-bold leading-[1.15] 2xl:text-[26px]">{{ t.titulo }}</h3>
+                <p class="m-0 text-[#d8e6f4] text-sm font-normal leading-[1.4] flex-1 [&_strong]:font-bold [&_strong]:text-white 2xl:text-base"
+                   [innerHTML]="t.descripcion"></p>
+              </div>
+
+              <!-- Botón: a caballo sobre el borde inferior -->
+              <button
+                type="button"
+                class="absolute left-0 right-0 mx-auto w-fit bottom-[-20px] z-10 border-0 bg-[#8bc53f] text-[#005d9d] font-extrabold text-[13px] tracking-[0.05em] py-[11px] px-[30px] rounded-full cursor-pointer transition-transform duration-200 hover:scale-110 2xl:bottom-[-24px] 2xl:text-[15px] 2xl:py-[13px] 2xl:px-[38px]"
+                (click)="verMas(i)"
+              >VER MÁS</button>
+            </article>
+          }
+        </div>
+      }
+      @default {
+        <div class="flex flex-col items-center gap-[14px] text-[#7d93a8] py-20 px-5 text-center">
+          <svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="currentColor"
+               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+          </svg>
+          <p class="m-0 text-[15px] font-semibold">Esta sección estará disponible muy pronto.</p>
+        </div>
+      }
+    }
+    }
+  </div>
+
+  <!-- ===================== Portada (overlay a pantalla completa) ===================== -->
+  @if (mostrarPortada) {
+    <section class="portada absolute inset-0 z-20 bg-white flex items-center justify-center overflow-hidden">
+      <div class="grid grid-cols-[0.85fr_1fr] items-center w-full h-full px-[9%] box-border max-[900px]:grid-cols-1 max-[900px]:text-center max-[900px]:p-6 max-[900px]:gap-2.5">
+
+        <!-- Texto: entra deslizándose desde la izquierda -->
+        <div class="flex flex-col items-start gap-[26px] pr-5 z-[2] max-[1200px]:items-center">
+          <img class="anim-left h-[72px] w-auto" style="--d:0ms"
+               src="/images/inicio/logo-abril-trim.webp" alt="Abril Grupo Inmobiliario" />
+          <h1 class="anim-left m-0 text-[#005d9d] text-[75px] font-bold leading-[1.05] tracking-[-0.01em] whitespace-nowrap max-[900px]:text-[42px] max-[900px]:whitespace-normal max-[560px]:text-[34px]" style="--d:80ms">
+            CONFIANZA QUE<br />TRASCIENDE
+          </h1>
+          <p class="anim-left m-0 max-w-[420px] text-[#005d9d] text-[27px] font-normal leading-[1.45] [&_strong]:font-bold max-[900px]:text-[18px] max-[900px]:max-w-[380px]" style="--d:160ms">
+            Todo lo que construimos juntos este trimestre, <strong>en un solo lugar.</strong>
+          </p>
+          @if (puedeVerBoletin) {
+          <span class="anim-left inline-block mt-1.5" style="--d:240ms">
+            <button
+              type="button"
+              class="btn-vamos border-0 bg-[#8bc53f] text-[#005d9d] font-extrabold text-[17px] tracking-[0.04em] py-[14px] px-[44px] rounded-full cursor-pointer shadow-[0_8px_20px_rgba(139,197,63,0.45)] transition-[transform,filter,box-shadow] duration-[250ms]"
+              (click)="entrarAlBoletin()"
+            >
+              ¡VAMOS!
+            </button>
+          </span>
+          }
+        </div>
+
+        <!-- Perro + línea azul de fondo (marco de esquina superior-derecha) -->
+        <div class="relative h-full max-[900px]:min-h-[280px]">
+          <svg class="portada-linea absolute top-[-2%] left-0 right-[-12%] h-[106%] z-0 pointer-events-none"
+               viewBox="0 0 100 100" fill="none" preserveAspectRatio="none" aria-hidden="true">
+            <!-- Vertical a la izquierda del perro → esquina redondeada → diagonal a la esquina superior derecha -->
+            <path d="M 18 100 V 38 Q 18 26 25 25 L 100 20" stroke="#1f74c4" stroke-width="3"
+                  stroke-linecap="round" vector-effect="non-scaling-stroke" pathLength="1" />
+          </svg>
+          <img class="anim-right absolute right-[-10%] bottom-[-20%] z-[1] w-[90%] h-auto"
+               src="/images/inicio/perro-saludando-trim.webp" alt="Mascota Abril saludando" />
+        </div>
+
+      </div>
+    </section>
+  }
+
+  <!-- ===================== Botones flotantes (esquina inferior derecha) ===================== -->
+  <div class="fixed right-[26px] bottom-[26px] z-40 flex flex-col items-end gap-3" data-accesos-flotantes>
+
+    <!-- Accesos rápidos de autoservicio: solo Casa logueado -->
+    @if (mostrarAccesosRapidos) {
+      <button
+        type="button"
+        class="group flex items-center gap-0 h-14 px-[17px] border-0 rounded-full bg-[#8bc53f] text-[#00432e] cursor-pointer shadow-[0_8px_22px_rgba(139,197,63,0.4)] transition-[gap,padding,transform,background] duration-[250ms] hover:gap-2.5 hover:px-[22px] hover:-translate-y-0.5 hover:bg-[#79ad33]"
+        [ngClass]="botonExpandido === 'descanso' ? 'gap-2.5 px-[22px]' : ''"
+        (click)="manejarClickFlotante('descanso', $event)"
+        title="Registra tu descanso médico"
+      >
+        <svg class="shrink-0" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="4" width="16" height="16" rx="4" />
+          <path d="M12 8v8M8 12h8" />
+        </svg>
+        <span class="max-w-0 overflow-hidden whitespace-nowrap font-bold text-sm transition-[max-width] duration-[250ms] group-hover:max-w-[180px]"
+              [ngClass]="botonExpandido === 'descanso' ? 'max-w-[180px]' : ''">Registra tu descanso médico</span>
+      </button>
+
+      <button
+        type="button"
+        class="group flex items-center gap-0 h-14 px-[17px] border-0 rounded-full bg-[#1f74c4] text-white cursor-pointer shadow-[0_8px_22px_rgba(31,116,196,0.4)] transition-[gap,padding,transform,background] duration-[250ms] hover:gap-2.5 hover:px-[22px] hover:-translate-y-0.5 hover:bg-[#00529b]"
+        [ngClass]="botonExpandido === 'salida' ? 'gap-2.5 px-[22px]' : ''"
+        (click)="manejarClickFlotante('salida', $event)"
+        title="Gestiona tu salida"
+      >
+        <svg class="shrink-0" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <path d="M16 17l5-5-5-5" />
+          <path d="M21 12H9" />
+        </svg>
+        <span class="max-w-0 overflow-hidden whitespace-nowrap font-bold text-sm transition-[max-width] duration-[250ms] group-hover:max-w-[160px]"
+              [ngClass]="botonExpandido === 'salida' ? 'max-w-[160px]' : ''">Gestiona tu salida</span>
+      </button>
+    }
+
+    <!-- Casa (Casa/Contratista logueados) o login (visitante) -->
+    <button
+      type="button"
+      class="group flex items-center gap-0 h-14 px-[17px] border-0 rounded-full bg-[#00529b] text-white cursor-pointer shadow-[0_8px_22px_rgba(0,70,140,0.4)] transition-[gap,padding,transform,background] duration-[250ms] hover:gap-2.5 hover:px-[22px] hover:-translate-y-0.5 hover:bg-[#1f74c4]"
+      [ngClass]="botonExpandido === 'dashboard' ? 'gap-2.5 px-[22px]' : ''"
+      (click)="manejarClickFlotante('dashboard', $event)"
+      [title]="accionFlotante === 'login' ? 'Iniciar sesión' : (accionFlotante === 'inicio-contratista' ? 'Ir a mi panel' : 'Ir al inicio')"
+    >
+      @if (accionFlotante === 'login') {
+        <svg class="shrink-0" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+          <path d="M10 17l5-5-5-5" />
+          <path d="M15 12H3" />
+        </svg>
+      } @else {
+        <svg class="shrink-0" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9.5 12 3l9 6.5" />
+          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10" />
+          <path d="M9 21v-6h6v6" />
+        </svg>
+      }
+      <span class="max-w-0 overflow-hidden whitespace-nowrap font-bold text-sm transition-[max-width] duration-[250ms] group-hover:max-w-[120px]"
+            [ngClass]="botonExpandido === 'dashboard' ? 'max-w-[120px]' : ''">
+        {{ accionFlotante === 'login' ? 'Iniciar sesión' : (accionFlotante === 'inicio-contratista' ? 'Ir a mi panel' : 'Ir al inicio') }}
+      </span>
+    </button>
+  </div>
+
+  <!-- Crédito discreto -->
+  <span class="fixed left-3 bottom-2 z-[41] text-[11px] font-normal text-[#9fb3c8] opacity-55 pointer-events-none select-none">© Andrea Mantilla</span>
+
+  <!-- Modal "THE BIRTHDAY CLUB" -->
+  @if (mostrarCumpleanos) {
+    <app-birthday-club (cerrar)="cerrarCumpleanos()"></app-birthday-club>
+  }
+
+</div>

@@ -1,0 +1,364 @@
+/* El overlay/panel/header/footer viven en el shell app-abril-modal-panel — no
+   reimplementarlos acá. Lo de este archivo es solo el checklist: la tarjeta de
+   cada actividad y sus cajas de detalle. */
+
+/* ── Fila de fases ───────────────────────────────────────────────────────
+   La fila tiene scroll horizontal propio (con 7 fases no entra en pantallas
+   chicas) y el círculo de la fase que se está viendo lleva un aro dibujado 4px
+   POR FUERA de su caja. Un contenedor con scroll recorta todo lo que se pinte
+   fuera de su área, así que sin este colchón el aro del primer círculo salía
+   cortado por la izquierda y por arriba. El margen negativo compensa el padding
+   para que los círculos queden alineados igual que antes con el resto de la
+   tarjeta: lo único que cambia es que el aro tiene dónde dibujarse. */
+.onb-fases {
+  padding: 6px 6px 0;
+  margin: -6px -6px 0;
+  /* Que tampoco lo recorte al llegar a un círculo con el tabulador. */
+  scroll-padding: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Los nombres de fase son cortos pero no caben en una línea en pantallas chicas:
+   se dejan envolver en dos líneas con un ancho tope, como el embudo de la lista. */
+.onb-fases-name {
+  max-width: 78px;
+}
+
+/* ── Una actividad del checklist ──────────────────────────────────────────
+   Pendiente = borde neutro; hecha = verde tenue, que es como se lee de un
+   vistazo cuánto queda de la fase. */
+.act {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  border: 1px solid var(--color-abril-border);
+  border-radius: 10px;
+  padding: 13px 15px;
+  background: #fff;
+}
+.act--hecha {
+  border-color: #a7f3d0;
+  background: #f6fefa;
+}
+
+.act-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border: 2px solid var(--color-abril-border-strong);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.act-check i {
+  font-size: 20px;
+  line-height: 1;
+  color: var(--color-abril-logo-blue);
+}
+/* Con el check dentro, el círculo propio sobra: el ícono ya es el círculo. */
+.act-check--hecha {
+  border-color: transparent;
+}
+
+/* ── Cajas de detalle dentro de una actividad ──────────────────────────── */
+.act-box {
+  border-radius: 8px;
+  padding: 10px 13px;
+  margin-top: 9px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.act-box--ok {
+  background: #f0fdf4;
+  border: 1px solid #a7f3d0;
+  color: #166534;
+}
+.act-box--aviso {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+.act-box input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  accent-color: var(--color-abril-logo-blue);
+}
+
+.act-lista {
+  list-style: disc;
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+/* Los avisos preventivos son solo la lista de datos: sin encabezado arriba,
+   el margen propio de la lista dejaría la caja descuadrada. */
+.act-box > .act-lista:first-child {
+  margin-top: 0;
+}
+.act-lista li {
+  margin: 2px 0;
+}
+.act-lista b {
+  font-weight: 600;
+}
+
+/* Pie de la actividad: la frase de estado que va debajo de todo. */
+.act-pie {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+/* Marca de "todavía no implementado". No es un estado del proceso: es una
+   advertencia de la aplicación, por eso es gris y no de color de estado. */
+.act-chip {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Fila del archivo adjunto (carta oferta firmada) ───────────────────── */
+.act-archivo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 9px;
+  padding: 9px 12px;
+  border: 1px solid var(--color-abril-border);
+  border-radius: 8px;
+  background: #fafafa;
+}
+.act-archivo-nombre {
+  flex: 1 1 220px;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #374151;
+  word-break: break-all;
+}
+
+.act-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.act-badge--ok {
+  background: #dcfce7;
+  color: #15803d;
+}
+.act-badge--pend {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.act-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 31px;
+  padding: 0 13px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.act-btn i {
+  font-size: 14px;
+}
+.act-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.act-btn--primary {
+  background: var(--color-abril-logo-blue);
+  border: 1px solid var(--color-abril-logo-blue);
+  color: #fff;
+}
+.act-btn--primary:hover:not(:disabled) {
+  background: var(--color-abril-logo-blue-hover);
+}
+.act-btn--ghost {
+  background: #fff;
+  border: 1px solid var(--color-abril-logo-blue);
+  color: var(--color-abril-logo-blue);
+}
+.act-btn--ghost:hover:not(:disabled) {
+  background: var(--color-abril-logo-blue-light);
+}
+
+/* El selector de archivo ocupa su propia línea dentro de la actividad. */
+app-file-selector {
+  display: block;
+  margin-top: 9px;
+}
+
+/* ── Botones de navegación entre fases (pie del modal) ─────────────────── */
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  min-width: 0;
+}
+/* En el ancho justo el rótulo se recorta con «…» antes que empujar al botón
+   fuera del pie. El texto completo sigue estando en el title. */
+.nav-btn-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-btn i {
+  font-size: 16px;
+}
+.nav-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.nav-btn--secundario {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+}
+.nav-btn--secundario:hover:not(:disabled) {
+  background: #f9fafb;
+}
+.nav-btn--primario {
+  background: var(--color-abril-logo-blue);
+  border: 1px solid var(--color-abril-logo-blue);
+  color: #fff;
+}
+.nav-btn--primario:hover:not(:disabled) {
+  background: var(--color-abril-logo-blue-hover);
+}
+
+/* Las dos formas de la posición en el proceso: la larga en escritorio y la
+   abreviada en teléfono (ver el @media del final). */
+.onb-nav-pos-corta {
+  display: none;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────
+   El shell del modal ya lo achica hasta el ancho de la pantalla; lo que falta
+   es que el contenido de adentro no quede apretado. Todo acotado a este @media
+   para no mover nada del escritorio. */
+@media (max-width: 639.98px) {
+  /* Cabecera: el avance ocupaba una columna a la derecha y le quitaba al nombre
+     del colaborador el poco ancho que hay. Pasa a ser una línea propia que se
+     lee de corrido: «AVANCE 11% 2 de 19 tareas». */
+  .onb-head {
+    gap: 10px;
+  }
+  .onb-head-nombre {
+    font-size: 17px;
+  }
+  .onb-head-avance {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+  }
+  /* En fila, los márgenes que separaban los tres datos apilados descuadran la
+     línea de base. */
+  .onb-head-avance > * {
+    margin-top: 0;
+  }
+  .onb-head-pct {
+    font-size: 22px;
+  }
+
+  /* Fases: la misma densidad compacta que el embudo de la bandeja. */
+  .onb-fases-card {
+    padding: 12px;
+  }
+  .onb-fases-title {
+    font-size: 13.5px;
+  }
+  .onb-fases-dot {
+    width: 34px;
+    height: 34px;
+    font-size: 13px;
+  }
+  .onb-fases-dot i {
+    font-size: 16px;
+  }
+  .onb-fases-count {
+    font-size: 15px;
+  }
+  .onb-fases-name {
+    font-size: 10.5px;
+    max-width: 66px;
+  }
+  /* min-width del conector: cuánto se puede comprimir la fila antes de
+     necesitar scroll. margin-top = radio del círculo, para que la línea quede a
+     su altura media (17px con círculos de 34px). */
+  .onb-fases-link {
+    min-width: 10px;
+    margin-top: 17px;
+  }
+  /* La fila se arrastra con el dedo: la barra de scroll ocupaba alto y se leía
+     como un corte. Mismo criterio que el embudo de la bandeja. */
+  .onb-fases {
+    scrollbar-width: none;
+  }
+  .onb-fases::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Checklist: tarjeta de actividad y fila del archivo adjunto. */
+  .act {
+    padding: 11px 12px;
+    gap: 9px;
+  }
+  .act-lista {
+    padding-left: 17px;
+  }
+  .act-archivo {
+    padding: 8px 10px;
+    gap: 7px;
+  }
+  /* Los botones reparten el ancho de su línea: cada uno con el ancho de su
+     texto quedaban escalonados y con huecos irregulares al envolverse. */
+  .act-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 0 10px;
+  }
+
+  /* Pie: los dos botones y la posición tienen que caber en una sola línea. */
+  .nav-btn {
+    height: 34px;
+    padding: 0 12px;
+    font-size: 12.5px;
+    gap: 4px;
+  }
+  .onb-nav-pos {
+    display: none;
+  }
+  .onb-nav-pos-corta {
+    display: inline;
+  }
+}

@@ -1,0 +1,284 @@
+@if (loading) {
+  <div class="rm-loading"><i class="ti ti-loader-2 spin"></i> Cargando investigación...</div>
+}
+
+@if (!loading) {
+  <div class="rm-root">
+
+    <!-- HEADER -->
+    <div class="rm-header">
+      <div>
+        <h2 class="rm-title">Registro de Investigación</h2>
+        <p class="rm-subtitle">RM-050-2013-TR — Formato de Accidentes de Trabajo e Incidentes Peligrosos</p>
+      </div>
+      <button class="btn-guardar" [disabled]="guardando" (click)="guardar()">
+        @if (guardando) { <i class="ti ti-loader-2 spin"></i> Guardando... }
+        @else { <i class="ti ti-device-floppy"></i> Guardar }
+      </button>
+    </div>
+
+    @if (updatedAt) {
+      <p class="rm-updated">Última actualización: {{ updatedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+    }
+
+    <!-- SECCIÓN 1: Datos del accidente (pre-llenado, algunos editables) -->
+    <section class="rm-section">
+      <h3 class="rm-section-title"><span class="rm-num">1</span> Datos del accidente / incidente</h3>
+      <div class="rm-grid">
+        <div class="rm-field">
+          <label>Fecha y hora</label>
+          <div class="rm-valor-ro">{{ detalle?.fecha | date:'dd/MM/yyyy':'UTC' }} {{ detalle?.hora ?? '' }}</div>
+        </div>
+        <div class="rm-field">
+          <label>Proyecto</label>
+          <div class="rm-valor-ro">{{ detalle?.proyectoNombre ?? '—' }}</div>
+        </div>
+        <div class="rm-field rm-field--full">
+          <label>Lugar exacto del accidente</label>
+          <div class="rm-valor-ro">{{ detalle?.lugarExacto ?? '—' }}</div>
+        </div>
+        <div class="rm-field">
+          <label>Tipo de evento</label>
+          <div class="rm-valor-ro">{{ detalle?.tipoNombre ?? '—' }}</div>
+        </div>
+        <div class="rm-field">
+          <label>Gravedad del accidente laboral</label>
+          <app-search-select
+            [showLabel]="false"
+            [options]="gravedadesOpts"
+            valueField="value"
+            displayField="label"
+            [sortAlpha]="false"
+            placeholder="— Seleccionar —"
+            [allowClear]="true"
+            [value]="form.gravedadAccidente"
+            (valueChange)="form.gravedadAccidente = $event"
+          />
+        </div>
+        <div class="rm-field">
+          <label>N° días de descanso médico</label>
+          <input class="rm-input" type="number" min="0" [(ngModel)]="form.diasPerdidos" />
+        </div>
+        <div class="rm-field">
+          <label>N° trabajadores afectados</label>
+          <input class="rm-input" type="number" min="1" [(ngModel)]="form.nroTrabajadoresAfectados" />
+        </div>
+        <div class="rm-field">
+          <label>Parte del cuerpo afectada</label>
+          <div class="rm-valor-ro">{{ detalle?.parteAfectadaNombre ?? '—' }}</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 2: Datos del trabajador -->
+    <section class="rm-section">
+      <h3 class="rm-section-title"><span class="rm-num">2</span> Datos del trabajador afectado</h3>
+      <div class="rm-grid">
+        <div class="rm-field">
+          <label>Nombre completo</label>
+          <div class="rm-valor-ro">{{ detalle?.trabajadorNombre ?? '—' }}</div>
+        </div>
+        <div class="rm-field">
+          <label>Puesto / ocupación</label>
+          <div class="rm-valor-ro">{{ detalle?.puestoTrabajo ?? '—' }}</div>
+        </div>
+        <div class="rm-field">
+          <label>Edad</label>
+          <div class="rm-valor-ro">{{ detalle?.edad ?? '—' }}</div>
+        </div>
+        <div class="rm-field">
+          <label>Años de experiencia</label>
+          <div class="rm-valor-ro">{{ detalle?.aniosExperiencia ?? '—' }}</div>
+        </div>
+        <div class="rm-field">
+          <label>Empresa</label>
+          <div class="rm-valor-ro">{{ detalle?.empresaAbrilNombre ?? detalle?.contributorNombre ?? '—' }}</div>
+        </div>
+        <div class="rm-field">
+          <label>Testigos</label>
+          <input class="rm-input" type="text" placeholder="Nombres de testigos" [(ngModel)]="form.testigos" />
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 3: Descripción del accidente -->
+    <section class="rm-section">
+      <h3 class="rm-section-title"><span class="rm-num">3</span> Descripción del accidente / incidente</h3>
+      <div class="rm-grid">
+        <div class="rm-field rm-field--full">
+          <label>Descripción detallada</label>
+          <textarea class="rm-input rm-textarea" rows="4" [(ngModel)]="form.descripcionDetallada"
+            placeholder="Narración detallada de cómo ocurrió el accidente..."></textarea>
+        </div>
+        <div class="rm-field">
+          <label>Mecanismo del accidente</label>
+          <input class="rm-input" type="text" placeholder="ej. Caída a mismo nivel, golpe con objeto, etc." [(ngModel)]="form.mecanismo" />
+        </div>
+        <div class="rm-field">
+          <label>Agente causante</label>
+          <input class="rm-input" type="text" placeholder="ej. Herramienta manual, piso húmedo, etc." [(ngModel)]="form.agenteCausante" />
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 4: Causas del accidente -->
+    <section class="rm-section">
+      <h3 class="rm-section-title"><span class="rm-num">4</span> Causas del accidente / incidente</h3>
+      <div class="rm-causas-grid">
+        <div class="rm-causas-col">
+          <h4 class="rm-causas-sub">Causas inmediatas</h4>
+          <div class="rm-field">
+            <label>Actos subestándares</label>
+            <textarea class="rm-input rm-textarea" rows="3" [(ngModel)]="form.actosSubestandar"
+              placeholder="Acciones incorrectas del trabajador..."></textarea>
+          </div>
+          <div class="rm-field" style="margin-top:10px">
+            <label>Condiciones subestándares</label>
+            <textarea class="rm-input rm-textarea" rows="3" [(ngModel)]="form.condicionesSubestandar"
+              placeholder="Condiciones del ambiente de trabajo..."></textarea>
+          </div>
+        </div>
+        <div class="rm-causas-col">
+          <h4 class="rm-causas-sub">Causas básicas</h4>
+          <div class="rm-field">
+            <label>Factores personales</label>
+            <textarea class="rm-input rm-textarea" rows="3" [(ngModel)]="form.factoresPersonales"
+              placeholder="Capacidad inadecuada, tensión, motivación..."></textarea>
+          </div>
+          <div class="rm-field" style="margin-top:10px">
+            <label>Factores de trabajo</label>
+            <textarea class="rm-input rm-textarea" rows="3" [(ngModel)]="form.factoresTrabajo"
+              placeholder="Liderazgo deficiente, mantenimiento, estándares..."></textarea>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ALERTA ACCIONES VENCIDAS -->
+    @if (accionesVencidas.length > 0) {
+      <div class="alerta-vencidas">
+        <i class="ti ti-alarm"></i>
+        <strong>{{ accionesVencidas.length }} acción(es) correctiva(s) vencida(s)</strong>
+        <ul>
+          @for (a of accionesVencidas; track a.accionId) {
+            <li>{{ a.descripcion }} — vencida hace {{ a.diasVencida }} días</li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- SECCIÓN 5: Medidas correctivas -->
+    <section class="rm-section">
+      <h3 class="rm-section-title">
+        <span class="rm-num">5</span> Medidas correctivas y preventivas
+        <button class="btn-add-accion" (click)="agregarAccion()">
+          <i class="ti ti-plus"></i> Agregar
+        </button>
+      </h3>
+
+      @if (form.accionesCorrectivas.length === 0) {
+        <p class="rm-vacio">No hay medidas registradas. Haz clic en "Agregar" para añadir.</p>
+      }
+
+      @if (form.accionesCorrectivas.length > 0) {
+        <div class="rm-acciones-table-wrap">
+          <table class="rm-acciones-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Descripción de la medida</th>
+                <th>Tipo</th>
+                <th>Responsable</th>
+                <th>F. Compromiso</th>
+                <th>F. Cumplimiento</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (a of form.accionesCorrectivas; track trackByIdx($index, a); let i = $index) {
+                <tr>
+                  <td class="rm-ac-num">{{ i + 1 }}</td>
+                  <td><input class="rm-input rm-input--sm" [(ngModel)]="a.descripcion" placeholder="Descripción..." /></td>
+                  <td>
+                    <app-search-select
+                      [compact]="true"
+                      [showLabel]="false"
+                      [options]="tipoAccionOpts"
+                      valueField="value"
+                      displayField="label"
+                      [sortAlpha]="false"
+                      [value]="a.tipo"
+                      (valueChange)="a.tipo = $event"
+                    />
+                  </td>
+                  <td><input class="rm-input rm-input--sm" [(ngModel)]="a.responsableNombre" placeholder="Responsable..." /></td>
+                  <td><input class="rm-input rm-input--sm" type="date" [(ngModel)]="a.fechaCompromiso" /></td>
+                  <td><input class="rm-input rm-input--sm" type="date" [(ngModel)]="a.fechaCumplimiento" /></td>
+                  <td>
+                    <app-search-select
+                      [compact]="true"
+                      [showLabel]="false"
+                      [options]="estadosAccionOpts"
+                      valueField="value"
+                      displayField="label"
+                      [sortAlpha]="false"
+                      [value]="a.estado"
+                      (valueChange)="a.estado = $event"
+                    />
+                  </td>
+                  <td>
+                    @if (a.estado === 'Cumplido') {
+                      <button type="button" class="btn-leccion" (click)="crearLeccion(a)" title="Crear lección aprendida">
+                        <i class="ti ti-bulb"></i> Lección
+                      </button>
+                    }
+                    <button class="btn-del-accion" title="Eliminar" (click)="eliminarAccion(i)">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <!-- SECCIÓN 6: Responsables -->
+    <section class="rm-section">
+      <h3 class="rm-section-title"><span class="rm-num">6</span> Responsables del registro</h3>
+      <div class="rm-grid rm-grid--3">
+        <div class="rm-field">
+          <label>Elaborado por</label>
+          <input class="rm-input" type="text" [(ngModel)]="form.elaboradoPorNombre" placeholder="Nombre" />
+        </div>
+        <div class="rm-field">
+          <label>Cargo</label>
+          <input class="rm-input" type="text" [(ngModel)]="form.elaboradoPorCargo" placeholder="Cargo" />
+        </div>
+        <div class="rm-field">
+          <label>Fecha</label>
+          <input class="rm-input" type="date" [(ngModel)]="form.elaboradoPorFecha" />
+        </div>
+        <div class="rm-field">
+          <label>Aprobado por</label>
+          <input class="rm-input" type="text" [(ngModel)]="form.aprobadoPorNombre" placeholder="Nombre" />
+        </div>
+        <div class="rm-field">
+          <label>Cargo</label>
+          <input class="rm-input" type="text" [(ngModel)]="form.aprobadoPorCargo" placeholder="Cargo" />
+        </div>
+      </div>
+    </section>
+
+    <!-- BOTÓN GUARDAR BOTTOM -->
+    <div class="rm-footer">
+      <button class="btn-guardar" [disabled]="guardando" (click)="guardar()">
+        @if (guardando) { <i class="ti ti-loader-2 spin"></i> Guardando... }
+        @else { <i class="ti ti-device-floppy"></i> Guardar investigación }
+      </button>
+    </div>
+
+  </div>
+}

@@ -1,0 +1,51 @@
+.abiertas-body {
+  padding: 20px 24px;
+}
+
+.skeleton-stack { display: flex; flex-direction: column; gap: 12px; }
+.skeleton-card { height: 90px; border-radius: var(--radius-standard); background: #f0ede8; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 48px 0; color: #8a8a8a; text-align: center;
+}
+.empty-state i { font-size: 32px; }
+
+.abiertas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.abierta-card {
+  border: 1px solid #e5e2dc;
+  border-radius: var(--radius-standard);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fff;
+}
+
+.abierta-card__top { display: flex; justify-content: space-between; font-size: 12px; color: #8a8a8a; }
+.abierta-card__tipo { font-weight: 600; color: var(--color-abril-logo-blue); }
+.abierta-card__proyecto { font-weight: 600; font-size: 15px; }
+.abierta-card__meta { display: flex; gap: 14px; font-size: 12px; color: #666; }
+
+.abierta-card__actions { display: flex; gap: 8px; margin-top: 4px; }
+.btn-ver, .btn-unirme {
+  border-radius: var(--radius-standard);
+  padding: 7px 12px;
+  font-size: 13px;
+  border: 1px solid #d9d5cd;
+  background: #fff;
+  cursor: pointer;
+}
+.btn-unirme {
+  flex: 1;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  border: none;
+}
+.btn-unirme:disabled { opacity: .6; cursor: default; }

@@ -1,0 +1,507 @@
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="EMOs"
+  subtitulo="Exámenes Médico Ocupacionales por trabajador."
+  [tabs]="tabs"
+  [botonSecundario]="{ label: 'Descargar Excel', icono: 'ti-file-spreadsheet' }"
+  (secondaryClick)="descargarExcel()"
+  [botonTerciario]="puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined"
+  botonTerciarioTooltip="Configuración de EMOs"
+  (tertiaryClick)="irAConfiguracion()">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<section class="page-container px-3 py-4 flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- Subtabs -->
+  <div class="subtabs">
+    <button type="button" class="subtab-btn" [class.subtab-btn--active]="!soloPendientesLecturaAbril" (click)="setSubtab(false)">
+      Todos los EMOs
+    </button>
+    <button type="button" class="subtab-btn" [class.subtab-btn--active]="soloPendientesLecturaAbril" (click)="setSubtab(true)">
+      Pendientes de lectura (médico Abril)
+    </button>
+  </div>
+
+  <!-- Enlace desde Reclutamiento: la lista queda acotada a una sola ficha, así que se avisa
+       y se ofrece volver a verlas todas. -->
+  <div *ngIf="workerIdEnfocado" class="foco-banner">
+    <i class="ti ti-filter-check"></i>
+    <span class="foco-banner__texto">
+      Mostrando solo la ficha que llegó desde Reclutamiento.
+    </span>
+    <button type="button" class="foco-banner__btn" (click)="quitarFoco()">
+      Ver todos los EMOs
+    </button>
+  </div>
+
+  <!-- Tabla (desde md: en móvil se usa la lista de tarjetas de abajo) -->
+  <div class="abril-table-wrap hidden md:block">
+      <table class="abril-table">
+        <colgroup>
+          <col style="width: auto" />
+          <col style="width: 80px" />
+          <col style="width: 140px" />
+          <col style="width: 140px" />
+          <col style="width: 120px" />
+          <col style="width: 80px" />
+          <col style="width: 90px" />
+          <col style="width: 90px" />
+          <col style="width: 90px" />
+          <col style="width: 90px" />
+          <col style="width: 110px" />
+          <col style="width: 60px" />
+          <col style="width: 160px" />
+        </colgroup>
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Trabajador</th>
+            <th>T.EMO</th>
+            <th>Emp. Actual</th>
+            <th>Emp. Origen</th>
+            <th>Proyecto</th>
+            <th>Tipo</th>
+            <th class="th-sortable" (click)="toggleSort('fechaEmo')">Fecha <span class="sort-icon">{{ sortIcon('fechaEmo') }}</span></th>
+            <th class="th-sortable" (click)="toggleSort('fechaVencimiento')">Vence <span class="sort-icon">{{ sortIcon('fechaVencimiento') }}</span></th>
+            <th>Aptitud</th>
+            <th>Estado</th>
+            <th>Prog. EMO</th>
+            <th class="text-right">Días</th>
+            <th class="text-right col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let item of items"
+            [class.row-clickable]="item.tieneEmo"
+            (click)="onRowClick(item)"
+          >
+            <td class="col-worker">
+              <div class="worker-cell">
+                <span class="worker-name">{{ item.nombreCompleto | titleCase }}</span>
+                <span class="worker-dni">DNI · {{ item.dni }}</span>
+                <span class="tag-preingreso" *ngIf="item.esFinalistaAprobado">
+                  Finalista aprobado
+                </span>
+              </div>
+            </td>
+            <td>{{ item.tieneEmo ? item.tipoEmo : '—' }}</td>
+            <td class="text-gray-600">{{ item.empresa || '—' }}</td>
+            <td class="text-gray-600">{{ item.empresaOrigenNombre || '—' }}</td>
+            <td class="text-gray-600">{{ item.proyectoNombre || '—' }}</td>
+            <td class="text-gray-600">{{ item.obraOficina || '—' }}</td>
+            <td>{{ item.tieneEmo ? (item.fechaEmo | date: 'dd/MM/yyyy') : '—' }}</td>
+            <td>{{ item.tieneEmo ? (item.fechaVencimiento | date: 'dd/MM/yyyy') : '—' }}</td>
+            <td>
+              <span
+                *ngIf="item.tieneEmo; else dashAptitud"
+                class="badge border"
+                [ngClass]="aptitudClass(item.aptitud)"
+              >
+                {{ item.aptitud }}
+              </span>
+              <ng-template #dashAptitud><span class="text-gray-400">—</span></ng-template>
+            </td>
+            <td>
+              <span class="badge border" [ngClass]="estadoClass(item.estado, item.tieneEmo)">
+                {{ estadoLabel(item) }}
+              </span>
+            </td>
+            <td>
+              <span *ngIf="item.estadoProgramacionEmo; else dashProg" class="text-gray-600 text-[12px]">
+                {{ item.estadoProgramacionEmo }}
+              </span>
+              <ng-template #dashProg><span class="text-gray-400">—</span></ng-template>
+            </td>
+            <td class="text-right">
+              <span
+                *ngIf="item.tieneEmo; else dashDias"
+                class="badge border"
+                [ngClass]="diasClass(item.diasRestantes)"
+              >
+                {{ diasLabel(item.diasRestantes) }}
+              </span>
+              <ng-template #dashDias><span class="text-gray-400">—</span></ng-template>
+            </td>
+            <td class="text-right col-actions" (click)="$event.stopPropagation()">
+              <div class="actions-group">
+                <button
+                  type="button"
+                  class="row-action"
+                  (click)="abrirProgramarEmo(item, $event)"
+                  title="Programar EMO con clínica"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                </button>
+                <button
+                  *ngIf="item.tieneEmo"
+                  type="button"
+                  class="row-action"
+                  (click)="verHistorial(item, $event)"
+                  title="Ver historial"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                  </svg>
+                </button>
+                <button
+                  *ngIf="item.tieneEmo"
+                  type="button"
+                  class="row-action"
+                  (click)="abrirDocumentos(item, $event)"
+                  title="Documentos"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="row-action"
+                  (click)="abrirEditar(item, $event)"
+                  title="Editar"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button
+                  *ngIf="!item.tieneEmo"
+                  type="button"
+                  class="row-action"
+                  (click)="registrarEmoPara(item, $event)"
+                  title="Registrar resultados de EMO"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M12 5v14M5 12h14"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading && items.length === 0">
+            <td colspan="13" class="empty-row">
+              Sin resultados para los filtros actuales.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+  </div>
+
+  <!-- Lista móvil (<md): la tabla tiene 13 columnas y con table-layout:fixed se comprimen
+       hasta encimarse, así que en móvil cada trabajador se muestra como tarjeta. Mismos
+       datos y mismas acciones que la fila, incluida "Programar EMO con clínica". -->
+  <div class="emo-cards md:hidden">
+    <article
+      *ngFor="let item of items"
+      class="emo-card"
+      [class.emo-card--clickable]="item.tieneEmo"
+      (click)="onRowClick(item)"
+    >
+      <header class="emo-card__head">
+        <div class="emo-card__ident">
+          <span class="emo-card__name">{{ item.nombreCompleto | titleCase }}</span>
+          <span class="emo-card__dni">DNI · {{ item.dni }}</span>
+          <span class="tag-preingreso" *ngIf="item.esFinalistaAprobado">
+            Finalista aprobado
+          </span>
+        </div>
+        <span
+          *ngIf="item.tieneEmo"
+          class="badge border shrink-0"
+          [ngClass]="diasClass(item.diasRestantes)"
+        >
+          {{ diasLabel(item.diasRestantes) }}
+        </span>
+      </header>
+
+      <div class="emo-card__badges">
+        <span
+          *ngIf="item.tieneEmo"
+          class="badge border"
+          [ngClass]="aptitudClass(item.aptitud)"
+        >
+          {{ item.aptitud }}
+        </span>
+        <span class="badge border" [ngClass]="estadoClass(item.estado, item.tieneEmo)">
+          {{ estadoLabel(item) }}
+        </span>
+      </div>
+
+      <dl class="emo-card__grid">
+        <div class="emo-card__item">
+          <dt>T. EMO</dt>
+          <dd>{{ item.tieneEmo ? item.tipoEmo : '—' }}</dd>
+        </div>
+        <div class="emo-card__item">
+          <dt>Prog. EMO</dt>
+          <dd>{{ item.estadoProgramacionEmo || '—' }}</dd>
+        </div>
+        <div class="emo-card__item">
+          <dt>Fecha</dt>
+          <dd>{{ item.tieneEmo ? (item.fechaEmo | date: 'dd/MM/yyyy') : '—' }}</dd>
+        </div>
+        <div class="emo-card__item">
+          <dt>Vence</dt>
+          <dd>{{ item.tieneEmo ? (item.fechaVencimiento | date: 'dd/MM/yyyy') : '—' }}</dd>
+        </div>
+        <div class="emo-card__item emo-card__item--wide">
+          <dt>Emp. actual</dt>
+          <dd>{{ item.empresa || '—' }}</dd>
+        </div>
+        <div class="emo-card__item emo-card__item--wide">
+          <dt>Emp. origen</dt>
+          <dd>{{ item.empresaOrigenNombre || '—' }}</dd>
+        </div>
+        <div class="emo-card__item emo-card__item--wide">
+          <dt>Proyecto</dt>
+          <dd>{{ item.proyectoNombre || '—' }}</dd>
+        </div>
+        <div class="emo-card__item">
+          <dt>Tipo</dt>
+          <dd>{{ item.obraOficina || '—' }}</dd>
+        </div>
+      </dl>
+
+      <footer class="emo-card__actions" (click)="$event.stopPropagation()">
+        <button type="button" class="emo-card__btn" (click)="abrirProgramarEmo(item, $event)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Programar
+        </button>
+        <button
+          *ngIf="item.tieneEmo"
+          type="button"
+          class="emo-card__btn"
+          (click)="verHistorial(item, $event)"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+          </svg>
+          Historial
+        </button>
+        <button
+          *ngIf="item.tieneEmo"
+          type="button"
+          class="emo-card__btn"
+          (click)="abrirDocumentos(item, $event)"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/>
+          </svg>
+          Documentos
+        </button>
+        <button type="button" class="emo-card__btn" (click)="abrirEditar(item, $event)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Editar
+        </button>
+        <button
+          *ngIf="!item.tieneEmo"
+          type="button"
+          class="emo-card__btn"
+          (click)="registrarEmoPara(item, $event)"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          Registrar
+        </button>
+      </footer>
+    </article>
+
+    <p *ngIf="!loading && items.length === 0" class="emo-cards__empty">
+      Sin resultados para los filtros actuales.
+    </p>
+  </div>
+
+  <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)"
+    ></app-paginator>
+  </div>
+</section>
+
+<app-fab label="Registrar resultados de EMO" (clicked)="openCreate()"></app-fab>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Nombre o DNI..."
+      [value]="filters.search"
+      (valueChange)="onSearchChange($event)"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Aptitud"
+      [options]="aptitudOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.aptitud"
+      placeholder="Todas"
+      (valueChange)="filters.aptitud = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.estado"
+      placeholder="Todos"
+      (valueChange)="filters.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Empresa"
+      [options]="empresaOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.empresaId"
+      placeholder="Todas"
+      (valueChange)="filters.empresaId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.proyectoId"
+      placeholder="Todos"
+      (valueChange)="filters.proyectoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Gerencia"
+      [options]="gerenciaOptions"
+      valueField="areaScopeId"
+      displayField="areaItemName"
+      [value]="filtroGerenciaId"
+      placeholder="Todas"
+      (valueChange)="onGerenciaChange($event)">
+    </app-search-select>
+  </div>
+
+  <div class="w-full" *ngIf="filtroGerenciaId">
+    <app-search-select
+      label="Área"
+      [options]="areaScopeOptions"
+      valueField="areaScopeId"
+      displayField="areaItemName"
+      [value]="filtroAreaScopeId"
+      placeholder="Todas"
+      (valueChange)="filtroAreaScopeId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Fecha EMO desde</label>
+      <input type="date" class="abril-field-input"
+             [(ngModel)]="filters.fechaEmoDesde"
+             (change)="onFilterChange()" />
+    </div>
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Fecha EMO hasta</label>
+      <input type="date" class="abril-field-input"
+             [(ngModel)]="filters.fechaEmoHasta"
+             (change)="onFilterChange()" />
+    </div>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Ordenar por"
+      [options]="sortOptions"
+      valueField="id"
+      displayField="nombre"
+      [sortAlpha]="false"
+      [value]="filters.sortBy"
+      placeholder="Nombre (A-Z)"
+      (valueChange)="filters.sortBy = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinLectura" (ngModelChange)="onFilterChange()" />
+    Sin Lectura EMO (evidencia)
+  </label>
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinCertificado" (ngModelChange)="onFilterChange()" />
+    Sin Certificado de Aptitud (evidencia)
+  </label>
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinEmoCompleto" (ngModelChange)="onFilterChange()" />
+    Sin EMO Completo (evidencia)
+  </label>
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinInterconsulta" (ngModelChange)="onFilterChange()" />
+    Sin levantamiento de Interconsulta (evidencia)
+  </label>
+</app-filter-modal>
+
+<app-emo-create
+  *ngIf="createOpen"
+  [open]="createOpen"
+  (closed)="closeCreate()"
+  (saved)="onCreated()"
+></app-emo-create>
+
+<app-emo-detail
+  *ngIf="selectedEmoId"
+  [emoId]="selectedEmoId"
+  [canUpload]="true"
+  (closed)="closeDetail()"
+  (saved)="onDetailSaved()"
+></app-emo-detail>
+
+<app-programar-emo-dialog
+  *ngIf="selectedWorkerForProgramar"
+  [worker]="selectedWorkerForProgramar"
+  (closed)="onProgramarEmoCerrado($event)"
+></app-programar-emo-dialog>
+
+<app-editar-emo-modal
+  [emo]="emoSeleccionado"
+  [open]="emoSeleccionado !== null"
+  (closed)="onEditarClosed()"
+  (saved)="onEditarSaved()"
+/>
+
+<app-documentos-emo-modal
+  [emo]="emoDocumentos"
+  [open]="emoDocumentos !== null"
+  (closed)="onDocumentosClosed()"
+/>

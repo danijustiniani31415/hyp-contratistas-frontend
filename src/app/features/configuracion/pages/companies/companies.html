@@ -1,0 +1,108 @@
+<app-abril-page-header
+  badge="CONFIGURACIÓN"
+  titulo="Razones Sociales"
+  subtitulo="Empresas del grupo Abril."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: 'Nueva razón social', icono: 'ti-plus' }"
+  (primaryClick)="openCreateModal()">
+</app-abril-page-header>
+
+<section class="p-6 space-y-4 flex-1 min-h-0">
+
+  <div class="filters-card">
+    <div class="filters-grid">
+      <div class="filter-search">
+        <label class="filter-label">Buscar</label>
+        <app-search-input
+          width="100%"
+          placeholder="Razón social"
+          [value]="filters.search"
+          (valueChange)="onSearchChange($event)">
+        </app-search-input>
+      </div>
+
+      <div>
+        <label class="filter-label">Estado</label>
+        <app-search-select
+          [options]="estadoOptions"
+          valueField="value"
+          displayField="label"
+          placeholder="Todos"
+          [showLabel]="false"
+          [allowClear]="false"
+          [value]="filters.estado"
+          (valueChange)="onEstadoChange($event)">
+        </app-search-select>
+      </div>
+    </div>
+
+    <div *ngIf="hasActiveFilters" class="pt-2">
+      <button type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Razón Social</th>
+            <th>RUC</th>
+            <th>Partida Registral</th>
+            <th>Tipo Actividad</th>
+            <th>Dirección</th>
+            <th>Estado</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of pageItems">
+            <td class="font-semibold text-gray-800">{{ item.nombre }}</td>
+            <td class="text-gray-600">{{ item.ruc || '—' }}</td>
+            <td class="text-gray-600">{{ item.partidaRegistral || '—' }}</td>
+            <td class="text-gray-600">{{ item.tipoActividad || '—' }}</td>
+            <td class="text-gray-600">{{ item.direccion || '—' }}</td>
+            <td>
+              <span class="badge border" [ngClass]="(item.activo ?? true) ? 'chip-green' : 'chip-gray'">
+                {{ (item.activo ?? true) ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="text-right">
+              <div class="row-actions">
+                <button type="button" class="btn-chip chip-blue" (click)="openEditModal(item)">
+                  Editar
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && pageItems.length === 0">
+            <td colspan="7" class="empty-row">Sin razones sociales registradas.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="totalRecords > 0" class="paginator-wrapper">
+      <app-paginator
+        [totalRecords]="totalRecords"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="onPageChange($event)"
+      ></app-paginator>
+    </div>
+  </div>
+</section>
+
+<app-company-edit-form
+  *ngIf="editModalOpen"
+  [open]="editModalOpen"
+  [company]="editCompany"
+  (closed)="closeEditModal()"
+  (saved)="onEditSaved()"
+></app-company-edit-form>
+
+<app-company-create-form
+  *ngIf="createModalOpen"
+  (closed)="closeCreateModal()"
+  (saved)="onCreated()"
+></app-company-create-form>

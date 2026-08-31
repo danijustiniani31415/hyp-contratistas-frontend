@@ -1,0 +1,975 @@
+<app-abril-page-header
+  [badge]="'ARQ. COMERCIAL · ' + anioActual"
+  titulo="Dashboard"
+  subtitulo="Vista general de actividades, hitos y eficiencia por arquitecto."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="dash-root">
+
+  <!-- ══ CATEGORÍA PILLS ══ -->
+  <div class="cat-pills">
+    <button class="cat-pill" [class.active]="categoriaActiva === null" (click)="seleccionarCategoria(null)">
+      <span class="cat-pill-dot" style="background:#1E3A5F"></span>TODOS
+    </button>
+    <button
+      *ngFor="let c of categorias"
+      class="cat-pill"
+      [class.active]="categoriaActiva === c.id"
+      (click)="seleccionarCategoria(c.id)">
+      <span class="cat-pill-dot"
+        [style.background]="c.id===1?'#2E6DB4':c.id===2?'#1B6B3A':c.id===3?'#D97706':'#9CA3AF'"></span>
+      {{ c.nombre }}
+    </button>
+  </div>
+
+  <!-- ══ INDICADOR DE RANGO ══ -->
+  <div class="rango-indicador" *ngIf="rangoUltimasSemanas || semanaActual"
+       style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:11px;color:#64748B">
+    <span style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#EDF4FB;border-radius:6px;font-weight:600;color:#1B3A6B">
+      <i class="ti ti-calendar-week"></i>
+      {{ filtro.semana ? ('Semana filtrada: ' + semanaActual?.label) : rangoUltimasSemanas }}
+    </span>
+    <span *ngIf="!filtro.semana" style="color:#94A3B8">Cards superiores muestran las últimas 2 semanas por defecto · usa el filtro "Semana" para ver otro rango</span>
+    <span *ngIf="semanaActual" style="margin-left:auto;padding:4px 10px;background:#F1F5F9;border-radius:6px;font-weight:600;color:#334155">
+      Progreso global, distribución de carga y ranking: {{ semanaActual.label }}
+    </span>
+  </div>
+
+  <!-- ══ KPI BAR ══ -->
+  <div class="kpi-bar">
+    <div class="kpi-card kpi-card--info">
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-list-check"></i></div>
+        <span class="kpi-num">{{ kpis.totalActividades }}</span>
+      </div>
+      <span class="kpi-title">Total actividades <span class="kpi-sub">· proyecto</span></span>
+    </div>
+    <div class="kpi-card kpi-card--success">
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-circle-check"></i></div>
+        <span class="kpi-num">{{ kpis.culminadas }}</span>
+      </div>
+      <span class="kpi-title">Culminadas <span class="kpi-sub">· a tiempo</span></span>
+    </div>
+    <div class="kpi-card kpi-card--primary">
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-player-play"></i></div>
+        <span class="kpi-num">{{ kpis.enProceso }}</span>
+      </div>
+      <span class="kpi-title">En proceso <span class="kpi-sub">· activas</span></span>
+    </div>
+    <div class="kpi-card kpi-card--danger">
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-alert-circle"></i></div>
+        <span class="kpi-num">{{ kpis.vencidas }}</span>
+      </div>
+      <span class="kpi-title">Vencidas <span class="kpi-sub">· sin cerrar</span></span>
+    </div>
+    <div class="kpi-card kpi-card--pending">
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-clock"></i></div>
+        <span class="kpi-num">{{ kpis.pendientes }}</span>
+      </div>
+      <span class="kpi-title">Pendientes <span class="kpi-sub">· sin iniciar</span></span>
+    </div>
+    <div class="kpi-card kpi-card--teal">
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-gauge"></i></div>
+        <span class="kpi-num">{{ kpis.eficienciaMedia | number:'1.0-0' }}%</span>
+      </div>
+      <span class="kpi-title">Eficiencia media <span class="kpi-sub" title="Schedule Performance Index · desempeño vs cronograma">· SPI real</span></span>
+    </div>
+    <div class="kpi-card kpi-card--info">
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-trending-up"></i></div>
+        <span class="kpi-num">{{ kpis.progresoGlobal | number:'1.0-0' }}%</span>
+      </div>
+      <span class="kpi-title">Progreso global <span class="kpi-sub">· del proyecto</span></span>
+    </div>
+  </div>
+
+  <!-- ══ ALERTAS (clickeables) ══ -->
+  <div class="alert-grid">
+
+    <!-- Vencidas -->
+    <div class="alert-tile alert-tile--danger"
+         (click)="abrirModalAlerta('VENCIDA')"
+         title="Ver actividades vencidas">
+      <div class="alert-tile-num">{{ alertas.vencidasSinCerrar }}</div>
+      <div class="alert-tile-body">
+        <div class="alert-tile-title">Vencidas sin cerrar</div>
+        <div class="alert-tile-sub">Acción inmediata</div>
+      </div>
+    </div>
+
+    <!-- Vencen esta semana -->
+    <div class="alert-tile alert-tile--warning"
+         (click)="abrirModalAlerta('VENCE_SEMANA')"
+         title="Ver actividades que vencen esta semana">
+      <div class="alert-tile-num">{{ alertas.vencenEstaSemana }}</div>
+      <div class="alert-tile-body">
+        <div class="alert-tile-title">Vencen esta semana</div>
+        <div class="alert-tile-sub">Monitorear de cerca</div>
+      </div>
+    </div>
+
+    <!-- Arrancan esta semana -->
+    <div class="alert-tile alert-tile--info"
+         (click)="abrirModalAlerta('ARRANQUE')"
+         title="Ver actividades que arrancan esta semana">
+      <div class="alert-tile-num">{{ alertas.arrancanEstaSemana }}</div>
+      <div class="alert-tile-body">
+        <div class="alert-tile-title">Arrancan esta semana</div>
+        <div class="alert-tile-sub">Confirmar asignación</div>
+      </div>
+    </div>
+
+    <!-- Hitos próximos -->
+    <div class="alert-tile alert-tile--warning"
+         (click)="abrirModalAlerta('HITO_PROXIMO')"
+         title="Ver hitos próximos en 14 días">
+      <div class="alert-tile-num">{{ alertas.hitosProximos14Dias }}</div>
+      <div class="alert-tile-body">
+        <div class="alert-tile-title">Hitos próximos 14 días</div>
+        <div class="alert-tile-sub">Revisar avance</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ BODY GRID A3 ══ -->
+  <div class="dash-body">
+
+    <!-- ══ FILA 1: 3 columnas ══ -->
+    <div class="dash-row-1">
+
+      <!-- ── Col 1: Ranking Eficiencia ── -->
+      <div class="dash-card rank-card dash-row1-card">
+        <div class="rank-header">
+          <div class="rank-header-left">
+            <span class="rank-title-text">RANKING EFICIENCIA</span>
+            <span class="rank-subtitle">IES = cierre + ritmo (SPI) de lo que vencía en {{ semanaActual?.label }}, más puntualidad de lo que arrancaba esa semana</span>
+          </div>
+          <div class="rank-prom-pill" title="Promedio de IES del equipo">
+            <span class="rank-prom-value">{{ promedioEficiencia }}%</span>
+            <span class="rank-prom-label">PROM. IES</span>
+          </div>
+        </div>
+        <div class="rank-list">
+          <div *ngFor="let sup of supervisores"
+               class="rank-item"
+               [class.rank-item-crit]="!sup.sinCompromisos && sup.progreso < 50"
+               [class.rank-item-empty]="sup.sinCompromisos"
+               [style.borderColor]="sup.sinCompromisos ? '#E2E8F0' : getAvatarColor(sup.progreso) + '55'"
+               style="cursor:pointer"
+               (click)="abrirHistoricoSupervisor(sup)"
+               [title]="sup.nombre + ' · ver histórico'">
+            <div class="rank-accent"
+                 [style.background]="sup.sinCompromisos ? '#CBD5E1'
+                   : sup.progreso >= 75 ? 'linear-gradient(180deg,#4ADE80,#16A34A)'
+                   : sup.progreso >= 60 ? 'linear-gradient(180deg,#60A5FA,#2563EB)'
+                   : sup.progreso >= 45 ? 'linear-gradient(180deg,#FCD34D,#B45309)'
+                   : 'linear-gradient(180deg,#F87171,#DC2626)'">
+            </div>
+            <div class="sup-avatar"
+                 [style.background]="sup.sinCompromisos ? '#F1F5F9' : getAvatarBg(sup.progreso)"
+                 [style.color]="sup.sinCompromisos ? '#94A3B8' : getAvatarColor(sup.progreso)">
+              {{ getInitials(sup.nombre) }}
+            </div>
+            <div class="rank-info">
+              <div class="rank-nombre-row">
+                <span class="rank-nombre" [title]="sup.nombre">{{ sup.nombre }}</span>
+                <div class="rank-badges-right">
+                  <span *ngIf="sup.deudaAnterior > 0" class="rank-badge rank-badge-deuda"
+                        [title]="sup.deudaAnterior + ' actividad(es) vencidas de semanas anteriores a esta, aún sin cerrar. No afecta el IES de esta semana.'">
+                    <i class="ti ti-alert-triangle"></i> {{ sup.deudaAnterior }} atrasada{{ sup.deudaAnterior > 1 ? 's' : '' }}
+                  </span>
+                  <span *ngIf="!sup.sinCompromisos" class="rank-badge" [style.background]="getComentarioBg(sup)" [style.color]="getComentarioColor(sup)">{{ getComentario(sup) }}</span>
+                  <span *ngIf="sup.sinCompromisos" class="rank-badge" style="background:#F1F5F9;color:#94A3B8">Sin compromisos</span>
+                </div>
+              </div>
+
+              <ng-container *ngIf="!sup.sinCompromisos; else sinCompromisosRow">
+                <div class="rank-stats-row" title="Culminadas / asignadas esta semana">
+                  <span [class]="sup.completadas > 0 ? 'rank-stat-ok' : 'rank-stat-fail'" [style.color]="sup.completadas > 0 ? getAvatarColor(sup.progreso) : '#E05252'">
+                    {{ sup.completadas > 0 ? '✓' : '✗' }} {{ sup.completadas }}
+                  </span>
+                  <span class="rank-stat-sep">/</span>
+                  <span class="rank-stat-tot">{{ sup.total }}</span>
+                  <span class="rank-stat-lbl" style="font-size:9px;color:#94A3B8">culminadas/asignadas</span>
+                  <button type="button"
+                     style="display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;color:#2E6DB4;background:#EDF4FB;border:none;border-radius:4px;padding:2px 6px;cursor:pointer"
+                     title="Ver el detalle: cuáles de estas actividades están culminadas y cuáles faltan"
+                     (click)="$event.stopPropagation(); verDetalleSemanaSupervisor(sup)">
+                    <i class="ti ti-list-details" style="font-size:11px"></i> ver cuáles
+                  </button>
+                  <span class="rank-stat-sep">·</span>
+                  <span class="rank-stat-ies-lbl"
+                        [title]="'SPI ' + sup.compSpi + '% · Cierre ' + sup.compCierre + '% · Puntualidad inicio ' + sup.compInicio + '%'">IES</span>
+                  <span class="rank-stat-ies" [style.color]="getAvatarColor(sup.progreso)">{{ sup.progreso | number:'1.0-0' }}%</span>
+                </div>
+                <div class="rank-bar-row">
+                  <div class="rank-bar-track">
+                    <div class="rank-bar-fill"
+                         [style.width.%]="sup.progreso"
+                         [style.background]="sup.progreso >= 75 ? 'linear-gradient(90deg,#4ADE80,#16A34A)'
+                           : sup.progreso >= 60 ? 'linear-gradient(90deg,#60A5FA,#2563EB)'
+                           : sup.progreso >= 45 ? 'linear-gradient(90deg,#FCD34D,#B45309)'
+                           : 'linear-gradient(90deg,#F87171,#DC2626)'">
+                    </div>
+                  </div>
+                </div>
+                <p *ngIf="sup.progreso < 100 && sup.motivos.length" class="rank-motivo" [title]="sup.motivos.join(' · ')">
+                  <i class="ti ti-info-circle"></i> {{ sup.motivos[0] }}
+                </p>
+              </ng-container>
+              <ng-template #sinCompromisosRow>
+                <div class="rank-stats-row" style="color:#94A3B8;font-size:11px">
+                  No tenía actividades por vencer ni por arrancar esta semana
+                </div>
+              </ng-template>
+            </div>
+          </div>
+          <p *ngIf="supervisores.length === 0" class="empty-msg">Sin datos</p>
+        </div>
+        <div class="rank-insights" *ngIf="rankingInsights.length">
+          <p *ngFor="let insight of rankingInsights" class="rank-insight-item">{{ insight }}</p>
+        </div>
+      </div>
+
+      <!-- ── Col 2: Curva de Avance + Tendencia SPI ── -->
+      <div class="dash-col-charts">
+        <div class="dash-card dash-chart-card">
+          <div class="card-header">
+            <span class="card-title" title="Curva S acumulada sobre el alcance activo actual: converge a 100% en la fecha de hoy">CURVA DE AVANCE</span>
+            <div class="chart-legend-inline">
+              <span class="cli-item"><span class="cli-line cli-line-dash"></span>Programado</span>
+              <span class="cli-item"><span class="cli-line cli-line-solid"></span>Real</span>
+            </div>
+          </div>
+          <div class="db-chart-wrap"><canvas #avanceCanvas></canvas></div>
+        </div>
+        <div class="dash-card dash-chart-card">
+          <div class="card-header">
+            <div>
+              <span class="card-title">TENDENCIA SPI</span>
+              <span style="display:block;font-size:9px;color:#94A3B8;margin-top:1px">SPI = Schedule Performance Index · avance real ÷ avance planificado</span>
+            </div>
+            <div class="spi-ref-badges">
+              <span class="spi-ref-badge" style="background:#EAF5EF;color:#2D9E5F" title="En tiempo o adelantado">≥0.95 OK</span>
+              <span class="spi-ref-badge" style="background:#FBF3E4;color:#C4860A" title="Leve retraso">≥0.80</span>
+              <span class="spi-ref-badge" style="background:#FAE9E9;color:#C94040" title="Retraso crítico">&lt;0.80</span>
+            </div>
+          </div>
+          <div class="db-chart-wrap"><canvas #eficienciaCanvas></canvas></div>
+        </div>
+      </div>
+
+      <!-- ── Col 3: Distribución de Carga ── -->
+      <div class="dash-card rank-card dash-row1-card">
+        <div class="rank-header">
+          <div class="rank-header-left">
+            <span class="rank-title-text">DISTRIBUCIÓN DE CARGA</span>
+            <span class="rank-subtitle">Actividades activas · {{ semanaActual?.label }} · línea = media del equipo</span>
+            <span class="rank-subtitle" style="font-size:10px;color:#94A3B8;margin-top:1px">H = Hitos · E = Entregables · C = Consultas</span>
+          </div>
+          <div class="rank-prom-pill" *ngIf="cargaStats">
+            <span class="rank-prom-value">{{ cargaStats.avg }}</span>
+            <span class="rank-prom-label">MEDIA</span>
+          </div>
+        </div>
+        <div class="rank-list" *ngIf="cargaStats">
+          <div *ngFor="let sup of tareasPorArquitectoOrdenado"
+               class="rank-item carga-item"
+               [style.borderColor]="cargaTagStyle(sup.total).color + '44'"
+               [class.rank-item-crit]="cargaTag(sup.total) === 'Sobrecargado'"
+               (click)="abrirModalCarga(sup)"
+               [title]="sup.nombre + ' — click para filtrar'">
+            <div class="rank-accent" [style.background]="cargaBarGradient(sup.total).replace('90deg','180deg')"></div>
+            <div class="sup-avatar" [style.background]="cargaTagStyle(sup.total).bg" [style.color]="cargaTagStyle(sup.total).color">
+              {{ getInitials(sup.nombre) }}
+            </div>
+            <div class="rank-info carga-info">
+              <div class="carga-top">
+                <span class="rank-nombre" [title]="sup.nombre">{{ sup.nombre }}</span>
+                <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+                  <span class="rank-badge" [style.background]="cargaTagStyle(sup.total).bg" [style.color]="cargaTagStyle(sup.total).color">{{ cargaTag(sup.total) }}</span>
+                  <span class="carga-total">{{ sup.total }}</span>
+                </div>
+              </div>
+              <div class="rank-bar-row">
+                <div class="carga-bar-wrap">
+                  <div class="carga-avg-line" [style.left.%]="cargaStats.avgPct"></div>
+                  <div class="carga-bar-fill" [style.width.%]="cargaBarPct(sup.total)" [style.background]="cargaBarGradient(sup.total)"></div>
+                </div>
+                <span class="carga-hec">H{{ sup.hitos }}·E{{ sup.entregables }}·C{{ sup.consultas }}</span>
+              </div>
+            </div>
+          </div>
+          <p *ngIf="tareasPorArquitecto.length === 0" class="empty-msg">Sin datos</p>
+        </div>
+        <div class="rank-insights" *ngIf="cargaInsights.length">
+          <p *ngFor="let insight of cargaInsights" class="rank-insight-item">{{ insight }}</p>
+        </div>
+      </div>
+
+    </div><!-- /dash-row-1 -->
+
+    <!-- ══ FILA 2: Partidas de Control (ancho completo) ══ -->
+    <div class="dash-card db-partidas-card">
+      <div class="card-header">
+        <span class="card-title">PARTIDAS DE CONTROL</span>
+        <div class="hbar-legend">
+          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#1B6B3A"></span>Culminadas</span>
+          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#2E6DB4"></span>En proceso</span>
+          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#C0392B"></span>Vencidas</span>
+          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#4A5568"></span>Pendientes</span>
+        </div>
+      </div>
+
+      <!-- Layout: donut izquierda + barras derecha -->
+      <div style="display:flex;gap:24px;align-items:flex-start">
+
+        <!-- Donut distribución estado (como PowerApps) -->
+        <div class="partidas-donut-col">
+          <p class="partidas-donut-title">Distribución</p>
+          <div style="position:relative;display:flex;align-items:center;gap:16px">
+            <!-- Donut -->
+            <div class="partidas-donut-wrap">
+              <canvas #tiposCanvas></canvas>
+              <div class="partidas-donut-center">
+                <span class="partidas-donut-total" style="color:#1B3A6B">{{ kpis.progresoGlobal | number:'1.0-0' }}%</span>
+                <span class="partidas-donut-label">global</span>
+              </div>
+            </div>
+            <!-- Leyenda lateral como PowerApps -->
+            <div class="partidas-tipo-list">
+              <div *ngFor="let item of estadoDonutItems" class="partidas-tipo-item">
+                <span class="partidas-tipo-dot" [style.background]="item.color"></span>
+                <span class="partidas-tipo-name">{{ item.label }}</span>
+                <span class="partidas-tipo-val" [style.color]="item.color">{{ item.value }} – {{ item.pct }}%</span>
+              </div>
+            </div>
+          </div>
+          <!-- Barra progreso total -->
+          <div style="margin-top:8px;background:#E2E8F0;border-radius:4px;overflow:hidden;height:5px;display:flex">
+            <div *ngFor="let item of estadoDonutItems" [style.width.%]="item.pct" [style.background]="item.color" style="height:5px"></div>
+          </div>
+        </div>
+
+        <!-- Barras por categoría -->
+        <div style="flex:1;min-width:0">
+      <div class="partidas-scroll-body" *ngIf="distribucionPorCategoria.length; else sinPartidas">
+        <div *ngFor="let cat of distribucionPorCategoria" class="hbar-row">
+          <span class="hbar-label hbar-label-nav" (click)="filtrarPorCategoria(cat.nombre)" [title]="cat.nombre">{{ cat.nombre }}</span>
+          <div class="hbar-bar" style="cursor:pointer" (click)="filtrarPorCategoria(cat.nombre)">
+            <ng-container *ngIf="cat.total > 0; else emptyBarP">
+              <div class="hbar-seg" style="background:#1B6B3A" [style.flex]="cat.culminadas"></div>
+              <div class="hbar-seg" style="background:#2E6DB4" [style.flex]="cat.enProceso"></div>
+              <div class="hbar-seg" style="background:#C0392B" [style.flex]="cat.vencidas"></div>
+              <div class="hbar-seg" style="background:#6b7280" [style.flex]="cat.pendientes"></div>
+            </ng-container>
+            <ng-template #emptyBarP><div class="hbar-empty-seg"></div></ng-template>
+          </div>
+          <span class="hbar-pct">{{ cat.progreso | number:'1.0-1' }}%</span>
+          <span class="hbar-cnt">({{ cat.total }})</span>
+          <div class="hbar-counts">
+            <span class="hbar-c hbar-c-cul hbar-c-nav" (click)="filtrarPorCategoriaYEstado(cat.nombre,'CULMINADO')">✓ {{ cat.culminadas }}</span>
+            <span class="hbar-c hbar-c-ep  hbar-c-nav" (click)="filtrarPorCategoriaYEstado(cat.nombre,'EN PROCESO')"> ◑ {{ cat.enProceso }}</span>
+            <span class="hbar-c hbar-c-ven hbar-c-nav" (click)="filtrarPorCategoriaYEstado(cat.nombre,'VENCIDO')">⚠ {{ cat.vencidas }}</span>
+            <span class="hbar-c hbar-c-pen hbar-c-nav" (click)="filtrarPorCategoriaYEstado(cat.nombre,'PENDIENTE')">◯ {{ cat.pendientes }}</span>
+          </div>
+        </div>
+        <div class="hbar-sep"></div>
+        <div class="hbar-row hbar-total-row" *ngIf="kpis.totalActividades > 0">
+          <span class="hbar-label hbar-label-total">TOTAL</span>
+          <div class="hbar-bar hbar-bar-total">
+            <div class="hbar-seg" style="background:#1B6B3A" [style.flex]="kpis.culminadas"></div>
+            <div class="hbar-seg" style="background:#2E6DB4" [style.flex]="kpis.enProceso"></div>
+            <div class="hbar-seg" style="background:#C0392B" [style.flex]="kpis.vencidas"></div>
+            <div class="hbar-seg" style="background:#4A5568" [style.flex]="kpis.pendientes"></div>
+          </div>
+          <span class="hbar-pct hbar-pct-total">{{ kpis.progresoGlobal | number:'1.0-1' }}%</span>
+          <span class="hbar-cnt">({{ kpis.totalActividades }})</span>
+          <div class="hbar-counts">
+            <span class="hbar-c hbar-c-cul">✓ {{ kpis.culminadas }}</span>
+            <span class="hbar-c hbar-c-ep"> ◑ {{ kpis.enProceso }}</span>
+            <span class="hbar-c hbar-c-ven">⚠ {{ kpis.vencidas }}</span>
+            <span class="hbar-c hbar-c-pen">◯ {{ kpis.pendientes }}</span>
+          </div>
+        </div>
+      </div>
+      <ng-template #sinPartidas><p class="empty-msg">Sin datos</p></ng-template>
+        </div> <!-- fin barras -->
+      </div> <!-- fin layout flex -->
+    </div>
+
+    <!-- ══ HITOS CRÍTICOS ══ -->
+    <div class="dash-card" style="padding:0;overflow:hidden">
+
+      <div class="card-header">
+        <span class="card-title">HITOS CRÍTICOS</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="spi-ref-badge" style="background:#FDF2F2;color:#C0392B">
+            {{ hitosUrgentesCnt }} urgente
+          </span>
+          <span class="spi-ref-badge" style="background:#FEF9E7;color:#D4A017">
+            {{ hitosEstaSemanaCnt }} esta sem.
+          </span>
+          <span class="spi-ref-badge" style="background:#EDF4FB;color:#2E6DB4">
+            {{ hitosProximosCnt }} próximo
+          </span>
+          <button *ngIf="hitosCriticos.length > 0"
+                  (click)="enviarAlertaHitos()"
+                  [disabled]="enviandoAlertaHitos"
+                  style="padding:4px 10px;font-size:11px;font-weight:600;border-radius:4px;border:1px solid #C0392B;
+                         color:#C0392B;background:#fff;cursor:pointer;white-space:nowrap">
+            {{ enviandoAlertaHitos ? 'Enviando...' : '📧 Enviar alerta' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div *ngIf="hitosCriticos.length === 0"
+           style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:24px">
+        <div style="width:32px;height:32px;border-radius:50%;background:#EAF3DE;display:flex;align-items:center;justify-content:center">
+          <span style="font-size:16px;color:#1B6B3A">✓</span>
+        </div>
+        <span style="font-size:11px;font-weight:600;color:#1B6B3A">Sin hitos críticos pendientes</span>
+      </div>
+
+      <!-- Grid de hitos -->
+      <div *ngIf="hitosCriticos.length > 0"
+           style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1px;background:#E2E8F0">
+        <div *ngFor="let h of hitosCriticos"
+             style="display:flex;align-items:stretch;min-height:40px"
+             [title]="h.nombre">
+          <!-- Barra lateral de urgencia -->
+          <div style="width:4px;flex-shrink:0"
+               [style.background]="h.diasRestantes <= 3 ? '#C0392B' : h.diasRestantes <= 7 ? '#D4A017' : '#2E6DB4'">
+          </div>
+          <!-- Contenido -->
+          <div style="padding:10px 14px;flex:1;display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff">
+            <!-- Nombre + proyecto -->
+            <div style="flex:1;min-width:0">
+              <div style="font-size:11px;font-weight:600;color:#1B3A6B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4"
+                   [title]="h.nombre">{{ h.nombre }}</div>
+              <div style="font-size:10px;color:#64748B;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                {{ h.proyecto }} <span style="color:#94A3B8">· Sem {{ h.semana }}</span>
+              </div>
+            </div>
+            <!-- Fecha + días -->
+            <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;gap:2px">
+              <span style="font-size:12px;font-weight:700;font-variant-numeric:tabular-nums"
+                    [style.color]="h.diasRestantes <= 3 ? '#C0392B' : h.diasRestantes <= 7 ? '#D4A017' : '#2E6DB4'">
+                {{ h.fechaLimite | slice:0:5 }}
+              </span>
+              <span style="font-size:10px;font-weight:500"
+                    [style.color]="h.diasRestantes <= 3 ? '#C0392B' : h.diasRestantes <= 7 ? '#D4A017' : '#94A3B8'">
+                {{ diasLabel(h.diasRestantes) }}
+              </span>
+            </div>
+            <!-- Enviar alerta de este hito puntual -->
+            <button type="button" title="Enviar alerta de este hito" (click)="alertarHito(h)"
+                    style="flex-shrink:0;border:none;background:transparent;color:#94A3B8;cursor:pointer;padding:4px;font-size:13px">
+              <i class="ti ti-mail-forward"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /dash-body -->
+
+</div><!-- /dash-root -->
+
+<!-- ══ Modal de filtros estándar ══════════════════════════════════════ -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Arquitecto"
+      [options]="arquitectos"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtro.userId"
+      [allowClear]="true"
+      placeholder="Buscar arquitecto..."
+      (valueChange)="filtro.userId = $event; buscar()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtro.proyectoId"
+      [allowClear]="true"
+      placeholder="Buscar proyecto..."
+      (valueChange)="filtro.proyectoId = $event; buscar()">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <app-search-select
+        label="Semana"
+        [options]="semanas"
+        valueField="value"
+        displayField="label"
+        [value]="filtro.semana"
+        [allowClear]="true"
+        [sortAlpha]="false"
+        placeholder="Todas las semanas"
+        (valueChange)="filtro.semana = $event; buscar()">
+      </app-search-select>
+    </div>
+    <div class="flex-1">
+      <app-search-select
+        label="Mes"
+        [options]="meses"
+        valueField="value"
+        displayField="label"
+        [value]="filtro.mes"
+        [allowClear]="true"
+        [sortAlpha]="false"
+        placeholder="Todos los meses"
+        (valueChange)="filtro.mes = $event; buscar()">
+      </app-search-select>
+    </div>
+  </div>
+</app-filter-modal>
+
+<!-- ══ LOADER ══ -->
+<div *ngIf="loader" class="loader-overlay">
+  <div class="loader-spinner"></div>
+</div>
+
+<!-- ══ MODAL ALERTAS ══ -->
+<div *ngIf="modalAlertaVisible" class="modal-backdrop" (click)="cerrarModalAlerta()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#fff" stroke-width="2"/>
+            <path d="M12 8V12M12 16H12.01" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title">{{ modalAlertaTitulo }}</h2>
+          <p class="modal-sub">{{ modalAlertaActividades.length }} actividad(es) encontradas</p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="cerrarModalAlerta()">✕</button>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="modalAlertaLoading" class="modal-loading">
+      <div class="loader-spinner" style="width:32px;height:32px;border-width:2px"></div>
+      <span>Cargando actividades...</span>
+    </div>
+
+    <!-- Tabla -->
+    <div *ngIf="!modalAlertaLoading" class="modal-body">
+      <div class="modal-toolbar">
+        <label class="check-todos">
+          <input type="checkbox" [checked]="todosMarcados" (change)="toggleTodos($event)">
+          <span>Seleccionar todos</span>
+        </label>
+        <span class="sel-count">{{ seleccionados.size }} seleccionados</span>
+      </div>
+
+      <div class="modal-table-wrap">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th style="width:36px"></th>
+              <th>Actividad</th>
+              <th>Proyecto</th>
+              <th>Tipo</th>
+              <th>Responsable 1</th>
+              <th>Responsable 2</th>
+              <th>Fecha Fin</th>
+              <th>Estado</th>
+              <th>SPI</th>
+              <th>Días</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of modalAlertaActividades"
+                [class.row-selected]="seleccionados.has(a.id)"
+                (click)="toggleSeleccion(a.id)">
+              <td><input type="checkbox" [checked]="seleccionados.has(a.id)" (click)="$event.stopPropagation()" (change)="toggleSeleccion(a.id)"></td>
+              <td class="td-nombre">{{ a.nombre }}</td>
+              <td class="td-muted">{{ a.proyecto }}</td>
+              <td>
+                <span class="tipo-badge"
+                  [style.background]="a.tipo==='HITO'?'#DBEAFE':a.tipo==='ENTREGABLE'?'#D1FAE5':'#FEF3C7'"
+                  [style.color]="a.tipo==='HITO'?'#2E6DB4':a.tipo==='ENTREGABLE'?'#1B6B3A':'#92400E'">
+                  {{ a.tipo }}
+                </span>
+              </td>
+              <td class="td-muted">{{ a.responsable1 ?? '—' }}</td>
+              <td class="td-muted">{{ a.responsable2 ?? '—' }}</td>
+              <td class="td-muted">{{ a.fechaFin ?? '—' }}</td>
+              <td>
+                <span class="estado-badge" [style.color]="a.estado==='CULMINADO'?'#1B6B3A':a.diasRestantes<0?'#C0392B':'#D97706'">
+                  {{ a.estado ?? '—' }}
+                </span>
+              </td>
+              <td>
+                <span class="spi-val" [style.color]="getSpiColor(a.spi)">{{ getSpiLabel(a.spi) }}</span>
+              </td>
+              <td>
+                <span class="dias-badge" [style.color]="getHitoColor(a.diasRestantes)">
+                  {{ diasLabel(a.diasRestantes) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p *ngIf="modalAlertaActividades.length === 0" class="empty-msg" style="padding:24px">Sin actividades para mostrar</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarModalAlerta()">Cerrar</button>
+      <button class="btn-enviar"
+              [disabled]="seleccionados.size === 0 || enviandoAlerta"
+              (click)="enviarAlertas()">
+        <svg *ngIf="!enviandoAlerta" width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div *ngIf="enviandoAlerta" class="loader-spinner" style="width:14px;height:14px;border-width:2px;border-top-color:#fff"></div>
+        {{ enviandoAlerta ? 'Enviando...' : 'Enviar alerta (' + seleccionados.size + ')' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL CARGA TRABAJADOR ══ -->
+<div *ngIf="modalCargaVisible" class="modal-backdrop" (click)="cerrarModalCarga()">
+  <div class="modal-box" style="max-width:1180px; width:95vw" (click)="$event.stopPropagation()">
+
+    <div class="modal-header" style="background:#fff;border-bottom:1px solid #E0E8F0">
+      <div class="modal-header-left">
+        <div class="modal-icon-wrap" style="background:#EDF4FB">
+          <i class="ti ti-user" style="color:#1B3A6B;font-size:16px"></i>
+        </div>
+        <div>
+          <h2 class="modal-title" style="color:#1B3A6B">{{ modalCargaNombre }}</h2>
+          <p class="modal-sub" style="color:#64748B" *ngIf="!modalCargaSoloSemanaControl">
+            {{ modalCargaActividades.length }} actividades totales · todos los proyectos
+          </p>
+          <p class="modal-sub" style="color:#64748B" *ngIf="modalCargaSoloSemanaControl">
+            Actividades que vencían en {{ semanaActual?.label }} — mismas que cuenta el IES del ranking
+          </p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="cerrarModalCarga()">✕</button>
+    </div>
+
+    <!-- Stats rápidas -->
+    <div style="display:flex;gap:8px;padding:10px 16px;background:#F4F6F9;border-bottom:1px solid #E0E8F0;flex-shrink:0;flex-wrap:wrap">
+      <div (click)="toggleModalCargaFiltroEstado('CULMINADO')"
+           style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#EAF3DE;border-radius:6px;font-size:11px;font-weight:600;color:#1B6B3A;cursor:pointer"
+           [style.outline]="modalCargaFiltroEstado === 'CULMINADO' ? '2px solid #1B6B3A' : 'none'">
+        ✓ {{ modalCargaStats.culminadas }} culminadas
+      </div>
+      <div (click)="toggleModalCargaFiltroEstado('VENCIDO')"
+           style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#FDF2F2;border-radius:6px;font-size:11px;font-weight:600;color:#C0392B;cursor:pointer"
+           [style.outline]="modalCargaFiltroEstado === 'VENCIDO' ? '2px solid #C0392B' : 'none'">
+        ⚠ {{ modalCargaStats.vencidas }} vencidas
+      </div>
+      <div style="padding:4px 10px;background:#EDF4FB;border-radius:6px;font-size:11px;font-weight:600;color:#1B3A6B"
+           title="Hitos · Entregables · Consultas">
+        H {{ modalCargaStats.hitos }} · E {{ modalCargaStats.entregables }} · C {{ modalCargaStats.consultas }}
+      </div>
+      <!-- Filtros inline -->
+      <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;cursor:pointer">
+          <input type="checkbox" [(ngModel)]="modalCargaExcluirCulminadas" style="cursor:pointer" />
+          Excluir culminadas
+        </label>
+        <div style="width:180px">
+          <app-search-select
+            label="Estado"
+            [showLabel]="false"
+            [compact]="true"
+            placeholder="Todos los estados"
+            [options]="modalCargaEstadoOptions"
+            valueField="value"
+            displayField="label"
+            [value]="modalCargaFiltroEstado || null"
+            [allowClear]="true"
+            [sortAlpha]="false"
+            (valueChange)="modalCargaFiltroEstado = $event || ''">
+          </app-search-select>
+        </div>
+        <span style="font-size:11px;color:#94A3B8">{{ modalCargaFiltradas.length }} mostrando</span>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="modalCargaLoading" class="modal-loading">
+      <div class="loader-spinner" style="width:32px;height:32px;border-width:2px"></div>
+      <span>Cargando actividades...</span>
+    </div>
+
+    <!-- Tabla -->
+    <div *ngIf="!modalCargaLoading" class="modal-body" style="max-height:460px">
+      <div class="modal-table-wrap">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Actividad</th>
+              <th>Proyecto</th>
+              <th>Tipo</th>
+              <th>Etapa</th>
+              <th>Estado</th>
+              <th>Inicio Prog.</th>
+              <th>Inicio Real</th>
+              <th>Fin Prog.</th>
+              <th>Fin Real</th>
+              <th>SPI</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of modalCargaFiltradas">
+              <td style="max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="a.nombre">{{ a.nombre }}</td>
+              <td style="font-size:10px;color:#64748B;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="a.projectNombre ?? ''">{{ a.projectNombre ?? '—' }}</td>
+              <td>
+                <span style="font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600"
+                  [style.background]="a.partidaDeControl==='HITO'?'#EDE9FE':a.partidaDeControl==='ENTREGABLE'?'#DBEAFE':'#FEF9C3'"
+                  [style.color]="a.partidaDeControl==='HITO'?'#5B21B6':a.partidaDeControl==='ENTREGABLE'?'#1E3A8A':'#713F12'">
+                  {{ a.partidaDeControl ?? '—' }}
+                </span>
+              </td>
+              <td>{{ a.etapaNombre ?? '—' }}</td>
+              <td>
+                <span style="font-size:10px;font-weight:600" [style.color]="estadoGanttColor(a)">
+                  {{ estadoGanttLabel(a) }}
+                </span>
+              </td>
+              <td style="font-size:11px;color:#64748B">{{ a.inicioProgramado ?? '—' }}</td>
+              <td style="font-size:11px;font-weight:600" [style.color]="a.inicioEfectivo ? '#2E6DB4' : '#CBD5E1'">{{ a.inicioEfectivo ?? '— aún no arranca' }}</td>
+              <td style="font-size:11px;color:#64748B">{{ a.finProgramado ?? '—' }}</td>
+              <td style="font-size:11px;font-weight:600" [style.color]="a.finEfectivo ? '#1B6B3A' : '#CBD5E1'">{{ a.finEfectivo ?? '— no culminada' }}</td>
+              <td style="font-weight:700;font-size:12px"
+                [style.color]="a.spi && a.spi>=1?'#1B6B3A':a.spi&&a.spi>=0.8?'#D4A017':'#C0392B'">
+                {{ a.spi ? (a.spi | number:'1.2-2') : '—' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p *ngIf="modalCargaFiltradas.length === 0" class="empty-msg">Sin actividades para mostrar</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL HITOS ══ -->
+<div *ngIf="modalHitosVisible" class="modal-backdrop" (click)="cerrarModalHitos()">
+  <div class="modal-box modal-box-wide" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon-wrap" style="background:#1E3A5F">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M3 3L21 3M3 3L7 8L3 13H21M3 3V13" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title">Hitos Críticos</h2>
+          <p class="modal-sub">{{ hitosCriticos.length }} hitos en seguimiento</p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="cerrarModalHitos()">✕</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="hito-tabs">
+      <button class="hito-tab" [class.active]="tabHito==='INICIAR'" (click)="tabHito='INICIAR'">
+        Por Iniciar
+        <span class="tab-badge" style="background:#FEE2E2;color:#C0392B">{{ hitosIniciar.length }}</span>
+      </button>
+      <button class="hito-tab" [class.active]="tabHito==='VENCER'" (click)="tabHito='VENCER'">
+        Por Vencer
+        <span class="tab-badge" style="background:#FEF3C7;color:#D97706">{{ hitosVencer.length }}</span>
+      </button>
+      <button class="hito-tab" [class.active]="tabHito==='VENCIDOS'" (click)="tabHito='VENCIDOS'">
+        Vencidos
+        <span class="tab-badge" style="background:#FEE2E2;color:#C0392B">{{ hitosVencidos.length }}</span>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-table-wrap">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Hito</th>
+              <th>Proyecto</th>
+              <th>Estado</th>
+              <th>Fecha Límite</th>
+              <th>Semana</th>
+              <th>Días</th>
+              <th style="width:90px">Alerta</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngIf="tabHito==='INICIAR'">
+              <tr *ngFor="let h of hitosIniciar">
+                <td class="td-nombre">{{ h.nombre }}</td>
+                <td class="td-muted">{{ h.proyecto }}</td>
+                <td><span class="estado-badge" style="color:#D97706">{{ h.estado }}</span></td>
+                <td class="td-muted">{{ h.fechaLimite }}</td>
+                <td class="td-muted">Sem {{ h.semana }}</td>
+                <td><span class="dias-badge" [style.color]="getHitoColor(h.diasRestantes)">{{ diasLabel(h.diasRestantes) }}</span></td>
+                <td>
+                  <button class="btn-alert-row" (click)="alertarHito(h)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                      <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Alertar
+                  </button>
+                </td>
+              </tr>
+            </ng-container>
+            <ng-container *ngIf="tabHito==='VENCER'">
+              <tr *ngFor="let h of hitosVencer">
+                <td class="td-nombre">{{ h.nombre }}</td>
+                <td class="td-muted">{{ h.proyecto }}</td>
+                <td><span class="estado-badge" style="color:#2E6DB4">{{ h.estado }}</span></td>
+                <td class="td-muted">{{ h.fechaLimite }}</td>
+                <td class="td-muted">Sem {{ h.semana }}</td>
+                <td><span class="dias-badge" [style.color]="getHitoColor(h.diasRestantes)">{{ diasLabel(h.diasRestantes) }}</span></td>
+                <td>
+                  <button class="btn-alert-row" (click)="alertarHito(h)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                      <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Alertar
+                  </button>
+                </td>
+              </tr>
+            </ng-container>
+            <ng-container *ngIf="tabHito==='VENCIDOS'">
+              <tr *ngFor="let h of hitosVencidos">
+                <td class="td-nombre">{{ h.nombre }}</td>
+                <td class="td-muted">{{ h.proyecto }}</td>
+                <td><span class="estado-badge" style="color:#C0392B">{{ h.estado }}</span></td>
+                <td class="td-muted">{{ h.fechaLimite }}</td>
+                <td class="td-muted">Sem {{ h.semana }}</td>
+                <td><span class="dias-badge" style="color:#C0392B">{{ diasLabel(h.diasRestantes) }}</span></td>
+                <td>
+                  <button class="btn-alert-row btn-alert-urgent" (click)="alertarHito(h)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                      <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Alertar
+                  </button>
+                </td>
+              </tr>
+            </ng-container>
+            <tr *ngIf="(tabHito==='INICIAR' && hitosIniciar.length===0) ||
+                       (tabHito==='VENCER'  && hitosVencer.length===0)  ||
+                       (tabHito==='VENCIDOS'&& hitosVencidos.length===0)">
+              <td colspan="7" class="empty-msg" style="padding:24px;text-align:center">Sin hitos en esta categoría</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarModalHitos()">Cerrar</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL HISTÓRICO DE SUPERVISOR ══ -->
+<div *ngIf="modalHistoricoVisible" class="modal-backdrop" (click)="cerrarModalHistorico()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon-wrap" style="background:#1E3A5F">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M3 3V21H21M7 15L11 10L14 13L20 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title">{{ historicoSupervisorNombre }}</h2>
+          <p class="modal-sub">Eficiencia a lo largo del tiempo</p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="cerrarModalHistorico()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <p *ngIf="cargandoHistorico" class="empty-msg" style="padding:24px 0">Cargando...</p>
+
+      <ng-container *ngIf="!cargandoHistorico && historicoSupervisor as h">
+        <!-- KPIs históricos -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">
+          <div style="background:#F8FAFC;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;font-weight:700;color:#1E293B">{{ h.totalActividades }}</div>
+            <div style="font-size:9px;color:#94A3B8;text-transform:uppercase;font-weight:600">Total histórico</div>
+          </div>
+          <div style="background:#EAF3DE;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;font-weight:700;color:#1B6B3A">{{ h.culminadas }}</div>
+            <div style="font-size:9px;color:#4D7C0F;text-transform:uppercase;font-weight:600">Culminadas</div>
+          </div>
+          <div style="background:#EDF4FB;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;font-weight:700;color:#2E6DB4">{{ h.enProceso }}</div>
+            <div style="font-size:9px;color:#2E6DB4;text-transform:uppercase;font-weight:600">En proceso</div>
+          </div>
+          <div (click)="verActividadesHistorico('PENDIENTE')"
+               style="background:#FEF9E7;border-radius:8px;padding:10px;text-align:center;cursor:pointer">
+            <div style="font-size:18px;font-weight:700;color:#B45309">{{ h.pendientes }}</div>
+            <div style="font-size:9px;color:#B45309;text-transform:uppercase;font-weight:600">Pendientes</div>
+          </div>
+          <div (click)="verActividadesHistorico('VENCIDO')"
+               style="background:#FDF2F2;border-radius:8px;padding:10px;text-align:center;cursor:pointer">
+            <div style="font-size:18px;font-weight:700;color:#C0392B">{{ h.vencidas }}</div>
+            <div style="font-size:9px;color:#C0392B;text-transform:uppercase;font-weight:600">Vencidas</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:16px;margin-bottom:14px">
+          <span style="font-size:12px;color:#64748B">
+            Eficiencia histórica (culminadas ÷ total): <b [style.color]="h.eficienciaHistorica >= 75 ? '#16A34A' : h.eficienciaHistorica >= 50 ? '#B45309' : '#C0392B'">{{ h.eficienciaHistorica | number:'1.0-1' }}%</b>
+          </span>
+          <span style="font-size:12px;color:#64748B">
+            SPI promedio: <b>{{ h.spiPromedio | number:'1.2-2' }}</b>
+          </span>
+        </div>
+
+        <!-- Tendencia semanal -->
+        <div style="font-size:11px;font-weight:600;color:#374151;margin-bottom:6px">
+          Tasa de cierre semanal (últimas 8 semanas)
+        </div>
+        <div style="height:180px">
+          <canvas #historicoCanvas></canvas>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarModalHistorico()">Cerrar</button>
+    </div>
+
+  </div>
+</div>

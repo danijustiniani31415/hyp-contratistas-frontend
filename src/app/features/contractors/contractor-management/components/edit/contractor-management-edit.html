@@ -1,0 +1,402 @@
+<app-base-modal [title]="'EDITAR CONTRATISTA'" width="w-full sm:w-[680px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-5 mt-4">
+
+    <!-- Inputs ocultos para archivos -->
+    <input #logoInput       type="file" accept="image/*" class="hidden" (change)="onLogoSelected($event)" />
+    <input #brochureInput   type="file" class="hidden" (change)="onBrochureSelected($event)" />
+    <input #fichaRucInput   type="file" class="hidden" (change)="onFichaRucSelected($event)" />
+    <input #referencesInput type="file" class="hidden" (change)="onReferencesSelected($event)" />
+
+    <!-- ── Consulta RUC (SUNAT) ─────────────────────────────────────────────── -->
+    <div class="bg-[#F7FBF3] border border-[#E5F0D8] rounded-lg p-3 flex flex-col gap-2">
+      <p class="text-xs text-[#64BC04] font-semibold uppercase tracking-widest">Búsqueda en SUNAT</p>
+      <div class="flex gap-2">
+        <div class="flex flex-1 items-center border border-[#D6DEE5] rounded-lg overflow-hidden bg-white">
+          <span class="px-3 text-xs text-gray-400 font-medium border-r border-[#D6DEE5] py-2.5 whitespace-nowrap">RUC</span>
+          <input type="text" [(ngModel)]="rucInput" (keydown)="onRucKeydown($event)" maxlength="11"
+            inputmode="numeric" placeholder="Ingresa el RUC (11 dígitos)"
+            class="flex-1 px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none" />
+        </div>
+        <button type="button" (click)="searchSunat()" [disabled]="rucInput.length !== 11 || rucLookupLoading"
+          class="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
+          [ngClass]="rucInput.length === 11 && !rucLookupLoading
+            ? 'bg-[#64BC04] text-white hover:bg-[#57a803] cursor-pointer'
+            : 'bg-gray-100 text-gray-400 cursor-not-allowed'">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+          </svg>
+          Consultar
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Datos principales ───────────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+      <!-- RUC -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-[#64BC04] font-medium">RUC</label>
+        <input type="text" [(ngModel)]="contributorRuc" maxlength="11"
+          class="border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+      </div>
+
+      <!-- Razón social -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-[#64BC04] font-medium">Razón social <span class="text-red-500">*</span></label>
+        <input type="text" [(ngModel)]="contributorName"
+          class="border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+      </div>
+
+      <!-- Dirección (full-width) -->
+      <div class="sm:col-span-2 flex flex-col gap-1">
+        <label class="text-xs text-[#64BC04] font-medium">Dirección</label>
+        <input type="text" [(ngModel)]="contributorAddress"
+          class="border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+      </div>
+
+      <!-- Actividad económica (full-width) -->
+      <div class="sm:col-span-2 flex flex-col gap-1">
+        <label class="text-xs text-[#64BC04] font-medium">Actividad económica</label>
+        <input type="text" [(ngModel)]="contributorEconomicActivityDescription"
+          class="border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+      </div>
+
+      <!-- Distrito -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-[#64BC04] font-medium">Distrito</label>
+        <input type="text" [(ngModel)]="contributorDistrict"
+          class="border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+      </div>
+
+      <!-- Provincia -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-[#64BC04] font-medium">Provincia</label>
+        <input type="text" [(ngModel)]="contributorProvince"
+          class="border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+      </div>
+
+      <!-- Departamento -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-[#64BC04] font-medium">Departamento</label>
+        <input type="text" [(ngModel)]="contributorDepartment"
+          class="border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+      </div>
+
+      <!-- N° Partida registral -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-[#64BC04] font-medium">N° Partida registral</label>
+        <input type="text" [(ngModel)]="legalEntityRegistryNumber"
+          class="border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+      </div>
+
+    </div>
+
+    <!-- ── Representante legal ──────────────────────────────────────────────── -->
+    <div>
+      <p class="text-xs text-[#64BC04] font-semibold uppercase tracking-widest mb-3">Representante legal</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-[#64BC04] font-medium">DNI</label>
+          <div class="flex gap-2">
+            <input type="text" [(ngModel)]="legalRepresentativeDni" (keydown)="onDniKeydown($event)"
+              maxlength="8" inputmode="numeric"
+              class="flex-1 border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+            <button type="button" (click)="searchReniec()" [disabled]="legalRepresentativeDni.length !== 8 || dniLookupLoading"
+              title="Consultar DNI en RENIEC"
+              class="shrink-0 flex items-center justify-center px-3 py-2.5 rounded-lg transition-colors"
+              [ngClass]="legalRepresentativeDni.length === 8 && !dniLookupLoading
+                ? 'bg-[#64BC04] text-white hover:bg-[#57a803] cursor-pointer'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-[#64BC04] font-medium">Nombre completo</label>
+          <input type="text" [(ngModel)]="legalRepresentativeFullName"
+            class="border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Correos de contacto ─────────────────────────────────────────────── -->
+    <div class="flex flex-col gap-3">
+      <p class="text-xs text-[#64BC04] font-semibold uppercase tracking-widest">Correos de contacto</p>
+
+      <!-- Lista editable de correos -->
+      <div *ngIf="emails.length > 0" class="flex flex-col gap-2">
+        <div *ngFor="let email of emails; let i = index"
+          class="flex items-center gap-2 rounded-lg border border-[#D6DEE5] px-2.5 py-1.5"
+          [ngClass]="{ 'bg-gray-50': !email.active }">
+
+          <!-- Texto editable del correo -->
+          <input type="email" [(ngModel)]="email.email"
+            autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false"
+            [ngClass]="{ 'text-gray-400 line-through': !email.active }"
+            class="flex-1 min-w-0 bg-transparent text-sm focus:outline-none" />
+
+          <!-- Clasificación del contacto -->
+          <div class="w-44 shrink-0">
+            <app-search-select
+              [options]="personTypes"
+              valueField="contractorPersonTypeId"
+              displayField="description"
+              [value]="email.contractorPersonTypeId"
+              (valueChange)="email.contractorPersonTypeId = $event"
+              [showLabel]="false"
+              [compact]="true"
+              placeholder="— Clasificación —">
+            </app-search-select>
+          </div>
+
+          <!-- Toggle activar/desactivar -->
+          <button type="button" (click)="toggleActive(i)"
+            [title]="email.active ? 'Desactivar correo' : 'Activar correo'"
+            class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors cursor-pointer"
+            [ngClass]="email.active ? 'bg-[#64BC04]' : 'bg-gray-300'">
+            <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform"
+              [ngClass]="email.active ? 'translate-x-[18px]' : 'translate-x-[3px]'"></span>
+          </button>
+
+          <span class="text-[10px] font-medium w-14 text-center"
+            [ngClass]="email.active ? 'text-[#3a7a00]' : 'text-gray-400'">
+            {{ email.active ? 'Activo' : 'Inactivo' }}
+          </span>
+
+          <!-- Eliminar -->
+          <button type="button" (click)="removeEmail(i)"
+            title="Eliminar correo"
+            class="text-gray-400 hover:text-red-500 transition-colors leading-none cursor-pointer shrink-0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <p *ngIf="emails.length === 0" class="text-xs text-gray-400 italic">Sin correos. Agrega al menos uno.</p>
+
+      <!-- Input nuevo correo -->
+      <div class="flex gap-2">
+        <input type="email" [(ngModel)]="newEmail" (keydown.enter)="addEmail()"
+          placeholder="nuevo@correo.com"
+          autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false"
+          class="flex-1 min-w-0 border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+        <div class="w-44 shrink-0">
+          <app-search-select
+            [options]="personTypes"
+            valueField="contractorPersonTypeId"
+            displayField="description"
+            [value]="newEmailPersonTypeId"
+            (valueChange)="newEmailPersonTypeId = $event"
+            [showLabel]="false"
+            placeholder="— Clasificación —">
+          </app-search-select>
+        </div>
+        <button type="button" (click)="addEmail()"
+          class="px-4 py-2.5 bg-[#64BC04] text-white text-sm font-medium rounded-lg hover:bg-[#57a803] transition-colors cursor-pointer shrink-0">
+          Agregar
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Documentos adjuntos ─────────────────────────────────────────────── -->
+    <div class="flex flex-col gap-3">
+      <p class="text-xs text-[#64BC04] font-semibold uppercase tracking-widest">Documentos adjuntos</p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+        <!-- Logo -->
+        <div class="relative border rounded-lg p-3 flex flex-col gap-2 transition-colors"
+          [style.borderColor]="dragDoc === 'logo' ? '#64BC04' : '#E2E2E2'"
+          [style.borderStyle]="dragDoc === 'logo' ? 'dashed' : 'solid'"
+          [style.background]="dragDoc === 'logo' ? '#F7FBF3' : 'transparent'"
+          (dragenter)="onDocDragEnter('logo', $event)"
+          (dragover)="onDocDragOver('logo', $event)"
+          (dragleave)="onDocDragLeave('logo', $event)"
+          (drop)="onDocDrop('logo', $event)">
+
+          <!-- Overlay: se muestra mientras se arrastra un archivo sobre la tarjeta -->
+          <div *ngIf="dragDoc === 'logo'"
+            class="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none"
+            style="background:#F7FBF3; opacity:0.95">
+            <span class="flex items-center gap-2 text-sm font-semibold text-[#64BC04]">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Suelta aquí para {{ logoFile || item.logoFileUrl ? 'reemplazar' : 'subir' }}
+            </span>
+          </div>
+
+          <p class="text-xs font-medium text-gray-600">Logo</p>
+
+          <!-- Preview actual -->
+          <div class="w-full h-14 rounded-lg border border-[#E2E2E2] bg-gray-50 flex items-center justify-center overflow-hidden">
+            <img *ngIf="logoPreviewUrl" [src]="logoPreviewUrl" alt="Logo" class="h-full object-contain" />
+            <img *ngIf="!logoPreviewUrl && item.logoFileUrl && !logoFile" [src]="item.logoFileUrl" alt="Logo actual" class="h-full object-contain" />
+            <svg *ngIf="!logoPreviewUrl && !item.logoFileUrl" class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909"/>
+            </svg>
+          </div>
+
+          <div *ngIf="logoFile" class="flex items-center gap-1">
+            <span class="text-xs text-gray-700 truncate flex-1">{{ logoFile.name }}</span>
+            <button type="button" (click)="clearLogo()" class="text-red-400 hover:text-red-600 cursor-pointer">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <button type="button" (click)="logoInput.click()"
+            class="text-xs px-3 py-1.5 border border-[#D6DEE5] rounded-lg text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+            {{ item.logoFileUrl ? 'Reemplazar' : 'Subir' }}
+          </button>
+        </div>
+
+        <!-- Brochure -->
+        <div class="relative border rounded-lg p-3 flex flex-col gap-2 transition-colors"
+          [style.borderColor]="dragDoc === 'brochure' ? '#64BC04' : '#E2E2E2'"
+          [style.borderStyle]="dragDoc === 'brochure' ? 'dashed' : 'solid'"
+          [style.background]="dragDoc === 'brochure' ? '#F7FBF3' : 'transparent'"
+          (dragenter)="onDocDragEnter('brochure', $event)"
+          (dragover)="onDocDragOver('brochure', $event)"
+          (dragleave)="onDocDragLeave('brochure', $event)"
+          (drop)="onDocDrop('brochure', $event)">
+
+          <!-- Overlay: se muestra mientras se arrastra un archivo sobre la tarjeta -->
+          <div *ngIf="dragDoc === 'brochure'"
+            class="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none"
+            style="background:#F7FBF3; opacity:0.95">
+            <span class="flex items-center gap-2 text-sm font-semibold text-[#64BC04]">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Suelta aquí para {{ brochureFile || item.brochureFileUrl ? 'reemplazar' : 'subir' }}
+            </span>
+          </div>
+
+          <p class="text-xs font-medium text-gray-600">Brochure</p>
+
+          <a *ngIf="item.brochureFileUrl && !brochureFile" [href]="item.brochureFileUrl" target="_blank"
+            class="text-xs text-[#64BC04] hover:underline truncate">Ver archivo</a>
+          <p *ngIf="!item.brochureFileUrl && !brochureFile" class="text-xs text-gray-400 italic">Sin archivo</p>
+
+          <div *ngIf="brochureFile" class="flex items-center gap-1">
+            <span class="text-xs text-gray-700 truncate flex-1">{{ brochureFile.name }}</span>
+            <button type="button" (click)="clearBrochure()" class="text-red-400 hover:text-red-600 cursor-pointer">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <button type="button" (click)="brochureInput.click()"
+            class="text-xs px-3 py-1.5 border border-[#D6DEE5] rounded-lg text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+            {{ item.brochureFileUrl ? 'Reemplazar' : 'Subir' }}
+          </button>
+        </div>
+
+        <!-- Ficha RUC -->
+        <div class="relative border rounded-lg p-3 flex flex-col gap-2 transition-colors"
+          [style.borderColor]="dragDoc === 'fichaRuc' ? '#64BC04' : '#E2E2E2'"
+          [style.borderStyle]="dragDoc === 'fichaRuc' ? 'dashed' : 'solid'"
+          [style.background]="dragDoc === 'fichaRuc' ? '#F7FBF3' : 'transparent'"
+          (dragenter)="onDocDragEnter('fichaRuc', $event)"
+          (dragover)="onDocDragOver('fichaRuc', $event)"
+          (dragleave)="onDocDragLeave('fichaRuc', $event)"
+          (drop)="onDocDrop('fichaRuc', $event)">
+
+          <!-- Overlay: se muestra mientras se arrastra un archivo sobre la tarjeta -->
+          <div *ngIf="dragDoc === 'fichaRuc'"
+            class="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none"
+            style="background:#F7FBF3; opacity:0.95">
+            <span class="flex items-center gap-2 text-sm font-semibold text-[#64BC04]">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Suelta aquí para {{ fichaRucFile || item.fichaRucFileUrl ? 'reemplazar' : 'subir' }}
+            </span>
+          </div>
+
+          <p class="text-xs font-medium text-gray-600">Ficha RUC</p>
+
+          <a *ngIf="item.fichaRucFileUrl && !fichaRucFile" [href]="item.fichaRucFileUrl" target="_blank"
+            class="text-xs text-[#64BC04] hover:underline truncate">Ver archivo</a>
+          <p *ngIf="!item.fichaRucFileUrl && !fichaRucFile" class="text-xs text-gray-400 italic">Sin archivo</p>
+
+          <div *ngIf="fichaRucFile" class="flex items-center gap-1">
+            <span class="text-xs text-gray-700 truncate flex-1">{{ fichaRucFile.name }}</span>
+            <button type="button" (click)="clearFichaRuc()" class="text-red-400 hover:text-red-600 cursor-pointer">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <button type="button" (click)="fichaRucInput.click()"
+            class="text-xs px-3 py-1.5 border border-[#D6DEE5] rounded-lg text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+            {{ item.fichaRucFileUrl ? 'Reemplazar' : 'Subir' }}
+          </button>
+        </div>
+
+        <!-- Lista de referencias -->
+        <div class="relative border rounded-lg p-3 flex flex-col gap-2 transition-colors"
+          [style.borderColor]="dragDoc === 'references' ? '#64BC04' : '#E2E2E2'"
+          [style.borderStyle]="dragDoc === 'references' ? 'dashed' : 'solid'"
+          [style.background]="dragDoc === 'references' ? '#F7FBF3' : 'transparent'"
+          (dragenter)="onDocDragEnter('references', $event)"
+          (dragover)="onDocDragOver('references', $event)"
+          (dragleave)="onDocDragLeave('references', $event)"
+          (drop)="onDocDrop('references', $event)">
+
+          <!-- Overlay: se muestra mientras se arrastra un archivo sobre la tarjeta -->
+          <div *ngIf="dragDoc === 'references'"
+            class="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none"
+            style="background:#F7FBF3; opacity:0.95">
+            <span class="flex items-center gap-2 text-sm font-semibold text-[#64BC04]">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Suelta aquí para {{ referencesFile || item.referencesListFileUrl ? 'reemplazar' : 'subir' }}
+            </span>
+          </div>
+
+          <p class="text-xs font-medium text-gray-600">Lista de referencias</p>
+
+          <a *ngIf="item.referencesListFileUrl && !referencesFile" [href]="item.referencesListFileUrl" target="_blank"
+            class="text-xs text-[#64BC04] hover:underline truncate">Ver archivo</a>
+          <p *ngIf="!item.referencesListFileUrl && !referencesFile" class="text-xs text-gray-400 italic">Sin archivo</p>
+
+          <div *ngIf="referencesFile" class="flex items-center gap-1">
+            <span class="text-xs text-gray-700 truncate flex-1">{{ referencesFile.name }}</span>
+            <button type="button" (click)="clearReferences()" class="text-red-400 hover:text-red-600 cursor-pointer">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <button type="button" (click)="referencesInput.click()"
+            class="text-xs px-3 py-1.5 border border-[#D6DEE5] rounded-lg text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+            {{ item.referencesListFileUrl ? 'Reemplazar' : 'Subir' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Botón guardar ────────────────────────────────────────────────────── -->
+    <div class="flex justify-end pt-1">
+      <button type="button" (click)="save()"
+        class="px-8 py-2.5 bg-[#64BC04] text-white text-sm font-semibold rounded-lg hover:bg-[#57a803] transition-colors cursor-pointer">
+        Guardar cambios
+      </button>
+    </div>
+
+  </div>
+</app-base-modal>

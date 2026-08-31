@@ -1,0 +1,865 @@
+<app-abril-page-header
+  [badge]="'CONTABILIDAD · ' + anioActual"
+  titulo="Facturas"
+  subtitulo="Registro y gestión de facturas de proveedores."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: 'Nueva factura', icono: 'ti-plus' }"
+  (primaryClick)="openCreate()"
+>
+</app-abril-page-header>
+
+<div class="bg-white rounded-lg flex flex-col flex-1 p-5 gap-3">
+  <!-- ── FILTROS + ACCIONES + CAMBIO DE VISTA ──────────────────────────
+       Dos columnas: los filtros y las acciones fluyen a la izquierda (envolviendo
+       en pantallas chicas); el contador y el cambio de vista quedan siempre a la
+       derecha sin participar del wrap. En móvil el cambio de vista pasa arriba. -->
+  <div class="flex flex-col-reverse sm:flex-row sm:items-start gap-3 sm:gap-4 py-1">
+    <div class="flex-1 min-w-0 flex flex-wrap items-end gap-4">
+      <!-- Razón social proveedor -->
+      <div class="w-full sm:w-[230px]">
+        <app-search-select
+          label="Razón social proveedor"
+          placeholder="— Todos —"
+          [options]="suppliers"
+          valueField="contributorId"
+          displayField="contributorName"
+          [value]="filters.contributorId"
+          (valueChange)="filters.contributorId = $event"
+          [allowClear]="true"
+        >
+        </app-search-select>
+      </div>
+
+      <!-- RUC proveedor -->
+      <div class="w-full sm:w-[150px] flex flex-col gap-[6px]">
+        <label class="text-sm font-medium" style="color: var(--color-abril-primary)"
+          >RUC proveedor</label
+        >
+        <input
+          type="text"
+          [(ngModel)]="filters.contributorRuc"
+          (keyup.enter)="onSearch()"
+          placeholder="Buscar…"
+          class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none"
+          style="border-color: var(--color-abril-border)"
+        />
+      </div>
+
+      <!-- Razón social Abril -->
+      <div class="w-full sm:w-[230px]">
+        <app-search-select
+          label="Razón social Abril"
+          placeholder="— Todas —"
+          [options]="abrilCompanies"
+          valueField="contributorId"
+          displayField="contributorName"
+          [value]="filters.abrilContributorId"
+          (valueChange)="filters.abrilContributorId = $event"
+          [allowClear]="true"
+        >
+        </app-search-select>
+      </div>
+
+      <!-- Moneda (soles / dólares) -->
+      <div class="w-full sm:w-[170px]">
+        <app-search-select
+          label="Moneda"
+          placeholder="— Todas —"
+          [options]="currencies"
+          valueField="currencyId"
+          displayField="currencyDescription"
+          [value]="filters.currencyId"
+          (valueChange)="filters.currencyId = $event"
+          [allowClear]="true"
+        >
+        </app-search-select>
+      </div>
+
+      <!-- Filtros avanzados -->
+      <ng-container *ngIf="showAdvanced">
+        <!-- RUC Abril -->
+        <div class="w-full sm:w-[150px] flex flex-col gap-[6px]">
+          <label class="text-sm font-medium" style="color: var(--color-abril-primary)"
+            >RUC Abril</label
+          >
+          <input
+            type="text"
+            [(ngModel)]="filters.abrilContributorRuc"
+            (keyup.enter)="onSearch()"
+            placeholder="Buscar…"
+            class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none"
+            style="border-color: var(--color-abril-border)"
+          />
+        </div>
+
+        <!-- Serie -->
+        <div class="w-[calc(50%-8px)] sm:w-[110px] flex flex-col gap-[6px]">
+          <label class="text-sm font-medium" style="color: var(--color-abril-primary)">Serie</label>
+          <input
+            type="text"
+            [(ngModel)]="filters.serie"
+            (keyup.enter)="onSearch()"
+            placeholder="F001"
+            class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none"
+            style="border-color: var(--color-abril-border)"
+          />
+        </div>
+
+        <!-- Correlativo -->
+        <div class="w-[calc(50%-8px)] sm:w-[130px] flex flex-col gap-[6px]">
+          <label class="text-sm font-medium" style="color: var(--color-abril-primary)"
+            >Correlativo</label
+          >
+          <input
+            type="text"
+            [(ngModel)]="filters.correlativo"
+            (keyup.enter)="onSearch()"
+            placeholder="1234"
+            class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none"
+            style="border-color: var(--color-abril-border)"
+          />
+        </div>
+
+        <!-- Forma de pago -->
+        <div class="w-full sm:w-[200px]">
+          <app-search-select
+            label="Forma de pago"
+            placeholder="— Todas —"
+            [options]="paymentForms"
+            valueField="invoicePaymentFormId"
+            displayField="invoicePaymentFormDescription"
+            [value]="filters.invoicePaymentFormId"
+            (valueChange)="filters.invoicePaymentFormId = $event"
+            [allowClear]="true"
+          >
+          </app-search-select>
+        </div>
+
+        <!-- Rango de total -->
+        <div class="w-[calc(50%-8px)] sm:w-[120px] flex flex-col gap-[6px]">
+          <label class="text-sm font-medium" style="color: var(--color-abril-primary)"
+            >Total mín.</label
+          >
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            [(ngModel)]="filters.totalMin"
+            (keyup.enter)="onSearch()"
+            placeholder="0.00"
+            class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none"
+            style="border-color: var(--color-abril-border)"
+          />
+        </div>
+        <div class="w-[calc(50%-8px)] sm:w-[120px] flex flex-col gap-[6px]">
+          <label class="text-sm font-medium" style="color: var(--color-abril-primary)"
+            >Total máx.</label
+          >
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            [(ngModel)]="filters.totalMax"
+            (keyup.enter)="onSearch()"
+            placeholder="0.00"
+            class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none"
+            style="border-color: var(--color-abril-border)"
+          />
+        </div>
+
+        <!-- Rango de fecha de emisión -->
+        <div class="w-[calc(50%-8px)] sm:w-[170px]">
+          <app-date-picker
+            label="Emisión desde"
+            color="var(--color-abril-primary)"
+            [value]="filters.issueDateFrom"
+            (valueChange)="filters.issueDateFrom = $event"
+          >
+          </app-date-picker>
+        </div>
+        <div class="w-[calc(50%-8px)] sm:w-[170px]">
+          <app-date-picker
+            label="Emisión hasta"
+            color="var(--color-abril-primary)"
+            [value]="filters.issueDateTo"
+            (valueChange)="filters.issueDateTo = $event"
+          >
+          </app-date-picker>
+        </div>
+      </ng-container>
+
+      <!-- Botón búsqueda avanzada -->
+      <button
+        type="button"
+        (click)="showAdvanced = !showAdvanced"
+        class="h-[42px] px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center justify-center gap-2 self-end grow sm:grow-0"
+        style="background: var(--color-abril-primary-light); color: var(--color-abril-primary)"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 15 15" fill="none">
+          <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M6.417 0v9.167H5.5V11H6.417v3.667H8.25V11h.917V9.167H8.25V0H6.417ZM.917 0v3.668H0V5.5h.917v9.167H2.75V5.5h.917V3.668H2.75V0H.917ZM11.916.0002V5.5h-.917v1.833h.917v7.334h1.834V7.333h.917V5.5h-.917V0l-1.834.0002Z"
+            fill="currentColor"
+          />
+        </svg>
+        {{ showAdvanced ? 'Ocultar filtros' : 'Búsqueda avanzada' }}
+      </button>
+
+      <!-- Botón buscar -->
+      <button
+        type="button"
+        (click)="onSearch()"
+        class="h-[42px] px-5 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors flex items-center justify-center gap-2 self-end grow sm:grow-0"
+        style="background: var(--color-abril-primary)"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z"
+            fill="white"
+          />
+        </svg>
+        Buscar
+      </button>
+
+      <!-- Acciones en bloque (vista de tabla): aprovechan el espacio libre
+           junto a los filtros o debajo de ellos cuando la fila envuelve. -->
+      @if (viewMode === 'table') {
+        <button
+          type="button"
+          (click)="aprobarBulk()"
+          [disabled]="selectedIds.size === 0"
+          class="h-[36px] px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-colors border border-green-300 text-green-700 hover:bg-green-50 disabled:border-gray-200 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:bg-transparent grow sm:grow-0"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          Aprobar<span *ngIf="selectedIds.size > 0"> ({{ selectedIds.size }})</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="rechazarBulk()"
+          [disabled]="selectedIds.size === 0"
+          class="h-[36px] px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-colors border border-red-200 text-red-600 hover:bg-red-50 disabled:border-gray-200 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:bg-transparent grow sm:grow-0"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" />
+          </svg>
+          Rechazar<span *ngIf="selectedIds.size > 0"> ({{ selectedIds.size }})</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="openObserve()"
+          [disabled]="selectedIds.size === 0"
+          class="h-[36px] px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-colors border border-amber-300 text-amber-700 hover:bg-amber-50 disabled:border-gray-200 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:bg-transparent grow sm:grow-0"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path stroke-linecap="round" d="M12 8v5m0 3h.01" />
+          </svg>
+          Observar<span *ngIf="selectedIds.size > 0"> ({{ selectedIds.size }})</span>
+        </button>
+
+        <span
+          *ngIf="selectedIds.size === 0"
+          class="hidden xl:inline text-xs text-gray-400 self-center"
+        >
+          Selecciona filas (usa Shift+clic para rangos) y aplica una acción.
+        </span>
+      }
+    </div>
+
+    <!-- Contador + cambio de vista: siempre a la derecha -->
+    <div class="shrink-0 flex items-center justify-end gap-3 sm:pt-1">
+      <span class="text-xs text-gray-400">{{ totalRecords }} registros</span>
+      <app-view-toggle
+        [modes]="viewModes"
+        [value]="viewMode"
+        (valueChange)="onViewModeChange($event)"
+      >
+      </app-view-toggle>
+    </div>
+  </div>
+
+  <!-- ── BLOQUES (agrupados por razón social Abril) ────────────────── -->
+  @if (viewMode === 'blocks') {
+    <div class="flex flex-col gap-5">
+      @for (group of blockGroups; track group.abrilName) {
+        <div class="rounded-xl border" style="border-color: var(--color-abril-border)">
+          <div
+            class="flex items-center justify-between gap-2 px-4 py-2 rounded-t-xl"
+            style="background: var(--color-abril-primary-light)"
+          >
+            <span
+              class="text-sm font-semibold truncate min-w-0"
+              style="color: var(--color-abril-primary-dark)"
+              [title]="group.abrilName"
+              >{{ group.abrilName }}</span
+            >
+            <span class="text-xs text-gray-500 whitespace-nowrap shrink-0"
+              >{{ group.count }} factura(s)</span
+            >
+          </div>
+          <!-- En móvil los chips van en grilla de 2 columnas (ocupan todo el ancho y son
+               más fáciles de tocar); desde sm vuelven al flujo compacto con wrap. -->
+          <div class="grid grid-cols-2 gap-2 p-3 sm:flex sm:flex-wrap">
+            @for (inv of group.items; track inv.invoiceId) {
+              <button
+                type="button"
+                (mouseenter)="onBlockEnter(inv, $event)"
+                (mousemove)="movePopover($event)"
+                (mouseleave)="onBlockLeave()"
+                (click)="onBlockClick(inv)"
+                (contextmenu)="onInvoiceContextMenu(inv, $event)"
+                [ngClass]="
+                  inv.documentUrl
+                    ? 'bg-[var(--color-abril-primary)] text-white border-[var(--color-abril-primary)]'
+                    : 'bg-amber-50 text-amber-700 border-amber-300'
+                "
+                class="rounded-md border px-3 py-2 sm:py-1.5 text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity truncate"
+                [title]="''"
+              >
+                {{ inv.invoiceNumber }}
+              </button>
+            }
+          </div>
+        </div>
+      } @empty {
+        <div class="px-4 py-10 text-center text-gray-400">No hay facturas registradas.</div>
+      }
+    </div>
+
+    <!-- Leyenda -->
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+      <span class="flex items-center gap-1"
+        ><span
+          class="inline-block w-3 h-3 rounded"
+          style="background: var(--color-abril-primary)"
+        ></span>
+        Con documento</span
+      >
+      <span class="flex items-center gap-1"
+        ><span class="inline-block w-3 h-3 rounded bg-amber-200 border border-amber-300"></span> Sin
+        documento</span
+      >
+    </div>
+  }
+
+  <!-- ── TABLA ─────────────────────────────────────────────────────── -->
+  @if (viewMode === 'table') {
+    <div class="overflow-x-auto rounded-lg border" style="border-color: var(--color-abril-border)">
+      <table class="min-w-full divide-y text-sm" style="border-color: var(--color-abril-border)">
+        <thead
+          class="text-left text-xs uppercase"
+          style="
+            background: var(--color-abril-primary-light);
+            color: var(--color-abril-primary-dark);
+          "
+        >
+          <tr>
+            <th class="px-4 py-3">
+              <input
+                type="checkbox"
+                [checked]="allSelected"
+                [disabled]="invoices.length === 0"
+                (change)="toggleSelectAll()"
+                class="cursor-pointer disabled:cursor-not-allowed"
+                style="accent-color: var(--color-abril-primary)"
+                title="Seleccionar / deseleccionar todo"
+              />
+            </th>
+            <th
+              class="px-4 py-3 cursor-pointer select-none"
+              (click)="toggleSort('issueDate')"
+              title="Ordenar por emisión"
+            >
+              <span class="inline-flex items-center gap-1"
+                >Emisión
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('issueDate')">{{
+                  sortDirOf('issueDate') === 'desc' ? '▼' : '▲'
+                }}</span>
+              </span>
+            </th>
+            <th
+              class="px-4 py-3 cursor-pointer select-none"
+              (click)="toggleSort('invoiceNumber')"
+              title="Ordenar por N° de factura"
+            >
+              <span class="inline-flex items-center gap-1"
+                >N° Factura
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('invoiceNumber')">{{
+                  sortDirOf('invoiceNumber') === 'desc' ? '▼' : '▲'
+                }}</span>
+              </span>
+            </th>
+            <th
+              class="px-4 py-3 cursor-pointer select-none"
+              (click)="toggleSort('contributorName')"
+              title="Ordenar por proveedor"
+            >
+              <span class="inline-flex items-center gap-1"
+                >Proveedor
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('contributorName')">{{
+                  sortDirOf('contributorName') === 'desc' ? '▼' : '▲'
+                }}</span>
+              </span>
+            </th>
+            <th
+              class="px-4 py-3 cursor-pointer select-none"
+              (click)="toggleSort('contributorRuc')"
+              title="Ordenar por RUC"
+            >
+              <span class="inline-flex items-center gap-1"
+                >RUC
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('contributorRuc')">{{
+                  sortDirOf('contributorRuc') === 'desc' ? '▼' : '▲'
+                }}</span>
+              </span>
+            </th>
+            <th
+              class="px-4 py-3 cursor-pointer select-none"
+              (click)="toggleSort('abrilContributorName')"
+              title="Ordenar por razón social Abril"
+            >
+              <span class="inline-flex items-center gap-1"
+                >Razón social Abril
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('abrilContributorName')">{{
+                  sortDirOf('abrilContributorName') === 'desc' ? '▼' : '▲'
+                }}</span>
+              </span>
+            </th>
+            <th
+              class="px-4 py-3 cursor-pointer select-none"
+              (click)="toggleSort('description')"
+              title="Ordenar por descripción"
+            >
+              <span class="inline-flex items-center gap-1"
+                >Descripción
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('description')">{{
+                  sortDirOf('description') === 'desc' ? '▼' : '▲'
+                }}</span>
+              </span>
+            </th>
+            <th
+              class="px-4 py-3 cursor-pointer select-none"
+              (click)="toggleSort('invoicePaymentFormDescription')"
+              title="Ordenar por forma de pago"
+            >
+              <span class="inline-flex items-center gap-1"
+                >Forma de pago
+                <span
+                  class="text-[10px]"
+                  [class.opacity-30]="!sortDirOf('invoicePaymentFormDescription')"
+                  >{{ sortDirOf('invoicePaymentFormDescription') === 'desc' ? '▼' : '▲' }}</span
+                >
+              </span>
+            </th>
+            <th
+              class="px-4 py-3 text-right cursor-pointer select-none"
+              (click)="toggleSort('total')"
+              title="Ordenar por total"
+            >
+              <span class="inline-flex items-center gap-1 justify-end"
+                >Total
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('total')">{{
+                  sortDirOf('total') === 'desc' ? '▼' : '▲'
+                }}</span>
+              </span>
+            </th>
+            <th
+              class="px-4 py-3 cursor-pointer select-none"
+              (click)="toggleSort('invoiceStatusDescription')"
+              title="Ordenar por estado"
+            >
+              <span class="inline-flex items-center gap-1"
+                >Estado
+                <span
+                  class="text-[10px]"
+                  [class.opacity-30]="!sortDirOf('invoiceStatusDescription')"
+                  >{{ sortDirOf('invoiceStatusDescription') === 'desc' ? '▼' : '▲' }}</span
+                >
+              </span>
+            </th>
+            <th class="px-4 py-3 text-center">Documento</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 bg-white">
+          @for (inv of invoices; track inv.invoiceId; let idx = $index) {
+            <tr
+              class="hover:bg-gray-50 cursor-pointer"
+              (click)="onRowClick($event, idx)"
+              (contextmenu)="onInvoiceContextMenu(inv, $event)"
+              [style.background]="selectedIds.has(inv.invoiceId) ? '#EAF6FF' : null"
+            >
+              <!-- Selección (Shift+clic para rango). select-none evita que Shift resalte texto. -->
+              <td class="px-4 py-3 select-none" (click)="onSelectClick($event, idx)">
+                <input
+                  type="checkbox"
+                  [checked]="selectedIds.has(inv.invoiceId)"
+                  class="cursor-pointer pointer-events-none"
+                  style="accent-color: var(--color-abril-primary)"
+                />
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap">{{ inv.issueDate }}</td>
+              <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-800">
+                {{ inv.invoiceNumber }}
+              </td>
+              <td class="px-4 py-3">{{ inv.contributorName }}</td>
+              <td class="px-4 py-3 whitespace-nowrap">{{ inv.contributorRuc }}</td>
+              <td class="px-4 py-3">{{ inv.abrilContributorName ?? '—' }}</td>
+              <td class="px-4 py-3 max-w-[260px] truncate" [title]="inv.description">
+                {{ inv.description }}
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap">{{ inv.invoicePaymentFormDescription }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-right">
+                {{ inv.currencySymbol || inv.currencyCode || '' }} {{ inv.total | number: '1.2-2' }}
+              </td>
+              <td
+                class="px-4 py-3 whitespace-nowrap"
+                [title]="
+                  inv.invoiceStatusDescription === 'Observado' &&
+                  inv.invoiceObservationReasonDescription
+                    ? 'Motivo: ' + inv.invoiceObservationReasonDescription
+                    : ''
+                "
+              >
+                <app-status-badge
+                  [text]="inv.invoiceStatusDescription || 'Pendiente'"
+                  [bgColor]="estadoColors(inv.invoiceStatusDescription).bg"
+                  [textColor]="estadoColors(inv.invoiceStatusDescription).text"
+                />
+              </td>
+              <td class="px-4 py-3 text-center">
+                @if (inv.documentUrl) {
+                  <a
+                    [href]="inv.documentUrl"
+                    target="_blank"
+                    rel="noopener"
+                    (click)="$event.stopPropagation()"
+                    class="text-[var(--color-abril-primary)] hover:underline"
+                    >Ver</a
+                  >
+                } @else {
+                  <span class="text-gray-300">—</span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="11" class="px-4 py-8 text-center text-gray-400">
+                No hay facturas registradas.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ── TARJETAS ──────────────────────────────────────────────────── -->
+  @if (viewMode === 'cards') {
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+      @for (inv of invoices; track inv.invoiceId) {
+        <div
+          class="rounded-xl border p-4 flex flex-col gap-2 hover:shadow-sm transition-shadow cursor-pointer"
+          style="border-color: var(--color-abril-border)"
+          (click)="openDetail(inv.invoiceId)"
+          (contextmenu)="onInvoiceContextMenu(inv, $event)"
+        >
+          <div class="flex items-start justify-between gap-2">
+            <span class="font-semibold text-gray-800">{{ inv.invoiceNumber }}</span>
+            <span
+              class="text-xs rounded-lg px-2 py-0.5 whitespace-nowrap"
+              style="
+                background: var(--color-abril-primary-light);
+                color: var(--color-abril-primary-dark);
+              "
+            >
+              {{ inv.invoicePaymentFormDescription }}
+            </span>
+          </div>
+          <div class="text-sm text-gray-700 font-medium line-clamp-1" [title]="inv.contributorName">
+            {{ inv.contributorName }}
+          </div>
+          <div class="text-xs text-gray-400">RUC {{ inv.contributorRuc }}</div>
+          <div class="text-xs text-gray-500 line-clamp-1" [title]="inv.abrilContributorName ?? ''">
+            Abril: <b>{{ inv.abrilContributorName ?? '—' }}</b>
+          </div>
+          <div class="text-sm text-gray-600 line-clamp-2" [title]="inv.description">
+            {{ inv.description }}
+          </div>
+          <div
+            class="flex items-center justify-between pt-1 border-t"
+            style="border-color: var(--color-abril-border)"
+          >
+            <span class="text-xs text-gray-400">{{ inv.issueDate }}</span>
+            <span class="font-semibold" style="color: var(--color-abril-primary)"
+              >{{ inv.currencySymbol || inv.currencyCode || 'S/' }}
+              {{ inv.total | number: '1.2-2' }}</span
+            >
+          </div>
+          <div>
+            @if (inv.documentUrl) {
+              <a
+                [href]="inv.documentUrl"
+                target="_blank"
+                rel="noopener"
+                (click)="$event.stopPropagation()"
+                class="text-xs text-[var(--color-abril-primary)] hover:underline"
+                >Ver documento</a
+              >
+            } @else {
+              <span class="text-xs text-gray-300">Sin documento</span>
+            }
+          </div>
+        </div>
+      } @empty {
+        <div class="col-span-full px-4 py-8 text-center text-gray-400">
+          No hay facturas registradas.
+        </div>
+      }
+    </div>
+  }
+
+  @if (viewMode !== 'blocks') {
+    <div>
+      <app-paginator
+        [totalRecords]="totalRecords"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="onPageChange($event)"
+      >
+      </app-paginator>
+    </div>
+  }
+</div>
+
+<!-- Popover de detalle al pasar el mouse por un bloque (oculto en móvil: no hay hover) -->
+@if (hoveredInvoice) {
+  <div
+    class="hidden sm:block fixed z-[60] w-[300px] rounded-xl border bg-white shadow-xl p-3 pointer-events-none"
+    style="border-color: var(--color-abril-border)"
+    [style.left.px]="popX"
+    [style.top.px]="popY"
+  >
+    <div class="flex items-center justify-between gap-2 mb-1">
+      <span class="font-semibold text-gray-800">{{ hoveredInvoice.invoiceNumber }}</span>
+      <span class="text-sm font-semibold" style="color: var(--color-abril-primary)">
+        {{ hoveredInvoice.currencySymbol || hoveredInvoice.currencyCode || 'S/' }}
+        {{ hoveredInvoice.total | number: '1.2-2' }}
+      </span>
+    </div>
+    <div class="text-sm text-gray-700 font-medium line-clamp-1">
+      {{ hoveredInvoice.contributorName }}
+    </div>
+    <div class="text-xs text-gray-400 mb-1">RUC {{ hoveredInvoice.contributorRuc || '—' }}</div>
+    <div class="grid grid-cols-1 gap-0.5 text-xs text-gray-500">
+      <div>
+        Razón social Abril:
+        <b class="text-gray-700">{{ hoveredInvoice.abrilContributorName || '—' }}</b>
+      </div>
+      <div>
+        Emisión: <b class="text-gray-700">{{ hoveredInvoice.issueDate }}</b>
+      </div>
+      <div>
+        Forma de pago:
+        <b class="text-gray-700">{{ hoveredInvoice.invoicePaymentFormDescription || '—' }}</b>
+      </div>
+      <div class="line-clamp-2">
+        Descripción: <span class="text-gray-700">{{ hoveredInvoice.description }}</span>
+      </div>
+      <div>
+        Documento:
+        <b
+          [class]="
+            hoveredInvoice.documentUrl ? 'text-[var(--color-abril-primary)]' : 'text-amber-600'
+          "
+          >{{ hoveredInvoice.documentUrl ? 'Adjunto' : 'Sin documento' }}</b
+        >
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Menú contextual (clic derecho en una factura) -->
+@if (ctxInvoice) {
+  <div
+    class="fixed z-[70] w-[230px] rounded-lg border bg-white shadow-xl py-1 text-sm"
+    style="border-color: var(--color-abril-border)"
+    [style.left.px]="ctxX"
+    [style.top.px]="ctxY"
+    (click)="$event.stopPropagation()"
+    (contextmenu)="$event.preventDefault()"
+  >
+    <div
+      class="px-3 py-1.5 text-xs text-gray-400 border-b truncate"
+      style="border-color: var(--color-abril-border)"
+    >
+      {{ ctxInvoice.invoiceNumber }}
+    </div>
+    @if (canSign) {
+      <button
+        type="button"
+        [disabled]="!ctxInvoice.documentUrl"
+        [title]="!ctxInvoice.documentUrl ? 'La factura no tiene documento que firmar' : ''"
+        (click)="signInvoice(ctxInvoice)"
+        class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-green-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"
+            fill="#64BC04"
+          />
+        </svg>
+        <span class="font-medium text-gray-700">Firmar</span>
+      </button>
+    }
+    @if (ctxInvoice.signedDocumentUrl) {
+      <button
+        type="button"
+        (click)="openSigned(ctxInvoice)"
+        class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 cursor-pointer"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M14 3h7v7M21 3l-9 9M5 5h6M5 5v14h14v-6"
+            stroke="#6b7280"
+            stroke-width="1.6"
+            stroke-linecap="round"
+          />
+        </svg>
+        <span class="text-gray-600">Ver documento firmado</span>
+      </button>
+    }
+    <div class="my-1 border-t" style="border-color: var(--color-abril-border)"></div>
+    <button
+      type="button"
+      (click)="aprobarCtx(ctxInvoice)"
+      class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-green-50 cursor-pointer"
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#15803d"
+        stroke-width="2.5"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+      <span class="font-medium text-green-700">Aprobar</span>
+    </button>
+    <button
+      type="button"
+      (click)="rechazarCtx(ctxInvoice)"
+      class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-red-50 cursor-pointer"
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#dc2626"
+        stroke-width="2.5"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" />
+      </svg>
+      <span class="font-medium text-red-600">Rechazar</span>
+    </button>
+    <button
+      type="button"
+      (click)="observarCtx(ctxInvoice)"
+      class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-amber-50 cursor-pointer"
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#b45309"
+        stroke-width="2.2"
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path stroke-linecap="round" d="M12 8v5m0 3h.01" />
+      </svg>
+      <span class="font-medium text-amber-700">Observar</span>
+    </button>
+  </div>
+}
+
+@if (showCreateModal) {
+  <app-factura-create
+    [suppliers]="suppliers"
+    [paymentForms]="paymentForms"
+    [abrilCompanies]="abrilCompanies"
+    [currencies]="currencies"
+    (closeModal)="onCreateClosed()"
+    (saved)="onCreated()"
+  >
+  </app-factura-create>
+}
+
+@if (showImportModal) {
+  <app-factura-import (closeModal)="showImportModal = false" (saved)="onImported()">
+  </app-factura-import>
+}
+
+@if (attachInvoice) {
+  <app-factura-attach [invoice]="attachInvoice" (closeModal)="closeAttach()" (saved)="onAttached()">
+  </app-factura-attach>
+}
+
+@if (detailInvoiceId) {
+  <app-factura-detail
+    [invoiceId]="detailInvoiceId"
+    (closeModal)="closeDetail()"
+    (edit)="onDetailEdit($event)"
+  >
+  </app-factura-detail>
+}
+
+@if (editDetail) {
+  <app-factura-edit
+    [detail]="editDetail"
+    [suppliers]="suppliers"
+    [paymentForms]="paymentForms"
+    [abrilCompanies]="abrilCompanies"
+    [currencies]="currencies"
+    (closeModal)="closeEdit()"
+    (saved)="onEdited()"
+  >
+  </app-factura-edit>
+}
+
+@if (showObserveModal) {
+  <app-factura-observe
+    [reasons]="observationReasons"
+    [count]="observeIds.length"
+    (closeModal)="closeObserve()"
+    (confirm)="onObserveConfirm($event)"
+  >
+  </app-factura-observe>
+}

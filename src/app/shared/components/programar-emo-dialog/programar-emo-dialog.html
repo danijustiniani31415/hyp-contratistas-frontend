@@ -1,0 +1,206 @@
+<app-abril-modal-panel
+  titulo="Programar EMO con clínica"
+  icono="ti-calendar-plus"
+  variant="blue"
+  width="620px"
+  [preventCloseWhenDirty]="true"
+  (closeModal)="close()">
+
+  <div class="paso-body">
+    <!-- Trabajador: solo lectura, viene de la fila desde la que se abrió el modal -->
+    <h2 class="paso-title"><i class="ti ti-user"></i> Trabajador</h2>
+    <div class="worker-card" [class.worker-card--preingreso]="worker.esFinalistaAprobado">
+      <span class="worker-card__name">{{ worker.nombreCompleto | titleCase }}</span>
+      <!-- La razón social ya no va acá: se muestra abajo como campo de solo lectura, al lado de
+           la clínica, donde antes estaba el desplegable de médico (lo pidió GTH así). -->
+      <span class="worker-card__meta">DNI {{ worker.dni }}</span>
+      <!-- Ficha de pre-ingreso: se dice explícitamente que todavía no es trabajador, para que
+           quien programa entienda por qué el tipo de EMO viene fijado en Ingreso. -->
+      <span class="worker-card__tag" *ngIf="worker.esFinalistaAprobado">
+        <i class="ti ti-user-plus"></i>
+        Finalista aprobado — aún sin contrato. Solo EMO de Ingreso.
+      </span>
+    </div>
+
+    <h2 class="paso-title mt-6"><i class="ti ti-calendar-event"></i> Datos de la cita</h2>
+
+    <div class="form-row">
+      <div class="abril-field">
+        <!-- dense + floatingLabel: mismas medidas y mismo label que app-search-select, para que la
+             fecha no se vea más grande que los desplegables de al lado. -->
+        <!-- Sin fechas pasadas: la cita es una reserva a futuro con la clínica. El calendario las
+             deshabilita y el campo rechaza una escrita a mano. -->
+        <app-date-picker
+          label="Fecha programada *"
+          [dense]="true"
+          [floatingLabel]="true"
+          [color]="accentColor"
+          [min]="minFechaProgramada"
+          [value]="form.fechaProgramada || null"
+          (valueChange)="form.fechaProgramada = $event ?? ''">
+        </app-date-picker>
+      </div>
+
+      <div class="abril-field">
+        <app-search-select
+          label="Tipo EMO *"
+          [color]="accentColor"
+          [options]="tiposEmo"
+          valueField="id"
+          displayField="nombre"
+          [value]="form.tipoEmoId"
+          placeholder="Selecciona tipo"
+          (valueChange)="form.tipoEmoId = $event">
+        </app-search-select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="abril-field">
+        <app-search-select
+          label="Clínica *"
+          [color]="accentColor"
+          [options]="clinicas"
+          valueField="id"
+          displayField="nombre"
+          [value]="form.clinicaId"
+          placeholder="Selecciona clínica"
+          (valueChange)="onClinicaChange($event)">
+        </app-search-select>
+      </div>
+
+      <!-- Razón social del trabajador. Normalmente es un dato de la ficha y no una decisión de
+           quien programa, así que va de solo lectura; ocupa el lugar del antiguo desplegable de
+           médico — GTH pidió dejar de elegir médico y ver acá la empresa. El médico de la cita lo
+           pone el backend con el que esté marcado como por defecto en el catálogo.
+
+           La excepción es el ingreso directo FFT: llega al EMO sin razón social porque su vacante
+           no se aprueba ni se publica y nadie pasó por la asignación de Reclutamiento. Ahí sí hay
+           que elegirla, y es obligatoria: sin ella la cita queda fuera de Programaciones. -->
+      <div class="abril-field" *ngIf="pideRazonSocial; else razonSocialFicha">
+        <app-search-select
+          label="Razón social *"
+          [color]="accentColor"
+          [options]="razonesSociales"
+          valueField="id"
+          displayField="nombre"
+          [value]="form.empresaId"
+          placeholder="Selecciona razón social"
+          (valueChange)="form.empresaId = $event">
+        </app-search-select>
+        <p class="razon-hint" *ngIf="razonSocialSeleccionada">
+          Cupos disponibles: <b>{{ razonSocialSeleccionada.cuposDisponibles }}</b> de 20.
+        </p>
+        <p class="razon-hint razon-hint--warn" *ngIf="sinCupos">
+          La razón social seleccionada no tiene cupos disponibles.
+        </p>
+      </div>
+
+      <ng-template #razonSocialFicha>
+        <div class="abril-field">
+          <label class="abril-field-label">Razón social</label>
+          <input
+            class="abril-field-input abril-field-input--readonly"
+            type="text"
+            readonly
+            tabindex="-1"
+            [value]="worker.empresa || '—'" />
+        </div>
+      </ng-template>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Notas</label>
+      <textarea
+        class="abril-field-input notas"
+        rows="3"
+        placeholder="Observaciones para la clínica…"
+        [(ngModel)]="form.notas"></textarea>
+    </div>
+
+    <!-- A quién le va a llegar cada correo: se resuelve en el backend con la misma lógica del
+         envío real, así el usuario no tiene que ir a Configuración de EMOs a adivinarlo.
+         Son DOS correos, en momentos distintos y con destinatarios propios, así que se
+         muestran por separado: el de ahora (programación manual) y el que sale después,
+         cuando la clínica acepte la cita. -->
+    <ng-container *ngIf="!cargandoDestinatarios">
+      <div class="aviso" *ngIf="manual.para.length || manual.clinicaPendiente; else manualVacio">
+        <i class="ti ti-mail"></i>
+        <p class="aviso__texto">
+          <strong>Programación manual:</strong> al guardar, la cita será notificada a
+          <ng-container
+            *ngTemplateOutlet="listaCorreos; context: { $implicit: manual }"></ng-container>
+        </p>
+      </div>
+      <ng-template #manualVacio>
+        <div class="aviso aviso--warn">
+          <i class="ti ti-mail-off"></i>
+          <p class="aviso__texto">
+            <strong>Programación manual:</strong> no hay destinatarios activos, así que al guardar
+            <strong>no se enviará</strong> ningún correo. Actívalos en Configuración de EMOs.
+          </p>
+        </div>
+      </ng-template>
+
+      <div
+        class="aviso"
+        *ngIf="aceptada.para.length || aceptada.clinicaPendiente; else aceptadaVacio">
+        <i class="ti ti-mail-check"></i>
+        <p class="aviso__texto">
+          <strong>Programación aceptada por la clínica:</strong> cuando la clínica acepte la cita,
+          se notificará a
+          <ng-container
+            *ngTemplateOutlet="listaCorreos; context: { $implicit: aceptada }"></ng-container>
+        </p>
+      </div>
+      <ng-template #aceptadaVacio>
+        <div class="aviso aviso--warn">
+          <i class="ti ti-mail-off"></i>
+          <p class="aviso__texto">
+            <strong>Programación aceptada por la clínica:</strong> no hay destinatarios activos, así
+            que cuando la clínica acepte <strong>no se enviará</strong> ningún correo. Actívalos en
+            Configuración de EMOs.
+          </p>
+        </div>
+      </ng-template>
+    </ng-container>
+
+    <!-- Lista de correos de un aviso: "a@x, b@x y c@x. Con copia a d@x."
+         Si la clínica es destinataria pero todavía no se elige cuál, se la nombra como una
+         entrada más de la frase en vez de omitirla: programar exige clínica, así que al
+         guardar siempre le llega, y callarla hacía leer el aviso como si el correo fuera
+         solo para el jefe. El " y a " solo va si hay otros destinatarios delante; si la
+         clínica es el único, la "a" ya la puso la frase del aviso. -->
+    <ng-template #listaCorreos let-dest>
+      <ng-container *ngFor="let d of dest.para; let i = index; let last = last"
+        ><span *ngIf="i > 0">{{ last && !dest.clinicaPendiente ? ' y ' : ', ' }}</span
+        ><span class="aviso__email" [title]="etiquetaDestinatario(d)">{{ d.email }}</span></ng-container
+      ><ng-container *ngIf="dest.clinicaPendiente"
+        ><span *ngIf="dest.para.length"> y a </span
+        ><span class="aviso__pendiente">los correos de contacto de la clínica que elijas</span></ng-container
+      >.
+      <ng-container *ngIf="dest.copias.length">
+        Con copia a
+        <ng-container *ngFor="let c of dest.copias; let i = index; let last = last"
+          ><span *ngIf="i > 0">{{ last ? ' y ' : ', ' }}</span
+          ><span class="aviso__email" [title]="etiquetaDestinatario(c)">{{ c.email }}</span></ng-container
+        >.
+      </ng-container>
+      <span class="aviso__alerta" *ngIf="dest.clinicaSinCorreos">
+        La clínica elegida está activa como destinataria pero no tiene ningún correo de contacto
+        cargado, así que a ella no le llegará.
+      </span>
+    </ng-template>
+  </div>
+
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-ghost" (click)="close()" [disabled]="submitting">
+      Cancelar
+    </button>
+    <button type="button" class="btn-primary" [disabled]="!canSubmit || submitting" (click)="submit()">
+      <i class="ti ti-loader-2 spin" *ngIf="submitting"></i>
+      <i class="ti ti-calendar-check" *ngIf="!submitting"></i>
+      {{ submitting ? 'Programando…' : 'Programar EMO con clínica' }}
+    </button>
+  </div>
+</app-abril-modal-panel>

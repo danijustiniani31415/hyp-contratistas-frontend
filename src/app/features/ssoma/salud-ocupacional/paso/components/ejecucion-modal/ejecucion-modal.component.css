@@ -1,0 +1,190 @@
+.ej-header-info {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: linear-gradient(90deg, #eef2ff 0%, #f0fdf4 100%);
+  border: 1px solid #e0e7ff;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.ej-header-icon {
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.ej-nombre { font-size: 0.9rem; font-weight: 700; color: #111827; }
+.ej-freq   { font-size: 0.72rem; color: #6b7280; }
+
+.ej-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 520px) { .ej-grid { grid-template-columns: 1fr; } }
+
+.ej-field { display: flex; flex-direction: column; gap: 0.3rem; }
+.ej-field.span2 { grid-column: 1 / -1; }
+
+.ej-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+}
+
+.ej-input,
+.ej-textarea {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.88rem;
+  color: #111827;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.ej-input:focus, .ej-textarea:focus {
+  outline: 0;
+  border-color: var(--color-abril-logo-blue);
+  box-shadow: 0 0 0 3px rgba(0, 93, 157, 0.12);
+}
+.ej-textarea { resize: vertical; min-height: 72px; }
+
+/* Drag & drop zone */
+.dropzone {
+  border: 2px dashed #d1d5db;
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.dropzone:hover, .dropzone.over {
+  border-color: var(--color-abril-logo-blue);
+  background: #f0f4f9;
+}
+
+.dropzone-icon { font-size: 1.5rem; color: #9ca3af; }
+.dropzone-text { font-size: 0.78rem; color: #9ca3af; line-height: 1.3; }
+.dropzone-hint { font-size: 0.68rem; color: #c4c9d1; }
+
+.evidencia-existente {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.evidencia-existente span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-ver-evidencia {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #2563eb;
+  color: #2563eb;
+  background: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-ver-evidencia:hover { background: #eff6ff; }
+
+.file-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  background: #f0f4f9;
+  border: 1px solid #d1dce9;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+}
+.file-preview i { font-size: 1.1rem; color: var(--color-abril-logo-blue); }
+.file-preview .remove-file {
+  margin-left: auto;
+  color: #9ca3af;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 2px;
+  font-size: 0.9rem;
+  transition: color 0.15s;
+}
+.file-preview .remove-file:hover { color: #dc2626; }
+
+/* Upload status */
+.upload-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #2563eb;
+  padding: 0.4rem 0;
+}
+
+/* Footer */
+.ej-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+  margin-top: 0.5rem;
+}
+
+.btn-cancel {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #6b7280;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-cancel:hover { background: #f9fafb; }
+
+.btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 8px;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-save:hover:not(:disabled) { background: var(--color-abril-logo-blue-hover); }
+.btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

@@ -1,0 +1,216 @@
+<div class="dash-root">
+
+  <!-- ══ TOOLBAR ═══════════════════════════════════════════════════════════ -->
+  <div class="dash-toolbar">
+    <div class="dt-brand">
+      <div class="dt-brand__badge">SSOMA</div>
+      <div>
+        <div class="dt-brand__title">Dashboard de Seguridad</div>
+        <div class="dt-brand__sub">{{ tablaCombinada().length }} proyectos activos · {{ nombreMes(mes()) }} {{ anio() }}</div>
+      </div>
+    </div>
+    <div class="dt-controls no-print">
+      <app-search-select
+        [options]="meses"
+        valueField="valor"
+        displayField="nombre"
+        placeholder="Todos los meses"
+        [sortAlpha]="false"
+        [value]="mes()"
+        [compact]="true"
+        [showLabel]="false"
+        color="var(--color-abril-primary)"
+        (valueChange)="mes.set(+$event)">
+      </app-search-select>
+      <app-search-select
+        [options]="anios"
+        valueField="valor"
+        displayField="nombre"
+        placeholder="Todos los años"
+        [sortAlpha]="false"
+        [value]="anio()"
+        [compact]="true"
+        [showLabel]="false"
+        color="var(--color-abril-primary)"
+        (valueChange)="anio.set(+$event)">
+      </app-search-select>
+      <button class="dt-btn" (click)="cargar()"><i class="ti ti-refresh"></i> Actualizar</button>
+      <button class="dt-btn dt-btn--ghost" (click)="imprimir()"><i class="ti ti-printer"></i> Exportar PDF</button>
+    </div>
+  </div>
+
+  <!-- ══ GRID ══════════════════════════════════════════════════════════════ -->
+  <div class="dash-body">
+    <ng-container *ngIf="tablaCombinada().length > 0; else emptyTpl">
+      <div class="dash-grid">
+
+        <!-- ■ REACTIVOS — prioridad N°1 del dashboard ─────────────────────── -->
+        <div class="card area-reactivos card--ink">
+          <div class="card-hd">
+            <span class="chd-label">INDICADORES REACTIVOS — IF · IG · IA</span>
+            <div class="card-hd__right">
+              <span class="chd-period">Acum. {{ anio() }}</span>
+              <button class="btn-editar-meta" (click)="abrirEditarMeta()" title="Configurar meta anual">
+                <i class="ti ti-target-arrow"></i> Meta
+              </button>
+            </div>
+          </div>
+          <!-- TODO en una sola fila: números grandes | gráfica de Julio | tabla Proyecto/Año/Total -->
+          <div class="rx-layout" *ngIf="reactivosTotales() as tot">
+            <div class="rx-totals">
+              <div class="rx-kpi">
+                <div class="rx-kpi__n" [ngClass]="ifColorClass(tot.IF)">{{ tot.IF | number:'1.1-1' }}</div>
+                <div class="rx-kpi__lbl">Frecuencia</div>
+                <span class="meta-chip" *ngIf="metaAnual()?.metaIndiceFrecuencia != null; else sinMetaIF" [ngClass]="metaClass(tot.IF, metaAnual()?.metaIndiceFrecuencia)">
+                  Meta {{ metaAnual()?.metaIndiceFrecuencia | number:'1.1-1' }}
+                </span>
+                <ng-template #sinMetaIF><span class="meta-chip meta-chip--sin-meta">Sin meta</span></ng-template>
+              </div>
+              <div class="rx-kpi">
+                <div class="rx-kpi__n" [ngClass]="igColorClass(tot.IG)">{{ tot.IG | number:'1.0-0' }}</div>
+                <div class="rx-kpi__lbl">Gravedad</div>
+                <span class="meta-chip" *ngIf="metaAnual()?.metaIndiceGravedad != null; else sinMetaIG" [ngClass]="metaClass(tot.IG, metaAnual()?.metaIndiceGravedad)">
+                  Meta {{ metaAnual()?.metaIndiceGravedad | number:'1.0-0' }}
+                </span>
+                <ng-template #sinMetaIG><span class="meta-chip meta-chip--sin-meta">Sin meta</span></ng-template>
+              </div>
+              <div class="rx-kpi">
+                <div class="rx-kpi__n" [ngClass]="iaColorClass(tot.IA)">{{ tot.IA | number:'1.2-2' }}</div>
+                <div class="rx-kpi__lbl">Accidentabilidad</div>
+                <span class="meta-chip" *ngIf="metaAnual()?.metaIndiceAccidentabilidad != null; else sinMetaIA" [ngClass]="metaClass(tot.IA, metaAnual()?.metaIndiceAccidentabilidad)">
+                  Meta {{ metaAnual()?.metaIndiceAccidentabilidad | number:'1.2-2' }}
+                </span>
+                <ng-template #sinMetaIA><span class="meta-chip meta-chip--sin-meta">Sin meta</span></ng-template>
+              </div>
+              <div class="rx-kpi rx-kpi--neutral">
+                <div class="rx-kpi__n rx-hht">{{ tot.totalHHT | number:'1.0-0' }}</div>
+                <div class="rx-kpi__lbl">HH Trabajadas</div>
+                <div class="rx-kpi__form">{{ tot.totalAcc }} acc · {{ tot.totalDias }} días</div>
+              </div>
+            </div>
+
+            <!-- Gráfica: accidentes DE JULIO, por proyecto (sin IF). Los días perdidos
+                 se identifican arriba de la misma barra del proyecto (segunda línea
+                 del datalabel), no como chip aparte ni como barra propia. -->
+            <div class="rx-chart-wrap">
+              <div class="rx-chart-hd-row">
+                <div class="rx-chart-hd">{{ nombreMes(mes()) }} {{ anio() }} · Accidentes por proyecto</div>
+              </div>
+              <div class="rx-chart-canvas"><canvas #accDiasCanvas></canvas></div>
+            </div>
+
+            <!-- Tabla: Proyecto | Año | Total proyecto (Julio ya está en la gráfica) -->
+            <div class="rx-table-wrap">
+              <table class="rx-tbl rx-tbl--grouped">
+                <thead>
+                  <tr>
+                    <th rowspan="2" class="rx-t-nombre">Proyecto</th>
+                    <th colspan="4" class="rx-grp-lbl">Año {{ anio() }}</th>
+                    <th colspan="4" class="rx-grp-lbl rx-grp-lbl--total">Total proyecto</th>
+                  </tr>
+                  <tr class="rx-t-sub">
+                    <th>HHT</th><th>Acc</th><th>Días</th><th>IA</th>
+                    <th class="rx-t-sub--total">HHT</th><th class="rx-t-sub--total">Acc</th><th class="rx-t-sub--total">Días</th><th class="rx-t-sub--total">IA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of filasReactivos()">
+                    <td class="rx-t-nombre">{{ row.nombreCorto }}</td>
+
+                    <td class="rx-t-num">{{ row.hhtAnio | number:'1.0-0' }}</td>
+                    <td class="rx-t-num">{{ row.accidentesAnio }}</td>
+                    <td class="rx-t-num">{{ row.diasPerdidosAnio }}</td>
+                    <td class="rx-t-idx" [ngClass]="iaColorClass(row.iaAnio)">{{ row.iaAnio | number:'1.2-2' }}</td>
+
+                    <td class="rx-t-num rx-t-num--total">{{ row.hhtTotal | number:'1.0-0' }}</td>
+                    <td class="rx-t-num rx-t-num--total">{{ row.accidentesTotal }}</td>
+                    <td class="rx-t-num rx-t-num--total">{{ row.diasPerdidosTotal }}</td>
+                    <td class="rx-t-idx rx-t-idx--total" [ngClass]="iaColorClass(row.iaTotal)">{{ row.iaTotal | number:'1.2-2' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ■ PUNTAJE MENSUAL — puntaje SSOMA por proyecto (máx. 110 pts) ─── -->
+        <div class="card area-ranking">
+          <div class="card-hd">
+            <span class="chd-label">PUNTAJE MENSUAL SSOMA</span>
+            <span class="chd-period">{{ nombreMes(mes()) }} {{ anio() }} · sobre 110 pts</span>
+          </div>
+          <div class="chart-card-body"><canvas #panoramaCanvas></canvas></div>
+        </div>
+
+        <!-- ■ DESEMPEÑO DE SUPERVISORES ─────────────────────────────────── -->
+        <div class="card area-supervisor">
+          <div class="card-hd">
+            <span class="chd-label">DESEMPEÑO DE SUPERVISORES</span>
+            <span class="chd-period">{{ nombreMes(mes()) }} {{ anio() }}</span>
+          </div>
+          <div class="chart-card-body"><canvas #supervisorCanvas></canvas></div>
+        </div>
+
+        <!-- ■ CUMPLIMIENTO PROACTIVO — por proyecto ────────────────────────── -->
+        <div class="card area-proactivos">
+          <div class="card-hd card-hd--stack">
+            <div class="card-hd__row">
+              <span class="chd-label">CUMPLIMIENTO INDICADORES PROACTIVOS</span>
+              <span class="chd-period">Acum. {{ anio() }}</span>
+            </div>
+            <span class="chd-desc">Suma del % de cumplimiento de metas SSOMA de Abril (Casa) y de las empresas contratistas del proyecto</span>
+          </div>
+          <div class="chart-card-body chart-card-body--tall"><canvas #proactivosCanvas></canvas></div>
+        </div>
+
+        <!-- ■ MEJORES PROYECTOS — resumen destacado, al costado de Proactivo ── -->
+        <div class="card area-mejores">
+          <div class="card-hd">
+            <span class="chd-label">MEJORES PROYECTOS</span>
+            <span class="chd-period">{{ nombreMes(mes()) }} {{ anio() }}</span>
+          </div>
+          <div class="mejores-grid">
+            <div class="mejor-card" *ngFor="let m of mejoresProyectos()">
+              <div class="mejor-card__titulo">{{ m.titulo }}</div>
+              <div class="mejor-card__sub">Mejor proyecto</div>
+              <div class="mejor-card__proyecto">{{ m.proyecto }}</div>
+              <div class="mejor-card__valor">{{ m.valor | number:'1.1-1' }}<small>{{ m.sufijo }}</small></div>
+              <div class="mejor-card__bar">
+                <div class="mejor-card__bar-fill" [style.width.%]="(m.valor / m.max) * 100"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </ng-container>
+
+    <ng-template #emptyTpl>
+      <div class="dash-empty">
+        <i class="ti ti-chart-bar"></i>
+        <p>Sin datos para el período seleccionado.</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- ══ MODAL META ANUAL ═══════════════════════════════════════════════════ -->
+  <div class="meta-modal-backdrop" *ngIf="editandoMeta" (click)="editandoMeta = false">
+    <div class="meta-modal" (click)="$event.stopPropagation()">
+      <h3>Meta anual {{ anio() }}</h3>
+      <p class="meta-modal__hint">Definí manualmente la meta de este año (ej. 10% menos que el año anterior en IF/IG, 20% menos en IA).</p>
+      <label>Meta Índice de Frecuencia
+        <input type="number" step="0.1" [(ngModel)]="metaForm.metaIndiceFrecuencia" placeholder="Ej. 23.4" />
+      </label>
+      <label>Meta Índice de Gravedad
+        <input type="number" step="0.1" [(ngModel)]="metaForm.metaIndiceGravedad" placeholder="Ej. 141" />
+      </label>
+      <label>Meta Índice de Accidentabilidad
+        <input type="number" step="0.01" [(ngModel)]="metaForm.metaIndiceAccidentabilidad" placeholder="Ej. 3.3" />
+      </label>
+      <div class="meta-modal__actions">
+        <button class="btn-cancelar" (click)="editandoMeta = false">Cancelar</button>
+        <button class="btn-guardar" (click)="guardarMeta()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>

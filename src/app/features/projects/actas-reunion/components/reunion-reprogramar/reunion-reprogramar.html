@@ -1,0 +1,43 @@
+<app-base-modal [title]="'Reprogramar reunión'" width="w-[520px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-4 p-1">
+
+    <div class="flex items-center gap-2 text-xs bg-[#F5F8FA] border border-[#E5EAF0] rounded-lg px-3 py-2 text-gray-600">
+      <span class="ti ti-calendar text-[var(--color-abril-primary)]"></span>
+      Fecha actual: <span class="font-medium">{{ fechaActual | date:'dd/MM/yyyy' }}</span>
+    </div>
+
+    <app-date-picker label="Nueva fecha *" color="var(--color-abril-primary)" [value]="fecha" (valueChange)="fecha = $event"></app-date-picker>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Hora de inicio</label>
+        <input type="time" [(ngModel)]="horaInicio"
+          class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]" />
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Hora de término</label>
+        <input type="time" [(ngModel)]="horaFin"
+          class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]" />
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm text-gray-600 mb-1">Motivo de la reprogramación</label>
+      <textarea [(ngModel)]="motivo" rows="3" maxlength="500"
+        class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)] resize-none"
+        placeholder="Ej. no hay disponibilidad de todos los participantes..."></textarea>
+    </div>
+
+    <div class="flex justify-end gap-3 pt-2">
+      <button type="button" (click)="closeModal.emit()"
+        class="h-[42px] px-5 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors">
+        Cancelar
+      </button>
+      <button type="button" (click)="submit()"
+        class="h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
+        <span class="ti ti-calendar-repeat text-base"></span>
+        Reprogramar
+      </button>
+    </div>
+  </div>
+</app-base-modal>

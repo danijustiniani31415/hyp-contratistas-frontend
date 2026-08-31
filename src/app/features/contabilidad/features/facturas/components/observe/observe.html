@@ -1,0 +1,36 @@
+<app-base-modal [title]="'Observar factura(s)'" width="w-[520px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-4">
+    <p class="text-sm text-gray-600">
+      Se observará(n) <b>{{ count }}</b> factura(s) seleccionada(s). Elige el motivo de la observación.
+    </p>
+
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Motivo *</label>
+      <app-search-select
+        [options]="reasons"
+        valueField="invoiceObservationReasonId"
+        displayField="invoiceObservationReasonDescription"
+        [value]="reasonId"
+        (valueChange)="reasonId = $event"
+        [showLabel]="false"
+        placeholder="— Selecciona un motivo —"
+        [allowClear]="true">
+      </app-search-select>
+    </div>
+  </div>
+
+  <div class="mt-6 flex justify-end gap-3">
+    <button
+      type="button"
+      (click)="closeModal.emit()"
+      class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">
+      Cancelar
+    </button>
+    <button
+      type="button"
+      (click)="save()"
+      class="rounded-lg bg-[var(--color-abril-primary)] px-5 py-2 text-sm font-medium text-white hover:opacity-90">
+      Observar
+    </button>
+  </div>
+</app-base-modal>

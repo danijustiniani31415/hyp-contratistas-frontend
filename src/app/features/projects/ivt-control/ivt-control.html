@@ -1,0 +1,254 @@
+<app-abril-page-header
+  [badge]="'PROYECTOS · ' + anioActual"
+  titulo="Control de IVTs"
+  subtitulo="Inspecciones de verificación técnica por proyecto."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: 'Nuevo registro', icono: 'ti-plus' }"
+  (primaryClick)="showCreateModal = true; loadCreateFilters()">
+</app-abril-page-header>
+
+<div class="bg-white flex-1 overflow-y-auto p-[20px] flex flex-col gap-[20px]">
+    <div>
+        <div class="flex gap-[10px] w-full">
+            <div class="w-[240px]">
+                <p class="w-[240px] text-lg" style="color:var(--color-abril-primary)">Periodo</p>
+                <select [(ngModel)]="tableComponentData.selectedFilters.periodDate"
+                    class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-lg select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)"
+                     name="periodDate">
+                    <option [ngValue]="''">Todos los periodos</option>
+                    <option *ngFor="let item of tableComponentData.filters.periods" [ngValue]="item">
+                        {{item | date:"MMMM yyyy" | titlecase }}
+                    </option>
+                </select>
+            </div>
+            <div class="w-[240px]">
+                <p class="w-[240px] text-lg" style="color:var(--color-abril-primary)">Residente</p>
+                <select [(ngModel)]="tableComponentData.selectedFilters.userId"
+                    class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-lg select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)"
+                     name="periodDate">
+                    <option [ngValue]="0">Todos los residentes</option>
+                    <option *ngFor="let item of tableComponentData.filters.residents" [ngValue]="item.userId">
+                        {{item.fullName}}
+                    </option>
+                </select>
+            </div>
+            <div class="w-[240px]">
+                <p class="w-[240px] text-lg" style="color:var(--color-abril-primary)">Proyecto</p>
+                <select [(ngModel)]="tableComponentData.selectedFilters.projectId"
+                    class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-lg select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)"
+                     name="periodDate">
+                    <option [ngValue]="0">Todos los proyectos</option>
+                    <option *ngFor="let item of tableComponentData.filters.projects" [ngValue]="item.projectId">
+                        {{item.projectDescription}}
+                    </option>
+                </select>
+            </div>
+            <button type="button" (click)="loadIvtControls()"
+                class="self-end ml-auto w-[120px] h-[45px] py-[1px] rounded-[10px] cursor-pointer" style="background:var(--color-abril-primary)">
+                <div class="flex justify-center items-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M19.6 21L13.3 14.7C12.8 15.1 12.225 15.4167 11.575 15.65C10.925 15.8833 10.2333 16 9.5 16C7.68333 16 6.146 15.3707 4.888 14.112C3.63 12.8533 3.00067 11.316 3 9.5C2.99933 7.684 3.62867 6.14667 4.888 4.888C6.14733 3.62933 7.68467 3 9.5 3C11.3153 3 12.853 3.62933 14.113 4.888C15.373 6.14667 16.002 7.684 16 9.5C16 10.2333 15.8833 10.925 15.65 11.575C15.4167 12.225 15.1 12.8 14.7 13.3L21 19.6L19.6 21ZM9.5 14C10.75 14 11.8127 13.5627 12.688 12.688C13.5633 11.8133 14.0007 10.7507 14 9.5C13.9993 8.24933 13.562 7.187 12.688 6.313C11.814 5.439 10.7513 5.00133 9.5 5C8.24867 4.99867 7.18633 5.43633 6.313 6.313C5.43967 7.18967 5.002 8.252 5 9.5C4.998 10.748 5.43567 11.8107 6.313 12.688C7.19033 13.5653 8.25267 14.0027 9.5 14Z"
+                            fill="white" />
+                    </svg>
+                    <p class="text-[#ffffff] pl-[10px] text-lg">Buscar</p>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <div class="flex h-[90%] gap-[20px]">
+        <div class="flex flex-1 flex-col items-start">
+            <div class="w-full rounded-lg overflow-hidden border" style="border-color:var(--color-abril-border)">
+
+                <table class="w-full table-fixed">
+                    <thead style="background:var(--color-abril-primary-light)">
+                        <tr style="color:var(--color-abril-primary-dark)">
+                            <th class="w-[10px]"></th>
+                            <th class="w-[50px]">Nombre archivo</th>
+                            <!--<th class="w-[150px]">Estado</th>-->
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        <tr *ngFor="let item of tableComponentData.tableData" class="border-b h-[30px]" style="border-color:var(--color-abril-border)">
+                            <td class="text-center">
+                                <div class="flex items-center justify-center">
+                                    <button class="cursor-pointer" (click)="showPdf($event, item.fileUrl)" >
+                                        <svg width="22" height="16" viewBox="0 0 22 16" fill="none"
+                                            xmlns="http://www.w3.org/2000/svg" style="color:var(--color-abril-primary)">
+                                            <path
+                                                d="M13.75 7.75C13.75 8.54565 13.4339 9.30871 12.8713 9.87132C12.3087 10.4339 11.5456 10.75 10.75 10.75C9.95435 10.75 9.19129 10.4339 8.62868 9.87132C8.06607 9.30871 7.75 8.54565 7.75 7.75C7.75 6.95435 8.06607 6.19129 8.62868 5.62868C9.19129 5.06607 9.95435 4.75 10.75 4.75C11.5456 4.75 12.3087 5.06607 12.8713 5.62868C13.4339 6.19129 13.75 6.95435 13.75 7.75Z"
+                                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                                stroke-linejoin="round" />
+                                            <path
+                                                d="M0.75 7.75C2.35 3.653 6.086 0.75 10.75 0.75C15.414 0.75 19.15 3.653 20.75 7.75C19.15 11.847 15.414 14.75 10.75 14.75C6.086 14.75 2.35 11.847 0.75 7.75Z"
+                                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                                stroke-linejoin="round" />
+                                        </svg>
+                                    </button>
+                                    <a [href]="item.fileUrl" target="_blank">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--color-abril-primary)">
+                                            <path d="M13.9991 4H18.5891L11.2891 11.29L12.7091 12.71L19.9991 5.41V10H21.9991V2H13.9991V4Z" fill="currentColor" />
+                                            <path d="M12 5V3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V12H19V19H5V5H12Z"
+                                                fill="currentColor" />
+                                        </svg>
+                                    </a>
+                                </div>
+                            </td>
+
+                            <!-- Ver
+                    <td class="text-center">
+                        <button class="cursor-pointer" (click)="openModal(item.lessonId, $event)">
+                            <svg *ngIf="item.stateDescription.toUpperCase() == 'SUBIDO'" width="24" height="24"
+                                viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M15 12C15 12.7956 14.6839 13.5587 14.1213 14.1213C13.5587 14.6839 12.7956 15 12 15C11.2044 15 10.4413 14.6839 9.87868 14.1213C9.31607 13.5587 9 12.7956 9 12C9 11.2044 9.31607 10.4413 9.87868 9.87868C10.4413 9.31607 11.2044 9 12 9C12.7956 9 13.5587 9.31607 14.1213 9.87868C14.6839 10.4413 15 11.2044 15 12Z"
+                                    stroke="#686971" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                                <path
+                                    d="M2 12C3.6 7.903 7.336 5 12 5C16.664 5 20.4 7.903 22 12C20.4 16.097 16.664 19 12 19C7.336 19 3.6 16.097 2 12Z"
+                                    stroke="#686971" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </button>
+                    </td>
+                    -->
+
+                            <td><span [title]="item.fileDescription"
+                                    class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{
+                                    item.fileDescription }}</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex gap-2 mt-4 justify-around w-full border rounded-lg h-[30px]" style="border-color:var(--color-abril-border)">
+                <span># Registros: {{totalRecords}}</span>
+                <div class="flex gap-[10px] items-center">
+                    <button class="cursor-pointer" style="color:var(--color-abril-accent)" (click)="prevPage()" [disabled]="currentPage === 1">
+                        «
+                    </button>
+
+                    <button class="cursor-pointer py-1 px-2 rounded transition-colors" *ngFor="let page of pages"
+                        (click)="goToPage(page)"
+                        [ngClass]="{'bg-[var(--color-abril-accent)] text-white': page === currentPage, 'text-black hover:bg-gray-100': page !== currentPage }">
+                        {{ page }}
+                    </button>
+
+                    <button class="cursor-pointer" style="color:var(--color-abril-accent)" (click)="nextPage()"
+                        [disabled]="currentPage === totalPages">
+                        »
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div [ngClass]="{
+            'visible': tableComponentData.iframeUrl,
+            'invisible': !tableComponentData.iframeUrl
+          }" class="flex-2 h-full">
+            <iframe *ngIf="tableComponentData.iframeUrl" class="w-full h-full" [src]="tableComponentData.iframeUrl"></iframe>
+        </div>
+    </div>
+
+    <div *ngIf="showCreateModal" class="fixed inset-0 bg-black/40 z-50 overflow-y-auto">
+        <div class="absolute inset-0" (click)="closeModal($event, 0)">
+        </div>
+        <div class="min-h-screen flex items-center justify-center py-10">
+            <div class="bg-white w-[800px] rounded-lg shadow-xl animate-modal-in relative"
+                (click)="$event.stopPropagation()">
+                <div class="py-[15px] px-[45px] flex flex-col gap-[15px] items-center">
+                    <h1 class="text-2xl text-center">AGREGAR IVT</h1>
+                    <div class="flex justify-between w-full gap-[20px]">
+                        <div class="flex flex-col flex-2">
+                            <p style="color:var(--color-abril-primary)">Archivo</p>
+                            <div *ngIf="createModalData.showImageAdder" class="relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg bg-[#F7FBF3] cursor-pointer transition-all duration-200 hover:bg-[#EEF7E6] hover:scale-[1.01]"
+                                style="border-color:var(--color-abril-primary)"
+                                (click)="opFile.click()">
+                                <input #opFile type="file" accept="application/pdf" class="hidden" (change)="onFileSelected($event)"
+                                    (dragover)="onDragOver($event)"
+                                    (dragleave)="onDragLeave($event)"
+                                    (drop)="onDrop($event)"
+                                required />
+
+                                <svg class="w-8 h-8 text-[var(--color-abril-primary)] mb-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M7 16a4 4 0 01-.88-7.9A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3-3 3m3-3v12" />
+                                </svg>
+
+                                <p class="text-sm text-gray-600">
+                                    Arrastra un archivo aquí o
+                                    <span style="color:var(--color-abril-primary)" class="font-semibold">Haz clic</span>
+                                </p>
+                                <p class="text-xs text-gray-400 mt-1">PDF</p>
+                            </div>
+                            <div *ngFor="let file of createModalData.selectedFiles; let i = index"
+                                class="w-full bg-white rounded-lg p-3 flex items-center justify-between shadow-sm"
+                                style="border:1px solid var(--color-abril-primary)"
+                                [ngClass]="{'mt-3': createModalData.showImageAdder}">
+
+                                <div class="flex items-center gap-3">
+
+                                    <!-- Icono PDF -->
+                                    <svg class="min-w-8 min-h-8 w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" />
+                                    </svg>
+
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-700">
+                                            {{ file.name }}
+                                        </p>
+                                        <p class="text-xs text-gray-400">
+                                            {{ file.size }}
+                                        </p>
+                                    </div>
+
+                                </div>
+
+                                <!-- Botón eliminar individual -->
+                                <button type="button" class="text-red-500 cursor-pointer hover:text-red-700 text-sm font-semibold"
+                                    (click)="removeFile(i)">
+                                    Quitar
+                                </button>
+
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <p style="color:var(--color-abril-primary)">Proyecto</p>
+                            <select [(ngModel)]="createModalData.createDto.projectId" class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-lg select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)">
+                                <option [ngValue]="0">Seleccionar</option>
+                                <option *ngFor="let item of createModalData.projectOptions" [ngValue]="item.projectId">{{item.projectDescription}}</option>
+                            </select>
+                            <p style="color:var(--color-abril-primary)">Periodo</p>
+
+                            <select [(ngModel)]="createModalData.createDto.periodDate"
+                                class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-lg select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)">
+
+                                <option [ngValue]="''">Seleccionar</option>
+
+                                <option *ngFor="let item of createModalData.periodOptions" [ngValue]="item.value">
+                                    {{ item.label }}
+                                </option>
+
+                            </select>
+                        </div>
+
+                    </div>
+                    <button (click)="saveIvtControl()" class="w-[120px] py-[5px] rounded-[10px] cursor-pointer" style="background:var(--color-abril-primary)">
+                        <p class="text-[#ffffff] text-lg">Guardar</p>
+                    </button>
+                </div>
+                <button class="absolute top-6 right-6 cursor-pointer" (click)="closeModal($event, 1)">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 20L4 4M20 4L4 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--color-abril-primary)" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div *ngIf="loader" class="loader-overlay">
+    <div class="loader"></div>
+</div>

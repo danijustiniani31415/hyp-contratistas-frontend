@@ -1,0 +1,33 @@
+<div class="campo">
+  <span class="campo__label">Imágenes adjuntas ({{ imagenes.length }})</span>
+
+  @if (imagenes.length === 0) {
+    <p class="text-[13px]" style="color:#94A3B8">Sin evidencia fotográfica</p>
+  } @else {
+    <div class="flex flex-wrap gap-[8px]">
+      @for (item of imagenes; track item.imageUrl; let i = $index) {
+        <button type="button" class="miniatura" (click)="abrirLightbox(i)"
+          [attr.aria-label]="'Ampliar imagen ' + (i + 1)">
+          <img [src]="item.imageUrl" [alt]="'Imagen adjunta ' + (i + 1)" />
+        </button>
+      }
+    </div>
+  }
+</div>
+
+<!-- ── Lightbox: vista ampliada superpuesta, sin salir del modal ─────────────
+     z-index por encima del backdrop de app-base-modal (z-50). -->
+@if (lightboxIndex !== null) {
+  <div class="lightbox" (click)="cerrarLightbox()">
+    <img class="lightbox__img" [src]="imagenes[lightboxIndex].imageUrl"
+      alt="Imagen adjunta ampliada" (click)="$event.stopPropagation()" />
+
+    <button type="button" class="lightbox__cerrar" (click)="cerrarLightbox()" aria-label="Cerrar imagen">
+      ✕
+    </button>
+
+    @if (imagenes.length > 1) {
+      <span class="lightbox__contador">{{ lightboxIndex + 1 }} / {{ imagenes.length }}</span>
+    }
+  </div>
+}

@@ -1,0 +1,107 @@
+<div class="flex flex-col gap-3">
+
+  <!-- Buscador -->
+  <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+    <label class="block text-[0.72rem] uppercase tracking-widest font-bold text-gray-500 mb-1.5">
+      Buscar rol
+    </label>
+    <app-search-input
+      placeholder="Nombre del rol..."
+      width="20rem"
+      [value]="searchTerm"
+      (valueChange)="onSearchChange($event)"
+    ></app-search-input>
+  </div>
+
+  <!-- Tabla desktop -->
+  <div class="hidden md:block bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="bg-gray-50 border-b border-gray-200">
+            <th class="text-left px-4 py-3 text-[0.7rem] font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap">#</th>
+            <th class="text-left px-4 py-3 text-[0.7rem] font-bold uppercase tracking-wider text-gray-500">Descripción</th>
+            <th class="text-left px-4 py-3 text-[0.7rem] font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap">Fecha de creación</th>
+            <th class="text-left px-4 py-3 text-[0.7rem] font-bold uppercase tracking-wider text-gray-500">Estado</th>
+            <th class="text-left px-4 py-3 text-[0.7rem] font-bold uppercase tracking-wider text-gray-500">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of tableData.data" class="border-b border-gray-100 last:border-b-0 hover:bg-green-50 transition-colors">
+            <td class="px-4 py-3 text-[0.78rem] text-gray-400 font-semibold tabular-nums">{{ item.roleId }}</td>
+            <td class="px-4 py-3 font-semibold text-gray-900">{{ item.roleDescription }}</td>
+            <td class="px-4 py-3 text-[0.82rem] text-gray-500 whitespace-nowrap">
+              {{ item.createdDateTime | date: 'dd/MM/yyyy' }}
+            </td>
+            <td class="px-4 py-3">
+              <span
+                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[0.7rem] font-bold border"
+                [ngClass]="item.active
+                  ? 'bg-green-100 text-green-800 border-green-200'
+                  : 'bg-gray-100 text-gray-600 border-gray-200'"
+              >
+                <span class="w-1.5 h-1.5 rounded-full" [ngClass]="item.active ? 'bg-green-500' : 'bg-gray-400'"></span>
+                {{ item.active ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 text-[0.78rem] font-semibold text-[#64bc04] bg-green-50 border border-green-200 rounded-lg cursor-pointer hover:bg-green-100 hover:border-[#64bc04] transition-colors"
+                (click)="editRole.emit(item)"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Editar
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="tableData.data.length === 0">
+            <td colspan="5" class="text-center text-gray-400 py-12 text-sm">Sin roles registrados.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Cards mobile -->
+  <div class="flex flex-col gap-2 md:hidden">
+    <div
+      *ngFor="let item of tableData.data"
+      class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col gap-2"
+    >
+      <div class="flex items-start justify-between gap-2">
+        <p class="font-semibold text-gray-900 text-sm leading-tight">{{ item.roleDescription }}</p>
+        <span
+          class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[0.7rem] font-bold border flex-shrink-0"
+          [ngClass]="item.active
+            ? 'bg-green-100 text-green-800 border-green-200'
+            : 'bg-gray-100 text-gray-600 border-gray-200'"
+        >
+          <span class="w-1.5 h-1.5 rounded-full" [ngClass]="item.active ? 'bg-green-500' : 'bg-gray-400'"></span>
+          {{ item.active ? 'Activo' : 'Inactivo' }}
+        </span>
+      </div>
+      <p class="text-[0.78rem] text-gray-400">
+        Creado: {{ item.createdDateTime | date: 'dd/MM/yyyy' }}
+      </p>
+      <button
+        type="button"
+        class="self-start inline-flex items-center gap-1.5 px-2.5 py-1 text-[0.78rem] font-semibold text-[#64bc04] bg-green-50 border border-green-200 rounded-lg cursor-pointer hover:bg-green-100 hover:border-[#64bc04] transition-colors"
+        (click)="editRole.emit(item)"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        Editar
+      </button>
+    </div>
+    <p *ngIf="tableData.data.length === 0" class="text-center text-gray-400 py-10 text-sm">
+      Sin roles registrados.
+    </p>
+  </div>
+
+</div>

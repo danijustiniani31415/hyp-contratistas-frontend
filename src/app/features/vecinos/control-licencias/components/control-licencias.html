@@ -1,0 +1,295 @@
+<div class="cl-root">
+
+<app-abril-page-header
+  titulo="Control de Licencias"
+  subtitulo="Plantilla de licencias y permisos por proyecto, con recordatorios automáticos"
+  [tabs]="tabs"
+  [botonPrimario]="botonPrimario"
+  (primaryClick)="onPrimaryClick()">
+  <div tabsExtra class="flex items-end gap-2">
+    <app-filter-trigger *ngIf="activeSubTab === 'plantilla' && selectedProjectId" [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+    <div class="w-64">
+      <app-search-select
+        [options]="proyectos"
+        valueField="projectId"
+        displayField="projectDescription"
+        label="Proyecto"
+        placeholder="Selecciona un proyecto"
+        [value]="selectedProjectId"
+        (valueChange)="selectedProjectId = $event; onProjectChange()">
+      </app-search-select>
+    </div>
+  </div>
+</app-abril-page-header>
+
+<div class="cl-body">
+
+  <!-- Subtabs planas, mismo lenguaje visual que las tabs del header -->
+  <div class="cl-subtabs">
+    <button type="button" *ngFor="let t of subTabs" (click)="onSubTabChange(t.id)"
+      class="cl-subtab" [class.cl-subtab--active]="activeSubTab === t.id">
+      {{ t.label }}
+    </button>
+  </div>
+
+  <!-- ── Catálogo base (no requiere proyecto seleccionado) ─────────────────── -->
+  <div *ngIf="activeSubTab === 'catalogo'" class="flex flex-col gap-2 pt-3">
+
+    <p class="text-xs text-gray-400">
+      Esta es la plantilla base: los tipos que agregues aquí aparecen de inmediato en <b>todos los proyectos</b>.
+      Cada proyecto puede además tener tipos propios, que se agregan desde su pestaña Plantilla.
+    </p>
+
+    <div class="abril-table-wrap" *ngIf="catalogo.length">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Descripción</th>
+            <th>Días de antelación por defecto</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let tipo of catalogo">
+            <td>{{ tipo.descripcion }}</td>
+            <td>{{ tipo.diasAntesDefault ?? '—' }}</td>
+            <td class="text-right whitespace-nowrap">
+              <button type="button" (click)="editarTipoBase(tipo)" class="text-gray-500 hover:text-gray-700 mr-3" title="Editar">
+                <i class="ti ti-pencil"></i>
+              </button>
+              <button type="button" (click)="eliminarTipoBase(tipo)" class="text-red-600 hover:text-red-800" title="Quitar de la plantilla base">
+                <i class="ti ti-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p *ngIf="catalogoLoaded && catalogo.length === 0" class="text-center text-sm text-gray-400 italic py-6">
+      La plantilla base todavía no tiene tipos configurados.
+    </p>
+  </div>
+
+  <p *ngIf="activeSubTab !== 'catalogo' && !selectedProjectId" class="text-center text-sm text-gray-400 italic py-10">
+    Selecciona un proyecto para ver su Control de Licencias.
+  </p>
+
+  <ng-container *ngIf="activeSubTab !== 'catalogo' && selectedProjectId">
+
+    <!-- ── Plantilla ─────────────────────────────────────────────────────── -->
+    <div *ngIf="activeSubTab === 'plantilla'" class="flex flex-col gap-2 pt-3">
+
+      <p class="text-xs text-gray-400">
+        Sube cada documento de la plantilla. El estado pasa a <b>Cargado</b> automáticamente al adjuntar
+        el archivo. Al reemplazar un documento, la versión anterior queda en el historial. Marca
+        <b>No aplica</b> si el tipo no corresponde a este proyecto.
+      </p>
+
+      <div class="abril-table-wrap">
+        <table class="abril-table">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Documento</th>
+              <th>Vencimiento</th>
+              <th>Recordatorios</th>
+              <th class="text-center">Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="filteredItems.length === 0">
+              <td colspan="6" class="text-center py-10 text-gray-400 text-sm">
+                {{ searchText.trim() ? 'Sin resultados.' : 'No hay tipos de licencia configurados.' }}
+              </td>
+            </tr>
+            <tr *ngFor="let item of pagedItems">
+              <td>
+                <span class="font-medium text-gray-700">{{ item.tipoDescripcion }}</span>
+                <span *ngIf="!item.esBase" class="text-[10px] font-semibold text-gray-400 border border-gray-300 rounded-full px-1.5 py-0.5 ml-1">propio</span>
+              </td>
+              <td>
+                <a *ngIf="item.archivoUrl" [href]="fileUrl(item.archivoUrl)" target="_blank"
+                  class="text-[var(--color-abril-standard)] hover:underline inline-flex items-center gap-1">
+                  <i class="ti ti-file"></i> {{ item.originalFileName || 'Ver archivo' }}
+                </a>
+                <span *ngIf="!item.archivoUrl" class="text-gray-300">—</span>
+              </td>
+              <td>
+                <span *ngIf="item.fechaVencimiento" class="cl-fecha-vencimiento" [ngClass]="estadoClass(item)">
+                  {{ item.fechaVencimiento | date: 'dd/MM/yyyy' }}
+                </span>
+                <span *ngIf="!item.fechaVencimiento" class="text-gray-300">—</span>
+              </td>
+              <td>
+                <div *ngIf="item.recordatorios.length" class="flex flex-wrap gap-1">
+                  <span *ngFor="let r of item.recordatorios"
+                    class="text-[10px] font-medium px-1.5 py-0.5 rounded-full border"
+                    [ngClass]="r.enviado ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-gray-50 text-gray-500 border-gray-200'"
+                    [title]="r.enviado ? 'Ya enviado' : 'Pendiente de enviar'">
+                    {{ r.diasAntes }}d
+                  </span>
+                </div>
+                <span *ngIf="!item.recordatorios.length" class="text-gray-300">—</span>
+              </td>
+              <td class="text-center">
+                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" [ngClass]="estadoClass(item)">
+                  {{ item.estadoDescripcion }}
+                </span>
+              </td>
+              <td class="text-right whitespace-nowrap">
+                <button *ngIf="item.archivoUrl" type="button" (click)="openRecordatorios(item)"
+                  class="text-gray-500 hover:text-gray-700 mr-2" title="Recordatorios">
+                  <i class="ti ti-bell"></i>
+                </button>
+                <button *ngIf="item.versionesHistorial > 0" type="button" (click)="openHistorial(item)"
+                  class="text-gray-500 hover:text-gray-700 mr-2 inline-flex items-center gap-0.5" title="Historial">
+                  <i class="ti ti-history"></i><span class="text-[11px]">{{ item.versionesHistorial }}</span>
+                </button>
+                <button *ngIf="!esNoAplica(item)" type="button" (click)="openUpload(item)"
+                  class="text-xs font-medium px-3 py-1.5 rounded-lg bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)] cursor-pointer hover:bg-[var(--color-abril-standard-hover)] hover:text-white transition-colors inline-flex items-center gap-1">
+                  <i class="ti ti-upload"></i> {{ item.archivoUrl ? 'Reemplazar' : 'Subir' }}
+                </button>
+                <button type="button" (click)="toggleNoAplica(item)"
+                  class="text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors cursor-pointer ml-2"
+                  [ngClass]="esNoAplica(item)
+                    ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                    : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50'">
+                  {{ esNoAplica(item) ? 'Quitar no aplica' : 'No aplica' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="shrink-0 max-w-[440px]" *ngIf="filteredItems.length">
+        <app-paginator
+          [totalRecords]="filteredItems.length"
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          (pageChange)="changePage($event)">
+        </app-paginator>
+      </div>
+    </div>
+
+    <!-- ── Destinatarios ─────────────────────────────────────────────────── -->
+    <div *ngIf="activeSubTab === 'destinatarios'" class="flex flex-col gap-4 pt-3 max-w-xl">
+
+      <div class="flex flex-col gap-2">
+        <p class="text-xs text-gray-400">
+          Residente, Coordinador SSOMA y Administración se resuelven automáticamente desde la ficha
+          del proyecto — igual criterio que en EMOs. GTH nunca recibe estos avisos.
+        </p>
+        <div class="abril-table-wrap">
+          <table class="abril-table">
+            <thead>
+              <tr>
+                <th>Rol</th>
+                <th>Correo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let a of destinatariosAutomaticos">
+                <td>{{ a.rol }}</td>
+                <td [class.text-amber-600]="!a.email" [class.italic]="!a.email">
+                  {{ a.email || 'Sin correo configurado en la ficha del proyecto' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <p class="text-xs text-gray-400">
+          Correos adicionales para este proyecto (ej. <b>Jefe SSOMA</b>, solo si aplica).
+        </p>
+
+      <div class="flex items-end gap-2">
+        <div class="abril-field flex-1">
+          <label class="abril-field-label">Rol</label>
+          <select class="abril-field-input" [(ngModel)]="nuevoRol">
+            <option *ngFor="let rol of rolesDestinatario" [value]="rol">{{ rol }}</option>
+          </select>
+        </div>
+        <div class="abril-field flex-1">
+          <label class="abril-field-label">Correo</label>
+          <input class="abril-field-input" type="email" [(ngModel)]="nuevoEmail" placeholder="correo@abril.pe" />
+        </div>
+        <button type="button" (click)="addDestinatario()"
+          class="h-[38px] px-4 rounded-[var(--radius-standard)] bg-[var(--color-abril-standard)] text-white text-sm font-medium hover:bg-[var(--color-abril-standard-hover)] transition-colors">
+          Agregar
+        </button>
+      </div>
+
+      <div class="abril-table-wrap" *ngIf="destinatarios.length">
+        <table class="abril-table">
+          <thead>
+            <tr>
+              <th>Rol</th>
+              <th>Correo</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of destinatarios">
+              <td>{{ d.rol }}</td>
+              <td>{{ d.email }}</td>
+              <td class="text-right">
+                <button type="button" (click)="eliminarDestinatario(d)" class="text-red-600 hover:text-red-800" title="Eliminar">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p *ngIf="destinatariosLoaded && destinatarios.length === 0" class="text-center text-sm text-gray-400 italic py-6">
+        No hay destinatarios adicionales para este proyecto.
+      </p>
+      </div>
+    </div>
+  </ng-container>
+</div>
+</div>
+
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por tipo de licencia..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+</app-filter-modal>
+
+<app-licencia-upload *ngIf="uploadItem && selectedProjectId"
+  [projectId]="selectedProjectId"
+  [item]="uploadItem"
+  (closeModal)="closeUpload()"
+  (uploaded)="onUploaded()">
+</app-licencia-upload>
+
+<app-licencia-historial *ngIf="historialItem && selectedProjectId"
+  [projectId]="selectedProjectId"
+  [item]="historialItem"
+  (closeModal)="closeHistorial()">
+</app-licencia-historial>
+
+<app-licencia-recordatorios *ngIf="recordatoriosItem && selectedProjectId"
+  [projectId]="selectedProjectId"
+  [item]="recordatoriosItem"
+  (closeModal)="closeRecordatorios()"
+  (changed)="onRecordatoriosChanged()">
+</app-licencia-recordatorios>
+
+<app-tipo-upsert *ngIf="showTipoUpsert"
+  [tipo]="tipoUpsertEditing"
+  [titulo]="tipoUpsertTitulo"
+  (closeModal)="closeTipoUpsert()"
+  (save)="onTipoUpsertSave($event)">
+</app-tipo-upsert>

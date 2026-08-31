@@ -1,0 +1,67 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [master, demo]   # master -> intranet.abril.pe | demo -> demo.abril.pe
+  workflow_dispatch:
+
+# Dos despliegues a la MISMA rama no corren a la vez, pero master y demo sí pueden
+# correr en paralelo (cada rama tiene su propio grupo).
+concurrency:
+  group: deploy-frontend-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # El proyecto pinnea "packageManager": "npm@11.7.0" y el package-lock.json se generó
+      # con npm 11. setup-node trae npm 10.x, que resuelve el árbol distinto y hace fallar
+      # `npm ci` ("Missing ... from lock file"). Forzamos npm 11 para que coincida con el lock.
+      - run: npm install -g npm@11.7.0
+
+      - run: npm ci           # si falla por falta de package-lock.json, cámbialo por: npm install
+      - run: npm run lint:standards   # bloquea <select> nativo y ::ng-deep fuera de shared/
+
+      # UN SOLO build para los dos entornos. environment.prod.ts usa apiUrl: '/' (relativo),
+      # así que el bundle habla con el backend del dominio donde esté servido. No hace falta
+      # un build distinto por rama para apuntar a un backend distinto.
+      - run: npm run build
+
+      # ---------------------------------------------------------------
+      # Solo UNO de los dos pasos siguientes corre, según la rama.
+      # Ambos copian a /var/www/abril porque las dos VPS usan esa misma raíz en nginx.
+      # ---------------------------------------------------------------
+
+      - name: Subir estáticos a PRODUCCION (intranet.abril.pe)
+        if: github.ref_name == 'master'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "dist/Abril/browser/*"
+          target: /var/www/abril
+          strip_components: 3   # quita "dist/Abril/browser" para que los archivos caigan en la raíz web
+          rm: false             # deploy no puede borrar /var/www/abril (su padre es de root); solo sobrescribe adentro
+          overwrite: true
+
+      - name: Subir estáticos a DEMO (demo.abril.pe)
+        if: github.ref_name == 'demo'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST_DEMO }}
+          username: ${{ secrets.SSH_USER_DEMO }}
+          key: ${{ secrets.SSH_KEY_DEMO }}
+          source: "dist/Abril/browser/*"
+          target: /var/www/abril
+          strip_components: 3
+          rm: false
+          overwrite: true

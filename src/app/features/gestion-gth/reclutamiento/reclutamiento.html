@@ -1,0 +1,327 @@
+<app-abril-page-header
+  [badge]="'GESTIÓN DE TALENTO · ' + anioActual"
+  titulo="Reclutamiento"
+  subtitulo="Gestiona los procesos de contratación y los procesos de selección de forma ágil."
+  [botonSecundario]="botonConfiguracion"
+  (secondaryClick)="abrirConfiguracion()"
+  [hasExtra]="true">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[16px] bg-white flex-1 min-h-0 overflow-auto pb-[64px]">
+
+  <!-- ── Tarjetas resumen ───────────────────────────────────────────────── -->
+  <!-- Contadores calculados en el backend (`resumen`): a qué etapa pertenece cada fase del
+       pipeline es regla del catálogo de reclutamiento, no de esta vista. -->
+  <!-- 2 columnas ya en teléfono (antes 1): apiladas ocupaban casi una pantalla completa
+       antes de llegar al pipeline y a la tabla. Las medidas compactas de móvil van en el
+       CSS del componente (.rec-kpi*), no acá, para no tocar el desktop. -->
+  <div class="rec-kpis grid grid-cols-2 xl:grid-cols-4 gap-[16px]">
+
+    <!-- En proceso -->
+    <div class="rec-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="rec-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DBEAFE">
+        <svg class="rec-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a3 3 0 10-2.5-4.66" />
+        </svg>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="rec-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.enProceso }}</span>
+        <span class="rec-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">En proceso</span>
+        <span class="rec-kpi-sub text-[11px] text-gray-400">Activos actualmente</span>
+      </div>
+    </div>
+
+    <!-- Vacantes abiertas -->
+    <div class="rec-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="rec-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#E0F2FE">
+        <svg class="rec-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m5 4v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6m18 0a2 2 0 00-2-2H5a2 2 0 00-2 2m18 0l-9 3-9-3" />
+        </svg>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="rec-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.vacantesAbiertas }}</span>
+        <span class="rec-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Vacantes abiertas</span>
+        <span class="rec-kpi-sub text-[11px] text-gray-400">Publicadas</span>
+      </div>
+    </div>
+
+    <!-- Evaluaciones programadas -->
+    <div class="rec-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="rec-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#FEF3C7">
+        <svg class="rec-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+        </svg>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="rec-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.evaluacionesProgramadas }}</span>
+        <span class="rec-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Evaluaciones</span>
+        <span class="rec-kpi-sub text-[11px] text-gray-400">Programadas</span>
+      </div>
+    </div>
+
+    <!-- Procesos cerrados -->
+    <div class="rec-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="rec-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#E5E7EB">
+        <svg class="rec-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4B5563" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="rec-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.procesosCerrados }}</span>
+        <span class="rec-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Procesos cerrados</span>
+        <span class="rec-kpi-sub text-[11px] text-gray-400">Este período</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Aviso: solicitudes nuevas de jefatura ──────────────────────────── -->
+  <!-- Solo aparece si hay alguna sin tomar. Al hacer clic acota la tabla de abajo a esas
+       solicitudes (cuenta como filtro activo); volver a hacer clic la restaura. -->
+  <button *ngIf="resumen.solicitudesNuevas > 0" type="button" (click)="toggleSoloNuevas()"
+    class="rec-aviso flex items-center gap-[12px] w-full text-left rounded-[10px] border px-[16px] py-[12px] cursor-pointer transition-colors"
+    [style.background]="soloNuevas ? 'var(--color-abril-standard)' : 'var(--color-abril-standard-light)'"
+    [style.border-color]="soloNuevas ? 'var(--color-abril-standard)' : 'var(--color-abril-standard-border)'"
+    [title]="soloNuevas ? 'Quitar el filtro y ver todas las solicitudes' : 'Ver solo las solicitudes nuevas'">
+
+    <span class="rec-aviso-icon flex items-center justify-center w-[34px] h-[34px] rounded-full shrink-0"
+          [style.background]="soloNuevas ? 'rgba(255,255,255,.2)' : '#FFFFFF'">
+      <i class="ti ti-mail text-[18px]"
+         [style.color]="soloNuevas ? '#FFFFFF' : 'var(--color-abril-standard)'"></i>
+    </span>
+
+    <span class="rec-aviso-text text-[13.5px] min-w-0" [style.color]="soloNuevas ? '#FFFFFF' : 'var(--color-abril-standard)'">
+      <span class="font-semibold">
+        {{ resumen.solicitudesNuevas }} solicitud{{ resumen.solicitudesNuevas === 1 ? '' : 'es' }}
+        de vacante nueva{{ resumen.solicitudesNuevas === 1 ? '' : 's' }} de jefatura
+      </span>
+      <span class="opacity-80">
+        — {{ soloNuevas ? 'Mostrando solo estas · Haz clic para ver todas' : 'Haz clic para revisar' }}
+      </span>
+    </span>
+
+    <i class="ti text-[18px] ml-auto shrink-0"
+       [ngClass]="soloNuevas ? 'ti-x' : 'ti-chevron-right'"
+       [style.color]="soloNuevas ? '#FFFFFF' : 'var(--color-abril-standard)'"></i>
+  </button>
+
+  <!-- ── Pipeline de reclutamiento ──────────────────────────────────────── -->
+  <!-- Embudo: cuántos requerimientos vigentes están parados en cada etapa. Las etapas y su
+       orden los define el backend agrupando las fases del catálogo, así que la suma de los
+       círculos es siempre el total de requerimientos. -->
+  <div class="rec-pipeline-card rounded-[12px] border bg-white px-[20px] py-[16px]"
+       style="border-color:var(--color-abril-border)">
+
+    <h2 class="rec-pipeline-title text-[15px] font-semibold text-gray-700 mb-[14px]">Fases de reclutamiento</h2>
+
+    <!-- El scroll horizontal es propio de esta fila (no de la página): con muchas etapas
+         el embudo se arrastra con el dedo sin mover el resto de la vista. -->
+    <div class="rec-pipeline flex items-start overflow-x-auto">
+      <ng-container *ngFor="let etapa of pipeline; let primero = first">
+
+        <!-- Conector entre etapas (no antes de la primera). -->
+        <div *ngIf="!primero" class="rec-pipeline-link h-[1px] flex-1 min-w-[16px] mt-[21px]"
+             style="background:var(--color-abril-border-strong)"></div>
+
+        <div class="flex flex-col items-center gap-[8px] shrink-0 px-[4px]">
+          <span class="rec-pipeline-dot flex items-center justify-center w-[42px] h-[42px] rounded-full text-[15px] font-bold border"
+                [style.background]="etapa.total > 0 ? 'var(--color-abril-logo-blue-light)' : '#F9FAFB'"
+                [style.border-color]="etapa.total > 0 ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-border-strong)'"
+                [style.color]="etapa.total > 0 ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-placeholder)'">
+            {{ etapa.total }}
+          </span>
+          <span class="rec-pipeline-name text-[11.5px] text-center whitespace-nowrap"
+                [style.color]="etapa.total > 0 ? 'var(--color-abril-body)' : 'var(--color-abril-placeholder)'">
+            {{ etapa.nombre }}
+          </span>
+        </div>
+
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- ── Tabla: Solicitudes de contratación ─────────────────────────────── -->
+  <div class="flex items-center justify-between gap-[10px]">
+    <h2 class="text-[15px] font-semibold text-gray-700">Solicitudes de contratación</h2>
+    <span class="text-[12px] text-gray-400 shrink-0">{{ filteredSolicitudes.length }} registro{{ filteredSolicitudes.length === 1 ? '' : 's' }}</span>
+  </div>
+
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>N° requerimiento</th>
+          <th>Área</th>
+          <th>Fecha llegada</th>
+          <th>Puesto</th>
+          <th>Proyecto / Obra</th>
+          <th>Prioridad</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="filteredSolicitudes.length === 0">
+          <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
+        </tr>
+
+        <tr *ngFor="let s of pagedSolicitudes"
+            class="border-b hover:bg-gray-50"
+            style="border-color:var(--color-abril-border)">
+
+          <td class="font-medium text-gray-700 whitespace-nowrap">{{ s.codigo }}</td>
+
+          <td class="text-gray-500">{{ (s.area | titleCase) || '—' }}</td>
+
+          <td class="text-gray-500 whitespace-nowrap">{{ s.fechaLlegada | date:'dd/MM/yyyy' }}</td>
+
+          <td class="text-gray-700 font-medium">{{ s.puesto | titleCase }}</td>
+
+          <td class="text-gray-500">{{ (s.proyectoObra | titleCase) || '—' }}</td>
+
+          <td class="text-center">
+            <div class="w-[104px] mx-auto">
+              <app-search-select
+                [options]="prioridades"
+                valueField="id"
+                displayField="nombre"
+                [value]="s.prioridadId"
+                (valueChange)="onPrioridadChange(s, $event)"
+                [showLabel]="false"
+                [allowClear]="false"
+                [compact]="true"
+                [sortAlpha]="false"
+                placeholder="Prioridad">
+              </app-search-select>
+            </div>
+          </td>
+
+          <td class="text-center">
+            <app-status-badge
+              [text]="s.estadoNombre"
+              [bgColor]="estadoColors(s.estadoCodigo).bg"
+              [textColor]="estadoColors(s.estadoCodigo).text" />
+          </td>
+
+          <!-- Acciones: solo el ojo, que abre el modal de detalle. -->
+          <td class="text-center whitespace-nowrap">
+            <div class="inline-flex items-center gap-[10px] text-gray-400">
+              <button type="button" class="hover:text-gray-600 cursor-pointer" title="Ver detalle"
+                      (click)="abrirDetalle(s)">
+                <i class="ti ti-eye text-[17px]"></i>
+              </button>
+            </div>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Las mismas solicitudes, en tarjetas (móvil y tablet) ─────────────
+       Reemplazan a la tabla por debajo de 1024px (ver el CSS del componente):
+       las 9 columnas no entran en ese ancho y el desborde arrastraba de lado
+       toda la página. Mismo patrón que Revisiones/Observaciones de AC.
+       Comparten paginación, filtros y acciones con la tabla: es la misma
+       lista, solo cambia cómo se dibuja. -->
+  <div class="rec-cards">
+
+    <div *ngIf="filteredSolicitudes.length === 0" class="text-center py-[32px] text-gray-400 text-sm">
+      {{ mensajeVacio }}
+    </div>
+
+    <div *ngFor="let s of pagedSolicitudes"
+         class="rounded-[10px] border bg-white px-[12px] py-[11px]"
+         style="border-color:var(--color-abril-border)">
+
+      <!-- Código + estado -->
+      <div class="flex items-start justify-between gap-[8px]">
+        <span class="text-[12px] font-bold text-gray-700 whitespace-nowrap">{{ s.codigo }}</span>
+        <app-status-badge
+          [text]="s.estadoNombre"
+          [bgColor]="estadoColors(s.estadoCodigo).bg"
+          [textColor]="estadoColors(s.estadoCodigo).text" />
+      </div>
+
+      <!-- Puesto + área/proyecto -->
+      <p class="text-[13.5px] font-semibold text-gray-800 mt-[5px] leading-snug">{{ s.puesto | titleCase }}</p>
+      <p class="text-[12px] text-gray-500 mt-[1px] leading-snug">
+        {{ (s.area | titleCase) || 'Sin área' }} · {{ (s.proyectoObra | titleCase) || 'Sin proyecto' }}
+      </p>
+
+      <!-- Fecha de llegada de la solicitud -->
+      <div class="mt-[9px]">
+        <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Fecha llegada</div>
+        <div class="text-[12px] text-gray-600">{{ s.fechaLlegada | date:'dd/MM/yyyy' }}</div>
+      </div>
+
+      <!-- Prioridad + acciones (mismas que la columna "Acciones" de la tabla) -->
+      <div class="flex items-center justify-between gap-[10px] mt-[10px] pt-[10px] border-t"
+           style="border-color:var(--color-abril-border)">
+
+        <div class="w-[118px] shrink-0">
+          <app-search-select
+            [options]="prioridades"
+            valueField="id"
+            displayField="nombre"
+            [value]="s.prioridadId"
+            (valueChange)="onPrioridadChange(s, $event)"
+            [showLabel]="false"
+            [allowClear]="false"
+            [compact]="true"
+            [sortAlpha]="false"
+            placeholder="Prioridad">
+          </app-search-select>
+        </div>
+
+        <div class="flex items-center gap-[6px]">
+          <button type="button" class="abril-action-btn cursor-pointer" title="Ver detalle"
+                  (click)="abrirDetalle(s)">
+            <i class="ti ti-eye"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredSolicitudes.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modal de detalle del requerimiento (ojo de la tabla) ─────────────── -->
+<app-gth-detalle-requerimiento
+  *ngIf="detalleId !== null"
+  [requerimientoId]="detalleId"
+  [abrirFormularioCandidatoId]="detalleFormularioCandidatoId"
+  (closeModal)="onDetalleCerrado($event)" />
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por código, puesto, área o proyecto..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+</app-filter-modal>

@@ -1,0 +1,354 @@
+<app-abril-modal-panel
+  variant="blue"
+  icono="ti-timeline-event-text"
+  titulo="Estado del reclutamiento"
+  [subtitulo]="subtitulo"
+  width="760px"
+  (closeModal)="closeModal.emit()">
+
+  @if (seguimiento) {
+    <div class="flex flex-col gap-[18px]">
+
+      <!-- Ingreso directo FFT: el proceso es más corto y la línea de tiempo de abajo ya viene sin
+           los pasos que no recorre. Se dice acá para que no parezca que faltan fases. -->
+      @if (seguimiento.esFft) {
+        <div class="flex items-start gap-[10px] rounded-[10px] border px-[14px] py-[11px]"
+             style="border-color:var(--color-abril-standard-border);background:var(--color-abril-standard-light)">
+          <i class="ti ti-user-plus text-[19px] shrink-0 mt-[1px]" style="color:var(--color-abril-standard)"></i>
+          <p class="text-[12.5px] text-gray-600 leading-snug">
+            <b>Ingreso directo (FFT)</b> — candidato:
+            {{ (seguimiento.fftCandidatoNombre | titleCase) || 'sin nombre registrado' }}.
+            El proceso omite publicación, revisión de CV, long list, formulario del postulante y
+            entrevistas: pasa directo al examen médico de ingreso.
+          </p>
+        </div>
+      }
+
+      <!-- ── Tarjetas resumen ───────────────────────────────────────────
+           3 columnas y no 4: con la tarjeta del salario son 5 tarjetas, y a 4 columnas la
+           quinta quedaba sola en su fila. A 3 quedan 3 + 2 y todas las tarjetas salen más
+           anchas que antes (el badge de "Aprobación Gerencia General" es el que más agradece). -->
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-[12px]">
+
+        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">
+          <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Estado actual</p>
+          <!-- wrap: nombres como "Aprobación Gerencia General" no caben en una línea en una
+               tarjeta de 1/4 del modal; sin esto el badge se desbordaba y la tarjeta vecina lo tapaba. -->
+          <div class="mt-[6px]">
+            <app-status-badge
+              [text]="seguimiento.estadoNombre"
+              [wrap]="true"
+              bgColor="var(--color-abril-logo-blue-light)"
+              textColor="var(--color-abril-logo-blue)" />
+          </div>
+        </div>
+
+        <!-- La solicitud pasa por dos aprobaciones. La de Gerencia General es la que la hace
+             avanzar, así que ocupa el lugar destacado; el visto bueno del gerente del área va
+             debajo como constancia. -->
+        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">
+          <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Aprobaciones</p>
+          <p class="mt-[6px] text-[14px] font-semibold" [style.color]="aprobacionGgColor">{{ aprobacionGgLabel }}</p>
+          <p class="text-[10.5px] text-gray-400 mt-[2px] leading-tight">{{ aprobacionGgDetalle }}</p>
+          @if (aprobacionAreaLabel) {
+            <p class="text-[10.5px] font-medium mt-[5px] leading-tight" [style.color]="aprobacionAreaColor">
+              {{ aprobacionAreaLabel }}
+            </p>
+          }
+        </div>
+
+        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">
+          <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Proyecto / Obra</p>
+          <p class="mt-[6px] text-[14px] font-semibold text-gray-700 truncate" [title]="seguimiento.proyectoObra || ''">
+            {{ (seguimiento.proyectoObra | titleCase) || '—' }}
+          </p>
+        </div>
+
+        <!-- Salario bruto mensual declarado para esta vacante. La tarjeta entera desaparece si no
+             lo hay: los reemplazos ya no lo declaran (y los requerimientos anteriores a que se
+             pidiera el dato tampoco lo tienen), así que reservarle un recuadro vacío sobra. -->
+        @if (seguimiento.salarioBrutoMensual !== null) {
+          <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">
+            <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Salario bruto mensual</p>
+            <p class="mt-[6px] text-[14px] font-semibold text-gray-700">
+              S/ {{ seguimiento.salarioBrutoMensual | number:'1.2-2' }}
+            </p>
+          </div>
+        }
+
+        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">
+          <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Adjunto sustento</p>
+          @if (seguimiento.sustentoUrl) {
+            <a [href]="seguimiento.sustentoUrl" target="_blank" rel="noopener"
+               class="mt-[6px] flex items-center gap-[6px] text-[13px] font-medium hover:underline truncate"
+               style="color:var(--color-abril-logo-blue)"
+               [title]="seguimiento.sustentoNombre || 'Ver documento'">
+              <i class="ti ti-paperclip text-[15px] shrink-0"></i>
+              <span class="truncate">{{ seguimiento.sustentoNombre || 'Ver documento' }}</span>
+            </a>
+          } @else {
+            <p class="mt-[6px] text-[13px] text-gray-400">Sin adjunto</p>
+          }
+        </div>
+
+      </div>
+
+      <!-- ── Puesto cubierto: quién obtuvo el puesto ───────────────────
+           El resultado del proceso queda registrado acá; antes solo existía en el
+           momento de decidir y en el correo. -->
+      @if (seguimiento.seleccionado; as sel) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             style="border-color:#a7f3d0;background:#F0FDF4">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-user-check text-[20px] shrink-0 mt-[1px]" style="color:#15803D"></i>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#15803D">
+                Puesto cubierto
+              </p>
+              <h3 class="text-[17px] font-bold text-emerald-900 mt-[2px] leading-tight">
+                {{ sel.nombre | titleCase }}
+              </h3>
+              <p class="text-[12.5px] text-emerald-800 mt-[1px]">
+                {{ (sel.puesto | titleCase) || (seguimiento.puesto | titleCase) }}
+              </p>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-[16px] gap-y-[8px] mt-[12px]">
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Seleccionado el</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                    {{ (sel.seleccionadoEn | date:'dd/MM/yyyy HH:mm') || '—' }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Decidido por</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                    {{ (sel.seleccionadoPor | titleCase) || 'Área solicitante' }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Responsable GTH</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                    {{ (sel.responsableGth | titleCase) || 'Sin asignar' }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Los dos CVs del seleccionado: el que consiguió GTH y el que él mismo adjuntó
+                   en su formulario de postulante. -->
+              <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                @if (sel.cvUrl) {
+                  <a [href]="sel.cvUrl" target="_blank" rel="noopener"
+                     class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                     style="background:#15803D">
+                    <i class="ti ti-external-link text-[15px]"></i>
+                    Ver CV del seleccionado
+                  </a>
+                }
+                @if (sel.cvPostulanteUrl) {
+                  <a [href]="sel.cvPostulanteUrl" target="_blank" rel="noopener"
+                     class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold border cursor-pointer transition-colors hover:bg-emerald-50"
+                     style="border-color:#a7f3d0;color:#15803D;background:#F0FDF4"
+                     [title]="sel.cvPostulanteNombre || ''">
+                    <i class="ti ti-file-check text-[15px]"></i>
+                    Ver CV documentado
+                  </a>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── Fase del reclutamiento (timeline vertical) ───────────────── -->
+      <div class="rounded-[10px] border p-[18px]" style="border-color:var(--color-abril-border)">
+
+        <div class="flex items-center justify-between mb-[14px]">
+          <h3 class="text-[14px] font-bold text-gray-800">Fase del reclutamiento</h3>
+          <span class="text-[11px] text-gray-400">Seguimiento vertical del requerimiento</span>
+        </div>
+
+        <div class="flex flex-col">
+          @for (fase of seguimiento.fases; track fase.codigo; let last = $last) {
+            <div class="flex gap-[14px]">
+
+              <!-- Columna del ícono + conector -->
+              <div class="flex flex-col items-center shrink-0">
+                <div class="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[12px] font-bold"
+                     [ngClass]="{
+                       'text-white': fase.estado !== 'pending',
+                       'text-gray-400 bg-white border border-gray-300': fase.estado === 'pending'
+                     }"
+                     [style.background]="fase.estado === 'pending' ? '' : 'var(--color-abril-logo-blue)'">
+                  @if (fase.estado === 'done') {
+                    <i class="ti ti-check text-[16px]"></i>
+                  } @else {
+                    {{ fase.orden }}
+                  }
+                </div>
+                @if (!last) {
+                  <div class="w-[2px] flex-1 min-h-[18px] my-[2px]"
+                       [style.background]="fase.estado === 'pending' ? '#e5e7eb' : 'var(--color-abril-logo-blue)'"></div>
+                }
+              </div>
+
+              <!-- Texto de la fase -->
+              <div [class]="last ? 'pb-[2px]' : 'pb-[16px]'">
+                <div class="flex items-center gap-[8px] flex-wrap">
+                  <p class="text-[13.5px] font-bold"
+                     [ngClass]="fase.estado === 'pending' ? 'text-gray-400' : 'text-gray-800'"
+                     [style.color]="fase.estado === 'pending' ? '' : 'var(--color-abril-logo-blue)'">
+                    {{ fase.nombre }}
+                  </p>
+                  @if (fase.estado === 'current') {
+                    <span class="text-[10px] font-semibold px-[8px] py-[2px] rounded-full"
+                          style="background:var(--color-abril-logo-blue-light);color:var(--color-abril-logo-blue)">
+                      Fase actual
+                    </span>
+                  }
+                </div>
+                @if (fase.descripcion) {
+                  <p class="text-[12px] text-gray-500 mt-[2px] leading-snug">{{ fase.descripcion }}</p>
+                }
+              </div>
+
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ── Historial de candidatos rechazados ───────────────────────────
+           Rechazar a todos devuelve el requerimiento a Long list, así que sin este
+           bloque la vuelta anterior desaparecía de la pantalla del solicitante. -->
+      @if (seguimiento.candidatosRechazados.length > 0) {
+        <div class="rounded-[10px] border p-[18px]" style="border-color:var(--color-abril-border)">
+
+          <div class="flex items-center justify-between mb-[4px]">
+            <h3 class="text-[14px] font-bold text-gray-800">Historial de candidatos rechazados</h3>
+            <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                  style="background:#FEE2E2;color:#B91C1C">
+              {{ seguimiento.candidatosRechazados.length }}
+            </span>
+          </div>
+          <p class="text-[12px] text-gray-500 leading-snug">
+            Candidatos que quedaron fuera del proceso, con la etapa en la que se los rechazó.
+            Incluye las long lists anteriores de este requerimiento.
+          </p>
+
+          <!-- Búsqueda inline (no app-filter-modal): es un solo campo dentro de un modal,
+               abrir otro modal de filtros encima sería peor de usar. -->
+          <div class="w-full mt-[12px]">
+            <app-search-input
+              placeholder="Buscar por nombre o etapa..."
+              [(value)]="busquedaRechazados"
+              (valueChange)="onBuscarRechazados()"
+              width="100%">
+            </app-search-input>
+          </div>
+
+          <div class="abril-table-wrap mt-[10px] max-h-[46vh]">
+            <table class="abril-table">
+              <thead class="sticky top-0 z-10">
+                <tr>
+                  <th>Candidato</th>
+                  <th>Etapa del rechazo</th>
+                  <th>Rechazado por</th>
+                  <th>Fecha</th>
+                  <th>CV</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of rechazadosPagina; track c.candidatoId) {
+                  <tr>
+                    <td class="font-semibold text-gray-800">{{ c.nombre | titleCase }}</td>
+                    <td>
+                      <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full whitespace-nowrap"
+                            [style.background]="etapaColors(c.etapaCodigo).bg"
+                            [style.color]="etapaColors(c.etapaCodigo).text">
+                        {{ c.etapaNombre }}
+                      </span>
+                      <p class="text-[11px] text-gray-400 mt-[3px] whitespace-nowrap">
+                        {{ c.numeroLongList }}ª long list
+                      </p>
+                    </td>
+                    <td class="whitespace-nowrap">{{ c.rechazadoPorNombre }}</td>
+                    <td class="whitespace-nowrap">{{ c.rechazadoEn | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>
+                      @if (c.cvUrl) {
+                        <a [href]="c.cvUrl" target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-[5px] font-semibold hover:underline"
+                           style="color:var(--color-abril-logo-blue)">
+                          <i class="ti ti-file-text text-[15px]"></i>
+                          Ver CV
+                        </a>
+                      } @else {
+                        <span class="text-gray-400">—</span>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="text-center py-[28px] text-gray-400">Sin resultados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (rechazadosTotalPaginas > 1) {
+            <div class="max-w-[440px] mt-[10px]">
+              <app-paginator
+                [totalRecords]="rechazadosFiltrados.length"
+                [currentPage]="rechazadosPaginaActual"
+                [totalPages]="rechazadosTotalPaginas"
+                (pageChange)="cambiarPaginaRechazados($event)">
+              </app-paginator>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ── Comentarios de las dos aprobaciones ──────────────────────── -->
+      @if (aprobacionGgComentario) {
+        <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[11px]"
+             style="background:#FFFBEB;border:1px solid #FCD34D">
+          <i class="ti ti-message-2 text-[18px] shrink-0 mt-[1px]" style="color:#B45309"></i>
+          <p class="text-[13px] text-gray-700">
+            <b style="color:#B45309">Comentario de Gerencia General:</b> {{ aprobacionGgComentario }}
+          </p>
+        </div>
+      }
+
+      @if (aprobacionAreaComentario) {
+        <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[11px]"
+             style="background:var(--color-abril-logo-blue-light);border:1px solid #a9c9e6">
+          <i class="ti ti-message-2 text-[18px] shrink-0 mt-[1px]" style="color:var(--color-abril-logo-blue)"></i>
+          <p class="text-[13px] text-gray-700">
+            <b style="color:var(--color-abril-logo-blue)">Comentario del gerente del área:</b>
+            {{ aprobacionAreaComentario }}
+          </p>
+        </div>
+      }
+
+      <!-- ── Siguiente paso ───────────────────────────────────────────── -->
+      @if (seguimiento.siguientePaso) {
+        <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[11px]"
+             style="background:var(--color-abril-logo-blue-light);border:1px solid #a9c9e6">
+          <i class="ti ti-info-circle text-[18px] shrink-0 mt-[1px]" style="color:var(--color-abril-logo-blue)"></i>
+          <p class="text-[13px] text-gray-700">
+            <b style="color:var(--color-abril-logo-blue)">Siguiente paso:</b> {{ seguimiento.siguientePaso }}
+          </p>
+        </div>
+      }
+
+    </div>
+  }
+
+  <!-- Footer: un solo botón "Cerrar" a la derecha. -->
+  <div modalFooter class="w-full flex justify-end">
+    <button type="button" (click)="closeModal.emit()"
+      class="h-[36px] px-[22px] rounded-[7px] text-[13px] font-medium text-gray-600 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+      Cerrar
+    </button>
+  </div>
+
+</app-abril-modal-panel>

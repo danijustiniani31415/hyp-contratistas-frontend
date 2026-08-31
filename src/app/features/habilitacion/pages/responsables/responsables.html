@@ -1,0 +1,182 @@
+<app-abril-page-header
+  badge="HABILITACIÓN"
+  titulo="Gestión de Responsables"
+  subtitulo="Administradores y coordinadores que reciben los avisos de EMOs e interconsultas (solo personal Casa).">
+</app-abril-page-header>
+
+<section class="page-container flex flex-col gap-[24px] flex-1 min-h-0 overflow-auto">
+
+  <!-- ═══ Razones sociales ═══ -->
+  <div class="flex flex-col gap-[10px]">
+    <div class="flex items-center justify-between">
+      <h2 class="text-[14px] font-semibold text-gray-700">Razones sociales — administrador responsable</h2>
+      <app-search-input
+        placeholder="Buscar razón social..."
+        [value]="razonesSocialesSearch"
+        (valueChange)="razonesSocialesSearch = $event; onRazonSocialSearch()">
+      </app-search-input>
+    </div>
+
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Razón social</th>
+            <th>Administrador responsable</th>
+            <th class="text-right">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of pagedRazonesSociales">
+            <td class="font-medium">{{ row.contributorName | titleCase }}</td>
+            <td>
+              <div class="flex flex-col gap-[4px] max-w-[360px]">
+                <app-search-select
+                  [options]="trabajadorOptions()"
+                  valueField="workerId"
+                  displayField="nombreCompleto"
+                  [value]="pendingRazonSocialWorker[row.contributorId] ?? null"
+                  placeholder="Buscar por nombre o DNI..."
+                  (valueChange)="pendingRazonSocialWorker[row.contributorId] = $event">
+                </app-search-select>
+                <span class="text-[11px] text-gray-500" *ngIf="emailRazonSocial(row); else sinAdminRs">
+                  {{ emailRazonSocial(row) }}
+                </span>
+                <ng-template #sinAdminRs>
+                  <span class="text-[11px] text-amber-600">Sin administrador asignado.</span>
+                </ng-template>
+              </div>
+            </td>
+            <td class="text-right">
+              <button
+                type="button"
+                [abrilBulkAction]="'primary'"
+                [disabled]="pendingRazonSocialWorker[row.contributorId] == null || savingRazonSocial[row.contributorId]"
+                (click)="guardarRazonSocial(row)">
+                {{ savingRazonSocial[row.contributorId] ? 'Guardando…' : 'Guardar' }}
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && filteredRazonesSociales.length === 0">
+            <td colspan="3" class="text-center py-[24px] text-gray-400 text-sm">Sin razones sociales.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="filteredRazonesSociales.length > 0" class="max-w-[440px]">
+      <app-paginator
+        [totalRecords]="filteredRazonesSociales.length"
+        [currentPage]="razonesSocialesPager.currentPage"
+        [totalPages]="razonesSocialesPager.totalPages(filteredRazonesSociales)"
+        (pageChange)="razonesSocialesPager.goTo($event)">
+      </app-paginator>
+    </div>
+  </div>
+
+  <!-- ═══ Proyectos ═══ -->
+  <div class="flex flex-col gap-[10px]">
+    <div class="flex items-center justify-between">
+      <h2 class="text-[14px] font-semibold text-gray-700">Proyectos — correos de aviso (EMOs e interconsultas)</h2>
+      <app-search-input
+        placeholder="Buscar proyecto..."
+        [value]="proyectosSearch"
+        (valueChange)="proyectosSearch = $event; onProyectoSearch()">
+      </app-search-input>
+    </div>
+
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Proyecto</th>
+            <th>Residente</th>
+            <th *ngFor="let c of camposProyecto">{{ c.label }}</th>
+            <th class="text-right">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of pagedProyectos">
+            <td class="font-medium">{{ row.projectDescription | titleCase }}</td>
+            <td>
+              <div class="flex flex-col gap-[4px] min-w-[220px]">
+                <app-search-select
+                  [options]="trabajadorOptions()"
+                  valueField="workerId"
+                  displayField="nombreCompleto"
+                  [value]="pendingProyectoResidenteFor(row.projectId)"
+                  placeholder="Buscar por nombre o DNI..."
+                  (valueChange)="setPendingProyectoResidente(row.projectId, $event)">
+                </app-search-select>
+                <div class="flex items-center justify-between gap-[8px]">
+                  <span class="text-[11px] text-gray-500" *ngIf="residenteEmailProyecto(row); else sinResidenteProy">
+                    {{ residenteEmailProyecto(row) }}
+                  </span>
+                  <ng-template #sinResidenteProy>
+                    <span class="text-[11px] text-amber-600">Sin residente asignado.</span>
+                  </ng-template>
+                  <button
+                    type="button"
+                    class="text-[11px] text-gray-400 hover:text-gray-600 underline shrink-0"
+                    *ngIf="pendingProyectoResidenteFor(row.projectId) !== campoLimpiar"
+                    (click)="limpiarPendingProyectoResidente(row.projectId)">
+                    Quitar
+                  </button>
+                </div>
+              </div>
+            </td>
+            <td *ngFor="let c of camposProyecto">
+              <div class="flex flex-col gap-[4px] min-w-[220px]">
+                <app-search-select
+                  [options]="trabajadorOptions()"
+                  valueField="workerId"
+                  displayField="nombreCompleto"
+                  [value]="pendingProyectoWorkerFor(row.projectId, c.campo)"
+                  placeholder="Buscar por nombre o DNI..."
+                  (valueChange)="setPendingProyectoWorker(row.projectId, c.campo, $event)">
+                </app-search-select>
+                <div class="flex items-center justify-between gap-[8px]">
+                  <span class="text-[11px] text-gray-500" *ngIf="emailProyecto(row, c.campo); else sinCorreoProy">
+                    {{ emailProyecto(row, c.campo) }}
+                  </span>
+                  <ng-template #sinCorreoProy>
+                    <span class="text-[11px] text-amber-600">Sin correo asignado.</span>
+                  </ng-template>
+                  <button
+                    type="button"
+                    class="text-[11px] text-gray-400 hover:text-gray-600 underline shrink-0"
+                    *ngIf="pendingProyectoWorkerFor(row.projectId, c.campo) !== campoLimpiar"
+                    (click)="limpiarPendingProyectoWorker(row.projectId, c.campo)">
+                    Quitar
+                  </button>
+                </div>
+              </div>
+            </td>
+            <td class="text-right">
+              <button
+                type="button"
+                [abrilBulkAction]="'primary'"
+                [disabled]="!proyectoTienePendientes(row.projectId) || savingProyecto[row.projectId]"
+                (click)="guardarProyecto(row)">
+                {{ savingProyecto[row.projectId] ? 'Guardando…' : 'Guardar' }}
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && filteredProyectos.length === 0">
+            <td [attr.colspan]="camposProyecto.length + 3" class="text-center py-[24px] text-gray-400 text-sm">Sin proyectos.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="filteredProyectos.length > 0" class="max-w-[440px]">
+      <app-paginator
+        [totalRecords]="filteredProyectos.length"
+        [currentPage]="proyectosPager.currentPage"
+        [totalPages]="proyectosPager.totalPages(filteredProyectos)"
+        (pageChange)="proyectosPager.goTo($event)">
+      </app-paginator>
+    </div>
+  </div>
+
+</section>

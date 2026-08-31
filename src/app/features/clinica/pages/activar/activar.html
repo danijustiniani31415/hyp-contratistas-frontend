@@ -1,0 +1,28 @@
+<div class="activar-root">
+  <div class="activar-card">
+    <h2 class="section-title">Activar cuenta clínica</h2>
+
+    <div *ngIf="exito" class="alert-box alert-green">
+      ✓ Contraseña establecida correctamente. Ya puedes iniciar sesión.
+    </div>
+
+    <div *ngIf="!exito">
+      <div *ngIf="error" class="alert-box alert-red">{{ error }}</div>
+      <div *ngIf="!token" class="alert-box alert-red">Token inválido o faltante.</div>
+
+      <div *ngIf="token" style="display:flex;flex-direction:column;gap:1rem;margin-top:1rem;">
+        <div>
+          <label class="field-label">Nueva contraseña *</label>
+          <input type="password" class="field-input" [(ngModel)]="password" placeholder="Mínimo 8 caracteres" />
+        </div>
+        <div>
+          <label class="field-label">Confirmar contraseña *</label>
+          <input type="password" class="field-input" [(ngModel)]="confirmar" />
+        </div>
+        <button class="btn-primary" [disabled]="loading" (click)="submit()">
+          {{ loading ? 'Activando...' : 'Activar cuenta' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

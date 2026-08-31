@@ -1,0 +1,169 @@
+<div *ngIf="loading" class="loading-center">
+  <i class="ti ti-loader-2 animate-spin" style="font-size:1.5rem"></i>
+  <span>Cargando programa…</span>
+</div>
+
+<ng-container *ngIf="!loading && paso">
+
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <app-abril-page-header
+    badge="SSOMA · PASO"
+    [titulo]="paso.nombre"
+    [subtitulo]="paso.proyectoNombre ?? ''"
+    [tabs]="[]"
+    [botonSecundario]="{ label: 'Exportar', icono: 'ti-download' }"
+    (secondaryClick)="exportOpen = !exportOpen">
+  </app-abril-page-header>
+
+  <!-- Acciones específicas del detalle -->
+  <div class="detalle-actions" *ngIf="paso.estado === 'Borrador' || (paso.esPlantilla && paso.estado === 'Aprobado') || exportOpen">
+    <button *ngIf="paso.estado === 'Borrador'" type="button" class="hdr-btn hdr-btn--green" (click)="aprobar()">
+      <i class="ti ti-check"></i> Aprobar
+    </button>
+    <button *ngIf="paso.esPlantilla && paso.estado === 'Aprobado'" type="button" class="hdr-btn hdr-btn--purple" (click)="instanciarOpen=true">
+      <i class="ti ti-copy"></i> Instanciar
+    </button>
+    <div *ngIf="exportOpen" class="export-menu">
+      <div class="export-item" (click)="exportar('excel')">
+        <i class="ti ti-file-spreadsheet" style="color:#16a34a"></i> Excel
+      </div>
+      <div class="export-item" (click)="exportar('pdf')">
+        <i class="ti ti-file-type-pdf" style="color:#dc2626"></i> PDF
+      </div>
+    </div>
+  </div>
+
+  <!-- ── KPI Strip ──────────────────────────────────────────────── -->
+  <div class="kpi-strip">
+    <div class="kpi-strip__item">
+      <span class="kpi-strip__label">SPI</span>
+      <div class="kpi-strip__value">
+        <app-spi-badge *ngIf="spi; else dashSpi" [spi]="spi.spiGeneral" size="md"></app-spi-badge>
+        <ng-template #dashSpi><span style="color:#9ca3af;font-size:.9rem">—</span></ng-template>
+      </div>
+    </div>
+    <div class="kpi-strip__item">
+      <span class="kpi-strip__label">Avance %</span>
+      <div class="kpi-strip__value" style="color:#2563eb">{{ spi ? (spi.porcentajeAvance | number:'1.0-1') + '%' : '—' }}</div>
+    </div>
+    <div class="kpi-strip__item">
+      <span class="kpi-strip__label">Total actividades</span>
+      <div class="kpi-strip__value">{{ paso.actividades?.length ?? 0 }}</div>
+    </div>
+    <div class="kpi-strip__item">
+      <span class="kpi-strip__label">Ejecutadas</span>
+      <div class="kpi-strip__value" style="color:#16a34a">{{ spi?.totalEjecutadas ?? 0 }}</div>
+    </div>
+    <div class="kpi-strip__item">
+      <span class="kpi-strip__label">Vencidas</span>
+      <div class="kpi-strip__value" [style.color]="(spi?.totalVencidas ?? 0) > 0 ? '#dc2626' : '#16a34a'">
+        {{ spi?.totalVencidas ?? 0 }}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tabs ───────────────────────────────────────────────────── -->
+  <nav class="paso-tabs">
+    <button *ngFor="let t of tabs" type="button"
+      class="paso-tab"
+      [ngClass]="[tabColor(t), tabActiva === t ? 'active' : '']"
+      (click)="setTab(t)">
+      <i class="ti" [ngClass]="tabIcon(t)"></i>
+      {{ tabLabel(t) }}
+      <span class="tab-count">{{ countTab(t) }}</span>
+    </button>
+  </nav>
+
+  <!-- ── Tab content ────────────────────────────────────────────── -->
+  <div class="tab-body">
+    <div class="tab-toolbar">
+      <button type="button" class="btn-add" (click)="abrirAgregar()">
+        <i class="ti ti-plus"></i> Agregar actividad
+      </button>
+    </div>
+    <app-actividad-tree
+      [actividades]="actividadesTab"
+      [pasoId]="paso.id"
+      [ambito]="tabActiva"
+      (actividadEliminada)="onEliminada($event)">
+    </app-actividad-tree>
+  </div>
+
+</ng-container>
+
+<!-- ── Offcanvas agregar actividad ─────────────────────────────── -->
+<div *ngIf="agregarOpen" class="offcanvas-overlay">
+  <div class="offcanvas-backdrop" (click)="agregarOpen=false"></div>
+  <div class="offcanvas-panel">
+    <div class="offcanvas-header">
+      <h3 class="offcanvas-title">Agregar Actividad</h3>
+      <button type="button" class="offcanvas-close" (click)="agregarOpen=false"><i class="ti ti-x"></i></button>
+    </div>
+
+    <div class="oc-field">
+      <label class="oc-label">Categoría <span style="color:#ef4444">*</span></label>
+      <app-search-select
+        [options]="categoriasFiltradas"
+        valueField="id"
+        displayField="nombre"
+        [value]="agregarForm.categoriaId"
+        placeholder="Selecciona categoría"
+        (valueChange)="agregarForm.categoriaId = $event">
+      </app-search-select>
+    </div>
+
+    <div class="oc-field">
+      <label class="oc-label">Nombre <span style="color:#ef4444">*</span></label>
+      <input type="text" class="oc-input" [(ngModel)]="agregarForm.nombre" />
+    </div>
+
+    <div class="oc-field">
+      <label class="oc-label">Descripción</label>
+      <textarea rows="2" class="oc-textarea" [(ngModel)]="agregarForm.descripcion"></textarea>
+    </div>
+
+    <div class="oc-field">
+      <label class="oc-label">Frecuencia</label>
+      <app-search-select
+        [options]="frecuenciaOpts"
+        valueField="id"
+        displayField="label"
+        [value]="agregarForm.frecuencia"
+        placeholder="Selecciona frecuencia"
+        [allowClear]="false"
+        [sortAlpha]="false"
+        (valueChange)="agregarForm.frecuencia = $event">
+      </app-search-select>
+    </div>
+
+    <div class="oc-grid2">
+      <div class="oc-field">
+        <label class="oc-label">Mes inicio</label>
+        <input type="number" min="1" max="12" class="oc-input" [(ngModel)]="agregarForm.mesInicio" />
+      </div>
+      <div class="oc-field">
+        <label class="oc-label">Mes fin</label>
+        <input type="number" min="1" max="12" class="oc-input" [(ngModel)]="agregarForm.mesFin" />
+      </div>
+    </div>
+
+    <div class="oc-field">
+      <label class="oc-label">Cantidad planificada</label>
+      <input type="number" min="1" class="oc-input" [(ngModel)]="agregarForm.cantidadPlanificada" />
+    </div>
+
+    <div class="oc-footer">
+      <button type="button" class="oc-btn-cancel" (click)="agregarOpen=false">Cancelar</button>
+      <button type="button" class="oc-btn-save" [disabled]="saving" (click)="guardarActividad()">
+        <i class="ti" [ngClass]="saving ? 'ti-loader-2 animate-spin' : 'ti-plus'"></i>
+        {{ saving ? 'Guardando...' : 'Agregar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Instanciar modal ────────────────────────────────────────── -->
+<app-instanciar-modal *ngIf="instanciarOpen && paso"
+  [pasoPlantillaId]="paso.id" [plantillaNombre]="paso.nombre"
+  (closed)="instanciarOpen=false" (instanciaCreada)="onInstanciaCreada()">
+</app-instanciar-modal>

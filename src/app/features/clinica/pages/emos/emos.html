@@ -1,0 +1,247 @@
+<app-abril-page-header
+  badge="CLÍNICA"
+  titulo="Control de EMOs"
+  subtitulo="Estado y aptitud de los EMOs de trabajadores."
+  [tabs]="tabs">
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="emos-root">
+
+  <!-- Tabla -->
+  <div class="table-shell">
+    <div class="table-scroll">
+      <table class="emos-table">
+        <thead>
+          <tr>
+            <th class="col-worker">Trabajador</th>
+            <th class="col-tipo">Tipo EMO</th>
+            <th class="col-fecha">Fecha</th>
+            <th class="col-fecha">Vencimiento</th>
+            <th class="col-aptitud">Aptitud</th>
+            <th class="col-estado">Estado</th>
+            <th class="col-dias text-right">Días</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let item of items"
+            [class.clickable]="item.tieneEmo"
+            (click)="onRowClick(item)"
+          >
+            <!-- Trabajador -->
+            <td class="col-worker">
+              <div class="worker-info">
+                <span class="w-name">{{ item.nombreCompleto }}</span>
+                <span class="w-meta">
+                  <span class="w-dni">{{ item.dni }}</span>
+                  <span class="sep" *ngIf="item.empresa">·</span>
+                  <span class="w-empresa" *ngIf="item.empresa">{{ item.empresa }}</span>
+                </span>
+              </div>
+            </td>
+
+            <!-- Tipo EMO -->
+            <td class="col-tipo">
+              <span *ngIf="item.tieneEmo" class="tipo-emo">{{ item.tipoEmo || '—' }}</span>
+              <span *ngIf="!item.tieneEmo" class="no-emo">Sin EMO</span>
+            </td>
+
+            <!-- Fecha EMO -->
+            <td class="col-fecha text-muted">
+              {{ item.tieneEmo ? (item.fechaEmo | date:'dd/MM/yyyy') : '—' }}
+            </td>
+
+            <!-- Vencimiento -->
+            <td class="col-fecha text-muted">
+              {{ item.tieneEmo ? (item.fechaVencimiento | date:'dd/MM/yyyy') : '—' }}
+            </td>
+
+            <!-- Aptitud -->
+            <td class="col-aptitud">
+              <span *ngIf="item.tieneEmo" class="badge" [ngClass]="aptitudClass(item.aptitud)">
+                {{ item.aptitud }}
+              </span>
+              <span *ngIf="!item.tieneEmo" class="text-muted">—</span>
+            </td>
+
+            <!-- Estado -->
+            <td class="col-estado">
+              <span class="badge" [ngClass]="estadoClass(item.estado, item.tieneEmo)">
+                {{ estadoLabel(item) }}
+              </span>
+            </td>
+
+            <!-- Días -->
+            <td class="col-dias text-right">
+              <span *ngIf="item.tieneEmo" class="badge" [ngClass]="diasClass(item.diasRestantes)">
+                {{ diasLabel(item.diasRestantes) }}
+              </span>
+              <span *ngIf="!item.tieneEmo" class="text-muted">—</span>
+            </td>
+
+            <!-- Acciones -->
+            <td class="col-actions" (click)="$event.stopPropagation()">
+              <div class="actions-group">
+                <button type="button" class="action-btn" title="Programar EMO con clínica"
+                  (click)="abrirProgramarEmo(item, $event)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                </button>
+                <button *ngIf="item.tieneEmo" type="button" class="action-btn" title="Historial"
+                  (click)="verHistorial(item, $event)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                  </svg>
+                </button>
+                <button *ngIf="item.tieneEmo" type="button" class="action-btn" title="Documentos"
+                  (click)="abrirDocumentos(item, $event)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/>
+                  </svg>
+                </button>
+                <button type="button" class="action-btn" title="Editar"
+                  (click)="abrirEditar(item, $event)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading && items.length === 0">
+            <td colspan="8" class="empty-row">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/>
+              </svg>
+              <p>Sin resultados para los filtros actuales.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="totalRecords > 0" class="table-footer">
+      <span class="record-count">{{ totalRecords }} registro{{ totalRecords !== 1 ? 's' : '' }}</span>
+      <app-paginator
+        [totalRecords]="totalRecords"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="onPageChange($event)"
+      ></app-paginator>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Modal de filtros ─────────────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Nombre o DNI..."
+      [value]="filters.search"
+      (valueChange)="onSearchChange($event)"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Aptitud"
+      [options]="aptitudOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.aptitud"
+      placeholder="Todas"
+      (valueChange)="filters.aptitud = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.estado"
+      placeholder="Todos"
+      (valueChange)="filters.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Empresa"
+      [options]="empresaOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.empresaId"
+      placeholder="Todas"
+      (valueChange)="filters.empresaId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.proyectoId"
+      placeholder="Todos"
+      (valueChange)="filters.proyectoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinLectura" (ngModelChange)="onFilterChange()" />
+    Sin Lectura EMO (evidencia)
+  </label>
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinCertificado" (ngModelChange)="onFilterChange()" />
+    Sin Certificado de Aptitud (evidencia)
+  </label>
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinEmoCompleto" (ngModelChange)="onFilterChange()" />
+    Sin EMO Completo (evidencia)
+  </label>
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinInterconsulta" (ngModelChange)="onFilterChange()" />
+    Sin levantamiento de Interconsulta (evidencia)
+  </label>
+</app-filter-modal>
+
+<!-- Modales -->
+<app-emo-detail
+  *ngIf="selectedEmoId"
+  [emoId]="selectedEmoId"
+  [canUpload]="true"
+  (closed)="closeDetail()"
+  (saved)="onDetailSaved()"
+></app-emo-detail>
+
+<app-programar-emo-dialog
+  *ngIf="selectedWorkerForProgramar"
+  [worker]="selectedWorkerForProgramar"
+  (closed)="onProgramarEmoCerrado($event)"
+></app-programar-emo-dialog>
+
+<app-editar-emo-modal
+  [emo]="emoSeleccionado"
+  [open]="emoSeleccionado !== null"
+  (closed)="onEditarClosed()"
+  (saved)="onEditarSaved()"
+/>
+
+<app-documentos-emo-modal
+  [emo]="emoDocumentos"
+  [open]="emoDocumentos !== null"
+  (closed)="emoDocumentos = null"
+/>

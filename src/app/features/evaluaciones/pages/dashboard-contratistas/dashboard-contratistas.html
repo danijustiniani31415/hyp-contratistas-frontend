@@ -1,0 +1,195 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Dashboard Contratistas"
+  subtitulo="Análisis ejecutivo del desempeño de contratistas."
+    [tabGroups]="[
+    { label: 'Residentes',   icono: 'ti-user-check', tabs: [
+      { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
+      { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
+      { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
+      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' },
+      { label: 'Asignaciones',  icono: 'ti-users',            route: '/evaluaciones/asignaciones',   featureKey: 'evaluaciones.asignaciones' }
+    ]},
+    { label: 'Contratistas', icono: 'ti-building', tabs: [
+      { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
+      { label: 'Evaluar',          icono: 'ti-pencil',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
+      { label: 'Ver evaluaciones', icono: 'ti-list',      route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' }
+    ]},
+    { label: 'Superv. Contratista', icono: 'ti-shield-check', tabs: [
+      { label: 'Evaluar supervisor', icono: 'ti-pencil', route: '/evaluaciones/evaluar-supervisor-contratista', featureKey: 'evaluaciones.evaluar-supervisor-contratista' },
+      { label: 'Ver evaluaciones',   icono: 'ti-list',   route: '/evaluaciones/ver-supervisores-contratista',   featureKey: 'evaluaciones.ver-supervisores-contratista' }
+    ]},
+    { label: 'Jefe SSOMA', icono: 'ti-user-shield', tabs: [
+      { label: 'Evaluar Jefe SSOMA', icono: 'ti-pencil', route: '/evaluaciones/evaluar-jefe-ssoma', featureKey: 'evaluaciones.evaluar-jefe-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-jefe-ssoma', featureKey: 'evaluaciones.resultados-jefe-ssoma' }
+    ]},
+    { label: 'Prevencionistas', icono: 'ti-vest', tabs: [
+      { label: 'Mi perfil', icono: 'ti-user', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
+      { label: 'Dashboard', icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' }
+    ]},
+    { label: 'Gestión SSOMA', icono: 'ti-users-group', tabs: [
+      { label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-gestion-ssoma', featureKey: 'evaluaciones.resultados-gestion-ssoma' }
+    ]}
+  ]">
+</app-abril-page-header>
+
+<div class="db-root">
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div><span>Cargando dashboard...</span>
+  </div>
+
+  <div class="db-content" *ngIf="!loading && dashboard">
+
+    <!-- SUB-HEADER -->
+    <div class="sub-header">
+      <div>
+        <div class="sh-title">Performance de contratistas</div>
+        <div class="sh-sub">Evaluación multidimensional · 5 áreas · {{ dashboard.totalContratistas }} contratistas</div>
+      </div>
+      <div class="view-toggle">
+        <span class="vt-btn" [class.active]="vista==='ranking'" (click)="setVista('ranking')">Ranking</span>
+        <span class="vt-btn" [class.active]="vista==='tendencia'" (click)="setVista('tendencia')">Tendencia</span>
+      </div>
+    </div>
+
+    <!-- KPI BAR -->
+    <div class="kpi-bar">
+      <div class="kpi-cell">
+        <div class="kc-lbl"><i class="ti ti-chart-line"></i> Promedio general</div>
+        <div class="kc-num" [ngClass]="scoreClass(dashboard.promedioGeneral)">
+          {{ dashboard.promedioGeneral ?? '—' }}
+        </div>
+        <div class="kc-sub"><span class="kc-badge">/ 20 pts</span></div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kc-lbl"><i class="ti ti-building"></i> Contratistas</div>
+        <div class="kc-num">{{ dashboard.totalContratistas }}</div>
+        <div class="kc-sub"><span class="kc-badge">Evaluados</span></div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kc-lbl"><i class="ti ti-circle-check"></i> Aprobados</div>
+        <div class="kc-num score-hi">{{ dashboard.aprobados }}</div>
+        <div class="kc-sub"><span class="kc-badge">{{ pctAprobados }}%</span></div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kc-lbl"><i class="ti ti-alert-triangle"></i> Desaprobados</div>
+        <div class="kc-num score-lo">{{ dashboard.desaprobados }}</div>
+        <div class="kc-sub"><span class="kc-badge">Menor a 12</span></div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="main-grid">
+
+      <!-- SIDEBAR: lista contratistas -->
+      <div class="db-sidebar">
+        <div class="sb-label">Contratistas</div>
+        <div class="contractor-item"
+          *ngFor="let c of dashboard.contratistas; let i = index"
+          [class.active]="contraHistaActivo?.contributorId === c.contributorId"
+          (click)="selectContratista(c)">
+          <div class="ci-av" [style.background]="scoreColor(c.notaTotal)">
+            {{ iniciales(c.contributorNombre) }}
+          </div>
+          <div class="ci-body">
+            <div class="ci-name">{{ c.contributorNombre }}</div>
+            <div class="ci-project">{{ c.proyectoNombre }}</div>
+            <div class="ci-bar">
+              <div class="ci-fill" [style.width.%]="((c.notaTotal ?? 0) / 20) * 100"
+                [style.background]="scoreColor(c.notaTotal)"></div>
+            </div>
+          </div>
+          <div class="ci-score" [ngClass]="scoreClass(c.notaTotal)">{{ c.notaTotal ?? '—' }}</div>
+        </div>
+      </div>
+
+      <!-- CENTRO: gráficas -->
+      <div class="db-main">
+
+        <!-- VISTA RANKING -->
+        <div *ngIf="vista === 'ranking'" class="ranking-view">
+          <div class="charts-row">
+
+            <!-- Donut distribución -->
+            <div class="chart-card">
+              <div class="cc-title">Distribución por estado</div>
+              <div class="chart-container">
+                <canvas id="chart-donut-cv"></canvas>
+              </div>
+            </div>
+
+            <!-- Radar contratista activo -->
+            <div class="chart-card" *ngIf="contraHistaActivo">
+              <div class="cc-title">{{ contraHistaActivo.contributorNombre }}</div>
+              <div class="cc-sub">Desempeño por área</div>
+              <div class="chart-container">
+                <canvas id="chart-radar-cv"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Promedios por área -->
+          <div class="areas-card" *ngIf="dashboard.promediosPorArea.length">
+            <div class="ac-title">Promedios por área evaluadora</div>
+            <div class="area-row" *ngFor="let a of dashboard.promediosPorArea">
+              <span class="ar-lbl">{{ a.areaNombre }}</span>
+              <div class="ar-bar">
+                <div class="ar-fill" [style.width.%]="((a.promedio ?? 0) / 20) * 100"
+                  [style.background]="scoreColor(a.promedio)"></div>
+              </div>
+              <span class="ar-num" [ngClass]="scoreClass(a.promedio)">{{ a.promedio ?? '—' }}</span>
+              <span class="ar-count">{{ a.totalEvaluaciones }} eval.</span>
+            </div>
+          </div>
+
+          <!-- Top 5 y Bottom 5 -->
+          <div class="top-grid">
+            <div class="top-card">
+              <div class="top-title"><i class="ti ti-trophy"></i> Top 5 — Mayor nota</div>
+              <div class="top-row" *ngFor="let c of top5; let i = index">
+                <span class="tr-pos">{{ i + 1 }}</span>
+                <div class="tr-body">
+                  <div class="tr-name">{{ c.contributorNombre }}</div>
+                  <div class="tr-project">{{ c.proyectoNombre }}</div>
+                </div>
+                <span class="tr-nota score-hi">{{ c.notaTotal ?? '—' }}</span>
+              </div>
+            </div>
+            <div class="top-card">
+              <div class="top-title"><i class="ti ti-alert-circle"></i> Bottom 5 — Menor nota</div>
+              <div class="top-row" *ngFor="let c of bottom5; let i = index">
+                <span class="tr-pos">{{ i + 1 }}</span>
+                <div class="tr-body">
+                  <div class="tr-name">{{ c.contributorNombre }}</div>
+                  <div class="tr-project">{{ c.proyectoNombre }}</div>
+                </div>
+                <span class="tr-nota score-lo">{{ c.notaTotal ?? '—' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VISTA TENDENCIA -->
+        <div *ngIf="vista === 'tendencia'" class="tendencia-view">
+          <div class="chart-card chart-card-full">
+            <div class="cc-title">Evolución histórica por contratista</div>
+            <div class="chart-container chart-container-lg">
+              <canvas id="chart-tendencia-cv"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- SIN DATOS -->
+  <div class="empty-state" *ngIf="!loading && !dashboard?.totalContratistas">
+    <i class="ti ti-clipboard-off"></i>
+    <h3>Sin evaluaciones</h3>
+    <p>No hay evaluaciones de contratistas registradas en el período activo.</p>
+  </div>
+
+</div>

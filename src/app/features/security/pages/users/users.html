@@ -1,0 +1,74 @@
+<app-abril-page-header
+  badge="SEGURIDAD"
+  titulo="Usuarios"
+  subtitulo="Administración de usuarios y accesos al sistema."
+  [tabs]="tabs"
+  [botonSecundario]="{ label: 'Crear usuario para trabajador de Abril', icono: 'ti-id-badge-2' }"
+  [botonPrimario]="{ label: 'Crear usuario para persona externa', icono: 'ti-plus' }"
+  (secondaryClick)="showAbrilWorkerModal = true"
+  (primaryClick)="showCreateModal = true">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="flex-1 min-h-0 bg-white rounded-lg p-[20px]">
+  <div class="flex flex-col justify-center items-center">
+    <app-user-list
+      class="w-full"
+      (pagedData)="updatePagination($event)"
+      (categoriasLoaded)="onCategoriasLoaded($event)"
+      (editUser)="openEditForm($event)"
+      (userToggled)="reloadUsers()"
+      (userDeleted)="reloadUsers()"
+    ></app-user-list>
+    <app-paginator
+      class="w-full"
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)"
+    ></app-paginator>
+  </div>
+</div>
+
+<!-- ── Panel de filtros estándar ──────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <!-- Los nombres del catálogo se guardan en MAYÚSCULAS y traen siglas ("COORDINADOR SSOMA"),
+         así que se muestran tal cual: el suavizado a nombre propio los rompe ("Coordinador Ssoma"). -->
+    <app-search-select
+      label="Categoría"
+      [options]="categorias"
+      valueField="categoriaId"
+      displayField="nombre"
+      [value]="categoriaId"
+      [uppercase]="true"
+      [fullText]="true"
+      placeholder="Todas las categorías"
+      (valueChange)="onCategoriaChange($event)">
+    </app-search-select>
+  </div>
+
+</app-filter-modal>
+
+<app-user-create
+  *ngIf="showCreateModal"
+  (closeModal)="showCreateModal = false"
+  (userCreated)="reloadUsers()"
+></app-user-create>
+
+<app-abril-worker-create
+  *ngIf="showAbrilWorkerModal"
+  (closeModal)="showAbrilWorkerModal = false"
+  (userCreated)="reloadUsers()"
+></app-abril-worker-create>
+
+<app-user-edit-form
+  *ngIf="formOpen"
+  [open]="formOpen"
+  [initial]="formUser"
+  (closed)="formOpen = false"
+  (saved)="onEditSaved()"
+></app-user-edit-form>

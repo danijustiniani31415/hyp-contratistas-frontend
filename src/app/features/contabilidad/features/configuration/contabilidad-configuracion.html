@@ -1,0 +1,27 @@
+﻿<app-abril-page-header
+  [badge]="'CONTABILIDAD · ' + anioActual"
+  titulo="Configuración"
+  subtitulo="Carpetas de OneDrive y demás ajustes del módulo de Contabilidad."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="bg-white flex-1 overflow-y-auto p-[20px] flex flex-col gap-5">
+  <app-section-tabs
+    [tabs]="sectionTabs"
+    [value]="activeSection"
+    (valueChange)="onSectionChange($event)"
+  ></app-section-tabs>
+
+  <!-- SECCIÓN: Carpeta facturas -->
+  <div *ngIf="activeSection === 'carpeta-facturas'">
+    <app-invoice-folder></app-invoice-folder>
+  </div>
+
+  <!-- SECCIÓN: Firma. Es la MISMA firma de la persona (person.signature_*) que se registra
+       en Gestión Administrativa → Tu firma: por eso el panel es el componente compartido y no
+       uno propio de Contabilidad. -->
+  <div *ngIf="activeSection === 'firma-gg'">
+    <app-firma-personal
+      descripcion="Se estampa en las facturas que visas y en el resto de documentos que firmes" />
+  </div>
+</div>

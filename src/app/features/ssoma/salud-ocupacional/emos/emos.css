@@ -1,0 +1,341 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: #ffffff;
+}
+
+.th-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.th-sortable:hover { color: #1e293b; }
+
+.sort-icon {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-left: 2px;
+}
+
+/* .abril-table-wrap global solo scrollea en vertical. Con 13 columnas y table-layout:fixed,
+   cualquier ancho por debajo de la suma del colgroup reparte el sobrante hacia abajo y el
+   texto termina encimándose, así que acá el ancho es un piso y el sobrante se scrollea. */
+.abril-table-wrap {
+  overflow-x: auto;
+}
+
+.abril-table {
+  table-layout: fixed;
+  min-width: 1180px;
+}
+
+.abril-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.abril-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.abril-table tbody tr.row-clickable {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.abril-table tbody tr.row-clickable:hover {
+  background: #f9fafb;
+}
+
+.worker-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+/* El nombre puede ocupar dos líneas, pero se queda dentro de su celda: con overflow visible
+   se salía por encima del DNI y de la columna de al lado. */
+.col-worker {
+  white-space: normal !important;
+  text-overflow: unset !important;
+}
+
+.col-actions {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+}
+
+.actions-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.worker-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.worker-dni {
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: #6b7280;
+  transition: background 0.12s, color 0.12s;
+}
+
+.row-action:hover {
+  background: var(--color-abril-standard-light);
+  color: var(--color-abril-standard);
+}
+
+.subtabs {
+  display: flex;
+  gap: 6px;
+}
+
+.subtab-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.subtab-btn:hover {
+  background: var(--color-abril-standard-light);
+}
+
+.subtab-btn--active {
+  background: var(--color-abril-standard);
+  border-color: var(--color-abril-standard);
+  color: #ffffff;
+}
+
+.empty-row {
+  text-align: center;
+  color: #9ca3af;
+  padding: 2.5rem 1rem;
+}
+
+/* ── Vista móvil (<md) ───────────────────────────────────────
+   Misma información que la fila de la tabla, apilada en tarjetas para que en un teléfono
+   se pueda leer y, sobre todo, llegar al botón de "Programar" (en la tabla queda fuera de
+   la pantalla). Se muestra/oculta con las utilidades md:hidden / hidden md:block. */
+.emo-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 0 1 auto;
+  padding-bottom: 4px;
+}
+
+.emo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-abril-border, #e5e7eb);
+  border-radius: var(--radius-standard, 10px);
+  background: #ffffff;
+}
+
+.emo-card--clickable {
+  cursor: pointer;
+}
+
+.emo-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.emo-card__ident {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.emo-card__name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.emo-card__dni {
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+
+.emo-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Dos columnas para los datos cortos (fechas, tipo); las empresas y el proyecto ocupan
+   la fila completa porque son los textos largos que antes se encimaban. */
+.emo-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.emo-card__item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.emo-card__item--wide {
+  grid-column: 1 / -1;
+}
+
+.emo-card__item dt {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.emo-card__item dd {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #374151;
+  overflow-wrap: anywhere;
+}
+
+.emo-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.emo-card__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.emo-card__btn:hover {
+  background: var(--color-abril-standard-light);
+  border-color: var(--color-abril-standard);
+  color: var(--color-abril-standard);
+}
+
+.emo-cards__empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.82rem;
+  padding: 2rem 1rem;
+  margin: 0;
+}
+
+/* ── Ficha de pre-ingreso ────────────────────────────────────
+   Un finalista aprobado en Reclutamiento aparece en esta lista para que GTH le programe el EMO
+   de Ingreso, pero todavía no es trabajador: se marca para que no se confunda con el resto. */
+.tag-preingreso {
+  align-self: flex-start;
+  margin-top: 3px;
+  padding: 1px 7px;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Aviso de que la lista viene acotada a una sola ficha (enlace desde Reclutamiento). */
+.foco-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #a9c9e6;
+  border-radius: var(--radius-standard);
+  background: var(--color-abril-logo-blue-light);
+  font-size: 0.78rem;
+  color: #1f2937;
+}
+
+.foco-banner i {
+  color: var(--color-abril-logo-blue);
+  font-size: 15px;
+}
+
+.foco-banner__texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.foco-banner__btn {
+  padding: 4px 12px;
+  border: 1px solid var(--color-abril-logo-blue);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--color-abril-logo-blue);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.foco-banner__btn:hover {
+  background: var(--color-abril-logo-blue);
+  color: #ffffff;
+}

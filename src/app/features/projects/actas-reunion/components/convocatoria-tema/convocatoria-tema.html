@@ -1,0 +1,189 @@
+<app-base-modal [title]="'Convocatoria recurrente del tema'" width="w-[680px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-4 p-1">
+    <p class="text-xs text-gray-500">
+      Cada regla convoca a <b>un</b> grupo: por área/gerencia + puesto, o por el staff completo de un
+      proyecto. Para convocar a varios grupos a la vez — ej. "todas las jefaturas de Proyectos" + "el
+      staff de Bugambilias" — agrega una regla por cada grupo con "Agregar otra regla".
+    </p>
+
+    <div *ngFor="let regla of reglas; let ri = index"
+      class="border border-[#E5EAF0] rounded-lg p-3 flex flex-col gap-2 relative">
+      <button *ngIf="reglas.length > 1" type="button" (click)="removerRegla(ri)"
+        class="absolute top-2 right-2 text-red-400 hover:text-red-600 cursor-pointer">
+        <span class="ti ti-x text-base"></span>
+      </button>
+
+      <label class="text-xs font-medium text-gray-500">Convocar por</label>
+      <div class="flex gap-4">
+        <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer select-none">
+          <input type="radio" [name]="'modo-regla-' + ri" [value]="'AREA_PUESTO'" [ngModel]="regla.modo"
+            (ngModelChange)="onModoReglaChange(regla, $event)" class="accent-[var(--color-abril-primary)]" />
+          Área / puesto
+        </label>
+        <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer select-none">
+          <input type="radio" [name]="'modo-regla-' + ri" [value]="'PROYECTO'" [ngModel]="regla.modo"
+            (ngModelChange)="onModoReglaChange(regla, $event)" class="accent-[var(--color-abril-primary)]" />
+          Staff de un proyecto
+        </label>
+      </div>
+
+      <ng-container *ngIf="regla.modo === 'AREA_PUESTO'">
+        <label class="text-xs font-medium text-gray-500 mt-1">Área/gerencia (opcional)</label>
+        <div class="flex flex-col gap-2">
+          <select *ngFor="let opciones of nivelesRegla(regla); let i = index"
+            [ngModel]="regla.areaScopePath[i]?.areaScopeId ?? null"
+            (ngModelChange)="onNivelReglaChange(regla, i, $event)"
+            class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]">
+            <option [ngValue]="null">{{ placeholderNivel(opciones, i) }}</option>
+            <option *ngFor="let n of opciones" [ngValue]="n.areaScopeId">{{ n.areaItemName }}</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-between mt-1">
+          <label class="text-xs font-medium text-gray-500">Puestos (opcional, marca uno o varios)</label>
+          <label *ngIf="regla.puestos.length > 0" class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+            <input type="checkbox" [ngModel]="todosPuestosMarcados(regla)" (ngModelChange)="toggleTodosPuestos(regla, $event)"
+              class="accent-[var(--color-abril-primary)] cursor-pointer" />
+            Marcar todos
+          </label>
+        </div>
+        <p *ngIf="regla.puestos.length === 0" class="text-[11px] text-gray-400">
+          No hay puestos registrados en esta área todavía.
+        </p>
+        <ng-container *ngIf="regla.puestos.length > 0">
+          <input type="text" [(ngModel)]="regla.filtroPuesto" maxlength="100"
+            class="w-full h-[36px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+            placeholder="Filtrar, ej. jefe" />
+          <div class="border border-[#E5EAF0] rounded-lg max-h-40 overflow-y-auto flex flex-col">
+            <label *ngFor="let p of puestosFiltrados(regla)"
+              class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 cursor-pointer select-none hover:bg-gray-50 border-b border-[#E5EAF0] last:border-b-0">
+              <input type="checkbox" [(ngModel)]="p.marcado" (ngModelChange)="onPuestoToggle()" class="accent-[var(--color-abril-primary)] cursor-pointer" />
+              {{ p.descripcion }}
+            </label>
+            <p *ngIf="puestosFiltrados(regla).length === 0" class="px-3 py-2 text-xs text-gray-400">
+              Ningún puesto coincide con "{{ regla.filtroPuesto }}".
+            </p>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <ng-container *ngIf="regla.modo === 'PROYECTO'">
+        <div class="mt-1">
+          <app-search-select
+            label="Staff de un proyecto"
+            [options]="proyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="regla.projectId"
+            (valueChange)="onProjectIdReglaChange(regla, $event)"
+            placeholder="Buscar proyecto...">
+          </app-search-select>
+          <p class="text-[11px] text-gray-400 mt-1">
+            Trae a todo el staff vinculado actualmente a ese proyecto (residente, ingenieros,
+            jefaturas de obra, etc.). Destilda a quien no quieras convocar.
+          </p>
+        </div>
+
+        <ng-container *ngIf="regla.projectId != null">
+          <div class="flex items-center justify-between mt-1">
+            <label class="text-xs font-medium text-gray-500">Staff del proyecto</label>
+            <label *ngIf="regla.staff.length > 0" class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+              <input type="checkbox" [ngModel]="todosStaffMarcados(regla)" (ngModelChange)="toggleTodosStaff(regla, $event)"
+                class="accent-[var(--color-abril-primary)] cursor-pointer" />
+              Marcar todos
+            </label>
+          </div>
+          <p *ngIf="regla.staff.length === 0" class="text-[11px] text-gray-400">
+            No hay nadie vinculado actualmente a este proyecto.
+          </p>
+          <ng-container *ngIf="regla.staff.length > 0">
+            <input type="text" [(ngModel)]="regla.filtroStaff" maxlength="100"
+              class="w-full h-[36px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+              placeholder="Filtrar, ej. jefe" />
+            <div class="border border-[#E5EAF0] rounded-lg max-h-40 overflow-y-auto flex flex-col">
+              <label *ngFor="let s of staffFiltrado(regla)"
+                class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 cursor-pointer select-none hover:bg-gray-50 border-b border-[#E5EAF0] last:border-b-0">
+                <input type="checkbox" [(ngModel)]="s.marcado" (ngModelChange)="onStaffToggle()" class="accent-[var(--color-abril-primary)] cursor-pointer" />
+                {{ s.nombre }}
+                <span *ngIf="s.cargo" class="text-xs text-gray-400">— {{ s.cargo }}</span>
+              </label>
+              <p *ngIf="staffFiltrado(regla).length === 0" class="px-3 py-2 text-xs text-gray-400">
+                Nadie coincide con "{{ regla.filtroStaff }}".
+              </p>
+            </div>
+          </ng-container>
+        </ng-container>
+      </ng-container>
+
+      <p class="text-[11px] text-gray-400 mt-1">
+        ¿Necesitas convocar también a otra área, otro puesto u otro proyecto?
+        <button type="button" (click)="agregarRegla()" class="text-[var(--color-abril-primary)] hover:underline cursor-pointer">Agrega otra regla</button>.
+      </p>
+    </div>
+
+    <button type="button" (click)="agregarRegla()"
+      class="self-start text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
+      <span class="ti ti-plus"></span> Agregar otra regla
+    </button>
+
+    <p *ngIf="trabajadoresPreview.length > 0" class="text-[11px] text-gray-500 border-t border-[#E5EAF0] pt-3">
+      Se agregarán <span class="font-semibold">{{ trabajadoresPreview.length }}</span> participante{{ trabajadoresPreview.length === 1 ? '' : 's' }} a esta reunión.
+    </p>
+
+    <div class="flex flex-col gap-2 border-t border-[#E5EAF0] pt-4">
+      <p class="text-sm font-medium text-gray-700">
+        Agenda de este tema
+        <span class="text-xs text-gray-400 font-normal">(toda reunión requiere agenda; elige cómo se define)</span>
+      </p>
+
+      <div class="flex gap-4 pl-1">
+        <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer select-none">
+          <input type="radio" name="agendaTipo" [value]="true" [ngModel]="agendaFija" (ngModelChange)="agendaFija = $event; onAgendaFijaChange()"
+            class="accent-[var(--color-abril-primary)]" />
+          Fija (siempre los mismos puntos)
+        </label>
+        <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer select-none">
+          <input type="radio" name="agendaTipo" [value]="false" [ngModel]="agendaFija" (ngModelChange)="agendaFija = $event; onAgendaFijaChange()"
+            class="accent-[var(--color-abril-primary)]" />
+          Dinámica (cada participante propone sus temas)
+        </label>
+      </div>
+      <p class="text-[11px] text-gray-400 pl-1">
+        <b>Fija:</b> escribes una sola vez los puntos y se repiten igual en cada reunión con este tema.
+        <b>Dinámica:</b> antes de cada reunión, cada convocado recibe un correo con un link para cargar
+        sus propios temas a tratar.
+      </p>
+
+      <div *ngIf="agendaFija" class="flex flex-col gap-1.5 pl-1">
+        <label class="text-xs font-medium text-gray-500">Agenda estándar</label>
+        <textarea [(ngModel)]="agendaTexto" rows="4" maxlength="2000"
+          class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+          placeholder="Ej.&#10;1. Revisión de avance&#10;2. Riesgos y bloqueos&#10;3. Acuerdos de la semana anterior"></textarea>
+      </div>
+
+      <div *ngIf="!agendaFija" class="flex flex-col gap-1.5 pl-1">
+        <label class="text-xs font-medium text-gray-500">Recordar con cuántas horas de anticipación</label>
+        <input type="number" [(ngModel)]="recordatorioHorasAntes" min="0" max="72" step="0.5"
+          class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+          placeholder="Ej. 15.5" />
+        <p class="text-[11px] text-gray-400">
+          Se calcula desde la hora de inicio y se ajusta a horario laboral (07:00–19:00, días
+          hábiles). A cada participante le llega un correo con el link para cargar sus temas.
+          Si se deja vacío, se recuerda 24h antes por defecto.
+        </p>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-3 pt-2">
+      <button type="button" (click)="closeModal.emit()"
+        class="h-[42px] px-5 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors">
+        Cancelar
+      </button>
+      <button type="button" (click)="guardarConfiguracion()"
+        class="h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
+        <span class="ti ti-device-floppy text-base"></span>
+        Guardar configuración
+      </button>
+    </div>
+  </div>
+</app-base-modal>

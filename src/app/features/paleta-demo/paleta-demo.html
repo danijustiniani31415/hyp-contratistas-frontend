@@ -1,0 +1,322 @@
+<div class="pd-root">
+
+  <!-- ── Fondo: grid de puntos ── -->
+  <div class="pd-grid" aria-hidden="true"></div>
+
+  <!-- ── Hero ── -->
+  <header class="pd-hero">
+    <div class="pd-hero-inner">
+      <span class="pd-eyebrow">Design System · Abril</span>
+      <h1 class="pd-title">
+        <span class="pd-title-thin">Paleta</span>
+        <span class="pd-title-bold">BCS</span>
+      </h1>
+      <p class="pd-desc">
+        Tokens de color, jerarquía visual y especificaciones de componentes.<br>
+        Sistema de 5 niveles derivado de la escala azul-naval BCS.
+      </p>
+    </div>
+    <!-- Franja cromática completa -->
+    <div class="pd-strip">
+      <div
+        class="pd-strip-seg"
+        *ngFor="let hex of stripColors"
+        [style.background]="hex"
+      ></div>
+    </div>
+  </header>
+
+  <main class="pd-main">
+
+    <!-- ══════════════════════════════════════════════
+         01 — PALETA BASE
+    ══════════════════════════════════════════════ -->
+    <section class="pd-section">
+      <div class="pd-section-head">
+        <span class="pd-section-num">01</span>
+        <div>
+          <h2 class="pd-section-title">Paleta base</h2>
+          <p class="pd-section-sub">Cinco tonos que definen la escala de jerarquía principal.</p>
+        </div>
+      </div>
+
+      <div class="pd-swatches pd-swatches-5">
+        <div class="pd-swatch" *ngFor="let c of paleta">
+          <div class="pd-swatch-color" [style.background]="c.hex">
+            <span class="pd-swatch-level" [style.color]="c.light ? '#0D1B2A' : '#E0E1DD'">
+              {{ c.label }}
+            </span>
+          </div>
+          <div class="pd-swatch-meta">
+            <span class="pd-swatch-name">{{ c.nombre }}</span>
+            <code class="pd-swatch-hex">{{ c.hex }}</code>
+            <code class="pd-swatch-cls">bg-{{ c.nombre }}</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════
+         02 — DERIVADOS + SEMÁNTICOS
+    ══════════════════════════════════════════════ -->
+    <section class="pd-section">
+      <div class="pd-section-head">
+        <span class="pd-section-num">02</span>
+        <div>
+          <h2 class="pd-section-title">Derivados y semánticos</h2>
+          <p class="pd-section-sub">Nivel 2 interpolado + tokens de estado de actividad.</p>
+        </div>
+      </div>
+
+      <div class="pd-two-col-tokens">
+        <div>
+          <p class="pd-group-label">Nivel 2 — derivados</p>
+          <div class="pd-swatches pd-swatches-4">
+            <div class="pd-swatch pd-swatch-sm" *ngFor="let c of derivados">
+              <div class="pd-swatch-color" [style.background]="c.hex">
+                <span class="pd-swatch-level" [style.color]="c.light ? '#0D1B2A' : '#E0E1DD'">
+                  {{ c.label }}
+                </span>
+              </div>
+              <div class="pd-swatch-meta">
+                <span class="pd-swatch-name">{{ c.nombre }}</span>
+                <code class="pd-swatch-hex">{{ c.hex }}</code>
+                <code class="pd-swatch-cls">bg-{{ c.nombre }}</code>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p class="pd-group-label">Semánticos — estados</p>
+          <div class="pd-swatches pd-swatches-4">
+            <div class="pd-swatch pd-swatch-sm" *ngFor="let c of semanticos">
+              <div class="pd-swatch-color" [style.background]="c.hex">
+                <span class="pd-swatch-level" [style.color]="'#0D1B2A'">{{ c.label }}</span>
+              </div>
+              <div class="pd-swatch-meta">
+                <span class="pd-swatch-name">{{ c.nombre }}</span>
+                <code class="pd-swatch-hex">{{ c.hex }}</code>
+                <code class="pd-swatch-cls">bg-{{ c.nombre }}</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════
+         03 — DEGRADADOS
+    ══════════════════════════════════════════════ -->
+    <section class="pd-section">
+      <div class="pd-section-head">
+        <span class="pd-section-num">03</span>
+        <div>
+          <h2 class="pd-section-title">Degradados de jerarquía</h2>
+          <p class="pd-section-sub">Progresión cromática entre los cinco niveles de la escala.</p>
+        </div>
+      </div>
+
+      <div class="pd-gradients">
+        <div class="pd-grad-item">
+          <div class="pd-grad-bar pd-grad-full"></div>
+          <div class="pd-grad-labels">
+            <code>ink</code><code>prussian</code><code>steel</code><code>dusk</code><code>light</code>
+          </div>
+          <span class="pd-grad-desc">Oscuro → Claro (jerarquía ascendente)</span>
+        </div>
+
+        <div class="pd-grad-item">
+          <div class="pd-grad-bar pd-grad-n2"></div>
+          <div class="pd-grad-labels">
+            <code>ink</code><code>n2a</code><code>n2b</code><code>n2c</code><code>n2d</code>
+          </div>
+          <span class="pd-grad-desc">Escala nivel 2 — derivados interpolados</span>
+        </div>
+
+        <div class="pd-grad-item">
+          <div class="pd-grad-bar pd-grad-accent"></div>
+          <span class="pd-grad-desc" style="margin-top:0.5rem">Rango total · 9 pasos uniformes</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════
+         04 — BADGES DE ESTADO
+    ══════════════════════════════════════════════ -->
+    <section class="pd-section">
+      <div class="pd-section-head">
+        <span class="pd-section-num">04</span>
+        <div>
+          <h2 class="pd-section-title">Badges de estado</h2>
+          <p class="pd-section-sub">Variante oscura (filas nivel 0–2) y variante clara (filas nivel 3+).</p>
+        </div>
+      </div>
+
+      <div class="pd-badges-compare">
+        <!-- Fondo oscuro -->
+        <div class="pd-badge-ctx pd-badge-ctx-dark">
+          <div class="pd-badge-ctx-label">Contexto oscuro · <code>#0D1B2A</code></div>
+          <div class="pd-badge-row">
+            <span
+              class="pd-badge"
+              *ngFor="let b of badgesDark"
+              [style.background]="b.bg"
+              [style.color]="b.fg"
+            >{{ b.label }}</span>
+          </div>
+        </div>
+
+        <!-- Fondo claro -->
+        <div class="pd-badge-ctx pd-badge-ctx-light">
+          <div class="pd-badge-ctx-label" style="color:#778da9">Contexto claro · <code>#F5F5F4</code></div>
+          <div class="pd-badge-row">
+            <span
+              class="pd-badge"
+              *ngFor="let b of badgesLight"
+              [style.background]="b.bg"
+              [style.color]="b.fg"
+            >{{ b.label }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════
+         05 — TABLA DE JERARQUÍA
+    ══════════════════════════════════════════════ -->
+    <section class="pd-section">
+      <div class="pd-section-head">
+        <span class="pd-section-num">05</span>
+        <div>
+          <h2 class="pd-section-title">Tabla de jerarquía</h2>
+          <p class="pd-section-sub">Filas con los colores reales del cronograma según nivel 0–3.</p>
+        </div>
+      </div>
+
+      <div class="pd-hier-wrapper">
+        <table class="pd-hier-table">
+          <thead>
+            <tr class="pd-hier-head">
+              <th>#</th>
+              <th>Actividad</th>
+              <th>Nivel</th>
+              <th>Avance</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let r of hierarquiaRows; let i = index"
+              class="pd-hier-row"
+              [style.background-color]="r.bg"
+              [style.color]="r.text"
+              [style.--row-border]="r.border"
+            >
+              <td class="pd-hier-num" [class.pd-hier-bordered]="r.border">{{ (i + 1).toString().padStart(2, '0') }}</td>
+              <td class="pd-hier-desc">
+                <span
+                  class="pd-hier-indent"
+                  [style.padding-left.px]="r.nivel * 20"
+                  [style.font-weight]="r.nivel === 0 ? '700' : r.nivel === 1 ? '600' : r.nivel === 2 ? '500' : '400'"
+                >{{ r.desc }}</span>
+              </td>
+              <td class="pd-hier-nivel">
+                <span class="pd-hier-lvl-badge" [style.color]="r.text" [style.border-color]="r.text">
+                  N{{ r.nivel }}
+                </span>
+              </td>
+              <td class="pd-hier-avance">
+                <div class="pd-hier-bar-wrap">
+                  <div class="pd-hier-bar-bg" [style.background]="r.text === '#E0E1DD' ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.1)'">
+                    <div
+                      class="pd-hier-bar-fill"
+                      [style.width.%]="r.pct"
+                      [style.background]="estadoColor(r.estado)"
+                    ></div>
+                  </div>
+                  <span class="pd-hier-pct">{{ r.pct }}%</span>
+                </div>
+              </td>
+              <td>
+                <span class="pd-hier-estado" [style.color]="estadoColor(r.estado)">{{ r.estado }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════
+         06 — BOTONES
+    ══════════════════════════════════════════════ -->
+    <section class="pd-section">
+      <div class="pd-section-head">
+        <span class="pd-section-num">06</span>
+        <div>
+          <h2 class="pd-section-title">Botones</h2>
+          <p class="pd-section-sub">Variantes primario · secundario · ghost · danger · culminar.</p>
+        </div>
+      </div>
+
+      <div class="pd-btns-showcase">
+        <div class="pd-btn-group">
+          <span class="pd-btn-group-label">Sobre fondo oscuro</span>
+          <div class="pd-btn-row pd-btn-row-dark">
+            <button class="pd-btn pd-btn-primary">Nueva Actividad</button>
+            <button class="pd-btn pd-btn-secondary">Importar MPP</button>
+            <button class="pd-btn pd-btn-ghost-dark">Cancelar</button>
+            <button class="pd-btn pd-btn-danger">Eliminar</button>
+            <button class="pd-btn pd-btn-verde">Culminar</button>
+          </div>
+        </div>
+
+        <div class="pd-btn-group">
+          <span class="pd-btn-group-label" style="color:#778da9">Sobre fondo claro</span>
+          <div class="pd-btn-row pd-btn-row-light">
+            <button class="pd-btn pd-btn-primary">Nueva Actividad</button>
+            <button class="pd-btn pd-btn-secondary">Importar MPP</button>
+            <button class="pd-btn pd-btn-ghost-light">Cancelar</button>
+            <button class="pd-btn pd-btn-danger">Eliminar</button>
+            <button class="pd-btn pd-btn-verde">Culminar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════
+         07 — TIPOGRAFÍA
+    ══════════════════════════════════════════════ -->
+    <section class="pd-section pd-section-last">
+      <div class="pd-section-head">
+        <span class="pd-section-num">07</span>
+        <div>
+          <h2 class="pd-section-title">Escala tipográfica</h2>
+          <p class="pd-section-sub">Tamaños y pesos utilizados en el sistema. Fuente base: system-ui.</p>
+        </div>
+      </div>
+
+      <div class="pd-tipo-list">
+        <div class="pd-tipo-row" *ngFor="let t of tipoMuestras">
+          <div class="pd-tipo-meta">
+            <span class="pd-tipo-label">{{ t.label }}</span>
+            <code class="pd-tipo-spec">{{ t.size }} · w{{ t.weight }}</code>
+          </div>
+          <div
+            class="pd-tipo-sample"
+            [style.font-size]="t.size"
+            [style.font-weight]="t.weight"
+            [style.font-family]="t.mono ? 'var(--pd-mono)' : 'inherit'"
+          >{{ t.sample }}</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer class="pd-footer">
+    <code class="pd-footer-text">abril / bcs-palette · v1 · 2026</code>
+  </footer>
+
+</div>

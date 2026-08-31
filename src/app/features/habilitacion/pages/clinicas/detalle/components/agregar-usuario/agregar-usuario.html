@@ -1,0 +1,40 @@
+<app-base-modal [title]="'AGREGAR USUARIO'" width="w-[440px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-4 mt-4">
+    <div class="flex flex-col gap-1">
+      <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Nombre *</label>
+      <input
+        type="text"
+        [(ngModel)]="nombre"
+        placeholder="Nombre completo"
+        class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04]
+               focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Email *</label>
+      <input
+        type="email"
+        [(ngModel)]="email"
+        placeholder="correo@ejemplo.com"
+        class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04]
+               focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm"
+      />
+    </div>
+  </div>
+
+  <footer class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+    <button
+      type="button"
+      (click)="closeModal.emit()"
+      class="px-5 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm font-semibold
+             hover:bg-gray-50 transition-colors cursor-pointer"
+    >Cancelar</button>
+    <button
+      type="button"
+      (click)="guardar()"
+      [disabled]="saving"
+      class="px-5 py-2 rounded-lg bg-[#64BC04] text-white text-sm font-semibold
+             hover:bg-[#58a804] transition-colors cursor-pointer disabled:opacity-50"
+    >{{ saving ? 'Guardando…' : 'Guardar' }}</button>
+  </footer>
+</app-base-modal>

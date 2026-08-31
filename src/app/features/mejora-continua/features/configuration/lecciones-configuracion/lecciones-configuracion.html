@@ -1,0 +1,39 @@
+<app-abril-page-header
+  [badge]="'MEJORA CONTINUA · ' + anioActual"
+  titulo="Configuración"
+  subtitulo="Áreas, plantillas, catálogos y relaciones de lecciones aprendidas."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="bg-white flex-1 overflow-y-auto p-[20px] flex flex-col gap-5">
+  <app-section-tabs
+    [tabs]="sectionTabs"
+    [value]="activeSection"
+    (valueChange)="onSectionChange($event)"
+  ></app-section-tabs>
+
+  <!-- SECCIÓN: Áreas -->
+  <div *ngIf="activeSection === 'areas'">
+    <app-lesson-areas></app-lesson-areas>
+  </div>
+
+  <!-- SECCIÓN: Relaciones por área -->
+  <div *ngIf="activeSection === 'area-relations'">
+    <app-areas></app-areas>
+  </div>
+
+  <!-- SECCIÓN: Plantillas -->
+  <div *ngIf="activeSection === 'templates'">
+    <app-templates></app-templates>
+  </div>
+
+  <!-- SECCIÓN: Tipos de catálogo -->
+  <div *ngIf="activeSection === 'catalog-types'">
+    <app-catalog-types></app-catalog-types>
+  </div>
+
+  <!-- SECCIÓN: Ítems de catálogo -->
+  <div *ngIf="activeSection === 'catalog-items'">
+    <app-catalog-items></app-catalog-items>
+  </div>
+</div>

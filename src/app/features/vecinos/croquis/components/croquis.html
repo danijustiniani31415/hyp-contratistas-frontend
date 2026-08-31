@@ -1,0 +1,137 @@
+<app-abril-page-header
+  badge="ADMINISTRACIÓN DE OBRA"
+  titulo="Croquis"
+  subtitulo="Asigna el croquis (plano de lotes) de cada proyecto."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="bg-white rounded-lg p-5 flex-1 min-h-0 flex flex-col gap-3">
+
+  <!-- ── FILTROS ───────────────────────────────────────────────────── -->
+  <div class="flex flex-wrap gap-4 py-1 items-end">
+    <div class="w-[280px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Buscar proyecto</label>
+      <input
+        type="text"
+        [(ngModel)]="searchText"
+        (keyup.enter)="search()"
+        placeholder="Nombre del proyecto…"
+        class="mt-1.5 w-full border rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-colors"
+        style="border-color:var(--color-abril-border)" />
+    </div>
+    <button type="button" (click)="search()"
+      class="h-[42px] px-5 bg-[#64BC04] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2 self-end">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
+      </svg>
+      Buscar
+    </button>
+  </div>
+
+  <!-- ── TABLA ─────────────────────────────────────────────────────── -->
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-[#E5F7D1] text-left text-gray-700">
+          <th class="px-4 py-3 font-semibold rounded-l-lg">Proyecto</th>
+          <th class="px-4 py-3 font-semibold">Croquis</th>
+          <th class="px-4 py-3 font-semibold">Última actualización</th>
+          <th class="px-4 py-3 font-semibold text-right rounded-r-lg">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of items" class="border-b border-gray-100">
+          <td class="px-4 py-3 text-gray-800">{{ item.projectDescription }}</td>
+
+          <td class="px-4 py-3">
+            <img *ngIf="item.imageUrl; else sinCroquis"
+              [src]="imageSrc(item.imageUrl)"
+              (click)="openPreview(item)"
+              class="h-14 w-20 object-cover rounded border border-gray-200 cursor-pointer hover:opacity-80 transition"
+              [alt]="'Croquis de ' + item.projectDescription" />
+            <ng-template #sinCroquis>
+              <span class="text-xs text-gray-400 italic">Sin croquis</span>
+            </ng-template>
+          </td>
+
+          <td class="px-4 py-3 text-gray-500">
+            {{ item.updatedDateTime ? (item.updatedDateTime | date: 'dd/MM/yyyy HH:mm') : '—' }}
+          </td>
+
+          <td class="px-4 py-3">
+            <div class="flex items-center justify-end gap-2">
+              <button *ngIf="item.imageUrl" type="button" (click)="openEditor(item)"
+                class="px-3 py-2 rounded-lg border border-[#64BC04] bg-white text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#E5F7D1] transition-colors inline-flex items-center gap-1.5">
+                <i class="ti ti-vector"></i> Editar lotes
+              </button>
+              <button type="button" (click)="openUpload(item)"
+                class="px-3 py-2 rounded-lg border text-sm font-medium cursor-pointer transition-colors inline-flex items-center gap-1.5"
+                [ngClass]="item.imageUrl
+                  ? 'bg-white text-[#0086A5] border-[#0086A5] hover:bg-[#CFEAF1]'
+                  : 'bg-[#E5F7D1] text-[#64BC04] border-[#64BC04] hover:bg-[#d4f0b8]'">
+                <i class="ti {{ item.imageUrl ? 'ti-refresh' : 'ti-upload' }}"></i>
+                {{ item.imageUrl ? 'Reemplazar' : 'Subir croquis' }}
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <tr *ngIf="items.length === 0">
+          <td colspan="4" class="text-center text-sm text-gray-400 italic py-10">
+            No hay proyectos para mostrar.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── MODAL: subir / reemplazar ───────────────────────────────────── -->
+<app-base-modal
+  *ngIf="uploadTarget"
+  [title]="(uploadTarget.imageUrl ? 'Reemplazar' : 'Asignar') + ' croquis · ' + uploadTarget.projectDescription"
+  width="w-[640px]"
+  (closeModal)="closeUpload()">
+  <div class="flex flex-col gap-4 p-1">
+    <app-file-selector
+      accept=".png,.jpg,.jpeg,.webp"
+      hint="PNG, JPG o WEBP (máx. 15 MB)"
+      (fileSelected)="onFileSelected($event)">
+    </app-file-selector>
+
+    <div *ngIf="selectedFile" class="flex flex-col gap-2">
+      <span class="text-xs text-gray-500">Vista previa</span>
+      <img [src]="selectedFile.preview" class="max-h-72 w-full object-contain rounded border border-gray-200" alt="Vista previa del croquis" />
+    </div>
+
+    <div class="flex justify-end gap-2 pt-2">
+      <button type="button" (click)="closeUpload()"
+        class="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm font-medium cursor-pointer hover:bg-gray-50">
+        Cancelar
+      </button>
+      <button type="button" (click)="confirmUpload()" [disabled]="!selectedFile"
+        class="px-5 py-2 rounded-lg text-white text-sm font-medium transition-colors flex items-center gap-1.5"
+        [ngClass]="selectedFile ? 'bg-[#64BC04] hover:bg-[#57a803] cursor-pointer' : 'bg-gray-300 cursor-not-allowed'">
+        <i class="ti ti-check"></i> Guardar croquis
+      </button>
+    </div>
+  </div>
+</app-base-modal>
+
+<!-- ── MODAL: vista previa ─────────────────────────────────────────── -->
+<app-base-modal
+  *ngIf="previewItem"
+  [title]="'Croquis · ' + previewItem.projectDescription"
+  width="w-[900px]"
+  (closeModal)="closePreview()">
+  <div class="p-1">
+    <img [src]="imageSrc(previewItem.imageUrl)" class="w-full object-contain rounded" [alt]="'Croquis de ' + previewItem.projectDescription" />
+  </div>
+</app-base-modal>
+
+<!-- ── MODAL: editor de lotes ──────────────────────────────────────── -->
+<app-lote-editor
+  *ngIf="editItem"
+  [croquis]="editItem"
+  (closeModal)="closeEditor()">
+</app-lote-editor>

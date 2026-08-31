@@ -1,0 +1,21 @@
+<app-abril-page-header
+  badge="SSOMA · CONFIGURACIÓN"
+  titulo="Configuración de Mi Salud"
+  subtitulo="Activa o desactiva las notificaciones por correo de Mi Salud."
+  [tabs]="tabs"
+  [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+  (secondaryClick)="volver()">
+</app-abril-page-header>
+
+<section class="page-container px-3 py-4 flex flex-col gap-[16px] flex-1 min-h-0 overflow-auto">
+  <app-section-tabs
+    class="shrink-0"
+    [tabs]="sectionTabs"
+    [value]="activeSection"
+    color="var(--color-abril-standard)"
+    (valueChange)="onSectionChange($event)">
+  </app-section-tabs>
+
+  <app-mi-salud-correos-notificacion *ngIf="activeSection === 'correos'">
+  </app-mi-salud-correos-notificacion>
+</section>

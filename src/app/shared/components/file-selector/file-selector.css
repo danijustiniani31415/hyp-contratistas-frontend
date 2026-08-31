@@ -1,0 +1,11 @@
+/* Fondo del área de arrastre. Sale de los inputs `background` / `backgroundHover`
+   (que inyectan --fs-bg / --fs-bg-hover); los fallbacks son el verde claro
+   histórico, así que quien no pasa nada se sigue viendo igual que siempre.
+   Va en CSS y no en clases de Tailwind porque el valor es dinámico: una clase
+   como bg-[#F7FBF3] no se puede parametrizar por consumidor. */
+.fs-drop {
+  background: var(--fs-bg, #f7fbf3);
+}
+.fs-drop:hover {
+  background: var(--fs-bg-hover, #eef7e6);
+}

@@ -1,0 +1,98 @@
+<!-- Sección embebida en GthConfiguracion: el header y el disparador de filtros viven en el
+     contenedor (`gth-configuracion`). Acá no hay botón de crear: la lista sale sola del área. -->
+<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Trabajador</th>
+          <th>Puesto</th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="filteredReclutadores.length === 0">
+          <td colspan="4" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ searchText.trim() || estadoFilter !== null
+                ? 'Sin resultados.'
+                : 'No hay trabajadores registrados en el área de Gestión del Talento Humano.' }}
+          </td>
+        </tr>
+
+        <tr *ngFor="let r of pagedReclutadores" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+
+          <td class="text-gray-700">
+            <span>{{ r.nombre | titleCase }}</span>
+            <!-- Ya no es del equipo de GTH pero sigue listado porque tiene el interruptor
+                 prendido: sin esta fila no habría manera de apagarlo desde la pantalla. -->
+            <span *ngIf="r.fueraDelEquipo"
+                  class="ml-[8px] text-[11px] px-[10px] py-[3px] rounded-full bg-[#FEF3C7] text-[#B45309] font-medium whitespace-nowrap"
+                  [title]="r.area ? 'Hoy pertenece a: ' + r.area : 'Ya no es un trabajador vigente'">
+              Fuera del área
+            </span>
+          </td>
+
+          <td class="text-gray-700">
+            <span *ngIf="r.puesto">{{ r.puesto | titleCase }}</span>
+            <span *ngIf="!r.puesto" class="text-gray-300">—</span>
+          </td>
+
+          <td class="text-center">
+            <app-status-badge
+              [text]="r.activo ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="r.activo ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="r.activo ? '#009C87' : '#D30000'" />
+          </td>
+
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[8px]">
+              <button
+                (click)="toggle(r)"
+                [abrilBulkAction]="r.activo ? 'danger' : 'default'">
+                {{ r.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+            </div>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredReclutadores.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por nombre o puesto..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="estadoFilter"
+      (valueChange)="estadoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

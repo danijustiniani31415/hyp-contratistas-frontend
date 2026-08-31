@@ -1,0 +1,177 @@
+/* ── Chip nombre actividad ─────────────────────────────────── */
+.prop-actividad-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+.prop-actividad-chip i { font-size: 0.9rem; opacity: 0.8; }
+
+/* ── Subtítulo ─────────────────────────────────────────────── */
+.prop-subtitulo {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin: 0 0 1rem;
+}
+
+/* ── Radio cards ───────────────────────────────────────────── */
+.prop-opciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.prop-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background: #fff;
+}
+.prop-card:hover { border-color: var(--color-abril-logo-blue); background: #f9fffe; }
+.prop-card--active {
+  border-color: var(--color-abril-logo-blue);
+  background: var(--color-abril-logo-blue-light);
+}
+
+.prop-card__radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s;
+}
+.prop-card--active .prop-card__radio { border-color: var(--color-abril-logo-blue); }
+
+.prop-card__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background 0.15s;
+}
+.prop-card__dot--active { background: var(--color-abril-logo-blue); }
+
+.prop-card__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #6b7280;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.prop-card--active .prop-card__icon { background: var(--color-abril-logo-blue-light); color: var(--color-abril-logo-blue); }
+
+.prop-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 0;
+}
+.prop-card__title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #111827;
+}
+.prop-card__desc {
+  font-size: 0.75rem;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Destinos chips ────────────────────────────────────────── */
+.prop-destinos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #f0f4f8;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+.prop-destinos__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+}
+.prop-destinos__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.prop-destino-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.2rem 0.55rem;
+}
+.prop-destino-chip i { font-size: 0.75rem; color: #6b7280; }
+.prop-destino-anio {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+/* ── Footer ────────────────────────────────────────────────── */
+.prop-btn-cancel {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #6b7280;
+  background: #fff;
+  cursor: pointer;
+}
+.prop-btn-cancel:hover { background: #f9fafb; }
+.prop-btn-apply {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 8px;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.prop-btn-apply:hover:not(:disabled) { background: var(--color-abril-logo-blue-hover); }
+.prop-btn-apply:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

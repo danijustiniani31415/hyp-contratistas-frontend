@@ -1,0 +1,52 @@
+:host {
+  display: flex; flex-direction: column;
+  height: 100%; min-height: 0;
+  background: #F8FAFC;
+}
+
+.mp-root {
+  background: #F8FAFC;
+  padding: 10px; display: flex; flex-direction: column; gap: 6px;
+  flex: 1; min-height: 0; box-sizing: border-box; overflow-y: auto;
+}
+
+.loading-state, .empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; padding: 60px 24px; color: var(--color-abril-muted);
+}
+.loading-state .spinner {
+  width: 32px; height: 32px; border: 3px solid var(--color-abril-border);
+  border-top-color: var(--color-abril-primary); border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.empty-state i { font-size: 36px; opacity: 0.4; }
+.empty-state p { font-size: 14px; margin: 0; }
+
+.mp-content { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+
+.stat-card {
+  background: var(--color-abril-surface); border: 1px solid var(--color-abril-border);
+  border-radius: 10px; padding: 12px 16px;
+}
+.stat-label { font-size: 12px; font-weight: 600; color: var(--color-abril-muted); text-transform: uppercase; }
+.stat-num { font-size: 32px; font-weight: 800; margin-top: 4px; }
+.stat-sub { font-size: 12px; color: var(--color-abril-muted); margin-top: 4px; }
+
+.section-card {
+  background: var(--color-abril-surface); border: 1px solid var(--color-abril-border);
+  border-radius: 10px; padding: 12px 16px;
+}
+.section-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; }
+
+.comentario-item {
+  font-size: 13px; line-height: 1.4; color: var(--color-abril-ink);
+  padding: 10px 0; border-bottom: 1px solid var(--color-abril-border);
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.comentario-item:last-child { border-bottom: none; }
+.comentario-item i { color: var(--color-abril-muted); margin-top: 2px; }
+
+.nota-aprobado { color: #059669; }
+.nota-regular { color: #D97706; }
+.nota-desaprobado { color: #DC2626; }
+.nota-sin { color: var(--color-abril-muted); }

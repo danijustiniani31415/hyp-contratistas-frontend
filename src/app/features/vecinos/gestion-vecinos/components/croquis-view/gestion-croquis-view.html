@@ -1,0 +1,301 @@
+<!-- ── Grilla de croquis ──────────────────────────────────────────────── -->
+<div class="flex-1 min-h-0 overflow-y-auto">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-1">
+    <div *ngFor="let c of filteredCroquis"
+      (click)="open(c)"
+      class="group bg-white rounded-lg border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md hover:border-[#4CAF50] transition">
+      <div class="relative h-44 bg-gray-50 flex items-center justify-center overflow-hidden">
+        <img [src]="imageSrc(c.imageUrl)" class="w-full h-full object-cover group-hover:scale-105 transition-transform"
+          [alt]="'Croquis de ' + c.projectDescription" />
+        <span class="absolute bottom-2 right-2 text-[11px] font-medium bg-black/55 text-white px-2 py-0.5 rounded-full">
+          {{ c.lotesCount }} lote(s)
+        </span>
+      </div>
+      <div class="px-4 py-3">
+        <h3 class="text-sm font-semibold text-gray-800 truncate">{{ c.projectDescription }}</h3>
+        <p class="text-xs text-gray-400 mt-0.5">
+          {{ countAssigned(c) }} lote(s) con vecinos · {{ c.vecinosCount }} vecinos
+        </p>
+        <div class="flex items-center gap-2 mt-2">
+          <span class="text-[11px] font-medium bg-[#E8F5E9] text-[#2E7D32] px-2 py-0.5 rounded-full">
+            {{ c.solicitudesCount }} solicitud(es)
+          </span>
+          <span class="text-[11px] font-medium bg-[#E0F2F7] text-[#0086A5] px-2 py-0.5 rounded-full">
+            {{ c.compromisosCount }} compromiso(s)
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <p *ngIf="filteredCroquis.length === 0"
+      class="sm:col-span-2 lg:col-span-3 text-center text-sm text-gray-400 italic py-10">
+      No hay croquis registrados. Súbelos en la pestaña “Croquis”.
+    </p>
+  </div>
+</div>
+
+<!-- ── Modal agrandado (solo lectura) ─────────────────────────────────── -->
+<app-base-modal
+  *ngIf="selected"
+  [title]="'Croquis · ' + selected.projectDescription"
+  width="w-[1360px] max-w-[95vw]"
+  height="h-[90vh]"
+  (closeModal)="close()">
+
+  <!-- Secciones -->
+  <app-section-tabs
+    [tabs]="sectionTabs"
+    [value]="activeSection"
+    (valueChange)="activeSection = $any($event)"
+    class="block mb-3">
+  </app-section-tabs>
+
+  <!-- ── Sección: Calendario de limpiezas ─────────────────────────────── -->
+  <div *ngIf="activeSection === 'limpiezas'" class="flex-1 min-h-0 overflow-y-auto p-1">
+    <app-limpiezas-calendar [projectId]="selected.projectId" [vecinos]="allVecinos(selected)"></app-limpiezas-calendar>
+  </div>
+
+  <!-- ── Sección: Resumen del proyecto ────────────────────────────────── -->
+  <div *ngIf="activeSection === 'resumen'" class="flex flex-col lg:flex-row gap-4 p-1 flex-1 min-h-0 overflow-y-auto">
+
+    <!-- Lienzo -->
+    <div class="flex-1 min-w-0">
+      <!-- Clic fuera de un lote válido → vuelve al resumen del proyecto. -->
+      <div class="relative w-full border border-gray-200 rounded overflow-hidden" (click)="clearLote()">
+        <img [src]="imageSrc(selected.imageUrl)" class="block w-full" [alt]="'Croquis de ' + selected.projectDescription" />
+
+        <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <polygon *ngFor="let lote of selected.lotes"
+            [attr.points]="pointsToSvg(lote.puntos)"
+            [attr.fill]="loteFill(lote)"
+            [attr.stroke]="loteStroke(lote)"
+            stroke-width="2"
+            vector-effect="non-scaling-stroke"
+            class="cursor-pointer"
+            (mouseenter)="hoverLoteId = lote.projectCroquisLoteId"
+            (mouseleave)="hoverLoteId = null"
+            (click)="$event.stopPropagation(); selectLote(lote)" />
+        </svg>
+
+        <!-- Etiquetas: solo la del lote bajo el cursor (o el seleccionado), para que
+             los nombres no se solapen. `pointer-events-none` evita que la etiqueta
+             tape al polígono y corte su propio hover. -->
+        <ng-container *ngFor="let lote of selected.lotes">
+          <div *ngIf="labelVisible(lote)"
+            class="absolute z-10 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-[11px] font-bold px-1.5 py-0.5 rounded bg-white/90 border shadow-sm pointer-events-none"
+            [style.left.%]="centroid(lote.puntos).x"
+            [style.top.%]="centroid(lote.puntos).y"
+            [style.borderColor]="loteStroke(lote)"
+            [style.color]="loteStroke(lote)">
+            {{ lote.numeroLote }}
+          </div>
+        </ng-container>
+      </div>
+      <p class="text-xs text-gray-400 mt-2">Pasa el mouse por un lote para ver su nombre y haz clic para ver sus vecinos.</p>
+    </div>
+
+    <!-- Panel lateral (solo consulta) -->
+    <div class="w-full lg:w-[320px] flex flex-col gap-3">
+      <ng-container *ngIf="selectedLote; else sinSeleccion">
+        <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-gray-700">Lote {{ selectedLote.numeroLote }}</span>
+            <span class="text-[11px] bg-[#E8F5E9] text-[#2E7D32] px-2 py-0.5 rounded-full">{{ selectedLote.vecinosCount }} vecino(s)</span>
+          </div>
+          <span *ngIf="selectedLote.direccion" class="text-xs text-gray-500 -mt-2">{{ selectedLote.direccion }}</span>
+
+          <!-- KPIs del lote (agregados de sus vecinos) -->
+          <div *ngIf="selectedLote.vecinosCount > 0" class="rounded-lg border border-[#4CAF50]/30 bg-white p-3 flex flex-col gap-2.5">
+            <span class="text-[11px] font-bold uppercase tracking-wide text-[#2E7D32]">KPIs del lote</span>
+
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Solicitudes aprobadas</span>
+                <span class="text-sm font-semibold text-[#2E7D32]">{{ solicitudesAprobadasPct(selectedLote) }}%</span>
+              </div>
+              <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-[#4CAF50] rounded-full transition-all" [style.width.%]="solicitudesAprobadasPct(selectedLote)"></div>
+              </div>
+              <span class="text-[11px] text-gray-400">{{ selectedLote.solicitudesAprobadas }} de {{ selectedLote.solicitudesEvaluables }} solicitudes</span>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Entregables aprobados</span>
+                <span class="text-sm font-semibold text-[#2E7D32]">{{ aprobadosPct(selectedLote) }}%</span>
+              </div>
+              <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-[#4CAF50] rounded-full transition-all" [style.width.%]="aprobadosPct(selectedLote)"></div>
+              </div>
+              <span class="text-[11px] text-gray-400">{{ selectedLote.entregablesAprobados }} de {{ selectedLote.entregablesEvaluables }} entregables</span>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Requisitos subidos</span>
+                <span class="text-sm font-semibold text-[#0086A5]">{{ requisitosSubidosPct(selectedLote) }}%</span>
+              </div>
+              <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-[#0086A5] rounded-full transition-all" [style.width.%]="requisitosSubidosPct(selectedLote)"></div>
+              </div>
+              <span class="text-[11px] text-gray-400">{{ selectedLote.requisitosSubidos }} de {{ selectedLote.requisitosEvaluables }} requisitos</span>
+            </div>
+          </div>
+
+          <!-- Vecinos del lote -->
+          <span class="text-[11px] font-bold uppercase tracking-wide text-gray-400">Vecinos del lote</span>
+          <div *ngIf="selectedLote.vecinos.length > 0; else sinVecinos" class="flex flex-col gap-2">
+            <div *ngFor="let v of selectedLote.vecinos"
+              class="rounded-lg border border-gray-200 bg-white p-3 flex flex-col gap-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-800">{{ v.nombrePropietario || '—' }}</span>
+                <span *ngIf="v.interiorDepartamento" class="text-[11px] text-gray-500">{{ v.interiorDepartamento }}</span>
+              </div>
+              <span class="text-xs text-gray-500">
+                <span *ngIf="v.dni">DNI {{ v.dni }} · </span>{{ v.colindanciaDescripcion }}
+              </span>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-[11px] font-medium bg-[#E8F5E9] text-[#2E7D32] px-2 py-0.5 rounded-full">{{ v.solicitudesCount }} solicitud(es)</span>
+                <span class="text-[11px] font-medium bg-[#E0F2F7] text-[#0086A5] px-2 py-0.5 rounded-full">{{ v.compromisosCount }} compromiso(s)</span>
+              </div>
+              <button type="button" (click)="verVecino(v)"
+                class="mt-1 self-start text-sm text-[#0086A5] hover:underline cursor-pointer inline-flex items-center gap-1">
+                <i class="ti ti-eye"></i> Ver detalle, requerimientos y requisitos
+              </button>
+            </div>
+          </div>
+          <ng-template #sinVecinos>
+            <p class="text-sm text-gray-400 italic">Este lote aún no tiene vecinos.</p>
+          </ng-template>
+
+          <!-- Añadir vecinos al lote seleccionado -->
+          <button type="button" (click)="agregarVecinos()"
+            class="w-full h-[40px] bg-[#4CAF50] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors flex items-center justify-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Añadir vecinos a este lote
+          </button>
+        </div>
+      </ng-container>
+
+      <ng-template #sinSeleccion>
+        <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 flex flex-col gap-3">
+          <span class="text-sm font-semibold text-gray-700">Resumen del proyecto</span>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-[11px] font-medium bg-[#E8F5E9] text-[#2E7D32] px-2 py-0.5 rounded-full">
+              {{ selected.solicitudesCount }} solicitud(es)
+            </span>
+            <span class="text-[11px] font-medium bg-[#E0F2F7] text-[#0086A5] px-2 py-0.5 rounded-full">
+              {{ selected.compromisosCount }} compromiso(s)
+            </span>
+          </div>
+
+          <!-- Englobado: Gestión de requerimientos -->
+          <div class="rounded-lg border border-[#4CAF50]/30 bg-white p-3 flex flex-col gap-2.5">
+            <span class="text-[11px] font-bold uppercase tracking-wide text-[#2E7D32]">Gestión de requerimientos</span>
+
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Solicitudes aprobadas</span>
+                <span class="text-sm font-semibold text-[#2E7D32]">{{ solicitudesAprobadasPct(selected) }}%</span>
+              </div>
+              <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-[#4CAF50] rounded-full transition-all" [style.width.%]="solicitudesAprobadasPct(selected)"></div>
+              </div>
+              <span class="text-[11px] text-gray-400">{{ selected.solicitudesAprobadas }} de {{ selected.solicitudesEvaluables }} solicitudes</span>
+              <span class="text-[11px] text-gray-400 italic">Solicitudes aceptadas sobre las evaluables (aceptadas + por responder; no cuenta las denegadas).</span>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Entregables aprobados</span>
+                <span class="text-sm font-semibold text-[#2E7D32]">{{ aprobadosPct(selected) }}%</span>
+              </div>
+              <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-[#4CAF50] rounded-full transition-all" [style.width.%]="aprobadosPct(selected)"></div>
+              </div>
+              <span class="text-[11px] text-gray-400">{{ selected.entregablesAprobados }} de {{ selected.entregablesEvaluables }} entregables</span>
+              <span class="text-[11px] text-gray-400 italic">Entregables aprobados sobre los evaluables (falta + enviado + aprobado; no cuenta los "No aplica").</span>
+            </div>
+          </div>
+
+          <!-- Englobado: Gestión de requisitos -->
+          <div class="rounded-lg border border-[#0086A5]/30 bg-white p-3 flex flex-col gap-2.5">
+            <span class="text-[11px] font-bold uppercase tracking-wide text-[#0086A5]">Gestión de requisitos</span>
+
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Requisitos subidos</span>
+                <span class="text-sm font-semibold text-[#0086A5]">{{ requisitosSubidosPct(selected) }}%</span>
+              </div>
+              <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-[#0086A5] rounded-full transition-all" [style.width.%]="requisitosSubidosPct(selected)"></div>
+              </div>
+              <span class="text-[11px] text-gray-400">{{ selected.requisitosSubidos }} de {{ selected.requisitosEvaluables }} requisitos</span>
+              <span class="text-[11px] text-gray-400 italic">Requisitos subidos sobre los evaluables (subidos + no subidos; no cuenta los "No aplica").</span>
+            </div>
+          </div>
+
+          <!-- Englobado: Compromisos (desglose por estado) -->
+          <div class="rounded-lg border border-[#B45309]/30 bg-white p-3 flex flex-col gap-3">
+            <span class="text-[11px] font-bold uppercase tracking-wide text-[#B45309]">Compromisos</span>
+
+            <!-- Barra 1: todos los compromisos -->
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Por estado (todos)</span>
+                <span class="text-[11px] text-gray-400">{{ selected.compromisosCount }} compromiso(s)</span>
+              </div>
+              <div class="flex h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full bg-[#9CA3AF]" [style.width.%]="segWidth(selected.compromisosPendientes, selected.compromisosCount)" title="Pendiente"></div>
+                <div class="h-full bg-[#0086A5]" [style.width.%]="segWidth(selected.compromisosEnProceso, selected.compromisosCount)" title="En proceso"></div>
+                <div class="h-full bg-[#4CAF50]" [style.width.%]="segWidth(selected.compromisosCulminados, selected.compromisosCount)" title="Culminado"></div>
+              </div>
+              <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-gray-500">
+                <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#9CA3AF]"></span>Pendiente {{ selected.compromisosPendientes }} ({{ segPct(selected.compromisosPendientes, selected.compromisosCount) }}%)</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#0086A5]"></span>En proceso {{ selected.compromisosEnProceso }} ({{ segPct(selected.compromisosEnProceso, selected.compromisosCount) }}%)</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#4CAF50]"></span>Culminado {{ selected.compromisosCulminados }} ({{ segPct(selected.compromisosCulminados, selected.compromisosCount) }}%)</span>
+              </div>
+            </div>
+
+            <!-- Barra 2: solo compromisos con fecha límite por municipalidad/fiscalización -->
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Por estado (con fecha límite municipalidad/fiscalización)</span>
+                <span class="text-[11px] text-gray-400">{{ compromisosLimiteTotal(selected) }} compromiso(s)</span>
+              </div>
+              <div class="flex h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full bg-[#9CA3AF]" [style.width.%]="segWidth(selected.compromisosLimitePendientes, compromisosLimiteTotal(selected))" title="Pendiente"></div>
+                <div class="h-full bg-[#0086A5]" [style.width.%]="segWidth(selected.compromisosLimiteEnProceso, compromisosLimiteTotal(selected))" title="En proceso"></div>
+                <div class="h-full bg-[#4CAF50]" [style.width.%]="segWidth(selected.compromisosLimiteCulminados, compromisosLimiteTotal(selected))" title="Culminado"></div>
+              </div>
+              <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-gray-500">
+                <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#9CA3AF]"></span>Pendiente {{ selected.compromisosLimitePendientes }} ({{ segPct(selected.compromisosLimitePendientes, compromisosLimiteTotal(selected)) }}%)</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#0086A5]"></span>En proceso {{ selected.compromisosLimiteEnProceso }} ({{ segPct(selected.compromisosLimiteEnProceso, compromisosLimiteTotal(selected)) }}%)</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#4CAF50]"></span>Culminado {{ selected.compromisosLimiteCulminados }} ({{ segPct(selected.compromisosLimiteCulminados, compromisosLimiteTotal(selected)) }}%)</span>
+              </div>
+              <span *ngIf="compromisosLimiteTotal(selected) === 0" class="text-[11px] text-gray-400 italic">
+                No hay compromisos catalogados con fecha límite por municipalidad/fiscalización.
+              </span>
+            </div>
+          </div>
+
+          <p class="text-xs text-gray-400 italic border-t border-gray-200 pt-2">
+            Selecciona un lote del croquis para ver sus vecinos.
+          </p>
+
+          <!-- Añadir vecinos al proyecto (sin lote preseleccionado) -->
+          <button type="button" (click)="agregarVecinos()"
+            class="w-full h-[40px] bg-[#4CAF50] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors flex items-center justify-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Añadir vecinos
+          </button>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</app-base-modal>

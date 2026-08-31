@@ -1,0 +1,347 @@
+<div class="page-root">
+  <app-abril-page-header
+    badge="SSOMA · Materiales"
+    titulo="Catálogo de Materiales"
+    subtitulo="Catálogo normalizado, materiales sin estandarizar y materiales que no pertenecen a SSOMA."
+    [tabs]="headerTabs">
+  </app-abril-page-header>
+
+  <div class="page-body">
+    <div class="tabs-internas">
+      <button class="tab-btn" [class.tab-activo]="seccion === 'normalizado'" (click)="cambiarSeccion('normalizado')">
+        Catálogo normalizado
+      </button>
+      <button class="tab-btn" [class.tab-activo]="seccion === 'sin-estandarizar'" (click)="cambiarSeccion('sin-estandarizar')">
+        Sin estandarizar
+      </button>
+      <button class="tab-btn" [class.tab-activo]="seccion === 'no-ssoma'" (click)="cambiarSeccion('no-ssoma')">
+        No pertenece a SSOMA
+      </button>
+    </div>
+
+    <div *ngIf="loading" class="loading-msg">Cargando...</div>
+
+    <!-- Sección 1: catálogo normalizado editable -->
+    <div *ngIf="!loading && seccion === 'normalizado'">
+      <input type="text" [(ngModel)]="filtroTexto" (ngModelChange)="onFiltroFamiliasChange()" placeholder="Buscar familia..." class="filtro-input" />
+      <p class="nota-explicativa">
+        <i class="ti ti-info-circle"></i>
+        Este es el catálogo maestro que usan la estandarización y el cálculo de ratios: el nombre,
+        el tipo, y "se calcula por" (HH/Área techada/Trabajadores/Calculado/Fijo/Metrado) de cada
+        familia. Editar aquí afecta cómo se calculan los ratios de TODOS los proyectos.
+      </p>
+      <table class="abril-table tabla-catalogo">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Nombre</th><th>Tipo</th><th>Se calcula por</th><th>Unidad</th>
+            <th>Pertenece SSOMA</th><th>Activo</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="familiasFiltradas.length === 0"><td colspan="7" class="empty-cell">Sin resultados.</td></tr>
+          <tr *ngFor="let f of familiasPaged">
+            <td><input type="text" [(ngModel)]="f.nombre" /></td>
+            <td>
+              <app-search-select
+                [options]="tipos"
+                valueField="id"
+                displayField="nombre"
+                [value]="f.tipoId"
+                [compact]="true"
+                [showLabel]="false"
+                placeholder="Selecciona tipo"
+                (valueChange)="f.tipoId = $event">
+              </app-search-select>
+            </td>
+            <td>
+              <app-search-select
+                [options]="variableBaseOpts"
+                valueField="id"
+                displayField="label"
+                [value]="f.variableBase"
+                [compact]="true"
+                [showLabel]="false"
+                [sortAlpha]="false"
+                placeholder="Selecciona variable"
+                (valueChange)="f.variableBase = $event">
+              </app-search-select>
+            </td>
+            <td><input type="text" [(ngModel)]="f.unidadMedida" style="width:70px" /></td>
+            <td class="td-check"><input type="checkbox" [(ngModel)]="f.perteneceSsoma" /></td>
+            <td class="td-check"><input type="checkbox" [(ngModel)]="f.activo" /></td>
+            <td><button class="btn-sm btn-primary-sm" (click)="guardarFamilia(f)">Guardar</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="shrink-0 max-w-[440px]" style="margin-top:10px;">
+        <app-paginator
+          [totalRecords]="familiasFiltradas.length"
+          [currentPage]="familiasCurrentPage"
+          [totalPages]="familiasTotalPages"
+          (pageChange)="changeFamiliasPage($event)">
+        </app-paginator>
+      </div>
+    </div>
+
+    <!-- Sección 2: sin estandarizar -->
+    <div *ngIf="!loading && seccion === 'sin-estandarizar'">
+      <div class="pres-card">
+        <p class="nota-explicativa">
+          <i class="ti ti-info-circle"></i>
+          Materiales de todos los proyectos que llegaron en un Kardex y todavía no se pudieron
+          emparejar automáticamente con el catálogo. Busca el ítem correcto y marca "Autorizar", o
+          "Rechazar" si no corresponde a SSOMA (se notifica a Oficina Técnica del proyecto).
+        </p>
+
+        <div *ngIf="pendientes.length === 0" class="empty-state">
+          <i class="ti ti-circle-check" style="font-size:48px;color:#16a34a"></i>
+          <p>No hay materiales pendientes de estandarizar.</p>
+        </div>
+
+        <ng-container *ngIf="pendientes.length > 0">
+          <div class="pres-revision-header">
+            <input type="text" [(ngModel)]="filtroPendientes" (ngModelChange)="onFiltroPendientesChange()"
+              placeholder="Buscar por proyecto o recurso..." class="filtro-input" style="margin:0" />
+            <button class="pres-btn-icon" (click)="cambiarSeccion('sin-estandarizar')" title="Refrescar">
+              <i class="ti ti-refresh"></i>
+            </button>
+            <span style="flex:1"></span>
+            @if (totalSeleccionados > 0) {
+              <span class="pres-sel-count">{{ totalSeleccionados }} seleccionados</span>
+              <button class="pres-btn-primary" [disabled]="procesando" (click)="procesarRevision()">
+                @if (procesando) {
+                  <i class="ti ti-loader-2 spin"></i> Procesando...
+                } @else {
+                  <i class="ti ti-check"></i> Aplicar decisiones
+                }
+              </button>
+            }
+          </div>
+
+          <div class="pres-table-wrap">
+            <table class="abril-table pres-table">
+              <thead>
+                <tr>
+                  <th>Proyecto</th>
+                  <th>Recurso (crudo)</th>
+                  <th>Ítem sugerido</th>
+                  <th>Familia</th>
+                  <th>Match</th>
+                  <th>Cantidad</th>
+                  <th>Precio Total</th>
+                  <th>Fecha guía</th>
+                  <th class="pres-th-center">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="pendientesFiltrados.length === 0"><td colspan="9" class="empty-cell">Sin resultados.</td></tr>
+                <tr *ngFor="let item of pendientesPaged"
+                    [class.pres-tr--autorizado]="getDecision(item.lineaId) === 'AUTORIZADO'"
+                    [class.pres-tr--rechazado]="getDecision(item.lineaId) === 'RECHAZADO'">
+                  <td>{{ item.projectDescription }}</td>
+                  <td class="pres-td-recurso">{{ item.recursoCrudo }}</td>
+                  @if (item.nombreItemSugerido && !sugerenciaDescartada.has(item.lineaId)) {
+                    <td>
+                      {{ item.nombreItemSugerido }}
+                      <button class="pres-link-crear" style="display:block;margin-top:2px" (click)="descartarSugerencia(item)">¿No es este ítem? Buscar otro</button>
+                    </td>
+                    <td class="pres-td-familia">{{ item.nombreFamiliaSugerida ?? '—' }}</td>
+                    <td>
+                      @if (item.scoreMatch) {
+                        <span [style.color]="scoreColor(item.scoreMatch)" style="font-weight:600">
+                          {{ (item.scoreMatch * 100) | number:'1.0-0' }}%
+                        </span>
+                        <span class="pres-match-method">{{ item.metodoMatch }}</span>
+                      } @else {
+                        <span style="color:#9ca3af">—</span>
+                      }
+                    </td>
+                  } @else if (itemManualSeleccionado(item.lineaId); as elegido) {
+                    <td>
+                      {{ elegido.nombre }}
+                      <button class="pres-btn-icon" style="width:22px;height:22px;margin-left:4px" title="Quitar" (click)="quitarItemManual(item)">
+                        <i class="ti ti-x" style="font-size:11px"></i>
+                      </button>
+                    </td>
+                    <td class="pres-td-familia">{{ elegido.nombreFamilia }}</td>
+                    <td><span class="pres-match-method">Asignado a mano</span></td>
+                  } @else {
+                    <td colspan="2" class="pres-td-busqueda-manual">
+                      @if (crearItemAbiertoPara === item.lineaId) {
+                        <div class="pres-crear-item">
+                          <input type="text" class="pres-input-xs" placeholder="Nombre CORTO estandarizado (ej. &quot;Barra expandible&quot;), no el texto del Kardex"
+                            [(ngModel)]="nuevoItemNombre" />
+                          @if (!crearFamiliaAbierta) {
+                            <app-search-select
+                              [options]="familiasParaCrear"
+                              valueField="id"
+                              displayField="nombre"
+                              [value]="nuevoItemFamiliaId"
+                              [compact]="true"
+                              [showLabel]="false"
+                              placeholder="Elige la família del catálogo"
+                              (valueChange)="onFamiliaCrearChange($event)">
+                            </app-search-select>
+                            <button class="pres-link-crear" (click)="abrirCrearFamilia()">¿Tampoco encaja en ninguna família? Crear família nueva</button>
+                            <div class="pres-crear-item-acciones">
+                              <button class="pres-btn-xs" [disabled]="!nuevoItemNombre.trim() || !nuevoItemFamiliaId || creandoItem"
+                                (click)="confirmarCrearItem(item)">
+                                @if (creandoItem) { <i class="ti ti-loader-2 spin"></i> } @else { Crear y usar }
+                              </button>
+                              <button class="pres-btn-xs" style="background:#fff;color:#6b7280;border-color:#d1d5db" (click)="cancelarCrearItem()">Cancelar</button>
+                            </div>
+                          } @else {
+                            <div class="pres-crear-item" style="background:#fffbeb">
+                              <input type="text" class="pres-input-xs" placeholder="Nombre de la família (ej. &quot;Toldos y coberturas&quot;)"
+                                [(ngModel)]="nuevaFamiliaNombre" />
+                              <app-search-select
+                                [options]="tiposParaCrear"
+                                valueField="id"
+                                displayField="nombre"
+                                [value]="nuevaFamiliaTipoId"
+                                [compact]="true"
+                                [showLabel]="false"
+                                placeholder="Tipo de material"
+                                (valueChange)="nuevaFamiliaTipoId = $event; cdr.detectChanges()">
+                              </app-search-select>
+                              <app-search-select
+                                [options]="variableBaseOpts"
+                                valueField="id"
+                                displayField="label"
+                                [value]="nuevaFamiliaVariableBase"
+                                [compact]="true"
+                                [showLabel]="false"
+                                [sortAlpha]="false"
+                                placeholder="Se calcula por..."
+                                (valueChange)="nuevaFamiliaVariableBase = $event; cdr.detectChanges()">
+                              </app-search-select>
+                              <input type="text" class="pres-input-xs" placeholder="Unidad de medida (opcional, ej. UND, GLN, ML)"
+                                [(ngModel)]="nuevaFamiliaUnidad" />
+                              <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#374151">
+                                <input type="checkbox" [(ngModel)]="nuevaFamiliaPerteneceSsoma" /> Pertenece a SSOMA
+                              </label>
+                              <div class="pres-crear-item-acciones">
+                                <button class="pres-btn-xs" [disabled]="!nuevaFamiliaNombre.trim() || !nuevaFamiliaTipoId || !nuevaFamiliaVariableBase || creandoFamilia"
+                                  (click)="confirmarCrearFamilia()">
+                                  @if (creandoFamilia) { <i class="ti ti-loader-2 spin"></i> } @else { Crear família }
+                                </button>
+                                <button class="pres-btn-xs" style="background:#fff;color:#6b7280;border-color:#d1d5db" (click)="cancelarCrearFamilia()">Cancelar</button>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      } @else {
+                        <input type="text" class="pres-input-xs" placeholder="Escribe para buscar en catálogo..."
+                          [value]="busquedaTexto.get(item.lineaId) ?? ''"
+                          (input)="onBusquedaManualInput(item, $any($event.target).value)" />
+                        @if (resultadoOpts(item.lineaId).length > 0) {
+                          <app-search-select
+                            [options]="resultadoOpts(item.lineaId)"
+                            valueField="id"
+                            displayField="_label"
+                            [value]="null"
+                            [compact]="true"
+                            [showLabel]="false"
+                            placeholder="Selecciona ítem"
+                            (valueChange)="onResultadoSeleccionado(item, $event)">
+                          </app-search-select>
+                        }
+                        <button class="pres-link-crear" (click)="abrirCrearItem(item)">¿No lo encuentras? Crear ítem nuevo</button>
+                      }
+                    </td>
+                    <td><span style="color:#9ca3af">Sin match</span></td>
+                  }
+                  <td class="pres-td-num">{{ item.cantidad | number:'1.2-2' }}</td>
+                  <td class="pres-td-num">S/ {{ item.precioTotal | number:'1.2-2' }}</td>
+                  <td class="pres-td-date">{{ item.fechaGuia }}</td>
+                  <td class="pres-td-actions">
+                    <button class="pres-btn-auth"
+                      [class.pres-btn-auth--active]="getDecision(item.lineaId) === 'AUTORIZADO'"
+                      [disabled]="!puedeAutorizar(item)"
+                      [title]="puedeAutorizar(item) ? '' : 'Elige un ítem del catálogo primero'"
+                      (click)="setDecision(item, 'AUTORIZADO')">
+                      <i class="ti ti-check"></i>
+                    </button>
+                    <button class="pres-btn-rej"
+                      [class.pres-btn-rej--active]="getDecision(item.lineaId) === 'RECHAZADO'"
+                      (click)="setDecision(item, 'RECHAZADO')">
+                      <i class="ti ti-x"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="shrink-0 max-w-[440px]" style="margin-top:10px;">
+            <app-paginator
+              [totalRecords]="pendientesFiltrados.length"
+              [currentPage]="pendientesCurrentPage"
+              [totalPages]="pendientesTotalPages"
+              (pageChange)="changePendientesPage($event)">
+            </app-paginator>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Sección 3: no pertenece a SSOMA -->
+    <div *ngIf="!loading && seccion === 'no-ssoma'">
+      <div class="pres-card">
+        <p class="nota-explicativa">
+          <i class="ti ti-info-circle"></i>
+          Reporte de solo lectura: materiales del Kardex marcados como que no corresponden al
+          presupuesto SSOMA (rechazados en la revisión, o de una família del catálogo fuera del
+          alcance SSOMA). Al rechazar se le avisa por correo a Oficina Técnica del proyecto — este
+          reporte es para consultar el total acumulado cuando lo necesites.
+        </p>
+
+        <div *ngIf="noSsoma.length === 0" class="empty-state">
+          <i class="ti ti-circle-check" style="font-size:48px;color:#16a34a"></i>
+          <p>No hay materiales reportados fuera de SSOMA.</p>
+        </div>
+
+        <ng-container *ngIf="noSsoma.length > 0">
+          <input type="text" [(ngModel)]="filtroNoSsoma" (ngModelChange)="onFiltroNoSsomaChange()"
+            placeholder="Buscar por proyecto o recurso..." class="filtro-input" />
+
+          <div class="pres-result" style="margin-top:0">
+            <div class="pres-result-grid">
+              <div class="pres-result-item">
+                <span class="pres-result-val">{{ noSsomaFiltrados.length }}</span>
+                <span class="pres-result-lbl">{{ filtroNoSsoma.trim() ? 'Líneas (filtro actual)' : 'Líneas en total' }}</span>
+              </div>
+              <div class="pres-result-item pres-result-danger">
+                <span class="pres-result-val">S/ {{ totalNoSsomaFiltrado | number:'1.2-2' }}</span>
+                <span class="pres-result-lbl">{{ filtroNoSsoma.trim() ? 'Total no-SSOMA (filtro actual)' : 'Total no-SSOMA general' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pres-table-wrap">
+            <table class="abril-table pres-table">
+              <thead><tr><th>Proyecto</th><th>Recurso (crudo)</th><th>Precio Total</th><th>Fecha guía</th><th>Estado</th></tr></thead>
+              <tbody>
+                <tr *ngIf="noSsomaFiltrados.length === 0"><td colspan="5" class="empty-cell">Sin resultados.</td></tr>
+                <tr *ngFor="let n of noSsomaPaged">
+                  <td>{{ n.projectDescription }}</td>
+                  <td class="pres-td-recurso">{{ n.recursoCrudo }}</td>
+                  <td class="pres-td-num">S/ {{ n.precioTotal | number:'1.2-2' }}</td>
+                  <td class="pres-td-date">{{ n.fechaGuia | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ n.estadoRevision || '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="shrink-0 max-w-[440px]" style="margin-top:10px;">
+            <app-paginator
+              [totalRecords]="noSsomaFiltrados.length"
+              [currentPage]="noSsomaCurrentPage"
+              [totalPages]="noSsomaTotalPages"
+              (pageChange)="changeNoSsomaPage($event)">
+            </app-paginator>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>

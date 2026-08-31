@@ -1,0 +1,306 @@
+<div class="dp-root">
+
+
+  <div class="dp-body">
+
+    <!-- FILTROS -->
+    <div class="filtros-card">
+      <div class="filtros-grid">
+        <div class="filtro-group filtro-group--wide">
+          <label class="filtro-label">Proyecto</label>
+          <app-search-select
+            [options]="proyectos()"
+            valueField="id"
+            displayField="nombre"
+            placeholder="Buscar proyecto..."
+            [value]="proyectoId()"
+            [compact]="true"
+            [showLabel]="false"
+            color="var(--color-abril-primary)"
+            (valueChange)="proyectoId.set($event ? +$event : null)">
+          </app-search-select>
+        </div>
+        <div class="filtro-group">
+          <label class="filtro-label">Mes</label>
+          <app-search-select
+            [options]="meses"
+            valueField="valor"
+            displayField="nombre"
+            placeholder="Todos los meses"
+            [sortAlpha]="false"
+            [value]="mes()"
+            [compact]="true"
+            [showLabel]="false"
+            color="var(--color-abril-primary)"
+            (valueChange)="mes.set(+$event)">
+          </app-search-select>
+        </div>
+        <div class="filtro-group">
+          <label class="filtro-label">Año</label>
+          <app-search-select
+            [options]="anios"
+            valueField="valor"
+            displayField="nombre"
+            placeholder="Todos los años"
+            [sortAlpha]="false"
+            [value]="anio()"
+            [compact]="true"
+            [showLabel]="false"
+            color="var(--color-abril-primary)"
+            (valueChange)="anio.set(+$event)">
+          </app-search-select>
+        </div>
+        <div class="filtro-action">
+          <button type="button" class="btn-cargar" (click)="cargar()" [disabled]="!proyectoId()">
+            <i class="ti ti-search"></i> Cargar
+          </button>
+          <button type="button" class="btn-exportar" (click)="exportarPDF()" [disabled]="!indicadores() || exportando()">
+            <i class="ti" [ngClass]="exportando() ? 'ti-loader-2 spin' : 'ti-file-type-pdf'"></i>
+            {{ exportando() ? 'Generando...' : 'Exportar PDF' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENIDO EXPORTABLE -->
+    <div #reportContent *ngIf="indicadores() as ind">
+
+      <!-- CABECERA DEL REPORTE -->
+      <div class="reporte-header">
+        <div class="rh-info">
+          <h2 class="rh-proyecto">DASHBOARD SST MENSUAL - {{ ind.proyectoNombre }}</h2>
+          <span class="rh-periodo">
+            <i class="ti ti-calendar"></i>
+            {{ nombreMes(mes()) }} {{ anio() }} · {{ ind.totalEmpresasActivas }} empresa(s) activa(s)
+          </span>
+        </div>
+
+        <div class="kpi-badge kpi-badge--trab">
+          <i class="ti ti-hard-hat kpi-badge__icon"></i>
+          <div class="kpi-badge__body">
+            <span class="kpi-badge__label">Trabajadores (mes)</span>
+            <span class="kpi-badge__val">{{ trabajadoresMes() | number:'1.0-0' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- REACTIVOS: Mes vs Total proyecto (accidentes/días) · Año vs Total proyecto (IF/IG/IA) -->
+      <div class="rx-cards-row">
+        <div class="rx-card">
+          <span class="rx-card__titulo">Accidentes</span>
+          <div class="rx-card__pares">
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="accColorClass(reactivoActual()?.totalAccidentes ?? 0)">{{ reactivoActual()?.totalAccidentes ?? 0 }}</span>
+              <span class="rx-card__lbl">Mes</span>
+            </div>
+            <div class="rx-card__sep"></div>
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="accColorClass(reactivoActual()?.totalAccidentesTotal ?? 0)">{{ reactivoActual()?.totalAccidentesTotal ?? 0 }}</span>
+              <span class="rx-card__lbl">Total proyecto</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rx-card">
+          <span class="rx-card__titulo">Días perdidos</span>
+          <div class="rx-card__pares">
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="accColorClass(reactivoActual()?.totalDiasPerdidos ?? 0)">{{ reactivoActual()?.totalDiasPerdidos ?? 0 }}</span>
+              <span class="rx-card__lbl">Mes</span>
+            </div>
+            <div class="rx-card__sep"></div>
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="accColorClass(reactivoActual()?.totalDiasPerdidosTotal ?? 0)">{{ reactivoActual()?.totalDiasPerdidosTotal ?? 0 }}</span>
+              <span class="rx-card__lbl">Total proyecto</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rx-card">
+          <span class="rx-card__titulo">Índice de Frecuencia</span>
+          <div class="rx-card__pares">
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="ifColorClass(reactivoActual()?.indiceFrecuenciaAnio ?? 0)">{{ reactivoActual()?.indiceFrecuenciaAnio ?? 0 | number:'1.1-1' }}</span>
+              <span class="rx-card__lbl">Año</span>
+            </div>
+            <div class="rx-card__sep"></div>
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="ifColorClass(reactivoActual()?.indiceFrecuenciaTotal ?? 0)">{{ reactivoActual()?.indiceFrecuenciaTotal ?? 0 | number:'1.1-1' }}</span>
+              <span class="rx-card__lbl">Total proyecto</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rx-card">
+          <span class="rx-card__titulo">Índice de Gravedad</span>
+          <div class="rx-card__pares">
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="igColorClass(reactivoActual()?.indiceGravedadAnio ?? 0)">{{ reactivoActual()?.indiceGravedadAnio ?? 0 | number:'1.0-0' }}</span>
+              <span class="rx-card__lbl">Año</span>
+            </div>
+            <div class="rx-card__sep"></div>
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="igColorClass(reactivoActual()?.indiceGravedadTotal ?? 0)">{{ reactivoActual()?.indiceGravedadTotal ?? 0 | number:'1.0-0' }}</span>
+              <span class="rx-card__lbl">Total proyecto</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rx-card">
+          <span class="rx-card__titulo">Índice de Accidentabilidad</span>
+          <div class="rx-card__pares">
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="iaColorClass(reactivoActual()?.indiceAccidentabilidadAnio ?? 0)">{{ reactivoActual()?.indiceAccidentabilidadAnio ?? 0 | number:'1.2-2' }}</span>
+              <span class="rx-card__lbl">Año</span>
+            </div>
+            <div class="rx-card__sep"></div>
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="iaColorClass(reactivoActual()?.indiceAccidentabilidadTotal ?? 0)">{{ reactivoActual()?.indiceAccidentabilidadTotal ?? 0 | number:'1.2-2' }}</span>
+              <span class="rx-card__lbl">Total proyecto</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TENDENCIA MENSUAL: accidentes, días perdidos y trabajadores promedio -->
+      <div class="mini-charts-row">
+        <div class="mini-chart-card">
+          <div class="mini-chart-title">Número de Accidentes por Mes</div>
+          <div class="mini-chart-wrap"><canvas #accCanvas></canvas></div>
+        </div>
+        <div class="mini-chart-card">
+          <div class="mini-chart-title">Número de Días Perdidos por Mes</div>
+          <div class="mini-chart-wrap"><canvas #diasCanvas></canvas></div>
+        </div>
+        <div class="mini-chart-card">
+          <div class="mini-chart-title">N° de Trabajadores Promedio por Mes</div>
+          <div class="mini-chart-wrap"><canvas #trabCanvas></canvas></div>
+        </div>
+      </div>
+
+      <!-- RESUMEN DE GESTIÓN: 5 GAUGES -->
+      <div class="gauges-row" *ngIf="puntaje() as pts">
+        <div class="gauge-mini-card">
+          <span class="gauge-mini-label">Índice de Desempeño del Supervisor</span>
+          <svg viewBox="0 0 100 100" class="gauge-svg gauge-svg--sm">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#e2e8f0" stroke-width="10" transform="rotate(-90 50 50)"/>
+            <circle cx="50" cy="50" r="40" fill="none" [attr.stroke]="gaugeColor(pctSupervisor())"
+              stroke-width="10" stroke-linecap="round" stroke-dasharray="251.2"
+              [attr.stroke-dashoffset]="gaugeOffset(pctSupervisor(), 100)"
+              transform="rotate(-90 50 50)" class="gauge-arc"/>
+            <text x="50" y="46" text-anchor="middle" class="gauge-num" [attr.fill]="gaugeColor(pctSupervisor())">
+              {{ pctSupervisor() | number:'1.0-0' }}%
+            </text>
+            <text x="50" y="60" text-anchor="middle" class="gauge-sub">Avance</text>
+          </svg>
+        </div>
+
+        <div class="gauge-mini-card">
+          <span class="gauge-mini-label">Avance de PASSO</span>
+          <svg viewBox="0 0 100 100" class="gauge-svg gauge-svg--sm">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#e2e8f0" stroke-width="10" transform="rotate(-90 50 50)"/>
+            <circle cx="50" cy="50" r="40" fill="none" [attr.stroke]="gaugeColor(pts.pctPasso)"
+              stroke-width="10" stroke-linecap="round" stroke-dasharray="251.2"
+              [attr.stroke-dashoffset]="gaugeOffset(pts.pctPasso, 100)"
+              transform="rotate(-90 50 50)" class="gauge-arc"/>
+            <text x="50" y="46" text-anchor="middle" class="gauge-num" [attr.fill]="gaugeColor(pts.pctPasso)">
+              {{ pts.pctPasso | number:'1.0-0' }}%
+            </text>
+            <text x="50" y="60" text-anchor="middle" class="gauge-sub">Avance</text>
+          </svg>
+        </div>
+
+        <div class="gauge-mini-card">
+          <span class="gauge-mini-label">Avance Indicador Proactivo</span>
+          <svg viewBox="0 0 100 100" class="gauge-svg gauge-svg--sm">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#e2e8f0" stroke-width="10" transform="rotate(-90 50 50)"/>
+            <circle cx="50" cy="50" r="40" fill="none" [attr.stroke]="gaugeColor(pts.pctProactivos)"
+              stroke-width="10" stroke-linecap="round" stroke-dasharray="251.2"
+              [attr.stroke-dashoffset]="gaugeOffset(pts.pctProactivos, 100)"
+              transform="rotate(-90 50 50)" class="gauge-arc"/>
+            <text x="50" y="46" text-anchor="middle" class="gauge-num" [attr.fill]="gaugeColor(pts.pctProactivos)">
+              {{ pts.pctProactivos | number:'1.0-0' }}%
+            </text>
+            <text x="50" y="60" text-anchor="middle" class="gauge-sub">Avance</text>
+          </svg>
+        </div>
+
+        <div class="gauge-mini-card">
+          <span class="gauge-mini-label">Cierre de Accidentes</span>
+          <div class="gauge-safe" *ngIf="(reactivoAcumulado()?.accidentes ?? 0) === 0; else gaugeAcc">
+            <i class="ti ti-shield-check gauge-safe__icon"></i>
+            <span class="gauge-safe__text">Sin accidentes</span>
+          </div>
+          <ng-template #gaugeAcc>
+            <svg viewBox="0 0 100 100" class="gauge-svg gauge-svg--sm">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#e2e8f0" stroke-width="10" transform="rotate(-90 50 50)"/>
+              <circle cx="50" cy="50" r="40" fill="none" [attr.stroke]="gaugeColor(pts.pctCierreAccidentes)"
+                stroke-width="10" stroke-linecap="round" stroke-dasharray="251.2"
+                [attr.stroke-dashoffset]="gaugeOffset(pts.pctCierreAccidentes, 100)"
+                transform="rotate(-90 50 50)" class="gauge-arc"/>
+              <text x="50" y="46" text-anchor="middle" class="gauge-num" [attr.fill]="gaugeColor(pts.pctCierreAccidentes)">
+                {{ pts.pctCierreAccidentes | number:'1.0-0' }}%
+              </text>
+              <text x="50" y="60" text-anchor="middle" class="gauge-sub">Avance</text>
+            </svg>
+          </ng-template>
+        </div>
+
+        <div class="gauge-mini-card">
+          <span class="gauge-mini-label">Puntaje del Mes</span>
+          <svg viewBox="0 0 100 100" class="gauge-svg gauge-svg--sm">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#e2e8f0" stroke-width="10" transform="rotate(-90 50 50)"/>
+            <circle cx="50" cy="50" r="40" fill="none" [attr.stroke]="gaugeColor(pts.puntajeTotal)"
+              stroke-width="10" stroke-linecap="round" stroke-dasharray="251.2"
+              [attr.stroke-dashoffset]="gaugeOffset(pts.puntajeTotal)"
+              transform="rotate(-90 50 50)" class="gauge-arc"/>
+            <text x="50" y="46" text-anchor="middle" class="gauge-num" [attr.fill]="gaugeColor(pts.puntajeTotal)">
+              {{ pts.puntajeTotal | number:'1.1-1' }}
+            </text>
+            <text x="50" y="60" text-anchor="middle" class="gauge-sub">/ 110 pts</text>
+          </svg>
+        </div>
+      </div>
+
+
+      <!-- ── CHECKLISTS ──────────────────────────────────────────────────────── -->
+      <div class="dp-section" *ngIf="indicadores()?.checklists?.length">
+        <h3 class="dp-section-title"><i class="ti ti-clipboard-check"></i> Estado de Checklists SSOMA</h3>
+        <div class="cl-cards-grid">
+          <div
+            *ngFor="let cl of indicadores()!.checklists"
+            class="cl-card"
+            [class.cl-card--completado]="cl.estado === 'completado'">
+            <div class="cl-card-header">
+              <div class="cl-card-title">{{ cl.nombre }}</div>
+              <span class="cl-badge" [ngClass]="estadoClass(cl.estado)">{{ estadoLabel(cl.estado) }}</span>
+            </div>
+            <div class="cl-card-progress">
+              <div class="cl-progress-bar">
+                <div class="cl-progress-fill"
+                  [style.width.%]="cl.porcentaje"
+                  [style.background]="porcentajeColor(cl.porcentaje)">
+                </div>
+              </div>
+              <span class="cl-progress-pct" [style.color]="porcentajeColor(cl.porcentaje)">
+                {{ cl.porcentaje | number:'1.0-0' }}%
+              </span>
+            </div>
+            <div class="cl-card-footer">
+              <span class="cl-card-items"><i class="ti ti-check"></i> {{ cl.itemsCompletados }} / {{ cl.totalItems }}</span>
+              <span *ngIf="cl.esObligatorio" class="cl-tag-obligatorio">Obligatorio</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /reportContent -->
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" *ngIf="!indicadores()">
+      <i class="ti ti-chart-dots empty-state__icon"></i>
+      <p class="empty-state__text">Seleccione un proyecto, mes y año, luego presione <strong>Cargar</strong>.</p>
+    </div>
+
+  </div>
+</div>

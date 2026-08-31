@@ -1,0 +1,80 @@
+<section class="p-6 space-y-4">
+  <header class="flex items-center justify-between gap-3">
+    <div>
+      <button type="button" class="btn-back" (click)="back()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Volver
+      </button>
+      <h2 class="text-xl font-semibold text-gray-800 mt-1">Historial EMO</h2>
+    </div>
+  </header>
+
+  <div *ngIf="loading" class="card p-8 text-center text-gray-500">Cargando historial…</div>
+  <div *ngIf="!loading && errorMsg" class="card p-8 text-center text-red-600">{{ errorMsg }}</div>
+
+  <ng-container *ngIf="data">
+    <!-- Worker summary -->
+    <div class="worker-card">
+      <div>
+        <div class="wc-name">{{ data.workerNombre }}</div>
+        <div class="wc-meta">
+          <span>DNI {{ data.workerDni }}</span>
+          <span *ngIf="data.puesto" class="sep">·</span>
+          <span *ngIf="data.puesto">{{ data.puesto }}</span>
+          <span *ngIf="data.empresa" class="sep">·</span>
+          <span *ngIf="data.empresa">Empresa actual: <b>{{ data.empresa }}</b></span>
+        </div>
+      </div>
+      <div class="wc-stats">
+        <span><b>{{ data.vinculaciones?.length || 0 }}</b> vinculaciones</span>
+        <span><b>{{ totalEmos() }}</b> EMOs</span>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div *ngIf="!data.vinculaciones?.length" class="card p-10 text-center text-gray-500">
+      Sin vinculaciones registradas para este trabajador.
+    </div>
+
+    <ol *ngIf="data.vinculaciones?.length" class="timeline">
+      <li *ngFor="let v of data.vinculaciones" class="tl-item">
+        <span class="tl-dot" [class.active]="!v.fechaFin"></span>
+        <div class="tl-card">
+          <header class="tl-head">
+            <div>
+              <div class="tl-empresa">{{ v.empresaNombre }}</div>
+              <div class="tl-range">
+                {{ v.fechaInicio | date: 'dd/MM/yyyy' }} —
+                {{ v.fechaFin ? (v.fechaFin | date: 'dd/MM/yyyy') : 'Actual' }}
+              </div>
+            </div>
+            <span class="tl-count">{{ v.emos?.length || 0 }} EMO{{ (v.emos?.length || 0) === 1 ? '' : 's' }}</span>
+          </header>
+
+          <div *ngIf="!v.emos?.length" class="tl-empty">Sin EMOs en esta vinculación.</div>
+
+          <ul *ngIf="v.emos?.length" class="emo-list">
+            <li *ngFor="let e of v.emos; trackBy: trackEmoById" class="emo-item">
+              <div class="emo-left">
+                <div class="emo-date">{{ e.fechaEmo | date: 'dd/MM/yyyy' }}</div>
+                <div class="emo-tipo">{{ e.tipoEmo }}</div>
+              </div>
+              <div class="emo-center">
+                <span class="emo-vence">Vence {{ e.fechaVencimiento | date: 'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="emo-badges">
+                <span class="badge border" [ngClass]="aptitudClass(e.aptitud)">{{ e.aptitud }}</span>
+                <span class="badge border" [ngClass]="estadoClass(e.estado)">{{ e.estado }}</span>
+                <span class="badge border" [ngClass]="diasClass(e.diasParaVencer)">
+                  {{ diasLabel(e.diasParaVencer) }}
+                </span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </li>
+    </ol>
+  </ng-container>
+</section>

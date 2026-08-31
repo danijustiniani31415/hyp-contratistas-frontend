@@ -1,0 +1,203 @@
+<div class="detalle-root">
+
+  <!-- HEADER -->
+  <div class="rac-header">
+    <div class="rac-header__left">
+      <button type="button" class="btn-back" (click)="irALista()" title="Volver a lista">
+        <i class="ti ti-arrow-left"></i>
+      </button>
+      <div>
+        <span class="rac-badge" *ngIf="rac">{{ rac.codigo }}</span>
+        <span class="rac-badge rac-badge--skeleton" *ngIf="loading && !rac">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+        <h1 class="rac-titulo">Detalle RAC</h1>
+      </div>
+    </div>
+    <div class="rac-header__actions" *ngIf="rac">
+      <button type="button" class="btn-secondary" (click)="descargarPdf()" [disabled]="descargandoPdf">
+        <i class="ti ti-file-type-pdf"></i>
+        {{ descargandoPdf ? 'Generando...' : 'PDF' }}
+      </button>
+      <button type="button" class="btn-primary" *ngIf="puedeCerrar" (click)="irACerrar()">
+        <i class="ti ti-lock"></i> Cerrar RAC
+      </button>
+    </div>
+  </div>
+
+  <!-- SKELETON -->
+  <div *ngIf="loading" class="skeleton-wrap">
+    <div class="skeleton-row" style="width:60%;height:24px;border-radius:6px"></div>
+    <div class="skeleton-row" style="width:100%;height:16px;border-radius:6px;margin-top:8px"></div>
+    <div class="skeleton-row" style="width:100%;height:16px;border-radius:6px;margin-top:8px"></div>
+    <div class="skeleton-row" style="width:80%;height:16px;border-radius:6px;margin-top:8px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px">
+      <div class="skeleton-row" style="height:60px;border-radius:8px"></div>
+      <div class="skeleton-row" style="height:60px;border-radius:8px"></div>
+      <div class="skeleton-row" style="height:60px;border-radius:8px"></div>
+      <div class="skeleton-row" style="height:60px;border-radius:8px"></div>
+    </div>
+  </div>
+
+  <!-- CONTENIDO -->
+  <ng-container *ngIf="rac && !loading">
+
+    <!-- CHIPS DE ESTADO -->
+    <div class="chips-row">
+      <span class="chip chip-estado" [ngClass]="estadoClass(rac.estado)">{{ rac.estado }}</span>
+      <span class="chip chip-sev" [ngClass]="severidadClass(rac.severidad)">{{ rac.severidad }}</span>
+      <span class="chip chip-tipo">{{ rac.tipo }}</span>
+      <span class="chip chip-ambito">{{ rac.categoriaAmbito }}</span>
+      <span *ngIf="rac.aplicaPenalidad" class="chip chip-penalidad">
+        <i class="ti ti-currency-sol"></i>
+        Con penalidad{{ rac.penalidad ? ' · ' + rac.penalidad.estado : '' }}
+      </span>
+    </div>
+
+    <!-- DATOS GENERALES -->
+    <div class="detalle-seccion">
+      <div class="detalle-seccion__titulo">Datos generales</div>
+      <div class="detalle-grid">
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Proyecto</span>
+          <span class="detalle-campo__valor">{{ rac.proyectoNombre ?? '—' }}</span>
+        </div>
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Categoría</span>
+          <span class="detalle-campo__valor">{{ rac.categoriaNombre }}</span>
+        </div>
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Fecha de reporte</span>
+          <span class="detalle-campo__valor">{{ formatFecha(rac.fechaReporte) }}</span>
+        </div>
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Plazo de levantamiento</span>
+          <span class="detalle-campo__valor">{{ formatFecha(rac.plazoLevantamiento) }}</span>
+        </div>
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Lugar</span>
+          <span class="detalle-campo__valor">{{ rac.lugarDescripcion ?? '—' }}</span>
+        </div>
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Piso / Área</span>
+          <span class="detalle-campo__valor">{{ rac.proyectoPiso ?? '—' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTANTE -->
+    <div class="detalle-seccion">
+      <div class="detalle-seccion__titulo">Reportante</div>
+      <div *ngIf="rac.esAnonimoReportante" class="anonimo-label">
+        <i class="ti ti-user-off"></i> Anónimo
+      </div>
+      <div *ngIf="!rac.esAnonimoReportante" class="detalle-grid">
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Nombre</span>
+          <span class="detalle-campo__valor">{{ rac.reportanteNombre ?? '—' }}</span>
+        </div>
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Cargo</span>
+          <span class="detalle-campo__valor">{{ rac.reportanteCargo ?? '—' }}</span>
+        </div>
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Empresa reportante</span>
+          <span class="detalle-campo__valor">{{ rac.empresaReportanteNombre ?? '—' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- OBSERVADO -->
+    <div class="detalle-seccion">
+      <div class="detalle-seccion__titulo">Trabajador observado</div>
+      <div *ngIf="rac.esAnonimoObservado" class="anonimo-label">
+        <i class="ti ti-user-off"></i> Anónimo
+      </div>
+      <div *ngIf="!rac.esAnonimoObservado" class="detalle-grid">
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Nombre</span>
+          <span class="detalle-campo__valor">{{ rac.observadoNombre ?? '—' }}</span>
+        </div>
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Empresa reportada</span>
+          <span class="detalle-campo__valor">{{ rac.empresaReportadaNombre ?? '—' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DESCRIPCIÓN -->
+    <div class="detalle-seccion">
+      <div class="detalle-seccion__titulo">Descripción del hallazgo</div>
+      <p class="detalle-parrafo">{{ rac.descripcion }}</p>
+    </div>
+
+    <!-- PLAN DE ACCIÓN -->
+    <div class="detalle-seccion">
+      <div class="detalle-seccion__titulo">Plan de acción</div>
+      <p class="detalle-parrafo" [class.detalle-parrafo--vacio]="!rac.planAccion">
+        {{ rac.planAccion || '—' }}
+      </p>
+    </div>
+
+    <!-- CIERRE (solo si cerrado) -->
+    <div class="detalle-seccion" *ngIf="rac.estado === 'Cerrado'">
+      <div class="detalle-seccion__titulo">Cierre</div>
+      <div class="detalle-grid">
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Fecha de cierre</span>
+          <span class="detalle-campo__valor">{{ formatFecha(rac.fechaCierre) }}</span>
+        </div>
+        <div class="detalle-campo" *ngIf="rac.cerradoPorNombre">
+          <span class="detalle-campo__label">Cerrado por</span>
+          <span class="detalle-campo__valor">
+            {{ rac.cerradoPorNombre }}<span *ngIf="rac.cerradoPorCargo"> · {{ rac.cerradoPorCargo }}</span>
+          </span>
+        </div>
+      </div>
+      <p class="detalle-parrafo" style="margin-top:8px">
+        {{ rac.cierreDescripcion || '—' }}
+      </p>
+    </div>
+
+    <!-- PENALIDAD -->
+    <div class="detalle-seccion" *ngIf="rac.aplicaPenalidad && rac.penalidad">
+      <div class="detalle-seccion__titulo">Penalidad</div>
+      <div class="penalidad-card">
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Código</span>
+          <span class="detalle-campo__valor penalidad-codigo">{{ rac.penalidad.codigo }}</span>
+        </div>
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Estado</span>
+          <span class="detalle-campo__valor">{{ rac.penalidad.estado }}</span>
+        </div>
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Infracción</span>
+          <span class="detalle-campo__valor">{{ rac.penalidad.infraccionNombre ?? '—' }}</span>
+        </div>
+        <div class="detalle-campo">
+          <span class="detalle-campo__label">Monto</span>
+          <span class="detalle-campo__valor penalidad-monto">
+            S/ {{ rac.penalidad.montoCalculado | number:'1.2-2' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOTOS -->
+    <div class="detalle-seccion">
+      <div class="detalle-seccion__titulo">Fotos</div>
+      <div class="fotos-grid" *ngIf="rac.fotos.length > 0">
+        <div class="foto-item" *ngFor="let foto of rac.fotos">
+          <app-draggable-image *ngIf="fotoUrls.get(foto.id) as url; else fotoCargando" [src]="url" />
+          <ng-template #fotoCargando>
+            <div class="foto-cargando"><i class="ti ti-loader-2 spin"></i></div>
+          </ng-template>
+          <span class="foto-badge">{{ foto.tipo }}</span>
+        </div>
+      </div>
+      <p class="detalle-parrafo detalle-parrafo--vacio" *ngIf="rac.fotos.length === 0">
+        Sin fotos registradas.
+      </p>
+    </div>
+
+  </ng-container>
+</div>

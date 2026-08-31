@@ -1,0 +1,71 @@
+<app-abril-page-header
+  badge="ARQ. COMERCIAL · TAREO"
+  titulo="Revisión de tareos"
+  subtitulo="Marcaciones que necesitan verificación manual del supervisor."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="rev-root">
+
+  <div class="rev-filtros">
+    <select class="rev-select" [(ngModel)]="estadoFiltro" (ngModelChange)="onFiltroChange()">
+      <option value="REVISAR">Por revisar</option>
+      <option value="SIN_ENROLAR">Sin enrolar</option>
+      <option value="VERIFICADO">Verificados</option>
+      <option value="RECHAZADO">Rechazados</option>
+      <option value="">Todos</option>
+    </select>
+  </div>
+
+  <div *ngIf="cargando" class="rev-loading"><span class="rev-spinner"></span> Cargando…</div>
+
+  <div class="rev-table-wrap" *ngIf="!cargando">
+    <table class="abril-table">
+      <thead>
+        <tr>
+          <th>Foto</th>
+          <th>Trabajador</th>
+          <th>Tipo</th>
+          <th>Fecha</th>
+          <th>Hora</th>
+          <th>Proyecto</th>
+          <th>Distancia</th>
+          <th>Rostro</th>
+          <th>Estado</th>
+          <th>Motivo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of items">
+          <td>
+            <img [src]="fotoUrl(item)" class="rev-thumb" (click)="fotoAmpliada = fotoUrl(item)" alt="Selfie" />
+          </td>
+          <td>{{ item.workerNombre }}</td>
+          <td>{{ TAREO_TIPO_LABEL[item.tipo] }}</td>
+          <td>{{ item.fecha | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ item.horaServidor | date: 'HH:mm' }}</td>
+          <td>{{ item.projectNombre || '—' }}</td>
+          <td>{{ item.distanciaMetros != null ? (item.distanciaMetros | number: '1.0-0') + 'm' : '—' }}</td>
+          <td>{{ item.faceMatchScore != null ? (item.faceMatchScore * 100 | number: '1.0-0') + '%' : '—' }}</td>
+          <td><span class="rev-badge" [class]="'rev-badge-' + item.estado.toLowerCase()">{{ TAREO_ESTADO_LABEL[item.estado] }}</span></td>
+          <td class="rev-motivo">{{ item.motivoRevision || '—' }}</td>
+          <td class="rev-acciones">
+            <button type="button" class="rev-btn rev-btn-ok" (click)="aprobar(item)"><i class="ti ti-check"></i></button>
+            <button type="button" class="rev-btn rev-btn-no" (click)="rechazar(item)"><i class="ti ti-x"></i></button>
+          </td>
+        </tr>
+        <tr *ngIf="items.length === 0"><td colspan="11" class="rev-empty">Sin registros</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginator *ngIf="!cargando && total > porPagina"
+    [totalRecords]="total" [currentPage]="pagina" [totalPages]="totalPages"
+    (pageChange)="onPageChange($event)">
+  </app-paginator>
+</div>
+
+<div class="rev-lightbox" *ngIf="fotoAmpliada" (click)="fotoAmpliada = null">
+  <img [src]="fotoAmpliada" alt="Selfie ampliada" />
+</div>

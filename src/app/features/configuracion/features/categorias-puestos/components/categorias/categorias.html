@@ -1,0 +1,97 @@
+<!-- Sección embebida en GthConfiguracion: el header, el botón de crear y el
+     disparador de filtros viven en el contenedor. -->
+<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Categoría</th>
+          <th class="text-center w-[140px]">Puestos</th>
+          <th class="text-center w-[140px]">Estado</th>
+          <th class="text-center w-[220px]">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="filteredCategorias.length === 0">
+          <td colspan="4" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ filtrosActivos > 0 ? 'Sin resultados.' : 'No hay categorías registradas.' }}
+          </td>
+        </tr>
+
+        <tr *ngFor="let c of pagedCategorias" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+
+          <td class="text-gray-700">{{ c.nombre | titleCase }}</td>
+
+          <td class="text-center">
+            <span *ngIf="puestosDe(c) > 0"
+                  class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium whitespace-nowrap">
+              {{ puestosDe(c) }} puesto(s)
+            </span>
+            <span *ngIf="puestosDe(c) === 0" class="text-gray-300">—</span>
+          </td>
+
+          <td class="text-center">
+            <app-status-badge
+              [text]="c.activo ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="c.activo ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="c.activo ? '#009C87' : '#D30000'" />
+          </td>
+
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[8px]">
+              <button (click)="openEdit(c)" abrilBulkAction="default">Editar</button>
+              <button (click)="toggle(c)" [abrilBulkAction]="c.activo ? 'danger' : 'default'">
+                {{ c.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+            </div>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredCategorias.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modal crear/editar ────────────────────────────────────────────── -->
+<app-categoria-create-edit
+  *ngIf="showModal"
+  [categoria]="categoriaToEdit"
+  (closeModal)="closeModales()"
+  (saved)="onSaved()" />
+
+<!-- ── Modal de filtros estándar ─────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por categoría..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="estadoFilter"
+      (valueChange)="estadoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

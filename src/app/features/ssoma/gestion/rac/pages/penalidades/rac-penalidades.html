@@ -1,0 +1,275 @@
+<div class="penalidades-root">
+
+  <app-abril-page-header
+    [badge]="'SSOMA · ' + anioActual"
+    titulo="Penalidades RAC"
+    subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
+    [tabs]="tabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()">
+
+    <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <div class="penalidades-body">
+
+  <!-- SKELETON -->
+  <div *ngIf="loading" class="skeleton-wrap">
+    <div *ngFor="let i of [1,2,3,4,5]" class="skeleton-row"></div>
+  </div>
+
+  <!-- TABLA -->
+  <div *ngIf="!loading && (result?.items?.length ?? 0) > 0" class="tabla-wrap">
+    <table class="abril-table tabla-rac">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Código</th>
+          <th>RAC</th>
+          <th>Proyecto</th>
+          <th>Empresa</th>
+          <th>Infracción</th>
+          <th>Monto</th>
+          <th>Estado</th>
+          <th>Fecha</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of result!.items" class="tabla-row">
+          <td class="col-codigo">{{ item.codigo }}</td>
+          <td>
+            <button type="button" class="link-rac" (click)="irARac(item.racId)">
+              {{ item.racCodigo }}
+            </button>
+          </td>
+          <td class="col-proyecto">{{ item.proyectoNombre ?? '—' }}</td>
+          <td class="col-empresa">{{ item.empresaNombre ?? '—' }}</td>
+          <td class="col-infraccion">{{ item.infraccionNombre ?? '—' }}</td>
+          <td class="col-monto">S/ {{ item.montoCalculado | number:'1.2-2' }}</td>
+          <td>
+            <span class="chip-estado" [ngClass]="estadoPenalClass(item.estado)">
+              {{ item.estado }}
+            </span>
+          </td>
+          <td class="col-fecha">{{ item.createdAt | date:'dd/MM/yyyy' }}</td>
+          <td class="col-acciones">
+            <button type="button" class="abril-action-btn" title="Ver detalle" (click)="abrirDetalle(item.id)">
+              <i class="ti ti-eye"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div *ngIf="!loading && (result?.items?.length ?? 0) === 0 && result !== null" class="empty-state">
+    <i class="ti ti-receipt-off empty-state__icon"></i>
+    <p class="empty-state__text">No se encontraron penalidades.</p>
+  </div>
+
+  <!-- PAGINACIÓN -->
+  <div *ngIf="result" class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="result.total"
+      [currentPage]="query.page ?? 1"
+      [totalPages]="result.totalPages"
+      (pageChange)="cambiarPagina($event)">
+    </app-paginator>
+  </div>
+
+  </div><!-- /penalidades-body -->
+
+</div>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="filtroEstado"
+      (valueChange)="filtroEstado = $event; load()">
+    </app-search-select>
+  </div>
+</app-filter-modal>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- MODAL DETALLE                                   -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="pen-overlay" *ngIf="mostrarModal" (click)="cerrarModal()"></div>
+
+<div class="pen-modal" *ngIf="mostrarModal" (click)="$event.stopPropagation()">
+
+  <!-- Modal header -->
+  <div class="pen-modal__header">
+    <div>
+      <span class="modal-badge">Penalidad</span>
+      <span class="modal-codigo">{{ penalidadSeleccionada?.codigo ?? '...' }}</span>
+    </div>
+    <button type="button" class="btn-close" (click)="cerrarModal()">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+
+  <!-- Modal body -->
+  <div class="pen-modal__body">
+
+    <!-- Skeleton detalle -->
+    <div *ngIf="loadingDetalle" class="modal-skeleton">
+      <div class="skeleton-row" style="height:16px;width:70%;border-radius:4px"></div>
+      <div class="skeleton-row" style="height:16px;width:90%;border-radius:4px;margin-top:8px"></div>
+      <div class="skeleton-row" style="height:16px;width:50%;border-radius:4px;margin-top:8px"></div>
+      <div class="skeleton-row" style="height:80px;border-radius:8px;margin-top:16px"></div>
+    </div>
+
+    <!-- Contenido detalle -->
+    <ng-container *ngIf="penalidadSeleccionada && !loadingDetalle">
+
+      <!-- Grid datos -->
+      <div class="modal-grid">
+        <div class="modal-campo">
+          <span class="modal-label">RAC</span>
+          <button type="button" class="link-rac" (click)="irARac(penalidadSeleccionada.racId); cerrarModal()">
+            {{ penalidadSeleccionada.racCodigo }}
+          </button>
+        </div>
+        <div class="modal-campo">
+          <span class="modal-label">Proyecto</span>
+          <span class="modal-valor">{{ penalidadSeleccionada.proyectoNombre ?? '—' }}</span>
+        </div>
+        <div class="modal-campo">
+          <span class="modal-label">Empresa</span>
+          <span class="modal-valor">{{ penalidadSeleccionada.empresaNombre ?? '—' }}</span>
+        </div>
+        <div class="modal-campo">
+          <span class="modal-label">Infracción</span>
+          <span class="modal-valor">{{ penalidadSeleccionada.infraccionNombre ?? '—' }}</span>
+        </div>
+        <div class="modal-campo">
+          <span class="modal-label">Monto</span>
+          <span class="modal-valor modal-monto">
+            S/ {{ penalidadSeleccionada.montoCalculado | number:'1.2-2' }}
+          </span>
+        </div>
+        <div class="modal-campo">
+          <span class="modal-label">Estado</span>
+          <span class="chip-estado" [ngClass]="estadoPenalClass(penalidadSeleccionada.estado)">
+            {{ penalidadSeleccionada.estado }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Descripción del ocurrido -->
+      <div class="modal-seccion" *ngIf="penalidadSeleccionada.descripcionOcurrido">
+        <div class="modal-seccion__titulo">Descripción del ocurrido</div>
+        <p class="modal-parrafo">{{ penalidadSeleccionada.descripcionOcurrido }}</p>
+      </div>
+
+      <!-- ── En Evaluación: presentar descargo ── -->
+      <ng-container *ngIf="penalidadSeleccionada.estado === 'EnEvaluacion'">
+        <div class="modal-seccion">
+          <div class="modal-seccion__titulo">Presentar descargo</div>
+          <textarea class="form-control"
+                    [(ngModel)]="descargoTexto"
+                    rows="4"
+                    maxlength="1000"
+                    placeholder="Describa el descargo o justificación..."></textarea>
+          <span class="form-hint"
+                *ngIf="descargoTexto.length > 0 && descargoTexto.trim().length < 10">
+            Mínimo 10 caracteres
+          </span>
+
+          <!-- Documento de sustento -->
+          <div class="descargo-doc">
+            <label class="doc-label">Documento de sustento *</label>
+            <input type="file"
+                   class="form-control"
+                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                   (change)="seleccionarDocumento($event)" />
+
+            <span class="doc-subiendo" *ngIf="subiendoDocumento">
+              <i class="ti ti-loader-2 spin"></i> Subiendo documento...
+            </span>
+
+            <span class="doc-ok" *ngIf="documentoUrl && !subiendoDocumento">
+              <i class="ti ti-circle-check"></i> Documento subido correctamente
+            </span>
+
+            <span class="doc-hint" *ngIf="!documentoArchivo && !subiendoDocumento">
+              Adjunta el documento de sustento (PDF, imagen o Word)
+            </span>
+          </div>
+
+          <div class="modal-acciones">
+            <button type="button"
+                    class="btn-accion btn-accion--blue"
+                    [disabled]="!puedeDescargar"
+                    (click)="presentarDescargo()">
+              <i class="ti ti-send"></i>
+              {{ guardandoAccion ? 'Enviando...' : 'Presentar descargo' }}
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ── Descargo presentado: resolver ── -->
+      <ng-container *ngIf="penalidadSeleccionada.estado === 'DescargoPresentado'">
+        <div class="modal-seccion">
+          <div class="modal-seccion__titulo">Descargo presentado</div>
+          <div class="descargo-readonly">{{ penalidadSeleccionada.descargoTexto ?? '—' }}</div>
+        </div>
+        <div class="modal-seccion">
+          <div class="modal-seccion__titulo">Texto de resolución <span class="opcional">(opcional)</span></div>
+          <textarea class="form-control"
+                    [(ngModel)]="resolucionTexto"
+                    rows="3"
+                    maxlength="500"
+                    placeholder="Justificación de la resolución..."></textarea>
+          <div class="modal-acciones modal-acciones--gap">
+            <button type="button"
+                    class="btn-accion btn-accion--red"
+                    [disabled]="guardandoAccion"
+                    (click)="resolver('Aplicada')">
+              <i class="ti ti-currency-sol"></i>
+              {{ guardandoAccion ? 'Procesando...' : 'Aplicar penalidad' }}
+            </button>
+            <button type="button"
+                    class="btn-accion btn-accion--green"
+                    [disabled]="guardandoAccion"
+                    (click)="resolver('Anulada')">
+              <i class="ti ti-ban"></i>
+              {{ guardandoAccion ? 'Procesando...' : 'Anular penalidad' }}
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ── Aplicada / Anulada: readonly ── -->
+      <ng-container *ngIf="penalidadSeleccionada.estado === 'Aplicada' || penalidadSeleccionada.estado === 'Anulada'">
+        <div class="modal-seccion" *ngIf="penalidadSeleccionada.resolucionTexto">
+          <div class="modal-seccion__titulo">Resolución</div>
+          <p class="modal-parrafo">{{ penalidadSeleccionada.resolucionTexto }}</p>
+        </div>
+        <div class="estado-final">
+          <span class="chip-estado chip-estado--lg" [ngClass]="estadoPenalClass(penalidadSeleccionada.estado)">
+            {{ penalidadSeleccionada.estado }}
+          </span>
+        </div>
+      </ng-container>
+
+      <!-- Ver RAC -->
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost" (click)="irARac(penalidadSeleccionada.racId); cerrarModal()">
+          <i class="ti ti-external-link"></i> Ver RAC
+        </button>
+      </div>
+
+    </ng-container>
+  </div>
+
+<app-fab label="Nuevo RAC" (clicked)="irANuevo()"></app-fab>
+</div>

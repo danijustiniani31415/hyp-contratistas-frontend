@@ -1,0 +1,69 @@
+/* Opciones de ámbito: dos tarjetas seleccionables (una sola elección, con la primera
+   preseleccionada). No se usa app-search-select porque son solo dos opciones y la elegida
+   debe quedar visible sin abrir nada. Estados default/hover/focus/disabled cubiertos. */
+.ambito-opt {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid var(--color-abril-border);
+  border-radius: var(--radius-standard, 7px);
+  background: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.ambito-opt:hover:not(:disabled) {
+  background: var(--color-abril-standard-light);
+}
+.ambito-opt:focus-visible {
+  outline: 2px solid var(--color-abril-standard);
+  outline-offset: 2px;
+}
+.ambito-opt:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ambito-opt--on {
+  border-color: var(--color-abril-standard);
+  background: var(--color-abril-standard-light);
+}
+
+.ambito-opt__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+.ambito-opt--on .ambito-opt__title {
+  color: var(--color-abril-standard);
+}
+
+.ambito-opt__hint {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Botón primario del modal — mismo lenguaje que el resto de acciones del módulo. */
+.consolidado-guardar {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--radius-standard, 7px);
+  background: var(--color-abril-standard);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.consolidado-guardar:hover:not(:disabled) {
+  background: var(--color-abril-standard-hover);
+}
+.consolidado-guardar:focus-visible {
+  outline: 2px solid var(--color-abril-standard);
+  outline-offset: 2px;
+}
+.consolidado-guardar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

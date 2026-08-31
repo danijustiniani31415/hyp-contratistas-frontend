@@ -1,0 +1,309 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.ssoma-hero {
+  flex-shrink: 0;
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+.ssoma-hero__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.ssoma-hero__badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: #064e3b;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.ssoma-hero__vline { width: 1px; height: 28px; background: #e5e7eb; }
+.ssoma-hero__title-wrap { line-height: 1.3; }
+.ssoma-hero__title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  /* Misma familia tipográfica que el subtítulo (fuente base sans-serif del
+     sistema, heredada) en lugar del serif Playfair. Color azul del mockup. */
+  color: var(--color-abril-header-title);
+  margin: 0;
+}
+.ssoma-hero__sub { font-size: 0.8rem; color: #64748b; margin: 0; }
+.ssoma-hero__center {
+  display: flex;
+  gap: 7px;
+  flex: 1;
+  justify-content: center;
+}
+.ssoma-hero__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 4px 11px;
+  border-radius: 20px;
+}
+.ssoma-hero__pill i { font-size: 12px; }
+.ssoma-hero__pill--warn { color: #92400e; background: #fef3c7; border-color: #fde68a; }
+.ssoma-hero__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-right: 16px;
+}
+.ssoma-hero__avatar-gap { display: none; }
+.ssoma-hero__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .15s;
+  line-height: 1;
+}
+.ssoma-hero__btn i { font-size: 13px; }
+.ssoma-hero__btn--ghost {
+  background: #fff;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+.ssoma-hero__btn--ghost:hover { background: #f8fafc; border-color: #cbd5e1; }
+.ssoma-hero__btn--primary { background: #16a34a; color: #fff; border: none; }
+.ssoma-hero__btn--primary:hover { background: #15803d; }
+.ssoma-hero__btn:disabled,
+.ssoma-hero__btn:disabled:hover {
+  background: #cbd5e1;
+  color: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+/* ── Botón primario flotante (estándar único de "agregar" en toda la app) ── */
+.ssoma-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1b3a2d;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  box-shadow: 0 4px 14px rgba(27, 58, 45, 0.3);
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+  transition: background 0.15s, transform 0.1s;
+}
+.ssoma-fab i { font-size: 16px; }
+.ssoma-fab:hover:not(:disabled) { background: #152e23; transform: scale(1.02); }
+.ssoma-fab:disabled { opacity: 0.6; cursor: not-allowed; }
+.ssoma-fab span { display: none; }
+@media (min-width: 640px) {
+  .ssoma-fab span { display: inline; }
+}
+
+/* ── Hamburger ── */
+/* Solo visible por debajo del breakpoint `sm` (640px), que es exactamente
+   donde se oculta el sidebar de escritorio (app-sidebar usa `hidden sm:block`).
+   Así el hamburguesa y el sidebar fijo nunca coexisten: entre 640–768px se
+   muestra el sidebar y NO el hamburguesa (antes aparecía a 768px y se montaba
+   el drawer encima del sidebar). */
+.hamburger-btn {
+  display: none;
+}
+@media (max-width: 639.98px) {
+  .hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    border: none;
+    cursor: pointer;
+  }
+  .hamburger-btn i { font-size: 16px; color: #374151; }
+}
+
+/* ── Tabs ── */
+.abril-tabs {
+  background: #ffffff;
+  flex-shrink: 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+.abril-tabs__row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  min-height: 40px;
+  padding: 6px 0;
+}
+.abril-tabs__nav {
+  display: flex;
+  gap: 0;
+  padding: 0;
+}
+.abril-tabs__extra {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* margin-left:auto en vez de justify-content:space-between en la fila: así
+     tabsExtra (ej. el botón Filtros) siempre queda a la derecha, sea que
+     haya pestañas al lado o no. Antes, sin pestañas, space-between con un
+     solo hijo lo dejaba pegado a la izquierda, como un botón suelto sin
+     relación visual con nada (bug real: Proyectos Habilitados SSOMA). */
+  margin-left: auto;
+  padding-right: 12px;
+  flex-shrink: 0;
+}
+.abril-tabs__extra:empty {
+  display: none;
+}
+.abril-tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0.4rem 0.85rem;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-abril-muted);
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  margin-bottom: -1px;
+  transition: color .15s;
+}
+.abril-tabs__tab i { font-size: 12px; }
+.abril-tabs__tab:hover { color: var(--color-abril-body); }
+.abril-tabs__tab--active {
+  color: #111827;
+  font-weight: 700;
+  background: #ffffff;
+  border-bottom: 3px solid #16a34a;
+  box-shadow: none;
+}
+
+/* ── Tab Groups (section switcher) ── */
+.abril-tab-groups {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+.atg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-abril-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.atg-btn i { font-size: 12px; }
+.atg-btn:hover { background: #fff; border-color: #e2e8f0; color: #374151; }
+.atg-btn--active {
+  background: #064e3b;
+  color: #fff;
+  border-color: #064e3b;
+  font-weight: 600;
+}
+.atg-btn--active:hover { background: #065f46; border-color: #065f46; }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .ssoma-hero { padding: 8px 12px; }
+
+  .ssoma-hero__badge,
+  .ssoma-hero__vline { display: none; }
+
+  .ssoma-hero__left {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .ssoma-hero__title-wrap {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+  .ssoma-hero__title {
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ssoma-hero__sub { display: none; }
+  .ssoma-hero__center { display: none; }
+  .ssoma-hero__right { padding-right: 0; }
+
+  /* Los botones ghost (Configuración, Catálogos, Exportar…) quedan SOLO con el
+     ícono, no ocultos: antes desaparecían enteros y su acción era inalcanzable
+     en móvil — en páginas donde son el único botón del header simplemente no
+     había manera de abrir eso desde el teléfono (bug real: "Configuración" de
+     Reclutamiento GTH). Lo que estorbaba era el texto, que empujaba el título
+     fuera de la vista; eso sí se sigue ocultando, igual que en el FAB primario
+     y en los botones proyectados en tabsExtra. */
+  .ssoma-hero__btn--ghost { padding: 6px 9px; }
+  .ssoma-hero__btn--ghost span { display: none; }
+  .ssoma-hero__btn--primary span { display: none; }
+
+  .abril-tabs__nav {
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+  }
+  .abril-tabs__nav::-webkit-scrollbar { display: none; }
+
+  /* Botones proyectados en tabsExtra (Catálogos, Proyectos, Filtros, etc.):
+     en mobile quedan solo con el ícono — el texto ocupaba demasiado ancho y
+     empujaba las pestañas fuera de la vista (bug real: Observaciones AC). */
+  .abril-tabs__extra {
+    gap: 4px;
+    padding-right: 6px;
+  }
+  .abril-tabs__extra ::ng-deep button {
+    padding: 6px 8px !important;
+  }
+  .abril-tabs__extra ::ng-deep button .btn-label {
+    display: none;
+  }
+}

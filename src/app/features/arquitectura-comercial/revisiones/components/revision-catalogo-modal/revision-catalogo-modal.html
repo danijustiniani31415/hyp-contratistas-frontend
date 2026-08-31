@@ -1,0 +1,72 @@
+<app-base-modal title="Agrega las revisiones que requieras" width="w-[620px]" height="h-[600px]" (closeModal)="closeModal.emit()">
+
+  <div class="form-row mb-[10px]">
+    <app-search-select
+      [options]="proyectos"
+      valueField="id"
+      displayField="nombre"
+      placeholder="Seleccionar el proyecto"
+      [value]="proyectoId"
+      (valueChange)="onProyectoChange($event)">
+    </app-search-select>
+
+    <app-search-select
+      [options]="tiposRevisionOptions"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      placeholder="Seleccionar tipo de revisión"
+      [value]="tipo"
+      (valueChange)="tipo = $event">
+    </app-search-select>
+  </div>
+
+  <div class="flex items-center justify-between mb-[8px]">
+    <span class="text-sm font-medium text-gray-600">Lugar a revisar:</span>
+    <label class="flex items-center gap-[6px] text-sm text-gray-600 cursor-pointer">
+      <input type="checkbox" [checked]="otroLugar" (change)="toggleOtroLugar()" />
+      Otro lugar
+    </label>
+  </div>
+
+  <div class="mb-[14px]">
+    <app-search-select *ngIf="!otroLugar"
+      [options]="lugares"
+      valueField="value"
+      displayField="label"
+      placeholder="Proyectos"
+      [value]="lugar"
+      (valueChange)="lugar = $event">
+    </app-search-select>
+    <input *ngIf="otroLugar" type="text" [(ngModel)]="lugarManual"
+           placeholder="Escribe el lugar a revisar..."
+           class="w-full border rounded-[7px] px-[10px] py-[7px] text-sm"
+           style="border-color:var(--color-abril-border)" />
+  </div>
+
+  <button type="button" class="btn-agregar mb-[14px]" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
+    <i class="ti ti-plus"></i> {{ guardando ? 'Guardando…' : 'Agregar revisión' }}
+  </button>
+
+  <div class="flex-1 min-h-0 overflow-y-auto border rounded-[7px]" style="border-color:var(--color-abril-border)">
+    <div *ngIf="loading" class="text-center text-sm text-gray-400 py-[24px]">Cargando...</div>
+
+    <div *ngIf="!loading && revisiones.length === 0" class="text-center text-sm text-gray-400 py-[24px]">
+      Sin revisiones todavía{{ proyectoId ? ' para este proyecto' : '' }}.
+    </div>
+
+    <div *ngFor="let r of revisiones" class="revision-row">
+      <span class="flex-1 text-sm text-gray-700">{{ r.nombre }}</span>
+      <button type="button" (click)="eliminar(r)" title="Eliminar" class="text-red-400 hover:text-red-600">
+        <i class="ti ti-trash"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="flex justify-end mt-[14px]">
+    <button type="button" class="btn-salir" (click)="closeModal.emit()">
+      <i class="ti ti-x"></i> Salir
+    </button>
+  </div>
+
+</app-base-modal>

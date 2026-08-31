@@ -1,0 +1,122 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <img src="/images/abril-logo-verde-letra-blanca.png" alt="Abril" class="auth-logo" />
+      <h2>Activa tu empresa</h2>
+      <p>{{ paso === 1 ? 'Verifica tu identidad para continuar.' : 'Crea las credenciales de acceso.' }}</p>
+    </div>
+
+    <!-- Indicador de pasos -->
+    <div class="steps">
+      <div class="step" [class.active]="paso >= 1" [class.done]="paso > 1">
+        <span class="step-num">1</span>
+        <span class="step-label">Verificar identidad</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" [class.active]="paso >= 2">
+        <span class="step-num">2</span>
+        <span class="step-label">Crear cuenta</span>
+      </div>
+    </div>
+
+    <!-- Paso 1: Verificar identidad -->
+    <form *ngIf="paso === 1" (ngSubmit)="submitPaso1()" class="auth-form">
+      <div class="field">
+        <label class="field-label">RUC *</label>
+        <input
+          class="field-input"
+          type="text"
+          [(ngModel)]="ruc"
+          name="ruc"
+          maxlength="11"
+          placeholder="11 dígitos"
+          autocomplete="off"
+        />
+        <span class="error-line" *ngIf="ruc.length > 0 && rucInvalido">
+          Debe tener exactamente 11 dígitos numéricos.
+        </span>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Contraseña temporal *</label>
+        <input
+          class="field-input"
+          type="password"
+          [(ngModel)]="spPassword"
+          name="spPassword"
+          autocomplete="off"
+          placeholder="Contraseña temporal proporcionada"
+        />
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="!canSubmitPaso1">
+        {{ saving ? 'Verificando…' : 'Verificar identidad' }}
+      </button>
+
+      <a routerLink="/auth/login" class="btn-link center">Volver al inicio</a>
+    </form>
+
+    <!-- Paso 2: Crear cuenta -->
+    <form *ngIf="paso === 2" (ngSubmit)="submitPaso2()" class="auth-form">
+      <div class="empresa-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+        </svg>
+        {{ nombreComercial }}
+      </div>
+
+      <div class="field">
+        <label class="field-label">Email *</label>
+        <input
+          class="field-input"
+          type="email"
+          [(ngModel)]="email"
+          name="email"
+          autocomplete="email"
+          placeholder="correo@empresa.com"
+        />
+      </div>
+
+      <div class="field">
+        <label class="field-label">Contraseña *</label>
+        <div class="password-wrapper">
+          <input
+            class="field-input"
+            [type]="showPassword ? 'text' : 'password'"
+            [(ngModel)]="password"
+            name="password"
+            autocomplete="new-password"
+            placeholder="Mínimo 8 caracteres"
+          />
+          <button type="button" class="password-toggle" (click)="togglePassword()">
+            {{ showPassword ? 'Ocultar' : 'Mostrar' }}
+          </button>
+        </div>
+        <app-password-strength [password]="password" />
+        <ul class="reglas">
+          <li [class.ok]="password.length >= 8">8 caracteres mínimo</li>
+          <li [class.ok]="password.length > 0 && !!password.match('[A-Z]')">1 mayúscula</li>
+          <li [class.ok]="password.length > 0 && !!password.match('[0-9]')">1 número</li>
+        </ul>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Confirmar contraseña *</label>
+        <input
+          class="field-input"
+          type="password"
+          [(ngModel)]="confirmarPassword"
+          name="confirmarPassword"
+          autocomplete="new-password"
+        />
+        <span class="error-line" *ngIf="passwordMismatch">Las contraseñas no coinciden.</span>
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="!canSubmitPaso2">
+        {{ saving ? 'Activando…' : 'Activar cuenta' }}
+      </button>
+
+      <button type="button" class="btn-link center" (click)="paso = 1">Volver al paso anterior</button>
+    </form>
+  </div>
+</div>

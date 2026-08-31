@@ -1,0 +1,263 @@
+<div class="lista-root">
+
+  <app-abril-page-header
+    [badge]="'SSOMA · ' + anioActual"
+    titulo="Actos &amp; Condiciones Subestándar"
+    subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
+    [tabs]="tabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()">
+
+    <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+    <app-filter-trigger tabsExtra [count]="hayFiltrosActivos ? 1 : 0" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <div class="lista-body">
+
+    <!-- CONTADOR: total según filtros, sin paginar -->
+    <div *ngIf="!loading && result" class="resultados-contador">
+      {{ result.total }} {{ result.total === 1 ? 'RAC encontrado' : 'RACs encontrados' }}
+    </div>
+
+    <!-- SKELETON -->
+    <div *ngIf="loading" class="skeleton-wrap">
+      <div *ngFor="let i of [1,2,3,4,5]" class="skeleton-row"></div>
+    </div>
+
+    <!-- TABLA DESKTOP -->
+    <div *ngIf="!loading && (result?.items?.length ?? 0) > 0" class="tabla-wrap">
+      <table class="abril-table tabla-rac">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th class="th-dot"></th>
+            <th class="th-codigo">Código</th>
+            <th>Proyecto</th>
+            <th>Reportante</th>
+            <th>Reportada</th>
+            <th>Tipo</th>
+            <th>Categoría</th>
+            <th>Descripción</th>
+            <th>Severidad</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th class="th-acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of result!.items" class="tabla-row">
+            <td class="col-dot">
+              <span class="sev-dot" [ngClass]="severidadDotClass(item.severidad)"></span>
+            </td>
+            <td class="col-codigo">{{ item.codigo }}</td>
+            <td class="col-proyecto">
+              <span class="proyecto-abrev" *ngIf="item.proyectoAbreviacion">{{ item.proyectoAbreviacion }}</span>
+              <span *ngIf="!item.proyectoAbreviacion">{{ item.proyectoNombre ?? '—' }}</span>
+            </td>
+            <td class="col-empresa">{{ item.empresaReportanteNombre ?? '—' }}</td>
+            <td class="col-empresa">{{ item.empresaReportadaNombre ?? '—' }}</td>
+            <td>
+              <span class="chip-tipo"
+                    [class.chip-tipo--acto]="item.tipo === 'ACTO'"
+                    [class.chip-tipo--condicion]="item.tipo === 'CONDICION'">
+                {{ item.tipo === 'ACTO' ? 'Acto' : 'Cond.' }}
+              </span>
+            </td>
+            <td class="col-categoria">{{ item.categoriaNombre }}</td>
+            <td class="col-desc">{{ (item.descripcion && item.descripcion.length > 60 ? (item.descripcion | slice:0:60) + '…' : item.descripcion) ?? '—' }}</td>
+            <td>
+              <span class="badge-sev" [ngClass]="severidadClass(item.severidad)">
+                {{ item.severidad }}
+              </span>
+            </td>
+            <td>
+              <span class="chip-estado" [ngClass]="estadoClass(item.estado)">
+                {{ item.estado }}
+              </span>
+            </td>
+            <td class="col-fecha">{{ item.fechaReporte | date:'dd/MM/yyyy' }}</td>
+            <td class="col-acciones" (click)="$event.stopPropagation()">
+              <button type="button" class="abril-action-btn" title="Descargar PDF" (click)="descargarPdf(item.id)">
+                <i class="ti ti-file-type-pdf"></i>
+              </button>
+              <button *ngIf="puedeVerBotonCerrar(item)"
+                      type="button" class="abril-action-btn abril-action-btn--danger" title="Cerrar"
+                      (click)="irACerrar(item.id)">
+                <i class="ti ti-lock"></i>
+              </button>
+              <button type="button" class="abril-action-btn abril-action-btn--primary" title="Ver detalle" (click)="irADetalle(item.id)">
+                <i class="ti ti-eye"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- CARDS MOBILE -->
+    <div *ngIf="!loading && (result?.items?.length ?? 0) > 0" class="cards-mobile">
+      <div *ngFor="let item of result!.items"
+           class="rac-card"
+           [class.rac-card--critico]="item.severidad?.toUpperCase() === 'CRITICO'"
+           [class.rac-card--alto]="item.severidad?.toUpperCase() === 'ALTO'"
+           [class.rac-card--medio]="item.severidad?.toUpperCase() === 'MEDIO'"
+           [class.rac-card--bajo]="item.severidad?.toUpperCase() === 'BAJO'">
+        <div class="card-top">
+          <div class="card-codigo">
+            <span class="sev-dot sev-dot--sm" [ngClass]="severidadDotClass(item.severidad)"></span>
+            {{ item.codigo }}
+          </div>
+          <span class="badge-sev badge-sev--sm" [ngClass]="severidadClass(item.severidad)">
+            {{ item.severidad }}
+          </span>
+        </div>
+        <div class="card-desc">
+          {{ item.categoriaNombre }} · {{ item.proyectoAbreviacion ?? item.proyectoNombre ?? '—' }} ·
+          {{ item.tipo === 'ACTO' ? 'Acto' : 'Condición' }}
+        </div>
+        <div class="card-subdesc">{{ (item.descripcion && item.descripcion.length > 80 ? (item.descripcion | slice:0:80) + '…' : item.descripcion) ?? '—' }}</div>
+        <div class="card-meta">
+          <span class="card-fecha"><i class="ti ti-calendar"></i> {{ item.fechaReporte | date:'dd/MM/yyyy' }}</span>
+          <span class="chip-estado chip-estado--sm" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+        </div>
+        <div class="card-divider"></div>
+        <div class="card-actions">
+          <button type="button" class="btn-card" (click)="descargarPdf(item.id)">
+            <i class="ti ti-file-type-pdf"></i> PDF
+          </button>
+          <button *ngIf="puedeVerBotonCerrar(item)"
+                  type="button" class="btn-card btn-card--danger"
+                  (click)="irACerrar(item.id)">
+            <i class="ti ti-lock"></i> Cerrar
+          </button>
+          <button type="button" class="btn-card btn-card--primary" (click)="irADetalle(item.id)">
+            <i class="ti ti-eye"></i> Ver
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div *ngIf="!loading && (result?.items?.length ?? 0) === 0 && result !== null" class="empty-state">
+      <i class="ti ti-inbox empty-state__icon"></i>
+      <p class="empty-state__text">No se encontraron registros con los filtros aplicados.</p>
+      <button *ngIf="hayFiltrosActivos" type="button" class="btn-limpiar" (click)="limpiarFiltros()">
+        Limpiar filtros
+      </button>
+    </div>
+
+    <!-- PAGINACIÓN -->
+    <div *ngIf="result" class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="result.total"
+        [currentPage]="query.page ?? 1"
+        [totalPages]="result.totalPages"
+        (pageChange)="cambiarPagina($event)">
+      </app-paginator>
+    </div>
+
+  </div><!-- /lista-body -->
+
+  <app-fab label="Nuevo RAC" (clicked)="irANuevo()"></app-fab>
+</div>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="filtroEstado"
+      (valueChange)="filtroEstado = $event; buscar()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Severidad"
+      [options]="severidadFilterOptions"
+      [sortAlpha]="false"
+      valueField="value"
+      displayField="label"
+      [value]="filtroSeveridad"
+      (valueChange)="filtroSeveridad = $event; buscar()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Tipo"
+      [options]="tipoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="filtroTipo"
+      (valueChange)="filtroTipo = $event; buscar()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtroProyectoId"
+      (valueChange)="filtroProyectoId = $event; buscar()"
+      placeholder="Todos los proyectos">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Empresa reportante"
+      [options]="empresas"
+      valueField="id"
+      displayField="razonSocial"
+      [value]="filtroEmpresaReportanteId"
+      (valueChange)="filtroEmpresaReportanteId = $event; buscar()"
+      placeholder="Todas">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Empresa reportada"
+      [options]="empresas"
+      valueField="id"
+      displayField="razonSocial"
+      [value]="filtroEmpresaReportadaId"
+      (valueChange)="filtroEmpresaReportadaId = $event; buscar()"
+      placeholder="Todas">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <app-search-select
+        label="Mes"
+        [options]="mesFilterOptions"
+        [sortAlpha]="false"
+        valueField="value"
+        displayField="label"
+        [value]="filtroMes"
+        (valueChange)="onFiltroMesChange($event)">
+      </app-search-select>
+    </div>
+    <div class="flex-1">
+      <app-search-select
+        label="Año"
+        [options]="anioFilterOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filtroAnio"
+        (valueChange)="filtroAnio = $event; buscar()">
+      </app-search-select>
+    </div>
+  </div>
+
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filtroSoloConPenalidad" (change)="buscar()" />
+    Solo con penalidad
+  </label>
+</app-filter-modal>

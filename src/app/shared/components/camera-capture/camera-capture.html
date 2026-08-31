@@ -1,0 +1,17 @@
+<div class="cam-wrap">
+  <video #video class="cam-video" [class.cam-hidden]="cargando || mensajeError" playsinline muted></video>
+  <canvas #canvas class="cam-canvas-hidden"></canvas>
+
+  <div class="cam-overlay" *ngIf="cargando">
+    <span class="cam-spinner"></span>
+    <span class="cam-overlay-text">Abriendo cámara…</span>
+  </div>
+
+  <div class="cam-overlay cam-overlay-error" *ngIf="mensajeError">
+    <i class="ti ti-camera-off" style="font-size:32px"></i>
+    <span class="cam-overlay-text">{{ mensajeError }}</span>
+    <button type="button" class="cam-retry-btn" (click)="iniciar()">
+      <i class="ti ti-refresh"></i> Reintentar
+    </button>
+  </div>
+</div>

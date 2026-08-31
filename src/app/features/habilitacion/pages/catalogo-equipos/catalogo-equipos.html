@@ -1,0 +1,113 @@
+<div class="cat-root">
+
+  <app-abril-page-header
+    titulo="Catálogo de Equipos"
+    subtitulo="Tipos de equipo y documentos exigidos — solo visible para SSOMA">
+  </app-abril-page-header>
+
+  <div class="cat-tabs">
+    <button type="button" class="cat-tab" [class.cat-tab--active]="activeTab === 'tipos'" (click)="setTab('tipos')">
+      Tipos de Equipo
+    </button>
+    <button type="button" class="cat-tab" [class.cat-tab--active]="activeTab === 'items'" (click)="setTab('items')">
+      Ítems / Entregables
+    </button>
+  </div>
+
+  @if (loading) {
+    <div class="skeleton-body"></div>
+  } @else {
+
+    <!-- ═══════════ Tipos de equipo ═══════════ -->
+    @if (activeTab === 'tipos') {
+      <div class="cat-filtros">
+        <app-search-input placeholder="Buscar tipo..." [(value)]="searchTipos" (valueChange)="onTiposSearchChange()" width="280px" />
+        <span class="form-hint">{{ tiposFiltrados.length }} registros</span>
+      </div>
+
+      <div class="abril-table-wrap">
+        <table class="abril-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th class="text-center">Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of tiposPage; track t.id) {
+              <tr>
+                <td class="fw-600">{{ t.nombre }}</td>
+                <td class="text-center">
+                  <app-status-badge [text]="t.activo ? 'ACTIVO' : 'INACTIVO'"
+                    [bgColor]="t.activo ? '#D7FAF4' : '#F1F1EF'"
+                    [textColor]="t.activo ? '#009C87' : '#8A8880'" />
+                </td>
+                <td class="cat-acciones">
+                  <button abrilBulkAction="default" (click)="editarTipo(t)">Editar</button>
+                  <button [abrilBulkAction]="t.activo ? 'danger' : 'primary'" (click)="toggleTipo(t)">
+                    {{ t.activo ? 'Desactivar' : 'Activar' }}
+                  </button>
+                </td>
+              </tr>
+            }
+            @if (!tiposPage.length) {
+              <tr><td colspan="3" class="empty-msg">Sin resultados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-paginator [totalRecords]="tiposFiltrados.length" [currentPage]="tiposCurrentPage" [totalPages]="tiposTotalPages" (pageChange)="tiposGoPage($event)" />
+
+      <app-fab label="Nuevo tipo" (clicked)="nuevoTipo()" />
+    }
+
+    <!-- ═══════════ Ítems / entregables ═══════════ -->
+    @if (activeTab === 'items') {
+      <div class="cat-filtros">
+        <app-search-input placeholder="Buscar ítem..." [(value)]="searchItems" (valueChange)="onItemsSearchChange()" width="280px" />
+        <span class="form-hint">{{ itemsFiltrados.length }} registros</span>
+      </div>
+
+      <div class="abril-table-wrap">
+        <table class="abril-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Aplica a</th>
+              <th class="text-center">Vigencia</th>
+              <th class="text-center">Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (i of itemsPage; track i.id) {
+              <tr>
+                <td class="fw-600">{{ i.nombre }}</td>
+                <td class="text-gray-500">{{ i.tipoEquipoNombre ?? 'Genérico (todos)' }}</td>
+                <td class="text-center">{{ i.requiereVigencia ? 'Sí' : 'No' }}</td>
+                <td class="text-center">
+                  <app-status-badge [text]="i.activo ? 'ACTIVO' : 'INACTIVO'"
+                    [bgColor]="i.activo ? '#D7FAF4' : '#F1F1EF'"
+                    [textColor]="i.activo ? '#009C87' : '#8A8880'" />
+                </td>
+                <td class="cat-acciones">
+                  <button abrilBulkAction="default" (click)="editarItem(i)">Editar</button>
+                  <button [abrilBulkAction]="i.activo ? 'danger' : 'primary'" (click)="toggleItem(i)">
+                    {{ i.activo ? 'Desactivar' : 'Activar' }}
+                  </button>
+                </td>
+              </tr>
+            }
+            @if (!itemsPage.length) {
+              <tr><td colspan="5" class="empty-msg">Sin resultados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-paginator [totalRecords]="itemsFiltrados.length" [currentPage]="itemsCurrentPage" [totalPages]="itemsTotalPages" (pageChange)="itemsGoPage($event)" />
+
+      <app-fab label="Nuevo ítem" (clicked)="nuevoItem()" />
+    }
+  }
+</div>

@@ -1,0 +1,150 @@
+<app-abril-page-header
+  badge="ARQ. COMERCIAL · TAREO"
+  titulo="Gestión de permisos"
+  subtitulo="Enrola el rostro de cada trabajador — el correo de obra es compartido, así que el enrolamiento lo hace el coordinador."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="gp-root">
+
+  <div class="gp-geo-card">
+    <button type="button" class="gp-geo-toggle" (click)="geoAbierto = !geoAbierto">
+      <i class="ti ti-map-pin"></i>
+      <span>Geolocalización de proyectos (geofencing de Marcar Tareo)</span>
+      <i class="ti" [class]="geoAbierto ? 'ti-chevron-up' : 'ti-chevron-down'" style="margin-left:auto"></i>
+    </button>
+
+    <div *ngIf="geoAbierto" class="gp-geo-body">
+      <p class="gp-geo-hint">
+        Sin latitud/longitud, las marcaciones de ese proyecto quedan para revisión manual. Saca las
+        coordenadas de Google Maps (click derecho sobre el punto → copiar coordenadas).
+      </p>
+
+      <div *ngIf="cargandoProyectosGeo" class="gp-loading"><span class="gp-spinner"></span> Cargando…</div>
+
+      <div *ngFor="let p of proyectosGeo" class="gp-geo-row">
+        <span class="gp-geo-nombre">{{ p.projectDescription }}</span>
+        <input type="number" step="0.0000001" [(ngModel)]="p.lat" placeholder="Latitud" class="gp-geo-input" />
+        <input type="number" step="0.0000001" [(ngModel)]="p.lng" placeholder="Longitud" class="gp-geo-input" />
+        <input type="number" step="1" [(ngModel)]="p.radioGeofenceMetros" placeholder="Radio (m)" class="gp-geo-input gp-geo-input-sm" />
+        <button type="button" class="gp-btn" [disabled]="guardandoGeo === p.projectId" (click)="guardarGeo(p)">
+          <span *ngIf="guardandoGeo !== p.projectId">Guardar</span>
+          <span *ngIf="guardandoGeo === p.projectId"><span class="gp-spinner gp-spinner-sm"></span></span>
+        </button>
+      </div>
+
+      <p *ngIf="!cargandoProyectosGeo && proyectosGeo.length === 0" class="gp-geo-hint">
+        No hay proyectos activos.
+      </p>
+    </div>
+  </div>
+
+  <div class="gp-buscador">
+    <i class="ti ti-search"></i>
+    <input type="text" placeholder="Buscar por nombre..." [(ngModel)]="busqueda" (ngModelChange)="onBusquedaChange()" />
+  </div>
+
+  <div *ngIf="cargando" class="gp-loading"><span class="gp-spinner"></span> Cargando…</div>
+
+  <div class="abril-table-wrap" *ngIf="!cargando">
+    <table class="abril-table">
+      <thead>
+        <tr>
+          <th>Trabajador</th>
+          <th>SSO-FO-150</th>
+          <th>Enrolamiento</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of trabajadoresPagina">
+          <td>{{ t.nombre }}</td>
+          <td>
+            <span class="gp-badge" [class.gp-badge-ok]="t.autorizacionSubida" [class.gp-badge-pend]="!t.autorizacionSubida">
+              {{ t.autorizacionSubida ? 'Subida' : 'Falta subir' }}
+            </span>
+          </td>
+          <td>
+            <span class="gp-badge" [class.gp-badge-ok]="t.enrolado" [class.gp-badge-pend]="!t.enrolado">
+              {{ t.enrolado ? 'Enrolado' : 'Sin enrolar' }}
+            </span>
+            <div *ngIf="t.fechaEnrolamiento" class="gp-fecha">{{ t.fechaEnrolamiento | date: 'dd/MM/yyyy HH:mm' }}</div>
+          </td>
+          <td class="gp-acciones">
+            <button type="button" class="gp-btn gp-btn-outline" [disabled]="descargandoAutorizacion === t.workerId" (click)="descargarAutorizacion(t)">
+              <i class="ti ti-file-download"></i> Descargar SSO-FO-150
+            </button>
+
+            <a *ngIf="t.autorizacionSubida && t.autorizacionUrl" class="gp-btn gp-btn-outline"
+               [href]="fotoUrlConToken(t.autorizacionUrl)" target="_blank" rel="noopener">
+              <i class="ti ti-file-search"></i> Ver escaneado
+            </a>
+
+            <label class="gp-btn gp-btn-outline gp-upload-label">
+              <i class="ti ti-upload"></i> {{ subiendoAutorizacion === t.workerId ? 'Subiendo…' : 'Subir escaneado' }}
+              <input type="file" accept="image/*,.pdf" hidden [disabled]="subiendoAutorizacion === t.workerId" (change)="onArchivoAutorizacion(t, $event)" />
+            </label>
+
+            <button type="button" class="gp-btn"
+                    [disabled]="!t.autorizacionSubida"
+                    [title]="!t.autorizacionSubida ? 'Falta subir el SSO-FO-150 firmado' : ''"
+                    (click)="abrirEnrolamiento(t)">
+              <i class="ti" [class]="t.enrolado ? 'ti-camera-retake' : 'ti-camera'"></i>
+              {{ t.enrolado ? 'Volver a enrolar' : 'Enrolar' }}
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="trabajadoresPagina.length === 0"><td colspan="4" class="gp-empty">Sin trabajadores</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginator *ngIf="!cargando && trabajadoresFiltrados.length > pager.pageSize"
+    [totalRecords]="trabajadoresFiltrados.length" [currentPage]="pager.currentPage" [totalPages]="totalPages"
+    (pageChange)="onPageChange($event)">
+  </app-paginator>
+</div>
+
+<app-base-modal *ngIf="modalAbierto" title="Enrolamiento facial" width="420px" (closeModal)="cerrarModal()">
+  <div class="gp-modal-body">
+    <p class="gp-modal-nombre">{{ trabajadorSeleccionado?.nombre }}</p>
+    <p class="gp-modal-sub">Que mire directo a la cámara, con buena luz y sin lentes de sol.</p>
+
+    <div *ngIf="cargandoModelos" class="gp-modelos-msg">
+      <span class="gp-spinner gp-spinner-sm"></span> Cargando reconocimiento facial…
+    </div>
+    <div *ngIf="!cargandoModelos && !modelosListos" class="gp-modelos-warn">
+      <i class="ti ti-alert-triangle"></i>
+      No se pudo cargar el reconocimiento facial. Recarga la página o prueba con otra red.
+    </div>
+
+    <ng-container *ngIf="!fotoCapturada; else previewTpl">
+      <app-camera-capture></app-camera-capture>
+      <button type="button" class="gp-btn-primario" [disabled]="capturando || !modelosListos" (click)="capturar()">
+        <span *ngIf="!capturando"><i class="ti ti-camera"></i> Capturar foto</span>
+        <span *ngIf="capturando"><span class="gp-spinner gp-spinner-sm"></span> Analizando rostro…</span>
+      </button>
+    </ng-container>
+
+    <ng-template #previewTpl>
+      <div class="gp-preview-wrap">
+        <img [src]="'data:image/jpeg;base64,' + fotoCapturada" class="gp-preview-img" alt="Foto capturada" />
+      </div>
+
+      <p class="gp-modal-evidencia">
+        <i class="ti ti-file-check" style="color:#16A34A"></i>
+        La autorización (SSO-FO-150) de este trabajador ya está subida y firmada.
+      </p>
+
+      <div class="gp-modal-actions">
+        <button type="button" class="gp-btn-secundario" (click)="reintentar()">
+          <i class="ti ti-refresh"></i> Volver a tomar
+        </button>
+        <button type="button" class="gp-btn-primario" [disabled]="guardando" (click)="confirmar()">
+          <span *ngIf="!guardando"><i class="ti ti-check"></i> Confirmar enrolamiento</span>
+          <span *ngIf="guardando"><span class="gp-spinner gp-spinner-sm"></span> Guardando…</span>
+        </button>
+      </div>
+    </ng-template>
+  </div>
+</app-base-modal>

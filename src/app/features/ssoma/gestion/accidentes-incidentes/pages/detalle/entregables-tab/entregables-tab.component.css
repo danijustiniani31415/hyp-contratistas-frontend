@@ -1,0 +1,89 @@
+.ent-loading { padding: 24px; color: #888; }
+
+.ent-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.ent-table th { background: #f5f3ef; color: #555; font-weight: 600; padding: 10px 12px; text-align: left; border-bottom: 2px solid #e8e5df; white-space: nowrap; }
+.ent-table td { padding: 9px 12px; border-bottom: 1px solid #f0ede8; vertical-align: middle; }
+.ent-table tr:hover td { background: #faf9f7; }
+.ent-table tr.ent-editing td { background: #fdfbf7; }
+
+.ent-num { color: #aaa; width: 36px; }
+.ent-nombre { font-weight: 500; }
+.ent-fecha { color: #666; white-space: nowrap; }
+.ent-resp { max-width: 180px; }
+.ent-vacio { color: #bbb; }
+.ent-archivo { max-width: 220px; }
+.ent-archivo-list { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.ent-archivo-item { display: flex; align-items: center; gap: 6px; }
+.ent-archivo-del { border: none; background: none; color: #bbb; cursor: pointer; padding: 0; display: flex; align-items: center; font-size: 0.85rem; }
+.ent-archivo-del:hover { color: #dc2626; }
+.ent-link { color: #2d6a4f; text-decoration: none; font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
+.ent-link:hover { text-decoration: underline; }
+.ent-acciones { white-space: nowrap; display: flex; gap: 6px; align-items: center; }
+.ent-tag { display: inline-block; background: #eef2ef; color: #2d6a4f; border-radius: 4px; padding: 1px 7px; font-size: 0.78rem; margin: 1px 2px 1px 0; }
+
+.ent-input { width: 100%; padding: 5px 8px; border: 1px solid #d8d4ce; border-radius: 6px; font-size: 0.83rem; background: #fff; }
+
+/* Chips de estado */
+.chip { display: inline-block; border-radius: 12px; padding: 2px 10px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+.chip--pendiente  { background: #fff3cd; color: #856404; }
+.chip--presentado { background: #cfe2ff; color: #084298; }
+.chip--observado  { background: #ffe5d0; color: #8b4513; }
+.chip--aprobado   { background: #d1e7dd; color: #0a5c36; }
+.chip--noaplica   { background: #e9ecef; color: #6c757d; }
+
+/* Botones */
+.btn-ent { border: none; border-radius: 6px; padding: 4px 12px; font-size: 0.8rem; cursor: pointer; font-weight: 500; transition: opacity .15s; }
+.btn-ent:disabled { opacity: .5; cursor: default; }
+.btn-ent--edit    { background: #f0ede8; color: #444; }
+.btn-ent--edit:hover { background: #e5e0d8; }
+.btn-ent--save    { background: #2d6a4f; color: #fff; }
+.btn-ent--save:hover { background: #245c43; }
+.btn-ent--cancel  { background: #f0ede8; color: #666; }
+.btn-ent--upload  { background: #e8f0f5; color: #1a5276; display: inline-block; }
+.btn-ent--upload:hover { background: #d4e6f1; }
+
+
+/* ── Medidas de control ─────────────────────────────────────────────────── */
+.medidas-section {
+  margin-top: 24px;
+  border-top: 2px solid #e8e5df;
+  padding-top: 16px;
+}
+
+.medidas-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.medidas-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-abril-standard);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.medidas-hint {
+  font-size: 11px;
+  color: #8a8880;
+  font-style: italic;
+}
+
+.medida-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.medida-add__input { flex: 1; }
+
+.btn-ent--danger {
+  color: #dc2626;
+  border-color: #fee2e2;
+  background: #fff5f5;
+}
+.btn-ent--danger:hover { background: #fee2e2; }

@@ -1,0 +1,138 @@
+<app-abril-page-header
+  [badge]="'PROYECTOS · ' + anioActual"
+  titulo="Respuesta de Informes"
+  subtitulo="Control de respuesta de informes de residentes."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. Oculto para
+       RESIDENTE sin proyectos asignados o con exactamente 1 (ver mostrarFiltroProyecto). -->
+  @if (mostrarFiltroProyecto) {
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="abrirFiltros()" />
+  }
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[16px] bg-white flex-1 min-h-0 overflow-hidden p-[20px] pb-[64px]">
+
+  @if (sinProyectosAsignados) {
+    <!-- Estado vacío específico para RESIDENTE sin proyectos asignados: no confundir con
+         el "sin resultados" genérico de la tabla/tarjetas, que sí depende de los filtros. -->
+    <div class="flex-1 flex flex-col items-center justify-center gap-2 text-center">
+      <i class="ti ti-folder-off text-[48px]" style="color:#94A3B8"></i>
+      <p class="text-[14px]" style="color:#64748B">No tenés proyectos asignados todavía.</p>
+      <p class="text-[13px]" style="color:#94A3B8">Contactá a un administrador.</p>
+    </div>
+  } @else {
+    <!-- ── Barra de herramientas: pestañas de estado + toggle de vista ────── -->
+    <div class="flex items-center gap-3">
+
+      <!-- Estado como pestañas siempre visibles (salió del modal de filtros). -->
+      <div class="estado-tabs flex items-center gap-1">
+        @for (tab of estadoTabs; track tab.value) {
+          <button type="button" (click)="setEstado(tab.value)"
+            [class]="'estado-tab' + (filtros.stateId === tab.value ? ' active' : '')">
+            {{ tab.label }}
+          </button>
+        }
+      </div>
+
+      <span class="text-[12px] text-stone-500">{{ totalRecords }} registro{{ totalRecords === 1 ? '' : 's' }}</span>
+
+      <div class="flex-1"></div>
+
+      <div class="view-toggle flex items-center bg-stone-100 rounded-[7px] p-1 gap-1">
+        <button type="button" (click)="setView('table')"
+          [class]="'view-btn' + (currentView === 'table' ? ' active' : '')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M3 12h18M3 18h18" />
+            <path d="M8 3v18" />
+          </svg>
+          Tabla
+        </button>
+        <button type="button" (click)="setView('cards')"
+          [class]="'view-btn' + (currentView === 'cards' ? ' active' : '')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
+          Tarjetas
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Chip del filtro de proyecto (se quita sin reabrir el modal) ────── -->
+    @if (mostrarFiltroProyecto && filtros.projectId != null) {
+      <div class="flex items-center gap-2">
+        <span class="filtro-chip">
+          Proyecto: <strong class="font-semibold">{{ filtroProyectoLabel | titleCase }}</strong>
+          <button type="button" class="filtro-chip__x" (click)="quitarFiltroProyecto()"
+            aria-label="Quitar filtro de proyecto">✕</button>
+        </span>
+      </div>
+    }
+
+    <!-- ── Vista tabla ────────────────────────────────────────────────────── -->
+    @if (currentView === 'table') {
+      <app-list
+        class="flex-1 flex flex-col min-h-0"
+        [data]="reports"
+        [loading]="loading"
+        (respond)="openResponseModal($event)"
+        (openView)="openReportViewModal($event)">
+      </app-list>
+    }
+
+    <!-- ── Vista tarjetas ─────────────────────────────────────────────────── -->
+    @if (currentView === 'cards') {
+      <app-report-cards
+        class="flex-1 flex flex-col min-h-0"
+        [data]="reports"
+        [loading]="loading"
+        (respond)="openResponseModal($event)"
+        (openView)="openReportViewModal($event)">
+      </app-report-cards>
+    }
+
+    <app-paginator [totalRecords]="totalRecords" [currentPage]="currentPage" [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
+  }
+</div>
+
+<!-- FAB "Nuevo registro": solo ADMINISTRADOR DE RESIDENTES, oculto mientras el modal está abierto. -->
+<app-fab
+  *ngIf="authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES) && !showCreateModal"
+  label="Nuevo registro"
+  (clicked)="openCreateModal()">
+</app-fab>
+
+<!-- ── Panel de filtros ───────────────────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <app-search-select
+    label="Proyecto"
+    placeholder="Buscar proyecto..."
+    [options]="projectOptions"
+    valueField="projectId"
+    displayField="projectDescription"
+    [value]="filtros.projectId"
+    (valueChange)="onProyectoChange($event)">
+  </app-search-select>
+</app-filter-modal>
+
+<!-- ── Modales ────────────────────────────────────────────────────────────── -->
+<app-report-response-control-create *ngIf="showCreateModal"
+  (loadIncidences)="onCreated()"
+  (closeCreateModal)="showCreateModal = false">
+</app-report-response-control-create>
+
+<app-report-view-modal *ngIf="showReportViewModal && selectedIncidence"
+  [selectedIncidence]="selectedIncidence"
+  (closeReportViewModal)="showReportViewModal = false">
+</app-report-view-modal>
+
+<app-respond-report-modal *ngIf="showResponseModal"
+  [selectedReportIncidenceId]="selectedReportIncidenceId"
+  (closeResponseModal)="showResponseModal = false"
+  (loadListData)="onResponded()">
+</app-respond-report-modal>

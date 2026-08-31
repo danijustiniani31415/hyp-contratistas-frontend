@@ -1,0 +1,245 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Evaluar Residente"
+  subtitulo="Registro y seguimiento de evaluaciones por residente."
+    [tabGroups]="[
+    { label: 'Residentes',   icono: 'ti-user-check', tabs: [
+      { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
+      { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
+      { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
+      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' },
+      { label: 'Asignaciones',  icono: 'ti-users',            route: '/evaluaciones/asignaciones',   featureKey: 'evaluaciones.asignaciones' }
+    ]},
+    { label: 'Contratistas', icono: 'ti-building', tabs: [
+      { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
+      { label: 'Evaluar',          icono: 'ti-pencil',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
+      { label: 'Ver evaluaciones', icono: 'ti-list',      route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' }
+    ]},
+    { label: 'Superv. Contratista', icono: 'ti-shield-check', tabs: [
+      { label: 'Evaluar supervisor', icono: 'ti-pencil', route: '/evaluaciones/evaluar-supervisor-contratista', featureKey: 'evaluaciones.evaluar-supervisor-contratista' },
+      { label: 'Ver evaluaciones',   icono: 'ti-list',   route: '/evaluaciones/ver-supervisores-contratista',   featureKey: 'evaluaciones.ver-supervisores-contratista' }
+    ]},
+    { label: 'Jefe SSOMA', icono: 'ti-user-shield', tabs: [
+      { label: 'Evaluar Jefe SSOMA', icono: 'ti-pencil', route: '/evaluaciones/evaluar-jefe-ssoma', featureKey: 'evaluaciones.evaluar-jefe-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-jefe-ssoma', featureKey: 'evaluaciones.resultados-jefe-ssoma' }
+    ]},
+    { label: 'Prevencionistas', icono: 'ti-vest', tabs: [
+      { label: 'Mi perfil', icono: 'ti-user', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
+      { label: 'Dashboard', icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' }
+    ]},
+    { label: 'Gestión SSOMA', icono: 'ti-users-group', tabs: [
+      { label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-gestion-ssoma', featureKey: 'evaluaciones.resultados-gestion-ssoma' }
+    ]}
+  ]">
+</app-abril-page-header>
+
+<div class="ev-root">
+
+  <div class="ev-body">
+
+    <!-- ══ VISTA LISTA: sin residente seleccionado ══════════════════ -->
+    <ng-container *ngIf="!residenteSeleccionado">
+
+      <!-- Header con período y contador -->
+      <div class="list-header">
+        <div class="lh-left">
+          <span class="lh-title">Selecciona un residente</span>
+          <span class="lh-period" *ngIf="periodo">
+            <span class="period-dot-sm"></span>
+            {{ periodo.nombreMes }} {{ periodo.anio }}
+            <span class="lh-dias">· {{ periodo.diasRestantes }} días restantes</span>
+          </span>
+        </div>
+        <div class="lh-counter">
+          <span class="counter-num">{{ evalCount }}</span>
+          <span class="counter-den">/ {{ residentes.length }}</span>
+          <span class="counter-label">evaluados</span>
+        </div>
+      </div>
+
+      <!-- Buscador (modoVerTodos) -->
+      <div class="search-wrap" *ngIf="modoVerTodos">
+        <div class="search-bar">
+          <i class="ti ti-search search-icon"></i>
+          <input class="search-input" type="text" placeholder="Buscar residente por nombre..."
+            [(ngModel)]="busqueda" autocomplete="off" />
+          <button class="search-clear" *ngIf="busqueda" (click)="busqueda = ''">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filtro proyecto (!modoVerTodos) -->
+      <div class="proj-filter-wrap" *ngIf="!modoVerTodos">
+        <div class="proj-filter-bar">
+          <i class="ti ti-building proj-icon"></i>
+          <span class="proj-filter-name">{{ proyectoActivoNombre }}</span>
+          <button class="btn-switch-proj" (click)="mostrarSelectProyecto = !mostrarSelectProyecto">
+            <i class="ti ti-transfer"></i> Cambiar
+          </button>
+        </div>
+        <select class="proj-select" *ngIf="mostrarSelectProyecto"
+          [(ngModel)]="proyectoFiltroId" (ngModelChange)="mostrarSelectProyecto = false">
+          <option [ngValue]="null">Todos los proyectos</option>
+          <option *ngFor="let p of proyectos" [ngValue]="p.id">{{ p.nombre }}</option>
+        </select>
+      </div>
+
+      <!-- Grid de cards -->
+      <div class="cards-scroll">
+        <div class="cards-grid">
+          <div class="res-card"
+            *ngFor="let r of residentesFiltrados"
+            [class.res-card-done]="yaEvaluoResidente(r.userId)"
+            (click)="seleccionarResidente(r)">
+            <div class="card-accent" [style.background]="projColor(r.projectId).accent"></div>
+            <div class="card-avatar"
+              [style.background]="projColor(r.projectId).bg"
+              [style.color]="projColor(r.projectId).text">
+              {{ iniciales(r.nombreCompleto) }}
+            </div>
+            <div class="card-body">
+              <div class="card-name">{{ r.nombreCompleto }}</div>
+              <span class="card-proj-chip"
+                [style.background]="projColor(r.projectId).bg"
+                [style.color]="projColor(r.projectId).text"
+                [style.borderColor]="projColor(r.projectId).border">
+                <i class="ti ti-building" style="font-size:8px"></i>
+                {{ r.projectNombre ?? 'Sin proyecto' }}
+              </span>
+            </div>
+            <div class="card-check" *ngIf="yaEvaluoResidente(r.userId)">
+              <i class="ti ti-circle-check-filled"></i>
+              <span>Evaluado</span>
+            </div>
+          </div>
+
+          <div class="cards-empty" *ngIf="!residentesFiltrados.length && !loading">
+            <i class="ti ti-users-group"></i>
+            <span>Sin residentes que mostrar</span>
+          </div>
+          <div class="cards-empty" *ngIf="loading">
+            <i class="ti ti-loader-2 spin"></i>
+            <span>Cargando...</span>
+          </div>
+        </div>
+      </div>
+
+    </ng-container>
+
+    <!-- ══ VISTA FORM: con residente seleccionado ════════════════════ -->
+    <ng-container *ngIf="residenteSeleccionado">
+
+      <!-- Residente seleccionado — barra compacta -->
+      <div class="res-block">
+        <div class="residente-selected">
+          <div class="rs-av"
+            [style.background]="projColor(residenteSeleccionado.projectId).bg"
+            [style.color]="projColor(residenteSeleccionado.projectId).text">
+            {{ iniciales(residenteSeleccionado.nombreCompleto) }}
+          </div>
+          <div class="rs-info">
+            <span class="rs-name">{{ residenteSeleccionado.nombreCompleto }}</span>
+            <span class="rs-sep">·</span>
+            <span class="rs-proj">{{ residenteSeleccionado.projectNombre ?? 'Sin proyecto' }}</span>
+            <span *ngIf="areaSeleccionada" class="rs-area-chip">· {{ areaSeleccionada }}</span>
+          </div>
+          <button class="btn-cambiar-res" (click)="cambiarResidente()">
+            <i class="ti ti-arrow-left"></i> Volver
+          </button>
+        </div>
+      </div>
+
+      <!-- Ya evaluado este período: solo lectura, no un formulario en blanco -->
+      <div class="aviso-ya-evaluado" *ngIf="soloLectura">
+        <i class="ti ti-info-circle"></i>
+        <span>
+          Ya evaluaste a este residente en <strong>{{ areaSeleccionada }}</strong> este período —
+          no se puede volver a evaluar hasta el próximo mes. Estos son los puntajes que llevaron a la nota
+          <strong [ngClass]="scoreClass(evaluacionExistente?.nota ?? null)">{{ evaluacionExistente?.nota }}</strong>/20.
+          <ng-container *ngIf="dentroDeVentanaCorreccion">
+            ¿Te equivocaste? Tienes 24h desde que la enviaste para corregirla.
+          </ng-container>
+        </span>
+        <button *ngIf="dentroDeVentanaCorreccion" class="btn-corregir" (click)="corregir()">
+          <i class="ti ti-edit"></i> Corregir
+        </button>
+      </div>
+
+      <!-- No aplica -->
+      <div class="noaplica-block">
+        <label class="no-aplica-toggle">
+          <input type="checkbox" [(ngModel)]="noAplica" [disabled]="soloLectura" />
+          <span>No aplica este mes</span>
+        </label>
+        <textarea *ngIf="noAplica" [(ngModel)]="noAplicaMotivo" [disabled]="soloLectura"
+          class="motivo-input" placeholder="Motivo obligatorio..." rows="2">
+        </textarea>
+      </div>
+
+      <!-- Criterios 2 columnas -->
+      <div class="criterios-scroll" *ngIf="!noAplica">
+        <div class="cs-sublabel">
+          1 Deficiente · 2 Regular · 3 Satisfactorio · 4 Bueno · 5 Sobresaliente · N/A
+        </div>
+        <div class="criterios-grid" [class.criterios-grid--lectura]="soloLectura">
+          <div class="criterio-row" *ngFor="let d of detalles; let i = index">
+            <div class="cr-text">{{ d.criterio }}</div>
+            <div class="cr-puntajes">
+              <span class="puntaje-btn"
+                *ngFor="let p of puntajes"
+                [class.active]="d.puntaje === p"
+                (click)="setPuntaje(i, p)">{{ p }}</span>
+              <span class="puntaje-btn na-btn" [class.active]="d.esNa" (click)="setNa(i)">N/A</span>
+            </div>
+          </div>
+        </div>
+        <div class="criterios-empty" *ngIf="!detalles.length">
+          <i class="ti ti-loader" style="font-size:14px;color:#cbd5e1"></i>
+          <span>Cargando criterios...</span>
+        </div>
+      </div>
+
+      <!-- Footer sticky -->
+      <div class="form-sticky-footer">
+        <div class="sf-row">
+          <textarea [(ngModel)]="comentario" class="comentario-input" rows="1" [disabled]="soloLectura"
+            placeholder="Oportunidades de mejora y/o fortalezas (obligatorio)...">
+          </textarea>
+          <span class="nota-preview" *ngIf="!noAplica">
+            <strong [ngClass]="scoreClass(notaCalculada)">{{ notaCalculada }}</strong>/20
+          </span>
+          <button class="btn-guardar" *ngIf="!soloLectura" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
+            <i class="ti ti-device-floppy"></i>
+            {{ guardando ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+        <div class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</div>
+        <div class="success-msg" *ngIf="successMsg">{{ successMsg }}</div>
+      </div>
+
+    </ng-container>
+
+    <!-- ══ MIS EVALUACIONES (siempre al fondo, colapsable) ══════════ -->
+    <div class="mis-eval-panel">
+      <div class="mep-header" (click)="misEvalColapsado = !misEvalColapsado">
+        <i class="ti ti-history" style="font-size:12px;color:#6366f1"></i>
+        <span class="mep-title">Mis evaluaciones · {{ periodo?.nombreMes }}</span>
+        <span class="mep-count">{{ misEvaluaciones.length }}</span>
+        <i class="ti mep-toggle" [ngClass]="misEvalColapsado ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+      </div>
+      <div class="mep-list" *ngIf="!misEvalColapsado">
+        <div class="hc" *ngFor="let e of misEvaluaciones">
+          <div class="hc-body">
+            <div class="hc-name">{{ e.evaluadoNombre.split(' ').slice(-2).join(' ') }}</div>
+            <div class="hc-area">{{ e.areaNombre }}</div>
+          </div>
+          <span class="hc-nota" [ngClass]="scoreClass(e.nota)">{{ e.nota ?? 'N/A' }}</span>
+        </div>
+        <div class="mep-empty" *ngIf="!misEvaluaciones.length">Sin evaluaciones este período</div>
+      </div>
+    </div>
+
+  </div>
+</div>

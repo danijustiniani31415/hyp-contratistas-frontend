@@ -1,0 +1,152 @@
+<app-abril-page-header
+  badge="CONFIGURACIÓN"
+  titulo="Proyectos"
+  subtitulo="Gestión de proyectos registrados en el sistema."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: 'Nuevo Proyecto', icono: 'ti-plus' }"
+  (primaryClick)="showCreateModal = true">
+</app-abril-page-header>
+
+<div class="bg-white rounded-lg flex flex-col flex-1 min-h-0 overflow-y-auto p-[20px] gap-4">
+    <div class="pb-[20px]">
+        <div class="flex w-full items-end gap-4 flex-wrap">
+            <!-- Filtros (izquierda) -->
+            <div class="flex flex-wrap items-end gap-3">
+                <div class="flex flex-col gap-[6px] w-[160px]">
+                    <label class="text-sm text-[#64BC04] font-medium">RUC</label>
+                    <app-search-input width="100%" placeholder="Buscar…"
+                        [(value)]="filters.ruc" (keyup.enter)="search()"></app-search-input>
+                </div>
+                <div class="flex flex-col gap-[6px] w-[220px]">
+                    <label class="text-sm text-[#64BC04] font-medium">Razón social</label>
+                    <app-search-input width="100%" placeholder="Buscar…"
+                        [(value)]="filters.razonSocial" (keyup.enter)="search()"></app-search-input>
+                </div>
+                <div class="flex flex-col gap-[6px] w-[220px]">
+                    <label class="text-sm text-[#64BC04] font-medium">Nombre del proyecto</label>
+                    <app-search-input width="100%" placeholder="Buscar…"
+                        [(value)]="filters.projectDescription" (keyup.enter)="search()"></app-search-input>
+                </div>
+                <button (click)="search()"
+                    class="h-[36px] px-5 bg-[#64BC04] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
+                    </svg>
+                    Buscar
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="flex flex-col">
+        <div class="w-full rounded-lg bg-white overflow-x-auto border border-gray-200">
+
+            <table class="table-auto w-full">
+                <thead class="bg-[#E5F7D1] sticky top-0">
+                    <tr class="text-[#64BC04]">
+                        <th class="w-[50px]"></th>
+                        <th class="w-[180px]">Nombre</th>
+                        <th class="w-[140px]">Desc. de pisos</th>
+                        <th class="w-[120px]">RUC</th>
+                        <th class="w-[180px]">Razón social</th>
+                        <th class="w-[140px]">Distrito</th>
+                        <th class="w-[170px]">Ubicación</th>
+                        <th class="w-[100px]">Estado</th>
+                        <th class="w-[140px]">Residente / Emails SSOMA</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr *ngFor="let item of projects.data" class="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                        <td class="text-center">
+                            <div class="flex items-center justify-center">
+                                <button class="cursor-pointer" (click)="openEditModal(item, $event)">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M14.06 9L15 9.94L5.92 19H5V18.08L14.06 9ZM17.66 3C17.41 3 17.15 3.1 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04C21.1 6.65 21.1 6 20.71 5.63L18.37 3.29C18.17 3.09 17.92 3 17.66 3ZM14.06 6.19L3 17.25V21H6.75L17.81 9.94L14.06 6.19Z"
+                                            fill="#64BC04" />
+                                    </svg>
+                                </button>
+                                <button class="cursor-pointer" (click)="deleteProject(item.projectId, $event)">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z"
+                                            fill="#64BC04" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+
+                        <td><span [title]="item.projectDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center text-sm text-gray-700">{{ item.projectDescription }}</span></td>
+                        <td><span [title]="item.levelDescription ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center text-sm text-gray-700">{{ item.levelDescription || '-' }}</span></td>
+                        <td><span [title]="item.contributorRuc ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center text-sm text-gray-700">{{ item.contributorRuc || '-' }}</span></td>
+                        <td><span [title]="item.contributorName ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center text-sm text-gray-700">{{ item.contributorName || '-' }}</span></td>
+                        <td><span [title]="item.projectDistrict ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center text-sm text-gray-700">{{ item.projectDistrict || '-' }}</span></td>
+                        <td><span [title]="item.projectLocation ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center text-sm text-gray-700">{{ item.projectLocation || '-' }}</span></td>
+
+                        <td class="text-center">
+                            <span class="inline-block rounded-lg px-[8px] py-[2px] my-[4px]" [ngClass]="{
+                              'bg-[#D7FAF4] text-[#009C87]': item.active == true,
+                              'bg-[#FAD5D4] text-[#D30000]': item.active == false }">
+                                {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
+                            </span>
+                        </td>
+
+                        <td class="text-center">
+                            <button (click)="openEmailsModal(item, $event)"
+                                class="inline-flex items-center gap-[6px] bg-[#E5F7D1] border border-[#64BC04] text-[#64BC04] rounded-lg px-[10px] py-[4px] cursor-pointer text-sm">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z" fill="#64BC04"/>
+                                </svg>
+                                Residente / Emails SSOMA
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="flex gap-2 mt-4 justify-around w-full border border-gray-200 rounded-lg h-[30px]">
+            <span># Registros: {{totalRecords}}</span>
+            <div class="flex gap-[10px] items-center">
+                <button class="cursor-pointer text-[#0086A5]" (click)="prevPage()" [disabled]="currentPage === 1">
+                    «
+                </button>
+
+                <button class="cursor-pointer py-1 px-2 rounded transition-colors" *ngFor="let page of pages" (click)="goToPage(page)"
+                    [ngClass]="{'bg-[#0086A5] text-white': page === currentPage, 'text-black hover:bg-gray-100': page !== currentPage }">
+                    {{ page }}
+                </button>
+
+                <button class="cursor-pointer text-[#0086A5]" (click)="nextPage()" [disabled]="currentPage === totalPages">
+                    »
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<app-proyecto-create
+  *ngIf="showCreateModal"
+  (closeModal)="onModalClosed()"
+  (saved)="onModalSaved()">
+</app-proyecto-create>
+
+<app-proyecto-edit
+  *ngIf="showEditModal && selectedProject"
+  [project]="selectedProject!"
+  (closeModal)="onModalClosed()"
+  (saved)="onModalSaved()">
+</app-proyecto-edit>
+
+<app-proyecto-emails
+  [open]="showEmailsModal && selectedEmailsProject !== null"
+  [projectId]="selectedEmailsProject?.projectId ?? 0"
+  [projectDescription]="selectedEmailsProject?.projectDescription ?? ''"
+  (closed)="onModalClosed()"
+  (saved)="onModalSaved()">
+</app-proyecto-emails>
+
+<div *ngIf="loader" class="loader-overlay">
+  <div class="loader"></div>
+</div>

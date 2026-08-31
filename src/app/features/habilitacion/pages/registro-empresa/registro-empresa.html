@@ -1,0 +1,121 @@
+<div class="registro-page">
+  <div class="registro-card">
+    <div class="registro-header">
+      <img src="/images/abril-logo-verde-letra-blanca.png" alt="Abril" class="registro-logo" />
+      <h2>Registro de Empresa Contratista</h2>
+      <p>Completa el formulario. Un administrador activará tu acceso.</p>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label class="field-label">RUC *</label>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="model.ruc"
+          placeholder="11 dígitos"
+          maxlength="11"
+        />
+        <span class="error-line" *ngIf="rucInvalido">El RUC debe tener 11 dígitos.</span>
+      </div>
+      <div>
+        <label class="field-label">Razón Social *</label>
+        <input type="text" class="field-input" [(ngModel)]="model.razonSocial" />
+      </div>
+
+      <div>
+        <label class="field-label">Nombre Comercial</label>
+        <input type="text" class="field-input" [(ngModel)]="model.nombreComercial" />
+      </div>
+      <div>
+        <label class="field-label">Rubro / Actividad</label>
+        <input type="text" class="field-input" [(ngModel)]="model.rubro" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Dirección</label>
+        <input type="text" class="field-input" [(ngModel)]="model.direccion" />
+      </div>
+
+      <div>
+        <label class="field-label">Email Gerente</label>
+        <input type="email" class="field-input" [(ngModel)]="model.emailGerente" />
+      </div>
+      <div>
+        <label class="field-label">Email Administrador *</label>
+        <input type="email" class="field-input" [(ngModel)]="model.emailAdmin" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Email SSOMA</label>
+        <input type="email" class="field-input" [(ngModel)]="model.emailSsoma" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Logo de empresa</label>
+        <div class="file-row">
+          <label class="file-btn" [class.file-btn--disabled]="uploadingFile">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            Seleccionar imagen
+            <input
+              type="file"
+              accept=".jpg,.jpeg,.png"
+              [disabled]="uploadingFile"
+              (change)="onFileSelected($event)"
+              hidden
+            />
+          </label>
+          <span class="file-uploading" *ngIf="uploadingFile">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+            </svg>
+            Subiendo logo…
+          </span>
+          <span class="file-success" *ngIf="logoUrl && !uploadingFile">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            {{ logoNombre }}
+          </span>
+          <span class="file-hint" *ngIf="!logoNombre && !uploadingFile">JPG o PNG · máx. 2 MB</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="field-label">Contraseña *</label>
+        <input
+          type="password"
+          class="field-input"
+          [(ngModel)]="model.password"
+          minlength="6"
+          placeholder="Mínimo 6 caracteres"
+        />
+      </div>
+      <div>
+        <label class="field-label">Confirmar contraseña *</label>
+        <input
+          type="password"
+          class="field-input"
+          [(ngModel)]="passwordConfirm"
+        />
+        <span class="error-line" *ngIf="passwordMismatch">Las contraseñas no coinciden.</span>
+      </div>
+    </div>
+
+    <div class="registro-footer">
+      <button
+        type="button"
+        class="btn-primary"
+        [disabled]="!canSubmit"
+        (click)="submit()"
+      >
+        {{ saving ? 'Registrando…' : 'Registrar Empresa' }}
+      </button>
+      <a routerLink="/auth/login" class="btn-link">Ya tengo cuenta — Ingresar</a>
+    </div>
+  </div>
+</div>

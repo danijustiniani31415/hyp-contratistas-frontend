@@ -1,0 +1,143 @@
+<div class="relative inline-block">
+
+  <!-- Campanita + badge de no leídas -->
+  <button type="button"
+    class="relative flex items-center justify-center w-[34px] h-[34px] rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 cursor-pointer transition-colors"
+    title="Notificaciones"
+    (click)="togglePanel($event)">
+    <i class="ti ti-bell text-[19px]"></i>
+    @if (svc.noLeidas > 0) {
+      <span
+        class="absolute top-[1px] right-[1px] min-w-[16px] h-[16px] px-[4px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+        {{ svc.noLeidas > 99 ? '99+' : svc.noLeidas }}
+      </span>
+    }
+  </button>
+
+  <!-- Panel de notificaciones -->
+  @if (abierto) {
+    <div
+      class="absolute right-0 top-[calc(100%+8px)] w-[min(410px,92vw)] bg-white border rounded-[10px] shadow-xl z-[60] overflow-hidden"
+      style="border-color:var(--color-abril-border)"
+      (click)="$event.stopPropagation()">
+
+      <!-- Encabezado -->
+      <div class="flex items-center justify-between px-[16px] pt-[14px] pb-[10px]">
+        <div class="flex items-center gap-[8px]">
+          <i class="ti ti-mailbox text-[18px]" style="color:var(--color-abril-logo-blue)"></i>
+          <h3 class="text-[15px] font-bold" style="color:var(--color-abril-logo-blue)">Notificaciones</h3>
+        </div>
+        <button type="button" class="text-gray-400 hover:text-gray-600 cursor-pointer" title="Cerrar"
+                (click)="abierto = false">
+          <i class="ti ti-x text-[16px]"></i>
+        </button>
+      </div>
+
+      <!-- Pestañas -->
+      <div class="flex border-b" style="border-color:var(--color-abril-border)">
+        @for (t of [
+          { id: 'todo', label: 'Todo' },
+          { id: 'proceso', label: 'En proceso' },
+          { id: 'atendido', label: 'Atendido' }
+        ]; track t.id) {
+          <button type="button"
+            class="flex-1 pb-[8px] text-[13px] font-medium cursor-pointer transition-colors border-b-2"
+            [ngClass]="tab === t.id
+              ? 'text-gray-800 font-semibold'
+              : 'text-gray-400 hover:text-gray-600 border-transparent'"
+            [style.borderColor]="tab === t.id ? 'var(--color-abril-logo-blue)' : 'transparent'"
+            (click)="tab = t.id === 'proceso' ? 'proceso' : t.id === 'atendido' ? 'atendido' : 'todo'">
+            {{ t.label }}
+          </button>
+        }
+      </div>
+
+      <!-- Lista -->
+      <div class="max-h-[420px] overflow-y-auto divide-y" style="border-color:var(--color-abril-border)">
+
+        @if (filtradas.length === 0) {
+          <p class="text-center text-[13px] text-gray-400 py-[32px]">
+            {{ tab === 'proceso' ? 'No hay notificaciones en proceso.'
+              : tab === 'atendido' ? 'No hay notificaciones atendidas.'
+              : 'Aún no tienes notificaciones.' }}
+          </p>
+        }
+
+        @for (n of filtradas; track n.id) {
+          <div
+            class="flex gap-[12px] px-[16px] py-[12px] transition-colors"
+            [ngClass]="n.leida ? 'opacity-70' : 'cursor-pointer hover:bg-gray-50'"
+            (click)="onItemClick(n)">
+
+            <!-- Avatar con iniciales de quien generó el evento -->
+            <div class="w-[34px] h-[34px] rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold"
+                 [ngClass]="n.leida ? 'bg-gray-100 text-gray-400' : ''"
+                 [style.background]="n.leida ? '' : 'var(--color-abril-logo-blue-light)'"
+                 [style.color]="n.leida ? '' : 'var(--color-abril-logo-blue)'">
+              {{ iniciales(n.origenNombre) }}
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <!-- Título + punto de no leída + fecha -->
+              <div class="flex items-center gap-[6px]">
+                <p class="text-[13px] truncate"
+                   [ngClass]="n.leida ? 'text-gray-500 font-semibold' : 'text-gray-800 font-bold'">
+                  {{ n.titulo }}
+                </p>
+                @if (!n.leida) {
+                  <span class="w-[7px] h-[7px] rounded-full shrink-0" style="background:#1D4ED8"></span>
+                }
+                <span class="text-[10px] text-gray-400 ml-auto shrink-0 whitespace-nowrap">
+                  {{ n.fecha | date:'dd/MM HH:mm' }}
+                </span>
+              </div>
+
+              @if (n.subtitulo) {
+                <p class="text-[12px] truncate" [ngClass]="n.leida ? 'text-gray-400' : 'text-gray-600'">
+                  {{ n.subtitulo }}
+                </p>
+              }
+              @if (n.descripcion) {
+                <p class="text-[12px] mt-[1px] line-clamp-2"
+                   [ngClass]="n.leida ? 'text-gray-400' : 'text-gray-500'">
+                  {{ n.descripcion }}
+                </p>
+              }
+
+              <!-- Referencia + estado -->
+              <div class="flex items-center gap-[8px] mt-[5px]">
+                @if (n.referencia) {
+                  <span class="text-[11px] text-gray-400">{{ n.referencia }}</span>
+                }
+                <span class="text-[10.5px] font-semibold px-[8px] py-[2px] rounded-full"
+                      [ngClass]="n.leida ? 'bg-gray-100 text-gray-500' : ''"
+                      [style.background]="n.leida ? '' : '#DBEAFE'"
+                      [style.color]="n.leida ? '' : '#1D4ED8'">
+                  {{ n.leida ? 'Atendido' : 'Pendiente de revisión' }}
+                </span>
+              </div>
+            </div>
+
+          </div>
+        }
+      </div>
+
+      <!-- Pie -->
+      <div class="flex justify-end border-t px-[14px] py-[9px]" style="border-color:var(--color-abril-border)">
+        <button type="button"
+          class="flex items-center gap-[5px] text-[12px] font-medium transition-colors"
+          [ngClass]="svc.noLeidas > 0
+            ? 'cursor-pointer hover:underline'
+            : 'text-gray-300 cursor-not-allowed'"
+          [style.color]="svc.noLeidas > 0 ? 'var(--color-abril-logo-blue)' : ''"
+          [disabled]="svc.noLeidas === 0"
+          (click)="svc.marcarTodasLeidas()">
+          <i class="ti ti-checks text-[14px]"></i>
+          Marcar leídas
+        </button>
+      </div>
+
+    </div>
+  }
+
+</div>

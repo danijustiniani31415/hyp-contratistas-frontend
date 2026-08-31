@@ -1,0 +1,11 @@
+.skeleton-line {
+  border-radius: 7px;
+  background: linear-gradient(90deg, #dde5ef 25%, #eaeff6 50%, #dde5ef 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

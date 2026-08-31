@@ -1,0 +1,194 @@
+<app-abril-page-header
+  badge="CONFIGURACIÓN"
+  titulo="Revisores de Áreas"
+  subtitulo="Asigna los revisores (jefes/superiores directos) de cada gerencia y área estándar, en orden de prioridad. Aplican a los trabajadores del área que no tienen revisores propios; si el área no tiene revisores activos se usa la de su gerencia y, en última instancia, el área de GTH."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="w-full flex-1 min-h-0 overflow-auto">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Área</th>
+          <th>Área padre</th>
+          <th class="text-center w-[150px]">Filtrar por proyecto</th>
+          <th class="w-[320px]">Revisores</th>
+          <th class="text-center w-[170px]">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let r of pagedRows">
+          <!-- Fila del área (revisores a nivel de área) -->
+          <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+            <td class="text-gray-700">
+              {{ r.areaName }}
+              <span *ngIf="esGerencia(r)"
+                    class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-[#E8F1FB] text-[var(--color-abril-logo-blue)] font-medium whitespace-nowrap">
+                Gerencia
+              </span>
+            </td>
+            <td class="text-gray-700">{{ r.parentName || '—' }}</td>
+            <td class="text-center">
+              <input type="checkbox" class="w-4 h-4 accent-[#64BC04]"
+                     [class.cursor-pointer]="puedeGestionar"
+                     [checked]="r.filtraPorProyecto"
+                     [disabled]="!puedeGestionar"
+                     (change)="toggleFiltroProyecto(r)"
+                     title="Si se activa, el área se subdivide por proyecto" />
+            </td>
+            <td class="text-gray-700">
+              <ng-container *ngIf="r.revisores.length > 0; else fallbackGthArea">
+                <ng-container *ngIf="revisorPrincipal(r.revisores) as principal; else sinActivosArea">
+                  <span>{{ principal.revisorFullName | titleCase }}</span>
+                  <span *ngIf="r.revisores.length > 1"
+                        class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium whitespace-nowrap">
+                    +{{ r.revisores.length - 1 }} más
+                  </span>
+                </ng-container>
+                <ng-template #sinActivosArea>
+                  <span class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#FEF9C3] text-[#92400E] font-medium whitespace-nowrap">
+                    {{ r.revisores.length }} inactivo(s) → GTH
+                  </span>
+                </ng-template>
+              </ng-container>
+              <ng-template #fallbackGthArea>
+                <span class="text-gray-400 italic">
+                  {{ r.filtraPorProyecto ? 'Sin revisor de área (fallback)' : 'GTH (por defecto)' }}
+                </span>
+              </ng-template>
+            </td>
+            <td class="text-center">
+              <div class="flex items-center justify-center gap-2">
+                <button (click)="openDetalle(r)" abrilBulkAction="default">Ver</button>
+                <button *ngIf="puedeGestionar" (click)="openEdit(r)" abrilBulkAction="default">Editar</button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Subfilas por proyecto (solo si el área filtra por proyecto) -->
+          <ng-container *ngIf="r.filtraPorProyecto">
+            <tr *ngFor="let proj of proyectosDeArea(r)"
+                class="border-b bg-[#FafcF7] hover:bg-[#F1F7E8]" style="border-color:var(--color-abril-border)">
+              <td class="text-gray-600 pl-[28px]">
+                <span class="text-gray-400 mr-[6px]">└</span>{{ proj.projectName }}
+              </td>
+              <td class="text-gray-400 text-[12px]">Proyecto</td>
+              <td></td>
+              <td class="text-gray-700">
+                <ng-container *ngIf="proj.revisores.length > 0; else fallbackGthProj">
+                  <ng-container *ngIf="revisorPrincipal(proj.revisores) as principal; else sinActivosProj">
+                    <span>{{ principal.revisorFullName | titleCase }}</span>
+                    <span *ngIf="proj.revisores.length > 1"
+                          class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium whitespace-nowrap">
+                      +{{ proj.revisores.length - 1 }} más
+                    </span>
+                  </ng-container>
+                  <ng-template #sinActivosProj>
+                    <span class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#FEF9C3] text-[#92400E] font-medium whitespace-nowrap">
+                      {{ proj.revisores.length }} inactivo(s)
+                    </span>
+                  </ng-template>
+                </ng-container>
+                <ng-template #fallbackGthProj>
+                  <span class="text-gray-400 italic">Sin revisor</span>
+                </ng-template>
+              </td>
+              <td class="text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <button (click)="openDetalleProyecto(r, proj)" abrilBulkAction="default">Ver</button>
+                  <button *ngIf="puedeGestionar" (click)="openEditProyecto(r, proj)" abrilBulkAction="default">Editar</button>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+        </ng-container>
+
+        <tr *ngIf="filteredRows.length === 0">
+          <td colspan="5" class="text-center py-[40px] text-gray-400 text-sm">
+            {{
+              filtrosActivos > 0
+                ? 'Sin resultados.'
+                : puedeGestionar
+                  ? 'No hay áreas configurables.'
+                  : 'No tienes áreas visibles. Solo los jefes, coordinadores y gerentes ven los revisores de su área.'
+            }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredRows.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)"
+    ></app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modal detalle (n revisores del área o del proyecto) ───────────── -->
+<app-revisores-areas-detalle
+  *ngIf="detalleDe"
+  [area]="detalleDe"
+  [projectName]="scopeProjectName"
+  [revisoresOverride]="scopeRevisores"
+  (closeModal)="closeModales()"
+></app-revisores-areas-detalle>
+
+<!-- ── Modal editar (agregar/quitar/priorizar/activar revisores) ────── -->
+<app-revisores-areas-editar
+  *ngIf="editando"
+  [area]="editando"
+  [options]="options"
+  [projectId]="scopeProjectId"
+  [projectName]="scopeProjectName"
+  [revisoresIniciales]="scopeRevisores"
+  (closeModal)="closeModales()"
+  (saved)="onSaved()"
+></app-revisores-areas-editar>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <app-search-select
+      label="Área padre"
+      [options]="parentFilterOptions"
+      valueField="name"
+      displayField="name"
+      [value]="parentFilter"
+      (valueChange)="parentFilter = $event; onFilterChange()"
+      placeholder="Todas las áreas padre"
+    ></app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Revisor"
+      [options]="revisorFilterOptions"
+      valueField="workerId"
+      displayField="fullName"
+      [value]="revisorFilter"
+      (valueChange)="revisorFilter = $event; onFilterChange()"
+      placeholder="Todos los revisores"
+    ></app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por área o revisor..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%"
+    ></app-search-input>
+  </div>
+</app-filter-modal>

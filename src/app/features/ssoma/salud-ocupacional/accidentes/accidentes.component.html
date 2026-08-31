@@ -1,0 +1,623 @@
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Accidentes de Trabajo"
+  subtitulo="Registro y seguimiento de accidentes de trabajo."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<section class="page-container px-3 py-4 space-y-3 flex-1 min-h-0 overflow-y-auto">
+
+  <!-- Layout: tabla + panel detalle -->
+  <div class="detail-layout" [class.panel-open]="detalle || loadingDetalle">
+
+    <!-- Tabla -->
+    <div class="flex flex-col min-h-0">
+      <div class="abril-table-wrap">
+        <table class="abril-table">
+          <colgroup>
+            <col style="width:50px"/>
+            <col/>
+            <col style="width:95px"/>
+            <col style="width:120px"/>
+            <col style="width:90px"/>
+            <col style="width:60px"/>
+            <col style="width:110px"/>
+          </colgroup>
+          <thead class="sticky top-0 z-10">
+            <tr>
+              <th>#</th>
+              <th>Trabajador</th>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th class="text-center">Estado</th>
+              <th class="text-center">Desc.</th>
+              <th>Reinducción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of accidentes"
+              class="row-clickable border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)"
+              [class.row-selected]="detalle?.id === a.id"
+              (click)="openDetalle(a)">
+              <td class="col-mono">{{ a.id }}</td>
+              <td class="col-worker">
+                <div class="worker-cell">
+                  <span class="worker-name">{{ (a.workerNombre | titleCase) ?? '—' }}</span>
+                  <span class="worker-dni">{{ a.workerDni }}</span>
+                </div>
+              </td>
+              <td class="text-gray-500">{{ a.fechaAccidente | date:'dd/MM/yyyy' }}</td>
+              <td class="text-gray-500">{{ a.tipoAccidente ?? '—' }}</td>
+              <td class="text-center">
+                <app-status-badge
+                  [text]="a.estado | uppercase"
+                  [bgColor]="a.estado === 'Abierto' ? '#FAD5D4' : '#D7FAF4'"
+                  [textColor]="a.estado === 'Abierto' ? '#D30000' : '#009C87'" />
+              </td>
+              <td class="text-center text-gray-500">{{ a.totalSeguimientos }}</td>
+              <td>
+                @if (a.requiereReinduccion && !a.reinduccionCompletada) {
+                  <button class="badge badge-orange btn-reinduccion"
+                    (click)="marcarReinduccion(a, $event)"
+                    title="Pendiente reinducción — click para confirmar">
+                    ⚠ Reinducción
+                  </button>
+                } @else if (a.reinduccionCompletada) {
+                  <span class="badge badge-green">✓ Reintegrado</span>
+                }
+              </td>
+            </tr>
+            <tr *ngIf="!loading && accidentes.length === 0">
+              <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">
+                {{ hasFilters ? 'Sin resultados.' : 'Sin accidentes registrados.' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px] mt-[10px]">
+        <app-paginator [totalRecords]="totalRecords" [currentPage]="currentPage"
+          [totalPages]="totalPages" (pageChange)="onPageChange($event)">
+        </app-paginator>
+      </div>
+    </div>
+
+    <!-- Panel de detalle -->
+    @if (detalle || loadingDetalle) {
+      <div class="detail-panel card">
+
+        <!-- Header del panel -->
+        <div class="panel-header">
+          @if (loadingDetalle) {
+            <span class="panel-title">Cargando…</span>
+          } @else if (detalle) {
+            <div>
+              <span class="panel-title">Accidente #{{ detalle.id }}</span>
+              <span class="badge ml-2"
+                [class.badge-red]="detalle.estado === 'Abierto'"
+                [class.badge-green]="detalle.estado === 'Cerrado'">
+                {{ detalle.estado }}
+              </span>
+            </div>
+          }
+          <button class="panel-close" (click)="closeDetalle()" title="Cerrar">✕</button>
+        </div>
+
+        @if (detalle) {
+          <!-- Tabs del panel -->
+          <div class="panel-tabs">
+            <button class="panel-tab" [class.active]="detalleTab === 'info'"
+              (click)="detalleTab = 'info'; resetForms()">Info</button>
+            <button class="panel-tab" [class.active]="detalleTab === 'descansos'"
+              (click)="detalleTab = 'descansos'; resetForms()">
+              Descansos
+              @if (detalle.descansos.length) {
+                <span class="tab-badge">{{ detalle.descansos.length }}</span>
+              }
+            </button>
+            <button class="panel-tab" [class.active]="detalleTab === 'citas'"
+              (click)="detalleTab = 'citas'; resetForms()">
+              Citas
+              @if (detalle.citas.length) {
+                <span class="tab-badge">{{ detalle.citas.length }}</span>
+              }
+            </button>
+            <button class="panel-tab" [class.active]="detalleTab === 'equipos'"
+              (click)="detalleTab = 'equipos'; resetForms()">
+              Equipos
+              @if (detalle.equipos.length) {
+                <span class="tab-badge">{{ detalle.equipos.length }}</span>
+              }
+            </button>
+            <button class="panel-tab" [class.active]="detalleTab === 'alta'"
+              (click)="detalleTab = 'alta'; resetForms()">Alta</button>
+          </div>
+
+          <div class="panel-body">
+
+            <!-- ══ Tab: Información general ══ -->
+            @if (detalleTab === 'info') {
+              <dl class="info-grid">
+                <dt>Trabajador</dt>
+                <dd>
+                  {{ detalle.workerNombre ?? '—' }}
+                  @if (detalle.workerDni) { <span class="sub-text">{{ detalle.workerDni }}</span> }
+                </dd>
+
+                @if (detalle.workerTelefono) {
+                  <dt>Teléfono</dt>
+                  <dd>{{ detalle.workerTelefono }}</dd>
+                }
+
+                <dt>Fecha</dt>
+                <dd>
+                  {{ detalle.fechaAccidente | date:'dd/MM/yyyy' }}
+                  @if (detalle.horaAccidente) { — {{ detalle.horaAccidente }} }
+                </dd>
+
+                <dt>Tipo</dt>
+                <dd>{{ detalle.tipoAccidente ?? '—' }}</dd>
+
+                <dt>Lugar</dt>
+                <dd>{{ detalle.lugarAccidente ?? '—' }}</dd>
+
+                <dt>Agente de riesgo</dt>
+                <dd>
+                  <app-search-select
+                    [options]="agentesRiesgoForSelect"
+                    valueField="id"
+                    displayField="label"
+                    [value]="detalle.agenteRiesgoId ?? null"
+                    placeholder="Sin especificar"
+                    [disabled]="savingAgenteRiesgo"
+                    (valueChange)="guardarAgenteRiesgo($event)">
+                  </app-search-select>
+                </dd>
+
+                @if (detalle.empresaNombre) {
+                  <dt>Empresa</dt>
+                  <dd>{{ detalle.empresaNombre }}</dd>
+                }
+                @if (detalle.proyectoNombre) {
+                  <dt>Proyecto</dt>
+                  <dd>{{ detalle.proyectoNombre }}</dd>
+                }
+
+                @if (detalle.diasDescansoReales != null) {
+                  <dt>Días descanso</dt>
+                  <dd>{{ detalle.diasDescansoReales }}</dd>
+                }
+
+                @if (detalle.flashReportId) {
+                  <dt>Flash Report</dt>
+                  <dd>
+                    <a class="link-action"
+                      [routerLink]="['/ssoma/gestion/accidentes-incidentes', detalle.flashReportId]"
+                      target="_blank">
+                      FR-{{ detalle.flashReportId }} ↗
+                    </a>
+                  </dd>
+                }
+
+                @if (detalle.descripcion) {
+                  <dt>Descripción</dt>
+                  <dd class="col-span">{{ detalle.descripcion }}</dd>
+                }
+              </dl>
+
+              <!-- Acciones -->
+              @if (detalle.estado === 'Abierto' && detalle.tieneAlta) {
+                <div class="panel-actions">
+                  <button class="btn-primary" (click)="cerrarAccidente()">Cerrar accidente</button>
+                </div>
+              }
+            }
+
+            <!-- ══ Tab: Descansos ══ -->
+            @if (detalleTab === 'descansos') {
+              <div class="tab-toolbar">
+                <span class="tab-count">{{ detalle.descansos.length }} descanso(s)</span>
+                <button class="btn-add" (click)="abrirNuevoDescanso()">+ Agregar descanso</button>
+              </div>
+
+              @if (detalle.descansos.length === 0) {
+                <p class="empty-tab">Sin descansos registrados.</p>
+              } @else {
+                <div class="sub-list">
+                  @for (d of detalle.descansos; track d.id) {
+                    <div class="sub-item">
+                      <div class="sub-item-header">
+                        <span class="sub-item-title">{{ d.tipo ?? 'Descanso' }} #{{ d.id }}</span>
+                        <span class="badge"
+                          [class.badge-amber]="d.estado === 'Pendiente'"
+                          [class.badge-green]="d.estado === 'Aprobado' || d.estado === 'Completado'"
+                          [class.badge-red]="d.estado === 'Rechazado'"
+                          [class.badge-gray]="d.estado !== 'Pendiente' && d.estado !== 'Aprobado' && d.estado !== 'Completado' && d.estado !== 'Rechazado'">
+                          {{ d.estado }}
+                        </span>
+                      </div>
+                      <div class="sub-item-meta">
+                        {{ d.fechaInicio | date:'dd/MM/yyyy' }} — {{ d.fechaFin | date:'dd/MM/yyyy' }}
+                        · <strong>{{ d.dias }}</strong> días
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            }
+
+            <!-- ══ Tab: Citas médicas ══ -->
+            @if (detalleTab === 'citas') {
+              <div class="tab-toolbar">
+                <span class="tab-count">{{ detalle.citas.length }} cita(s)</span>
+                @if (!showFormCita) {
+                  <button class="btn-add" (click)="abrirFormCita()">+ Agregar cita</button>
+                }
+              </div>
+
+              <!-- Formulario cita -->
+              @if (showFormCita) {
+                <div class="inline-form">
+                  <div class="form-title">{{ editingCitaId ? 'Editar cita' : 'Nueva cita' }}</div>
+                  <div class="form-grid-2">
+                    <div class="form-field">
+                      <label class="filter-label">Tipo <span class="req">*</span></label>
+                      <app-search-select
+                        [options]="tiposCita"
+                        valueField="id"
+                        displayField="nombre"
+                        [value]="formCita.tipoId"
+                        placeholder="Selecciona tipo"
+                        (valueChange)="formCita.tipoId = $event">
+                      </app-search-select>
+                    </div>
+                    <div class="form-field">
+                      <label class="filter-label">Fecha <span class="req">*</span></label>
+                      <input type="date" class="field-input" [(ngModel)]="formCita.fechaCita" />
+                    </div>
+                    <div class="form-field">
+                      <label class="filter-label">Hora</label>
+                      <input type="time" class="field-input" [(ngModel)]="formCita.horaCita" />
+                    </div>
+                    <div class="form-field">
+                      <label class="filter-label">Clínica</label>
+                      <input type="text" class="field-input" [(ngModel)]="formCita.clinica" placeholder="Nombre de clínica" />
+                    </div>
+                    <div class="form-field">
+                      <label class="filter-label">Médico</label>
+                      <input type="text" class="field-input" [(ngModel)]="formCita.medico" placeholder="Nombre del médico" />
+                    </div>
+                    <div class="form-field">
+                      <label class="filter-label">Próxima cita</label>
+                      <input type="date" class="field-input" [(ngModel)]="formCita.proximaCita" />
+                    </div>
+                  </div>
+                  <div class="form-field mt-1">
+                    <label class="filter-label">Diagnóstico</label>
+                    <input type="text" class="field-input" [(ngModel)]="formCita.diagnostico" placeholder="CIE-10 o descripción" />
+                  </div>
+                  <div class="form-field mt-1">
+                    <label class="filter-label">Indicaciones</label>
+                    <textarea class="field-input" rows="2" [(ngModel)]="formCita.indicaciones" placeholder="Indicaciones médicas…"></textarea>
+                  </div>
+                  <div class="form-field mt-1">
+                    <label class="filter-label">Observaciones</label>
+                    <textarea class="field-input" rows="2" [(ngModel)]="formCita.observaciones" placeholder="Observaciones adicionales…"></textarea>
+                  </div>
+                  <div class="form-actions">
+                    <button class="btn-secondary" (click)="showFormCita = false; editingCitaId = null">Cancelar</button>
+                    <button class="btn-primary" [disabled]="saving" (click)="guardarCita()">
+                      {{ saving ? 'Guardando…' : 'Guardar' }}
+                    </button>
+                  </div>
+                </div>
+              }
+
+              @if (detalle.citas.length === 0 && !showFormCita) {
+                <p class="empty-tab">Sin citas médicas registradas.</p>
+              }
+              @if (detalle.citas.length > 0) {
+                <div class="sub-list mt-2">
+                  @for (c of detalle.citas; track c.id) {
+                    <div class="sub-item">
+                      <div class="sub-item-header">
+                        <span class="sub-item-title">{{ c.tipoNombre || 'Cita' }} #{{ c.id }}</span>
+                        <div class="sub-item-actions">
+                          <button class="btn-icon-edit" title="Editar" (click)="abrirFormCita(c)">✏</button>
+                          <button class="btn-icon-del" title="Eliminar" (click)="eliminarCita(c.id)">✕</button>
+                        </div>
+                      </div>
+                      <div class="sub-item-meta">
+                        {{ c.fechaCita | date:'dd/MM/yyyy' }}
+                        @if (c.horaCita) { · {{ c.horaCita }} }
+                        @if (c.clinica) { · {{ c.clinica }} }
+                      </div>
+                      @if (c.medico) {
+                        <div class="sub-item-meta">Dr./Dra. {{ c.medico }}</div>
+                      }
+                      @if (c.diagnostico) {
+                        <div class="sub-item-meta text-muted">{{ c.diagnostico }}</div>
+                      }
+                      @if (c.proximaCita) {
+                        <div class="sub-item-meta">Próxima cita: {{ c.proximaCita | date:'dd/MM/yyyy' }}</div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            }
+
+            <!-- ══ Tab: Equipos prestados ══ -->
+            @if (detalleTab === 'equipos') {
+              <div class="tab-toolbar">
+                <span class="tab-count">{{ detalle.equipos.length }} equipo(s)</span>
+                @if (!showFormEquipo && !showFormDevolucion) {
+                  <button class="btn-add" (click)="showFormEquipo = true">+ Registrar préstamo</button>
+                }
+              </div>
+
+              <!-- Formulario préstamo -->
+              @if (showFormEquipo) {
+                <div class="inline-form">
+                  <div class="form-title">Nuevo préstamo de equipo</div>
+                  <div class="form-grid-2">
+                    <div class="form-field">
+                      <label class="filter-label">Tipo de equipo <span class="req">*</span></label>
+                      <app-search-select
+                        [options]="tiposEquipo"
+                        valueField="id"
+                        displayField="nombre"
+                        [value]="formEquipo.tipoEquipoId"
+                        placeholder="Selecciona tipo de equipo"
+                        (valueChange)="formEquipo.tipoEquipoId = $event">
+                      </app-search-select>
+                    </div>
+                    <div class="form-field">
+                      <label class="filter-label">Cantidad <span class="req">*</span></label>
+                      <input type="number" class="field-input" [(ngModel)]="formEquipo.cantidad" min="1" />
+                    </div>
+                    <div class="form-field">
+                      <label class="filter-label">Fecha de préstamo <span class="req">*</span></label>
+                      <input type="date" class="field-input" [(ngModel)]="formEquipo.fechaPrestamo" />
+                    </div>
+                  </div>
+                  <div class="form-field mt-1">
+                    <label class="filter-label">Observaciones</label>
+                    <textarea class="field-input" rows="2" [(ngModel)]="formEquipo.observaciones" placeholder="Observaciones…"></textarea>
+                  </div>
+                  <div class="form-actions">
+                    <button class="btn-secondary" (click)="showFormEquipo = false; resetForms()">Cancelar</button>
+                    <button class="btn-primary" [disabled]="saving" (click)="guardarEquipo()">
+                      {{ saving ? 'Guardando…' : 'Guardar' }}
+                    </button>
+                  </div>
+                </div>
+              }
+
+              <!-- Formulario devolución -->
+              @if (showFormDevolucion) {
+                <div class="inline-form">
+                  <div class="form-title">Registrar devolución</div>
+                  <div class="form-field">
+                    <label class="filter-label">Fecha de devolución <span class="req">*</span></label>
+                    <input type="date" class="field-input" [(ngModel)]="formDevolucion.fechaDevolucion" />
+                  </div>
+                  <div class="form-field mt-1">
+                    <label class="filter-label">Observaciones</label>
+                    <textarea class="field-input" rows="2" [(ngModel)]="formDevolucion.observaciones" placeholder="Observaciones…"></textarea>
+                  </div>
+                  <div class="form-actions">
+                    <button class="btn-secondary" (click)="showFormDevolucion = false; devolucionEquipoId = null">Cancelar</button>
+                    <button class="btn-primary" [disabled]="saving" (click)="guardarDevolucion()">
+                      {{ saving ? 'Guardando…' : 'Confirmar devolución' }}
+                    </button>
+                  </div>
+                </div>
+              }
+
+              @if (detalle.equipos.length === 0 && !showFormEquipo) {
+                <p class="empty-tab">Sin equipos prestados.</p>
+              }
+              @if (detalle.equipos.length > 0) {
+                <div class="sub-list mt-2">
+                  @for (eq of detalle.equipos; track eq.id) {
+                    <div class="sub-item">
+                      <div class="sub-item-header">
+                        <span class="sub-item-title">{{ eq.tipoEquipoNombre || 'Equipo' }} #{{ eq.id }}</span>
+                        <div class="sub-item-actions">
+                          <span class="badge" [class.badge-green]="eq.devuelto" [class.badge-amber]="!eq.devuelto">
+                            {{ eq.devuelto ? 'Devuelto' : 'Prestado' }}
+                          </span>
+                          @if (!eq.devuelto) {
+                            <button class="btn-icon-check" title="Registrar devolución" (click)="abrirDevolucion(eq.id)">↩</button>
+                          }
+                          <button class="btn-icon-del" title="Eliminar" (click)="eliminarEquipo(eq.id)">✕</button>
+                        </div>
+                      </div>
+                      <div class="sub-item-meta">
+                        Cant.: {{ eq.cantidad }} · Préstamo: {{ eq.fechaPrestamo | date:'dd/MM/yyyy' }}
+                        @if (eq.fechaDevolucion) { · Dev.: {{ eq.fechaDevolucion | date:'dd/MM/yyyy' }} }
+                      </div>
+                      @if (eq.observaciones) {
+                        <div class="sub-item-meta text-muted">{{ eq.observaciones }}</div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            }
+
+            <!-- ══ Tab: Alta médica ══ -->
+            @if (detalleTab === 'alta') {
+              <div class="tab-toolbar">
+                <span class="tab-count">
+                  @if (detalle.altaMedica) { Alta registrada } @else { Sin alta médica }
+                </span>
+                @if (!showFormAlta) {
+                  <button class="btn-add" (click)="abrirFormAlta()">
+                    {{ detalle.altaMedica ? '✏ Editar alta' : '+ Registrar alta' }}
+                  </button>
+                }
+              </div>
+
+              <!-- Formulario alta -->
+              @if (showFormAlta) {
+                <div class="inline-form">
+                  <div class="form-title">{{ detalle.altaMedica ? 'Editar alta médica' : 'Registrar alta médica' }}</div>
+                  <div class="form-grid-2">
+                    <div class="form-field">
+                      <label class="filter-label">Tipo de alta <span class="req">*</span></label>
+                      <app-search-select
+                        [options]="tiposAlta"
+                        valueField="id"
+                        displayField="nombre"
+                        [value]="formAlta.tipoId"
+                        placeholder="Selecciona tipo de alta"
+                        (valueChange)="formAlta.tipoId = $event">
+                      </app-search-select>
+                    </div>
+                    <div class="form-field">
+                      <label class="filter-label">Fecha de alta <span class="req">*</span></label>
+                      <input type="date" class="field-input" [(ngModel)]="formAlta.fechaAlta" />
+                    </div>
+                    <div class="form-field">
+                      <label class="filter-label">Médico</label>
+                      <input type="text" class="field-input" [(ngModel)]="formAlta.medico" placeholder="Nombre del médico" />
+                    </div>
+                  </div>
+                  <div class="form-field mt-1">
+                    <label class="filter-label">Diagnóstico final</label>
+                    <textarea class="field-input" rows="2" [(ngModel)]="formAlta.diagnosticoFinal" placeholder="CIE-10 o descripción…"></textarea>
+                  </div>
+                  <div class="form-field mt-1">
+                    <label class="form-check-label">
+                      <input type="checkbox" [(ngModel)]="formAlta.tieneRestriccion" />
+                      <span>Tiene restricciones de reintegro</span>
+                    </label>
+                  </div>
+                  @if (formAlta.tieneRestriccion) {
+                    <div class="form-field mt-1">
+                      <label class="filter-label">Descripción de restricciones <span class="req">*</span></label>
+                      <textarea class="field-input" rows="2" [(ngModel)]="formAlta.descripcionRestriccion" placeholder="Describe las restricciones…"></textarea>
+                    </div>
+                    <div class="form-field mt-1">
+                      <label class="filter-label">Fecha fin de restricciones</label>
+                      <input type="date" class="field-input" [(ngModel)]="formAlta.fechaFinRestriccion" />
+                    </div>
+                  }
+                  <div class="form-field mt-1">
+                    <label class="filter-label">Observaciones</label>
+                    <textarea class="field-input" rows="2" [(ngModel)]="formAlta.observaciones" placeholder="Observaciones adicionales…"></textarea>
+                  </div>
+                  <div class="form-actions">
+                    <button class="btn-secondary" (click)="showFormAlta = false">Cancelar</button>
+                    <button class="btn-primary" [disabled]="saving" (click)="guardarAlta()">
+                      {{ saving ? 'Guardando…' : 'Guardar alta' }}
+                    </button>
+                  </div>
+                </div>
+              }
+
+              @if (!showFormAlta) {
+                @if (!detalle.altaMedica) {
+                  <p class="empty-tab">Sin alta médica registrada.</p>
+                } @else {
+                  <dl class="info-grid mt-2">
+                    <dt>Tipo de alta</dt>
+                    <dd>{{ detalle.altaMedica.tipoNombre || '—' }}</dd>
+
+                    <dt>Fecha alta</dt>
+                    <dd>{{ detalle.altaMedica.fechaAlta | date:'dd/MM/yyyy' }}</dd>
+
+                    @if (detalle.altaMedica.medico) {
+                      <dt>Médico</dt>
+                      <dd>{{ detalle.altaMedica.medico }}</dd>
+                    }
+
+                    @if (detalle.altaMedica.diagnosticoFinal) {
+                      <dt>Diagnóstico final</dt>
+                      <dd>{{ detalle.altaMedica.diagnosticoFinal }}</dd>
+                    }
+
+                    @if (detalle.altaMedica.tieneRestriccion) {
+                      <dt>Restricciones</dt>
+                      <dd>
+                        {{ detalle.altaMedica.descripcionRestriccion || 'Sí' }}
+                        @if (detalle.altaMedica.fechaFinRestriccion) {
+                          <span class="sub-text">Hasta: {{ detalle.altaMedica.fechaFinRestriccion | date:'dd/MM/yyyy' }}</span>
+                        }
+                      </dd>
+                    }
+
+                    @if (detalle.altaMedica.observaciones) {
+                      <dt>Observaciones</dt>
+                      <dd class="col-span">{{ detalle.altaMedica.observaciones }}</dd>
+                    }
+                  </dl>
+                  <div class="panel-actions mt-2">
+                    <button class="btn-danger-sm" (click)="eliminarAlta()">Eliminar alta</button>
+                  </div>
+                }
+              }
+
+              @if (detalle.estado === 'Abierto' && detalle.tieneAlta && !showFormAlta) {
+                <div class="panel-actions">
+                  <button class="btn-primary" (click)="cerrarAccidente()">Cerrar accidente</button>
+                </div>
+              }
+            }
+
+          </div>
+        }
+      </div>
+    }
+
+  </div><!-- /detail-layout -->
+
+</section>
+
+@if (showDescansoModal && detalle) {
+  <app-descanso-modal
+    [descansoId]="null"
+    [presetWorker]="presetWorkerDescanso"
+    [presetAccidenteId]="detalle.id"
+    (closed)="cerrarDescansoModal()"
+    (saved)="onDescansoGuardado()">
+  </app-descanso-modal>
+}
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="flex gap-3">
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtros.fechaDesde" (change)="onFilterChange()" />
+    </div>
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtros.fechaHasta" (change)="onFilterChange()" />
+    </div>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOpts"
+      valueField="id"
+      displayField="nombre"
+      [sortAlpha]="false"
+      [value]="filtros.estado"
+      (valueChange)="filtros.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-worker-search-input
+      [selected]="workerFiltroSelected"
+      (selectedChange)="onWorkerFiltroChange($event)">
+    </app-worker-search-input>
+  </div>
+</app-filter-modal>

@@ -1,0 +1,159 @@
+<div class="revision-root">
+
+  <app-abril-page-header
+    titulo="Revisión de Charlas — Contratistas"
+    subtitulo="Aprueba o rechaza la charla diaria que suben las empresas contratistas"
+    [tabs]="tabsHeader">
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <div class="revision-body">
+    <div class="revision-estado-tabs">
+      @for (opt of estadoOpts; track opt.value) {
+        <button type="button" class="estado-tab" [class.estado-tab--active]="estado === opt.value"
+          (click)="onEstadoChange(opt.value)">{{ opt.label }}</button>
+      }
+    </div>
+
+    @if (loading) {
+      <div class="skeleton-body"></div>
+    } @else if (!items.length) {
+      <p class="empty-msg">Sin charlas para los filtros seleccionados.</p>
+    } @else {
+      <div class="abril-table-wrap">
+        <table class="abril-table">
+          <thead>
+            <tr>
+              <th>Empresa</th>
+              <th>Proyecto</th>
+              <th>Fecha</th>
+              <th>Tema</th>
+              <th class="text-center">Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items; track item.id) {
+              <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+                <td class="fw-600">{{ item.empresaNombre }}</td>
+                <td class="text-gray-500">{{ item.proyectoNombre }}</td>
+                <td class="text-gray-500">{{ item.fecha }}</td>
+                <td class="text-gray-500">{{ item.tema }}</td>
+                <td class="text-center">
+                  <app-status-badge [text]="item.estado | uppercase" [bgColor]="estadoBg(item.estado)" [textColor]="estadoColor(item.estado)" />
+                </td>
+                <td>
+                  <button class="abril-action-btn" (click)="abrirDetalle(item)" title="Ver detalle">
+                    <i class="ti ti-eye"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="shrink-0 max-w-[440px]">
+        <app-paginator
+          [totalRecords]="total"
+          [currentPage]="page"
+          [totalPages]="totalPages"
+          (pageChange)="goPage($event)">
+        </app-paginator>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- MODAL: Detalle / Aprobación -->
+@if (detalle) {
+  <app-abril-modal-panel
+    [titulo]="detalle.empresaNombre + ' — ' + detalle.tema"
+    icono="ti-eye"
+    variant="blue"
+    width="900px"
+    (closeModal)="cerrarDetalle()">
+    <div class="modal-body">
+      <div class="modal-left">
+        <div class="detalle-meta">
+          <div class="meta-row"><span class="meta-lbl">Proyecto</span><span>{{ detalle.proyectoNombre }}</span></div>
+          <div class="meta-row"><span class="meta-lbl">Fecha</span><span>{{ detalle.fecha }}</span></div>
+          <div class="meta-row"><span class="meta-lbl">Tema</span><span>{{ detalle.tema }}</span></div>
+          <div class="meta-row">
+            <span class="meta-lbl">Estado</span>
+            <app-status-badge [text]="detalle.estado | uppercase" [bgColor]="estadoBg(detalle.estado)" [textColor]="estadoColor(detalle.estado)" />
+          </div>
+          @if (detalle.descripcion) {
+            <div class="meta-row meta-row--col">
+              <span class="meta-lbl">Descripción</span>
+              <span class="meta-desc">{{ detalle.descripcion }}</span>
+            </div>
+          }
+        </div>
+        @if (detalle.evidenciaUrl) {
+          <div class="viewer-section">
+            <h4 class="section-title"><i class="ti ti-paperclip"></i> {{ detalle.evidenciaNombre }}</h4>
+            @if (isPdf(detalle.evidenciaUrl)) {
+              <iframe [src]="safeUrl(detalle.evidenciaUrl!)" class="pdf-viewer" title="Evidencia PDF"></iframe>
+            } @else {
+              <img [secureImg]="detalle.evidenciaUrl" class="img-viewer" alt="Evidencia" />
+            }
+          </div>
+        } @else {
+          <div class="no-evidencia"><i class="ti ti-file-off"></i> Sin evidencia adjunta</div>
+        }
+      </div>
+      <div class="modal-right">
+        <h4 class="section-title">Acciones</h4>
+        @if (detalle.estado === 'Enviado') {
+          @if (!showRechazarForm) {
+            <div class="acciones-btns">
+              <button abrilBulkAction="primary" (click)="aprobar()"><i class="ti ti-circle-check"></i> Aprobar</button>
+              <button abrilBulkAction="danger" (click)="showRechazarForm=true"><i class="ti ti-circle-x"></i> Rechazar</button>
+            </div>
+          } @else {
+            <div class="rechazar-form">
+              <label class="form-group">
+                <span>Motivo del rechazo <span class="req">*</span></span>
+                <textarea class="form-input form-textarea" [(ngModel)]="motivoRechazo" rows="3"></textarea>
+              </label>
+              <div class="acciones-btns">
+                <button abrilBulkAction="default" (click)="showRechazarForm=false; motivoRechazo=''">Cancelar</button>
+                <button abrilBulkAction="danger" (click)="rechazar()" [disabled]="!motivoRechazo.trim()">
+                  <i class="ti ti-circle-x"></i> Confirmar rechazo
+                </button>
+              </div>
+            </div>
+          }
+        } @else if (detalle.estado === 'Aprobado') {
+          <div class="estado-badge estado-badge--aprobado">
+            <i class="ti ti-circle-check"></i>
+            <div><strong>Aprobado</strong>
+              @if (detalle.aprobadoPorNombre) { <span>por {{ detalle.aprobadoPorNombre }}</span> }
+            </div>
+          </div>
+        } @else if (detalle.estado === 'Rechazado') {
+          <div class="estado-badge estado-badge--rechazado">
+            <i class="ti ti-circle-x"></i>
+            <div><strong>Rechazado</strong>
+              @if (detalle.motivoRechazo) { <span class="motivo">{{ detalle.motivoRechazo }}</span> }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </app-abril-modal-panel>
+}
+
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      displayField="nombre"
+      valueField="id"
+      placeholder="Buscar proyecto..."
+      [value]="proyectoId"
+      (valueChange)="proyectoId = $event ? +$event : undefined; page = 1; cargar()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

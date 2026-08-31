@@ -1,0 +1,100 @@
+.amp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.amp-container {
+  background: #fff;
+  max-width: 100%;
+  max-height: calc(100vh - 48px);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  animation: ampPopIn 0.18s ease-out;
+}
+
+@keyframes ampPopIn {
+  from { transform: scale(0.97); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.amp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--color-abril-standard);
+  color: #fff;
+  flex-shrink: 0;
+}
+.amp-container--blue .amp-header { background: var(--color-abril-logo-blue); }
+
+.amp-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.amp-title i { font-size: 20px; }
+
+/* Título (+ subtítulo opcional) apilados a la derecha del ícono. Sin subtítulo
+   el bloque es una sola línea, idéntico visualmente al header original. */
+.amp-title-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+.amp-title-main { font-size: 16px; font-weight: 600; }
+.amp-title-sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.82);
+  margin-top: 1px;
+}
+
+.amp-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.amp-close:hover { background: rgba(255, 255, 255, 0.15); }
+
+.amp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* space-between, no flex-end: el primer hijo proyectado (Cancelar) siempre
+   queda a la izquierda y el resto (acción primaria, o un grupo .footer-nav
+   con Anterior/Siguiente) a la derecha. Esto reemplaza la clase local
+   .modal-footer-row que cada página tenía que recordar declarar — ahora es
+   automático y no se puede omitir por accidente (era el bug real: RAC y
+   Amonestaciones se quedaron sin ella). Si algún día un formulario necesita
+   un solo botón centrado o a la derecha, eso es la excepción y debe forzarse
+   explícitamente desde esa página, no ser el default. */
+.amp-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+.amp-footer:empty { display: none; }

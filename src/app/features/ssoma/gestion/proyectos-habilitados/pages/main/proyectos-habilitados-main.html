@@ -1,0 +1,94 @@
+<app-abril-page-header
+  badge="SSOMA · Gestión"
+  titulo="Proyectos Habilitados SSOMA"
+  subtitulo="Define qué proyectos aparecen en los filtros de todas las funcionalidades de SSOMA"
+  [hasExtra]="true">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
+  <div class="abril-table-wrap">
+    <table class="abril-table">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Proyecto</th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Habilitado para SSOMA</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of pagedProyectos; track p.proyectoId) {
+          <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+            <td class="text-gray-700">{{ p.proyectoDescription | titleCase }}</td>
+            <td class="text-center">
+              <app-status-badge
+                [text]="p.proyectoActivo ? 'ACTIVO' : 'CULMINADO / INACTIVO'"
+                [bgColor]="p.proyectoActivo ? '#D7FAF4' : '#F3F4F6'"
+                [textColor]="p.proyectoActivo ? '#009C87' : '#6B7280'" />
+            </td>
+            <td class="text-center">
+              <button
+                class="ph-switch"
+                [class.ph-switch--on]="p.habilitado"
+                [disabled]="cambiandoId === p.proyectoId"
+                (click)="toggle(p)">
+                <span class="ph-switch-knob"></span>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="3" class="text-center py-[40px] text-gray-400 text-sm">
+              {{ searchText.trim() || estadoFilter !== null || habilitadoFilter !== null ? 'Sin resultados.' : 'No hay proyectos.' }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="proyectosFiltrados.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+</div>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por proyecto..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="estadoFilter"
+      (valueChange)="estadoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Habilitado para SSOMA"
+      [options]="habilitadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="habilitadoFilter"
+      (valueChange)="habilitadoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

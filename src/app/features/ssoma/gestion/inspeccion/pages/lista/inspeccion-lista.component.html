@@ -1,0 +1,181 @@
+<div class="lista-root">
+
+  <app-abril-page-header
+    badge="SSOMA"
+    titulo="Inspecciones"
+    subtitulo="Gestión de inspecciones de seguridad"
+    [tabs]="tabs">
+
+    <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <div class="lista-body">
+
+    @if (loading) {
+      <div class="skeleton-list">
+        @for (_ of [1,2,3,4,5]; track $index) {
+          <div class="skeleton-row"></div>
+        }
+      </div>
+    }
+
+    @if (!loading) {
+
+      <!-- TABLA DESKTOP -->
+      <div class="tabla-wrap abril-table-wrap">
+        <table class="abril-table tabla">
+          <thead class="sticky top-0 z-10">
+            <tr>
+              <th>Fecha</th>
+              <th>Proyecto</th>
+              <th>Tipo / Ámbito</th>
+              <th>Inspector</th>
+              <th class="ta-c">Tasa</th>
+              <th class="ta-c">Hallazgos</th>
+              <th class="ta-c">Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (!items.length) {
+              <tr>
+                <td colspan="8" class="empty-row">No se encontraron inspecciones</td>
+              </tr>
+            }
+            @for (item of items; track item.id) {
+              <tr class="tabla-row" (click)="irADetalle(item.id)">
+                <td>{{ item.fecha | date:'dd/MM/yy' }}</td>
+                <td class="td-proyecto">{{ item.proyectoNombre }}</td>
+                <td>
+                  <div class="tipo-cell">
+                    <span>{{ item.tipoNombre }}</span>
+                    <app-status-badge [text]="item.tipoAmbito" [bgColor]="ambitoBg(item.tipoAmbito)" [textColor]="ambitoText(item.tipoAmbito)" />
+                  </div>
+                </td>
+                <td class="td-inspector">{{ item.inspectorNombre ?? '—' }}</td>
+                <td class="ta-c">
+                  @if (item.tasaCumplimiento != null) {
+                    <span class="score-badge" [ngClass]="scoreClass(item.tasaCumplimiento)">
+                      {{ item.tasaCumplimiento | number:'1.0-0' }}%
+                    </span>
+                  } @else { <span class="score-na-txt">—</span> }
+                </td>
+                <td class="ta-c">
+                  <span class="hallazgo-chip" [class.hallazgo-chip--critico]="item.hallazgosCriticos > 0">
+                    {{ item.totalHallazgos }}
+                    @if (item.hallazgosCriticos > 0) { <span>({{ item.hallazgosCriticos }}C)</span> }
+                  </span>
+                </td>
+                <td class="ta-c">
+                  <span class="estado-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+                </td>
+                <td>
+                  <button type="button" class="abril-action-btn" (click)="$event.stopPropagation(); irADetalle(item.id)">
+                    <i class="ti ti-eye"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- CARDS MOBILE -->
+      <div class="cards-mobile">
+        @if (!items.length) {
+          <div class="empty-mobile">No se encontraron inspecciones</div>
+        }
+        @for (item of items; track item.id) {
+          <div class="insp-card" (click)="irADetalle(item.id)">
+            <div class="insp-card__top">
+              <span class="insp-date">{{ item.fecha | date:'dd/MM/yyyy' }}</span>
+              <span class="estado-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+            </div>
+            <div class="insp-card__proyecto">{{ item.proyectoNombre }}</div>
+            <div class="insp-card__tipo">
+              <app-status-badge [text]="item.tipoAmbito" [bgColor]="ambitoBg(item.tipoAmbito)" [textColor]="ambitoText(item.tipoAmbito)" />
+              {{ item.tipoNombre }}
+            </div>
+            <div class="insp-card__bottom">
+              @if (item.tasaCumplimiento != null) {
+                <span class="score-badge" [ngClass]="scoreClass(item.tasaCumplimiento)">
+                  {{ item.tasaCumplimiento | number:'1.0-0' }}%
+                </span>
+              }
+              @if (item.totalHallazgos > 0) {
+                <span class="hallazgo-chip" [class.hallazgo-chip--critico]="item.hallazgosCriticos > 0">
+                  {{ item.totalHallazgos }} hallazgo{{ item.totalHallazgos > 1 ? 's' : '' }}
+                  @if (item.hallazgosCriticos > 0) { · {{ item.hallazgosCriticos }} crítico{{ item.hallazgosCriticos > 1 ? 's' : '' }} }
+                </span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- PAGINACIÓN -->
+      <div class="shrink-0 max-w-[440px]">
+        <app-paginator
+          [totalRecords]="total"
+          [currentPage]="page"
+          [totalPages]="totalPages"
+          (pageChange)="cambiarPagina($event)">
+        </app-paginator>
+      </div>
+
+    }<!-- /!loading -->
+
+  </div><!-- /lista-body -->
+
+  <app-fab label="Nueva inspección" (clicked)="irANueva()"></app-fab>
+</div>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      valueField="projectId"
+      displayField="projectDescription"
+      [value]="filtroProyectoId"
+      (valueChange)="filtroProyectoId = $event; load()"
+      placeholder="Todos los proyectos">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Tipo"
+      [options]="tipos"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtroTipoId"
+      (valueChange)="filtroTipoId = $event; load()"
+      placeholder="Todos los tipos">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="filtroEstado"
+      (valueChange)="filtroEstado = $event; load()">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaDesde" (change)="load()" />
+    </div>
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaHasta" (change)="load()" />
+    </div>
+  </div>
+</app-filter-modal>

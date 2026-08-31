@@ -1,0 +1,425 @@
+<app-abril-modal-panel
+  titulo="Nueva Observación Planeada"
+  icono="ti-clipboard-text"
+  variant="blue"
+  width="820px"
+  (closeModal)="cancelar()">
+
+  <!-- STEPPER -->
+  @if (!sinWorkerVinculado) {
+  <div class="stepper">
+    @for (label of pasoLabels; track $index) {
+      <div class="step" [class.step--active]="paso === $index + 1" [class.step--done]="paso > $index + 1">
+        <div class="step-circle">
+          @if (paso > $index + 1) {
+            <i class="ti ti-check"></i>
+          } @else {
+            {{ $index + 1 }}
+          }
+        </div>
+        <span class="step-label">{{ label }}</span>
+      </div>
+      @if ($index < pasoLabels.length - 1) {
+        <div class="step-line" [class.step-line--done]="paso > $index + 1"></div>
+      }
+    }
+  </div>
+  }
+
+  <!-- LOADING CATÁLOGOS -->
+  @if (loadingCatalogos || resolviendoObservador) {
+    <div class="loading-catalogos">
+      <i class="ti ti-loader-2 spin"></i> Cargando catálogos...
+    </div>
+  }
+
+  <!-- BLOQUEO: usuario sin trabajador vinculado -->
+  @if (!loadingCatalogos && !resolviendoObservador && sinWorkerVinculado) {
+    <div class="bloqueo-sin-worker">
+      <i class="ti ti-alert-triangle"></i>
+      <div>
+        <div class="bloqueo-sin-worker__titulo">No puedes registrar una OPT</div>
+        <div class="bloqueo-sin-worker__texto">
+          Tu usuario no está vinculado a una ficha de trabajador dentro de la plataforma.
+          Comunícate con el área de SSOMA o Administración para que te asocien como trabajador
+          antes de poder reportar.
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (!loadingCatalogos && !resolviendoObservador && !sinWorkerVinculado) {
+
+    <!-- ─────────────────── PASO 1 ─────────────────── -->
+    @if (paso === 1) {
+      <div class="paso-body">
+        <h2 class="paso-title"><i class="ti ti-clipboard-text"></i> Datos de la observación</h2>
+
+        <!-- FIX 2: SearchSelect para proyecto -->
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Proyecto *"
+            [options]="proyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="proyectoId"
+            placeholder="Buscar proyecto..."
+            (valueChange)="proyectoId = $event">
+          </app-search-select>
+        </div>
+
+        <div class="form-row">
+          <div class="abril-field">
+            <label class="abril-field-label">Fecha *</label>
+            <input type="date" class="abril-field-input" [(ngModel)]="fecha" />
+          </div>
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Tipo de observación *"
+              [options]="tiposObservacion"
+              valueField="value"
+              displayField="label"
+              [value]="tipoObservacion"
+              placeholder="Selecciona tipo"
+              [allowClear]="false"
+              (valueChange)="tipoObservacion = $event">
+            </app-search-select>
+          </div>
+        </div>
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="PET asociado"
+            [options]="pets"
+            valueField="id"
+            displayField="nombre"
+            [value]="petId"
+            placeholder="Sin PET"
+            (valueChange)="petId = $event ? +$event : null; onPetChange()">
+          </app-search-select>
+          @if (petSeleccionado?.sharepointUrl) {
+            <div class="pet-actions">
+              <button type="button" class="btn-ver-pdf" (click)="abrirVisorPet()">
+                <i class="ti ti-file-text"></i> Ver PET
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="form-row">
+          <div class="abril-field">
+            <label class="abril-field-label toggle-label">
+              <span>¿Cuenta con PET?</span>
+              <div class="toggle" [class.toggle--on]="cuentaConPet" (click)="cuentaConPet = !cuentaConPet">
+                <div class="toggle-thumb"></div>
+              </div>
+            </label>
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label toggle-label">
+              <span>¿Se informó al trabajador?</span>
+              <div class="toggle" [class.toggle--on]="seInformaTrabajador" (click)="seInformaTrabajador = !seInformaTrabajador">
+                <div class="toggle-thumb"></div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Área *</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="area" placeholder="Área donde se realizó la observación" />
+        </div>
+
+        <!-- Observador: fijo, resuelto del usuario logueado -->
+        <div class="observador-fijo">
+          <i class="ti ti-user-check"></i>
+          <div>
+            <div class="observador-fijo__nombre">{{ observadorNombre }}</div>
+            <div class="observador-fijo__cargo">{{ observadorCargo || '—' }}</div>
+          </div>
+        </div>
+
+      </div>
+    }
+
+    <!-- ─────────────────── PASO 2 ─────────────────── -->
+    @if (paso === 2) {
+      <div class="paso-body">
+
+        <!-- TRABAJADORES -->
+        <h2 class="paso-title"><i class="ti ti-users"></i> Trabajadores observados</h2>
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Agregar trabajador observado"
+            [options]="workersObservador"
+            valueField="workerId"
+            displayField="apellidoNombre"
+            [value]="trabajadorObservadoId"
+            [allowClear]="true"
+            placeholder="Buscar por nombre o DNI..."
+            (valueChange)="onTrabajadorObservadoChange($event)">
+          </app-search-select>
+        </div>
+
+        @if (trabajadores.length > 0) {
+          <div class="trabajadores-list">
+            @for (t of trabajadores; track t.trabajador.id; let i = $index) {
+              <div class="trab-card">
+                <div class="trab-card__header">
+                  <div class="trab-info">
+                    <span class="trab-name">{{ t.trabajador.apellidoNombre }}</span>
+                    <span class="trab-meta">{{ t.trabajador.dni }}{{ t.trabajador.empresaActual ? ' · ' + t.trabajador.empresaActual : '' }}</span>
+                  </div>
+                  <button type="button" class="btn-remove" (click)="quitarTrabajador(t.trabajador.id)" title="Quitar">
+                    <i class="ti ti-x"></i>
+                  </button>
+                </div>
+                <div class="trab-datos">
+                  @if (t.tipoTrabajador) {
+                    <span class="trab-chip"><i class="ti ti-id-badge"></i> {{ t.tipoTrabajador }}</span>
+                  }
+                  @if (t.tiempoEnObra) {
+                    <span class="trab-chip"><i class="ti ti-clock"></i> {{ t.tiempoEnObra }} en obra</span>
+                  }
+                  @if (t.aniosExperiencia) {
+                    <span class="trab-chip"><i class="ti ti-award"></i> {{ t.aniosExperiencia }} años exp.</span>
+                  }
+                  @if (t.trabajador.puesto) {
+                    <span class="trab-chip"><i class="ti ti-briefcase"></i> {{ t.trabajador.puesto }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- VERIFICACIÓN ENTRENAMIENTO -->
+        @if (verificaciones.length > 0) {
+          <h2 class="paso-title" style="margin-top:20px"><i class="ti ti-clipboard-check"></i> Verificación de entrenamiento</h2>
+          <div class="verificaciones-list">
+            @for (v of verificaciones; track v.criterioId) {
+              <div class="verif-row">
+                <span class="verif-pregunta">{{ v.pregunta }}</span>
+                <div class="toggle toggle--sm" [class.toggle--on]="v.resultado" (click)="v.resultado = !v.resultado">
+                  <div class="toggle-thumb"></div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- PASOS OBSERVADOS -->
+        <div class="pasos-header">
+          <h2 class="paso-title"><i class="ti ti-list-numbers"></i> Pasos observados</h2>
+          <button type="button" class="btn-add-paso" (click)="agregarPaso()">
+            <i class="ti ti-plus"></i> Agregar paso
+          </button>
+        </div>
+
+        @if (pasos.length === 0) {
+          <div class="pasos-empty">Sin pasos. Agrega el primero.</div>
+        }
+
+        <!-- FIX 6+7: sin nivel, botones con texto completo -->
+        @for (p of pasos; track p.id; let i = $index) {
+          <div class="paso-row" [class.paso-row--inseguro]="p.resultado === 'Inseguro'">
+            <div class="paso-num">{{ p.numeroDisplay }}</div>
+            <div class="paso-fields">
+              <div class="paso-top-row">
+                <input type="text" class="abril-field-input paso-desc" [(ngModel)]="p.descripcion"
+                  placeholder="Descripción del paso..." />
+                <div class="resultado-group">
+                  <button type="button" class="resultado-btn"
+                    [class.resultado-btn--seguro]="p.resultado === 'Seguro'"
+                    (click)="p.resultado = p.resultado === 'Seguro' ? '' : 'Seguro'">
+                    <span class="res-full">Seguro ✓</span>
+                    <span class="res-short">S ✓</span>
+                  </button>
+                  <button type="button" class="resultado-btn"
+                    [class.resultado-btn--inseguro]="p.resultado === 'Inseguro'"
+                    (click)="p.resultado = p.resultado === 'Inseguro' ? '' : 'Inseguro'">
+                    <span class="res-full">Inseguro ✗</span>
+                    <span class="res-short">I ✗</span>
+                  </button>
+                  <button type="button" class="resultado-btn"
+                    [class.resultado-btn--na]="p.resultado === 'NA'"
+                    (click)="p.resultado = p.resultado === 'NA' ? '' : 'NA'">
+                    <span class="res-full">No aplica —</span>
+                    <span class="res-short">NA</span>
+                  </button>
+                </div>
+                <button type="button" class="btn-remove-paso" (click)="quitarPaso(p.id)" title="Quitar">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </div>
+              @if (p.resultado === 'Inseguro') {
+                <input type="text" class="abril-field-input" [(ngModel)]="p.desviacionObservada"
+                  placeholder="Desviación observada (acto/condición inseguro)..." />
+              }
+            </div>
+          </div>
+        }
+
+      </div>
+    }
+
+    <!-- ─────────────────── PASO 3 ─────────────────── -->
+    @if (paso === 3) {
+      <div class="paso-body">
+
+        <h2 class="paso-title">
+          <i class="ti ti-camera"></i> Fotos de la actividad
+          <span class="fotos-counter" [class.fotos-ok]="fotosAreaBase64.length >= 3">
+            {{ fotosAreaBase64.length }} / mín. 3
+          </span>
+        </h2>
+        <p class="fotos-hint">Se requieren al menos 3 fotos de la actividad observada. Máximo 10.</p>
+
+        <app-photo-grid-picker
+          color="var(--color-abril-logo-blue)"
+          [previews]="fotosAreaPreview"
+          [max]="10"
+          (filesSelected)="onFotoAreaChange($event)"
+          (remove)="quitarFotoArea($event)"
+        ></app-photo-grid-picker>
+
+        <h2 class="paso-title" style="margin-top: 2rem"><i class="ti ti-messages"></i> Retroalimentación</h2>
+
+        <div class="toggle-grid">
+          <label class="toggle-field">
+            <span>¿Se felicitó al trabajador?</span>
+            <div class="toggle" [class.toggle--on]="seFelicito" (click)="seFelicito = !seFelicito">
+              <div class="toggle-thumb"></div>
+            </div>
+          </label>
+          <label class="toggle-field">
+            <span>¿Se recibieron comentarios?</span>
+            <div class="toggle" [class.toggle--on]="seRecibieronComentarios" (click)="seRecibieronComentarios = !seRecibieronComentarios">
+              <div class="toggle-thumb"></div>
+            </div>
+          </label>
+          <label class="toggle-field">
+            <span>¿Se retroalimentó al trabajador?</span>
+            <div class="toggle" [class.toggle--on]="seRetroalimento" (click)="seRetroalimento = !seRetroalimento">
+              <div class="toggle-thumb"></div>
+            </div>
+          </label>
+          <label class="toggle-field">
+            <span>¿Se obtuvo compromiso de mejora?</span>
+            <div class="toggle" [class.toggle--on]="seObtuvoCCompromiso" (click)="seObtuvoCCompromiso = !seObtuvoCCompromiso">
+              <div class="toggle-thumb"></div>
+            </div>
+          </label>
+        </div>
+
+        <div class="form-row" style="margin-top:16px">
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Acción requerida"
+              [options]="accionesRequeridasOptions"
+              valueField="value"
+              displayField="label"
+              [value]="accionRequerida"
+              placeholder="Sin acción requerida"
+              [allowClear]="true"
+              (valueChange)="accionRequerida = $event">
+            </app-search-select>
+          </div>
+        </div>
+
+        @if (accionRequerida) {
+          <div class="abril-field">
+            <label class="abril-field-label">Observación sobre la acción</label>
+            <textarea class="abril-field-input" [(ngModel)]="accionObservacion" rows="3"
+              placeholder="Describe la acción requerida..."></textarea>
+          </div>
+        }
+
+        <!-- FIRMA OBSERVADOR -->
+        <h2 class="paso-title" style="margin-top:20px"><i class="ti ti-signature"></i> Firma del observador</h2>
+        <div class="firma-trab-name">{{ observadorNombre || 'Sin observador seleccionado' }}</div>
+        <div class="firma-wrap">
+          <canvas #canvasObs
+            class="firma-canvas"
+            width="360" height="140"
+            (mousedown)="startDrawObs($event)"
+            (mousemove)="drawObs($event)"
+            (mouseup)="stopDrawObs()"
+            (mouseleave)="stopDrawObs()"
+            (touchstart)="startDrawObsTouch($event)"
+            (touchmove)="drawObsTouch($event)"
+            (touchend)="stopDrawObs()">
+          </canvas>
+          <button type="button" class="btn-clear-canvas" (click)="clearCanvasObs()">
+            <i class="ti ti-trash"></i> Limpiar
+          </button>
+        </div>
+
+        <!-- FIRMAS TRABAJADORES -->
+        @if (trabajadores.length > 0) {
+          <h2 class="paso-title" style="margin-top:20px"><i class="ti ti-signature"></i> Firmas de trabajadores</h2>
+          @for (t of trabajadores; track t.trabajador.id; let i = $index) {
+            <div class="firma-trab-block">
+              <div class="firma-trab-name">{{ t.trabajador.apellidoNombre }}</div>
+              <div class="firma-wrap">
+                <canvas #canvasTrab
+                  class="firma-canvas"
+                  width="360" height="120"
+                  (mousedown)="startDrawTrab($event, t.trabajador.id, i)"
+                  (mousemove)="drawTrab($event, t.trabajador.id)"
+                  (mouseup)="stopDrawTrab(t.trabajador.id, i)"
+                  (mouseleave)="stopDrawTrab(t.trabajador.id, i)"
+                  (touchstart)="startDrawTrabTouch($event, t.trabajador.id, i)"
+                  (touchmove)="drawTrabTouch($event, t.trabajador.id)"
+                  (touchend)="stopDrawTrab(t.trabajador.id, i)">
+                </canvas>
+                <button type="button" class="btn-clear-canvas" (click)="clearCanvasTrab(t.trabajador.id, i)">
+                  <i class="ti ti-trash"></i> Limpiar
+                </button>
+              </div>
+            </div>
+          }
+        }
+
+      </div>
+    }
+
+  }<!-- /!loadingCatalogos -->
+
+  <!-- FIX 1: Visor de documentos PET (modal overlay) -->
+  <app-document-viewer
+    [archivoUrl]="petVisorUrl"
+    [nombre]="petVisorNombre"
+    (closed)="cerrarVisorPet()">
+  </app-document-viewer>
+
+  <div modalFooter *ngIf="!loadingCatalogos && !resolviendoObservador">
+    <button type="button" class="btn-ghost" (click)="cancelar()">Cancelar</button>
+    <div class="footer-nav" *ngIf="!sinWorkerVinculado">
+      @if (paso > 1) {
+        <button type="button" class="btn-secondary" (click)="anterior()">
+          <i class="ti ti-chevron-left"></i> Anterior
+        </button>
+      }
+      <!-- FIX 8+9: disabled hasta que puedeAvanzar sea true -->
+      @if (paso < totalPasos) {
+        <button type="button" class="btn-primary" (click)="siguiente()" [disabled]="loadingCatalogos || !puedeAvanzar">
+          Siguiente <i class="ti ti-chevron-right"></i>
+        </button>
+      }
+      @if (paso === totalPasos) {
+        <button type="button" class="btn-primary btn-guardar" (click)="guardar()" [disabled]="guardando || fotosAreaBase64.length < 3">
+          @if (guardando) { <i class="ti ti-loader-2 spin"></i> } @else { <i class="ti ti-check"></i> }
+          Guardar OPT
+        </button>
+      }
+    </div>
+  </div>
+
+</app-abril-modal-panel>

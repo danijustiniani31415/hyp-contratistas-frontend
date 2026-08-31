@@ -1,0 +1,569 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #F4F6F9;
+}
+
+.bim-dash-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.bim-container {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ── Tarjetas planas UDP ────────────────────────────────────── */
+.bim-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(30, 58, 95, 0.04);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: box-shadow 0.15s ease;
+}
+
+.bim-card:hover {
+  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.08);
+}
+
+.selector-card {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-left: 4px solid #1E3A5F;
+}
+
+.filters-grid {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.project-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.project-select {
+  height: 38px;
+  font-weight: 600;
+  color: #1E3A5F;
+  border-color: #CBD5E1;
+  min-width: 260px;
+}
+
+.date-select {
+  height: 38px;
+  font-weight: 600;
+  color: #1E3A5F;
+  border-color: #CBD5E1;
+  width: 150px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* ── Card Header ────────────────────────────────────────────── */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.card-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.card-subtitle {
+  font-size: 0.8rem;
+  color: #64748B;
+  margin: 0.25rem 0 0 0;
+}
+
+.title-icon {
+  font-size: 1.1rem;
+  color: #1E3A5F;
+}
+
+.card-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #EDF4FB;
+  color: #1E3A5F;
+  white-space: nowrap;
+}
+
+/* ── Grid de Avance (semáforo) ────────────────────────────────── */
+.avance-zona-block {
+  padding-bottom: 1rem;
+  border-bottom: 1px dashed #E2E8F0;
+}
+
+.avance-zona-block:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.avance-zona-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.zona-nombre {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.zona-pct {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748B;
+}
+
+.avance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.6rem;
+}
+
+.avance-cell-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.avance-cell {
+  width: 100%;
+  height: 46px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: default;
+}
+
+.avance-cell-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748B;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.avance-legend {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding-top: 0.75rem;
+  border-top: 1px solid #F1F5F9;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: #64748B;
+  font-weight: 600;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+/* ── Tabla estándar UDP ──────────────────────────────────────── */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.bim-grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.bim-grid-table th {
+  padding: 8px 10px;
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: #1E3A5F;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  text-align: center;
+}
+
+.bim-grid-table td {
+  padding: 8px 10px;
+  border: 1px solid #E2E8F0;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.text-left {
+  text-align: left !important;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.text-navy {
+  color: #1E3A5F;
+}
+
+.plan-maestro-table tbody tr:hover {
+  background: #F8FAFC;
+}
+
+.meta-input {
+  width: 90px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #2E6DB4;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  text-align: center;
+  outline: none;
+}
+
+/* ── Badges de estado ───────────────────────────────────────── */
+.badge-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.badge-estado--ok {
+  background: #EAF3DE;
+  color: #1B6B3A;
+}
+
+.badge-estado--atraso {
+  background: #FDECEA;
+  color: #C0392B;
+}
+
+.badge-estado--pendiente {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+/* ── Gráficos Chart.js ──────────────────────────────────────── */
+.chart-wrap {
+  position: relative;
+  height: 320px;
+  width: 100%;
+}
+
+.skeleton-line--chart {
+  height: 280px;
+  width: 100%;
+}
+
+/* ── Galería de Evidencias ──────────────────────────────────── */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.25rem;
+}
+
+.gallery-card {
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #FFFFFF;
+}
+
+.gallery-img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-meta {
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748B;
+  background: #F8FAFC;
+  text-align: center;
+  border-top: 1px solid #F1F5F9;
+}
+
+/* ── Lista de Bloqueos ──────────────────────────────────────── */
+.bloqueos-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.bloqueo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.7rem 0.9rem;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+}
+
+.bloqueo-desc {
+  flex: 1;
+  font-size: 0.85rem;
+  color: #1E293B;
+  font-weight: 500;
+}
+
+.bloqueo-fecha {
+  font-size: 0.75rem;
+  color: #94A3B8;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Botones UDP ────────────────────────────────────────────── */
+.btn-primary-udp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 36px;
+  padding: 0 1.25rem;
+  background: #1E3A5F;
+  color: #FFFFFF;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary-udp:hover:not(:disabled) {
+  background: #162C48;
+}
+
+.btn-primary-udp:disabled {
+  background: #CBD5E1;
+  cursor: not-allowed;
+}
+
+.btn-secondary-udp {
+  height: 36px;
+  padding: 0 1.25rem;
+  background: #F1F5F9;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #CBD5E1;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-secondary-udp:hover:not(:disabled) {
+  background: #E2E8F0;
+}
+
+.btn-secondary-udp:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bim-select,
+.bim-input {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #1E293B;
+  background: #FFFFFF;
+  outline: none;
+}
+
+.bim-select:focus,
+.bim-input:focus {
+  border-color: #2E6DB4;
+}
+
+/* ── Foco visible accesible (outline azul) ───────────────────── */
+.bim-select:focus-visible,
+.bim-input:focus-visible,
+.meta-input:focus-visible,
+.btn-primary-udp:focus-visible,
+.btn-secondary-udp:focus-visible,
+.btn-retry:focus-visible {
+  outline: 2px solid #2E6DB4;
+  outline-offset: 2px;
+}
+
+/* ── Empty States & Alerts ──────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  background: #F8FAFC;
+  border: 2px dashed #E2E8F0;
+  border-radius: 8px;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  color: #94A3B8;
+  margin-bottom: 0.5rem;
+}
+
+.empty-title {
+  font-weight: 700;
+  color: #1E3A5F;
+  font-size: 0.95rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.empty-sub {
+  font-size: 0.8rem;
+  color: #64748B;
+  margin: 0;
+}
+
+.empty-sub-list {
+  font-size: 0.8rem;
+  color: #94A3B8;
+  font-style: italic;
+  padding: 1rem;
+  text-align: center;
+}
+
+.bim-alert {
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.85rem;
+}
+
+.bim-alert--danger {
+  background: #FDF2F2;
+  border: 1px solid #FCA5A5;
+  color: #991B1B;
+}
+
+.alert-icon {
+  font-size: 1.5rem;
+}
+
+.alert-content {
+  flex: 1;
+}
+
+.btn-retry {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 6px 12px;
+  background: #DC2626;
+  color: #FFFFFF;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+/* ── Skeleton Loaders (DESIGN-VICTOR.md §7) ─────────────────── */
+.skeleton-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400% 0;
+  }
+  100% {
+    background-position: 400% 0;
+  }
+}
+
+.skeleton-line {
+  background: linear-gradient(90deg, #dde5ef 25%, #eaeff6 50%, #dde5ef 75%);
+  background-size: 400% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 4px;
+  height: 16px;
+}

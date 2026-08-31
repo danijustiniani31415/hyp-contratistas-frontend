@@ -1,0 +1,426 @@
+<app-base-modal [title]="'Detalle del vecino'" width="w-[920px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-4 mt-2">
+
+    <!-- Cabecera -->
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <p class="text-lg font-semibold text-gray-800 leading-tight">{{ item.direccion || '—' }}</p>
+        <p *ngIf="item.interiorDepartamento" class="text-sm text-gray-400">
+          Int./Dpto.: {{ item.interiorDepartamento }}
+        </p>
+      </div>
+      <span
+        class="inline-block rounded-full px-3 py-1 text-xs font-semibold border shrink-0"
+        [ngClass]="item.colindanciaDescripcion === 'Colindante'
+          ? 'bg-[#D7FAF4] text-[#009C87] border-[#009C87]/30'
+          : 'bg-[#FEF3C7] text-[#92400E] border-[#92400E]/30'">
+        {{ item.colindanciaDescripcion }}
+      </span>
+    </div>
+
+    <!-- Tabs -->
+    <app-section-tabs [tabs]="tabs" [(value)]="activeTab"></app-section-tabs>
+
+    <!-- ── DETALLE ─────────────────────────────────────────────────── -->
+    <div *ngIf="activeTab === 'detalle'" class="flex flex-col gap-4 pt-1">
+
+      <!-- Barra de acciones -->
+      <div class="flex justify-end">
+        <button *ngIf="!editing" type="button" (click)="startEdit()"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#4CAF50] text-[#4CAF50] text-sm font-medium cursor-pointer hover:bg-[#E8F5E9] transition-colors">
+          <i class="ti ti-edit"></i> Editar
+        </button>
+      </div>
+
+      <!-- ══════════ VISTA (solo lectura) ══════════ -->
+      <ng-container *ngIf="!editing">
+        <div class="grid grid-cols-2 gap-x-6 gap-y-3">
+          <div>
+            <p class="text-xs text-[#4CAF50] font-medium">Proyecto</p>
+            <p class="text-sm text-gray-700">{{ item.projectDescription }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-[#4CAF50] font-medium">Uso</p>
+            <p class="text-sm text-gray-700">{{ item.usoDescripcion || '—' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-[#4CAF50] font-medium">Tipo de construcción</p>
+            <p class="text-sm text-gray-700">{{ item.tipoConstruccionDescripcion }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-[#4CAF50] font-medium">Fecha de registro</p>
+            <p class="text-sm text-gray-700">{{ item.createdDateTime | date:'dd/MM/yyyy' }}</p>
+          </div>
+        </div>
+
+        <!-- Personas -->
+        <div class="flex flex-col gap-2">
+          <p class="text-xs text-[#4CAF50] font-medium">Personas ({{ item.personas.length }})</p>
+          <div class="flex flex-col gap-2">
+            <div *ngFor="let p of item.personas"
+              class="flex items-center justify-between gap-3 border border-gray-200 rounded-lg px-3 py-2">
+              <div class="min-w-0">
+                <p class="text-sm text-gray-800 truncate">{{ p.nombre }}</p>
+                <p class="text-xs text-gray-400">
+                  DNI {{ p.dni || '—' }} · Cel. {{ p.celular || '—' }}
+                </p>
+              </div>
+              <span class="text-[11px] font-medium bg-[#E8F5E9] text-[#2E7D32] px-2 py-0.5 rounded-full shrink-0">
+                {{ p.relacionDescripcion }}
+              </span>
+            </div>
+            <p *ngIf="item.personas.length === 0" class="text-sm text-gray-400 italic">
+              No hay personas registradas.
+            </p>
+          </div>
+        </div>
+
+        <!-- Observaciones -->
+        <div *ngIf="item.observaciones" class="flex flex-col gap-1">
+          <p class="text-xs text-[#4CAF50] font-medium">Observaciones</p>
+          <p class="text-sm text-gray-700 whitespace-pre-line">{{ item.observaciones }}</p>
+        </div>
+
+        <!-- Estado de la propiedad (imágenes) -->
+        <div *ngIf="item.imagenes.length > 0" class="flex flex-col gap-2">
+          <p class="text-xs text-[#4CAF50] font-medium">Estado de la propiedad</p>
+          <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div *ngFor="let img of item.imagenes"
+              class="h-24 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50">
+              <app-draggable-image [src]="img.archivoUrl" [apiUrl]="apiBase" />
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ══════════ EDICIÓN ══════════ -->
+      <ng-container *ngIf="editing">
+        <!-- Campos de la propiedad -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-[6px]">
+            <label class="text-sm text-[#4CAF50] font-medium">Dirección (lote) <span class="text-red-500">*</span></label>
+            <input type="text" [(ngModel)]="loteForm.direccion" name="ed_direccion" placeholder="Dirección del lote"
+              class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30" />
+          </div>
+          <div class="flex flex-col gap-[6px]">
+            <label class="text-sm text-[#4CAF50] font-medium">Interior / Departamento</label>
+            <input type="text" [(ngModel)]="editForm.interiorDepartamento" name="ed_interior" placeholder="Interior o departamento"
+              class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30" />
+          </div>
+          <div>
+            <app-search-select label="Uso *" placeholder="Selecciona" [options]="usos"
+              valueField="id" displayField="descripcion"
+              [value]="editForm.vecinoUsoId" (valueChange)="editForm.vecinoUsoId = $event">
+            </app-search-select>
+          </div>
+          <div>
+            <app-search-select label="Colindante / No colindante *" placeholder="Selecciona" [options]="colindancias"
+              valueField="id" displayField="descripcion"
+              [value]="editForm.vecinoColindanciaId" (valueChange)="editForm.vecinoColindanciaId = $event">
+            </app-search-select>
+          </div>
+          <div>
+            <app-search-select label="Tipo de construcción *" placeholder="Selecciona" [options]="tiposConstruccion"
+              valueField="id" displayField="descripcion"
+              [value]="editForm.vecinoTipoConstruccionId" (valueChange)="editForm.vecinoTipoConstruccionId = $event">
+            </app-search-select>
+          </div>
+        </div>
+
+        <!-- Observaciones (del lote) -->
+        <div class="flex flex-col gap-[6px]">
+          <label class="text-sm text-[#4CAF50] font-medium">Observaciones (lote)</label>
+          <textarea [(ngModel)]="loteForm.observaciones" name="ed_observaciones" rows="3"
+            placeholder="Notas adicionales sobre el lote (opcional)"
+            class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30 resize-none"></textarea>
+        </div>
+
+        <!-- Personas (editar/añadir/quitar) -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+              Personas <span class="text-red-400 normal-case font-normal text-[11px]">* mín. 1</span>
+            </p>
+            <button type="button" (click)="addPersonaEdit()"
+              class="flex items-center gap-1.5 text-xs text-[#4CAF50] font-medium hover:text-[#43A047] cursor-pointer transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
+              </svg>
+              Agregar persona
+            </button>
+          </div>
+
+          <div class="flex flex-col gap-4">
+            <div *ngFor="let p of editForm.personas; let i = index; trackBy: trackByIndex"
+              class="border border-[#D6DEE5] rounded-lg p-3 flex flex-col gap-3 bg-[#FAFCF7]">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-gray-500">Persona {{ i + 1 }}</span>
+                <button *ngIf="editForm.personas.length > 1" type="button" (click)="removePersonaEdit(i)"
+                  class="p-1 text-gray-300 hover:text-red-400 transition-colors cursor-pointer rounded hover:bg-red-50">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="flex flex-col gap-[6px]">
+                  <label class="text-sm text-[#4CAF50] font-medium">DNI</label>
+                  <input type="text" maxlength="8" inputmode="numeric"
+                    [(ngModel)]="p.dni" [name]="'ed_dni_' + i" (keydown)="onNumericKeydown($event)" placeholder="N° de DNI"
+                    class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30" />
+                </div>
+                <div class="flex flex-col gap-[6px]">
+                  <label class="text-sm text-[#4CAF50] font-medium">Nombre completo <span class="text-red-500">*</span></label>
+                  <input type="text" [(ngModel)]="p.nombre" [name]="'ed_nombre_' + i" placeholder="Nombre completo"
+                    class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30" />
+                </div>
+                <div class="flex flex-col gap-[6px]">
+                  <label class="text-sm text-[#4CAF50] font-medium">Celular <span class="text-red-500">*</span></label>
+                  <input type="text" maxlength="20" inputmode="numeric"
+                    [(ngModel)]="p.celular" [name]="'ed_celular_' + i" (keydown)="onNumericKeydown($event)" placeholder="N° de celular"
+                    class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30" />
+                </div>
+                <div>
+                  <app-search-select label="Relación *" placeholder="Propietario, inquilino u otro"
+                    [options]="relacionTipos" valueField="id" displayField="descripcion"
+                    [value]="p.vecinoRelacionTipoId" (valueChange)="p.vecinoRelacionTipoId = $event">
+                  </app-search-select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estado de la propiedad (imágenes existentes + nuevas) -->
+        <div class="flex flex-col gap-2">
+          <label class="text-sm text-[#4CAF50] font-medium">Estado de la propiedad (imágenes)</label>
+
+          <div *ngIf="item.imagenes.length > 0" class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div *ngFor="let img of item.imagenes"
+              class="relative group h-24 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50">
+              <app-draggable-image [src]="img.archivoUrl" [apiUrl]="apiBase" />
+              <button type="button" (click)="removeExistingImage(img.vecinoImagenId)"
+                class="absolute top-1 right-1 bg-black/55 text-white rounded-full p-1 cursor-pointer hover:bg-black/75 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <app-file-selector
+            accept=".png,.jpg,.jpeg,.webp"
+            label="Arrastra nuevas imágenes aquí o"
+            hint="Puedes subir varias · PNG, JPG o WEBP (máx. 15 MB c/u)"
+            (fileSelected)="onImageSelected($event)">
+          </app-file-selector>
+
+          <div *ngIf="newImages.length > 0" class="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-1">
+            <div *ngFor="let img of newImages; let i = index; trackBy: trackByIndex"
+              class="relative rounded-lg overflow-hidden border border-[#4CAF50]/40">
+              <img [src]="img.preview" class="h-24 w-full object-cover" [alt]="'Nueva imagen ' + (i + 1)" />
+              <span class="absolute bottom-1 left-1 text-[10px] bg-[#4CAF50] text-white px-1.5 rounded">nueva</span>
+              <button type="button" (click)="removeNewImage(i)"
+                class="absolute top-1 right-1 bg-black/55 text-white rounded-full p-1 cursor-pointer hover:bg-black/75 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones de edición -->
+        <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+          <button type="button" (click)="cancelEdit()"
+            class="px-5 py-[10px] rounded-lg border border-[#D6DEE5] text-gray-600 text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors">
+            Cancelar
+          </button>
+          <button type="button" (click)="saveEdit()"
+            class="px-6 py-[10px] rounded-lg bg-[#4CAF50] text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors">
+            Guardar cambios
+          </button>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- ── GESTIÓN DE REQUERIMIENTOS (solicitudes) ─────────────────── -->
+    <div *ngIf="activeTab === 'requerimientos'" class="flex flex-col gap-4 pt-1">
+
+      <!-- Formulario nueva solicitud -->
+      <div class="border border-[#D6DEE5] rounded-lg p-4 flex flex-col gap-3 bg-[#FAFCF7]">
+        <label class="text-sm text-[#4CAF50] font-medium">Nueva solicitud</label>
+        <textarea
+          [(ngModel)]="nuevaDescripcion"
+          rows="3"
+          placeholder="Describe la solicitud del vecino…"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30 resize-none"></textarea>
+
+        <div class="flex items-center justify-between gap-3">
+          <!-- Toggle crítica -->
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <button type="button" (click)="nuevaCritica = !nuevaCritica"
+              class="relative w-10 h-5 rounded-full transition-colors"
+              [ngClass]="nuevaCritica ? 'bg-[#D30000]' : 'bg-gray-300'">
+              <span class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
+                [class.translate-x-5]="nuevaCritica"></span>
+            </button>
+            <span class="text-sm text-gray-600">Solicitud crítica</span>
+          </label>
+
+          <button type="button" (click)="addSolicitud()"
+            class="px-5 py-[9px] rounded-lg bg-[#4CAF50] text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors">
+            Añadir solicitud
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista de solicitudes (acordeón) -->
+      <div class="flex flex-col gap-3">
+        <div
+          *ngFor="let s of solicitudes"
+          class="border rounded-lg overflow-hidden"
+          [ngClass]="s.esCritica ? 'border-[#D30000]/30' : 'border-gray-200'">
+
+          <!-- Cuerpo de la solicitud -->
+          <div class="p-3 flex flex-col gap-2.5">
+            <div class="flex items-start justify-between gap-2">
+              <span class="text-[11px] text-gray-400">{{ s.createdDateTime | date:'dd/MM/yyyy HH:mm' }}</span>
+              <div class="flex items-center gap-2 shrink-0">
+                <span *ngIf="s.esCritica"
+                  class="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-[#FAD5D4] text-[#D30000] border border-[#D30000]/30">
+                  CRÍTICA
+                </span>
+                <button *ngIf="editDescripcionId !== s.vecinoSolicitudId" type="button" (click)="startEditDescripcion(s)"
+                  class="text-[11px] text-[#0086A5] hover:underline cursor-pointer inline-flex items-center gap-1">
+                  <i class="ti ti-pencil"></i> Editar
+                </button>
+              </div>
+            </div>
+
+            <ng-container *ngIf="editDescripcionId === s.vecinoSolicitudId; else verDescripcion">
+              <textarea
+                [(ngModel)]="descripcionDraft"
+                rows="4"
+                placeholder="Describe la solicitud del vecino…"
+                class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30 resize-none"></textarea>
+              <div class="flex items-center gap-2">
+                <button type="button" (click)="saveDescripcion(s)"
+                  class="px-3 py-[6px] rounded-lg bg-[#4CAF50] text-white text-xs font-medium cursor-pointer hover:bg-[#43A047] transition-colors">
+                  Guardar
+                </button>
+                <button type="button" (click)="cancelEditDescripcion()"
+                  class="px-3 py-[6px] rounded-lg bg-gray-100 text-gray-600 text-xs font-medium cursor-pointer hover:bg-gray-200 transition-colors">
+                  Cancelar
+                </button>
+              </div>
+            </ng-container>
+            <ng-template #verDescripcion>
+              <p class="text-sm text-gray-700 whitespace-pre-line">{{ s.descripcion }}</p>
+            </ng-template>
+
+            <div class="flex items-end justify-between gap-3 flex-wrap border-t border-gray-100 pt-2.5">
+              <div class="flex flex-col gap-1.5">
+                <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Estado de la solicitud</span>
+                <app-status-pills
+                  [options]="estados"
+                  [value]="s.vecinoSolicitudEstadoId"
+                  (valueChange)="onEstadoChange(s, $event)">
+                </app-status-pills>
+              </div>
+
+              <button type="button" (click)="toggleCompromisos(s)"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E8F5E9] text-[#4CAF50] text-xs font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors shrink-0">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+                {{ expandedSolicitudId === s.vecinoSolicitudId ? 'Ocultar compromisos' : 'Ver compromisos' }}
+                <svg width="14" height="14" viewBox="0 0 16 9" fill="none" class="transition-transform"
+                  [class.rotate-180]="expandedSolicitudId === s.vecinoSolicitudId">
+                  <path d="M14.692 0L16 1.339L8.873 8.629a1.997 1.997 0 0 1-2.746 0L0 1.339 1.308.001 8 6.844 14.692 0Z" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Panel de compromisos inline -->
+          <div *ngIf="expandedSolicitudId === s.vecinoSolicitudId"
+            class="border-t border-gray-100 bg-[#FAFBF8] p-3">
+            <app-gestion-vecinos-compromisos
+              [solicitud]="s"
+              [compromisoEstados]="compromisoEstados"
+              [entregableEstados]="entregableEstados">
+            </app-gestion-vecinos-compromisos>
+          </div>
+        </div>
+
+        <p *ngIf="solicitudesLoaded && solicitudes.length === 0"
+          class="text-center text-sm text-gray-400 italic py-6">
+          Este vecino aún no tiene solicitudes registradas.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- ── GESTIÓN DE REQUISITOS (documentos) ──────────────────────── -->
+    <div *ngIf="activeTab === 'requisitos'" class="flex flex-col gap-2 pt-1">
+
+      <p class="text-xs text-gray-400">
+        Sube cada documento requerido. El estado pasa a <b>Subido</b> automáticamente al adjuntar el
+        archivo. Marca <b>No aplica</b> si el documento no corresponde a este vecino.
+      </p>
+
+      <div
+        *ngFor="let r of requisitos"
+        class="flex items-center justify-between gap-3 border border-gray-200 rounded-lg p-3">
+
+        <div class="min-w-0 flex flex-col gap-1">
+          <span class="text-sm font-medium text-gray-700 truncate">{{ r.tipoDescripcion }}</span>
+          <a *ngIf="r.archivoUrl" [href]="requisitoFileUrl(r.archivoUrl)" target="_blank"
+            class="text-xs text-[#0086A5] hover:underline inline-flex items-center gap-1 truncate">
+            <i class="ti ti-file"></i> {{ r.originalFileName || 'Ver archivo' }}
+          </a>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <!-- Estado -->
+          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border"
+            [ngClass]="{
+              'bg-[#E8F5E9] text-[#2E7D32] border-[#2E7D32]/30': r.estadoDescripcion === 'Subido',
+              'bg-gray-100 text-gray-500 border-gray-300': r.estadoDescripcion === 'No subido',
+              'bg-[#FEF3C7] text-[#92400E] border-[#92400E]/30': r.estadoDescripcion === 'No aplica'
+            }">
+            {{ r.estadoDescripcion }}
+          </span>
+
+          <!-- Subir / Reemplazar (deshabilitado si No aplica) -->
+          <label *ngIf="!esNoAplica(r)"
+            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#E8F5E9] text-[#4CAF50] cursor-pointer hover:bg-[#d4f0b8] transition-colors inline-flex items-center gap-1">
+            <i class="ti ti-upload"></i> {{ r.archivoUrl ? 'Reemplazar' : 'Subir' }}
+            <input type="file" class="hidden"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp"
+              (change)="onRequisitoFileSelected(r, $event)" />
+          </label>
+
+          <!-- Toggle No aplica -->
+          <button type="button" (click)="toggleNoAplica(r)"
+            class="text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors cursor-pointer"
+            [ngClass]="esNoAplica(r)
+              ? 'bg-[#FEF3C7] text-[#92400E] border-[#92400E]/30 hover:bg-[#fde9b0]'
+              : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50'">
+            {{ esNoAplica(r) ? 'Quitar no aplica' : 'No aplica' }}
+          </button>
+        </div>
+      </div>
+
+      <p *ngIf="requisitosLoaded && requisitos.length === 0"
+        class="text-center text-sm text-gray-400 italic py-6">
+        No hay requisitos configurados.
+      </p>
+
+    </div>
+
+  </div>
+
+</app-base-modal>

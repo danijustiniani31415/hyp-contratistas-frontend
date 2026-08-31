@@ -1,0 +1,84 @@
+<div class="bg-white rounded-lg p-[20px] flex flex-col gap-4">
+
+  <!-- Botón crear -->
+  <div>
+    <button (click)="openCreateModal()"
+      class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer">
+      <div class="flex items-center gap-[10px]">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z" fill="#64BC04" />
+        </svg>
+        <p>Nueva plantilla</p>
+      </div>
+    </button>
+  </div>
+
+  <!-- Tabla de plantillas -->
+  <div class="w-full rounded-lg overflow-auto border border-[#D6DEE5]">
+    <table class="w-full table-fixed">
+      <thead class="bg-[#E5F7D1]">
+        <tr class="text-[#64BC04]">
+          <th class="w-[60px]"></th>
+          <th class="text-left px-4 py-2">Nombre</th>
+          <th class="w-[100px] text-center py-2">Ítems</th>
+          <th class="w-[60px]"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of templates"
+          class="border-b border-[#D6DEE5] h-[42px] hover:bg-gray-50 cursor-pointer"
+          (click)="openEditModal(t)">
+          <td class="text-center">
+            <div class="flex items-center justify-center">
+              <svg class="w-5 h-5 text-[#64BC04]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+          </td>
+          <td class="px-4 text-sm text-gray-800 font-medium">{{ t.templateName }}</td>
+          <td class="text-center">
+            <span class="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full border border-green-200">
+              {{ t.items.length }}
+            </span>
+          </td>
+          <td class="text-center">
+            <button class="cursor-pointer" (click)="delete(t, $event)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z" fill="#64BC04" />
+              </svg>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="templates.length === 0">
+          <td colspan="4" class="text-center py-10 text-gray-400">No hay plantillas. Crea una con el botón superior.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Modal: Crear plantilla -->
+<app-base-modal *ngIf="showCreateModal" title="NUEVA PLANTILLA" width="w-[400px]" (closeModal)="showCreateModal = false">
+  <div class="flex flex-col gap-4 mt-4">
+    <div class="flex flex-col gap-1">
+      <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Nombre *</label>
+      <input type="text" [(ngModel)]="newTemplateName" placeholder="Ej: Estructura Residencial"
+        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#64bc04]" />
+    </div>
+    <div class="flex justify-center mt-2">
+      <button (click)="create()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
+        <p class="text-white text-lg">Guardar</p>
+      </button>
+    </div>
+  </div>
+</app-base-modal>
+
+<!-- Modal: Editar plantilla -->
+<app-template-edit
+  *ngIf="showEditModal && selectedTemplate"
+  [template]="selectedTemplate!"
+  (closeModal)="showEditModal = false"
+  (saved)="showEditModal = false; loadTemplates()"
+/>

@@ -1,0 +1,25 @@
+/* ── Ancho del modal en pantallas angostas ────────────────────────────────
+   Cada página pasa el ancho como clase de Tailwind (`width="w-[880px]"`, el
+   default es `w-[1000px]`), y eso es un ancho FIJO: en cualquier pantalla más
+   angosta que ese valor el modal salía más ancho que el viewport y había que
+   arrastrarlo de lado para leerlo y para llenar el formulario (bug real:
+   "Nueva solicitud" de Solicitud de Personal — w-[880px] en un teléfono de
+   360px).
+
+   max-width solo puede achicar: mientras la pantalla sea más ancha que el valor
+   pedido no cambia absolutamente nada, así que ningún modal de escritorio se ve
+   distinto. */
+.base-modal-card {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+@media (max-width: 1023.98px) {
+  /* -40px = el `m-5` (20px por lado) que lleva el propio modal cuando no se le
+     fija alto; así el margen se respeta en vez de desbordar. Con alto fijo no
+     hay margen y el descuento queda como aire a los costados, que es lo que se
+     quiere igual. */
+  .base-modal-card {
+    max-width: calc(100vw - 40px);
+  }
+}

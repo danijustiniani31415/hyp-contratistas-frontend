@@ -1,0 +1,256 @@
+.dv-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1099;
+}
+
+.dv-modal {
+  position: fixed;
+  top: 5vh;
+  left: 5vw;
+  width: 90vw;
+  height: 90vh;
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+}
+
+.dv-hdr {
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 12px;
+  background: #ffffff;
+}
+
+.dv-nombre {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.dv-hdr-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.dv-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.dv-btn--primary {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+.dv-btn--primary:hover {
+  background: #1e293b;
+  border-color: #1e293b;
+}
+
+.dv-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.dv-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.dv-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+}
+
+.dv-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.dv-img {
+  max-width: 100%;
+  max-height: calc(90vh - 48px);
+  object-fit: contain;
+}
+
+.dv-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.dv-spinner {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #64bc04;
+  border-radius: 50%;
+  animation: dv-spin 0.7s linear infinite;
+}
+
+@keyframes dv-spin {
+  to { transform: rotate(360deg); }
+}
+
+.dv-no-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.dv-no-preview-txt {
+  font-size: 0.88rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* PDF canvas viewer */
+.dv-pdf-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dv-search-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fff;
+}
+
+.dv-search-input {
+  flex: 1;
+  max-width: 260px;
+  padding: 4px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  font-size: 0.82rem;
+  outline: none;
+}
+.dv-search-input:focus { border-color: #64bc04; }
+
+.dv-search-count {
+  font-size: 0.78rem;
+  color: #64748b;
+  min-width: 48px;
+  text-align: center;
+}
+
+.dv-btn-sm {
+  padding: 3px 8px;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.dv-page-info {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-left: 4px;
+}
+
+.dv-pdf-pages {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  background: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  gap: 12px;
+}
+
+.dv-pdf-page {
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.dv-text-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  opacity: 0.25;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.dv-text-layer span {
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  pointer-events: auto;
+}
+
+.dv-highlight {
+  background: rgba(255, 220, 0, 0.55) !important;
+  opacity: 1 !important;
+  border-radius: 2px;
+}
+
+.dv-highlight-active {
+  background: rgba(255, 140, 0, 0.75) !important;
+  opacity: 1 !important;
+}

@@ -1,0 +1,49 @@
+<app-abril-page-header
+  badge="SSOMA"
+  titulo="Inspecciones abiertas"
+  subtitulo="Gerenciales / cruzadas — únete y agrega tus propios hallazgos"
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="abiertas-body">
+
+  @if (loading) {
+    <div class="skeleton-stack">
+      @for (_ of [1,2,3]; track $index) {
+        <div class="skeleton-card"></div>
+      }
+    </div>
+  }
+
+  @if (!loading && items.length === 0) {
+    <div class="empty-state">
+      <i class="ti ti-clipboard-off"></i>
+      <span>No hay inspecciones gerenciales/cruzadas abiertas en este momento.</span>
+    </div>
+  }
+
+  @if (!loading) {
+    <div class="abiertas-grid">
+      @for (item of items; track item.id) {
+        <div class="abierta-card">
+          <div class="abierta-card__top">
+            <span class="abierta-card__tipo">{{ item.tipoNombre }}</span>
+            <span class="abierta-card__fecha">{{ item.fecha | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="abierta-card__proyecto">{{ item.proyectoNombre }}</div>
+          <div class="abierta-card__meta">
+            <span><i class="ti ti-alert-triangle"></i> {{ item.totalHallazgos }} hallazgo(s)</span>
+            <span><i class="ti ti-users"></i> {{ item.totalParticipantes }} participante(s)</span>
+          </div>
+          <div class="abierta-card__actions">
+            <button type="button" class="btn-ver" (click)="verDetalle(item.id)">Ver</button>
+            <button type="button" class="btn-unirme" [disabled]="uniendoId === item.id" (click)="unirmeYAgregar(item)">
+              @if (uniendoId === item.id) { <i class="ti ti-loader-2 spin"></i> } @else { Unirme y agregar hallazgo }
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+</div>

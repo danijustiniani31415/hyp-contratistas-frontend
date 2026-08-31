@@ -1,0 +1,31 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.hht-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: #ffffff;
+}
+
+.hht-state {
+  text-align: center;
+  padding: 40px 0;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.hht-num { text-align: right; }
+.hht-num--strong { font-weight: 700; color: #1a1a18; }
+.hht-foot-label {
+  text-align: right;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  padding: 10px 16px;
+}

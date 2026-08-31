@@ -1,0 +1,13 @@
+<!--
+  touch-none es imprescindible en móvil: sin él, arrastrar el dedo hace scroll de la página en vez
+  de dibujar. El ancho lo pone el contenedor y el canvas conserva su proporción interna.
+-->
+<canvas #canvas
+  [width]="anchoCanvas" [height]="altoCanvas"
+  class="w-full rounded-lg border bg-white touch-none cursor-crosshair"
+  style="border-color:var(--color-abril-border)"
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp()"
+  (pointerleave)="onPointerUp()">
+</canvas>

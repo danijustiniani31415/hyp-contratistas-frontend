@@ -1,0 +1,144 @@
+<div class="page-root">
+  <app-abril-page-header
+    badge="SSOMA · Materiales"
+    titulo="Datos Base del Proyecto"
+    subtitulo="HH, Área Techada y Trabajadores de cada proyecto — la base con la que se calculan los ratios"
+    [tabs]="headerTabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()">
+  </app-abril-page-header>
+
+  <div class="page-body">
+    <div class="ir-a-proyecto">
+      <label>Ir a la ficha de un proyecto (incluye proyectos nuevos sin datos aún)
+        <div class="ir-a-proyecto-fila">
+          <app-search-select
+            [options]="proyectosHabilitados"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="proyectoSeleccionado"
+            [compact]="true"
+            [showLabel]="false"
+            placeholder="Buscar proyecto..."
+            (valueChange)="proyectoSeleccionado = $event">
+          </app-search-select>
+          <button class="btn-primary" (click)="irAProyectoSeleccionado()" [disabled]="!proyectoSeleccionado">
+            <i class="ti ti-arrow-right"></i> Ir
+          </button>
+        </div>
+      </label>
+    </div>
+
+    <div *ngIf="loading" class="loading-msg">Cargando proyectos...</div>
+
+    <div *ngIf="!loading" style="margin-bottom:10px;">
+      <app-search-input
+        placeholder="Buscar proyecto..."
+        [(value)]="searchText"
+        (valueChange)="onFilterChange()"
+        width="280px">
+      </app-search-input>
+    </div>
+
+    <div *ngIf="!loading" class="drivers-table-wrap">
+      <table class="abril-table drivers-table">
+        <thead>
+          <tr>
+            <th>Proyecto</th>
+            <th>Estado</th>
+            <th class="num-col">HH Total</th>
+            <th class="num-col">Área (m²)</th>
+            <th class="num-col">Trabajadores</th>
+            <th>Fuente HH</th>
+            <th class="num-col">Familias c/ ratio</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="driversFiltrados.length === 0"><td colspan="8" class="text-center" style="padding:24px;color:#94a3b8;">Sin resultados.</td></tr>
+          <ng-container *ngFor="let d of driversPaged">
+            <!-- Fila normal -->
+            <tr *ngIf="editandoId !== d.projectId" class="driver-row">
+              <td class="proyecto-cell">
+                <button class="link-btn" (click)="irAProyecto(d.projectId)">
+                  {{ d.projectDescription }}
+                </button>
+              </td>
+              <td>
+                <span class="badge" [class.badge-ok]="d.habilitadoSsoma" [class.badge-neutral]="!d.habilitadoSsoma">
+                  {{ d.habilitadoSsoma ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="num-col">{{ d.hhTotalCasa | number:'1.0-0' }}</td>
+              <td class="num-col">{{ d.areaTechadaM2 | number:'1.2-2' }}</td>
+              <td class="num-col">{{ d.trabajadores }}</td>
+              <td><span class="badge" [ngClass]="fuenteClass(d)">{{ fuente(d) }}</span></td>
+              <td class="num-col">{{ d.familiasConRatio }}</td>
+              <td class="actions-cell">
+                <button class="btn-edit" (click)="abrirEdicion(d)" title="Editar datos base">
+                  <i class="ti ti-pencil"></i>
+                </button>
+              </td>
+            </tr>
+
+            <!-- Fila de edición inline -->
+            <tr *ngIf="editandoId === d.projectId" class="edit-row">
+              <td colspan="9" class="edit-cell">
+                <div class="edit-form">
+                  <strong>{{ d.projectDescription }}</strong>
+
+                  <div class="edit-fields">
+                    <label>HH Total
+                      <input type="number" [(ngModel)]="form.hhTotalCasa" min="0" step="0.01" />
+                    </label>
+                    <label>Área Techada (m²)
+                      <input type="number" [(ngModel)]="form.areaTechadaM2" min="0" step="0.01" />
+                    </label>
+                    <label>Trabajadores
+                      <input type="number" [(ngModel)]="form.trabajadores" min="0" />
+                    </label>
+                    <label>Fuente HH
+                      <app-search-select
+                        [options]="hhFuenteOpts"
+                        valueField="id"
+                        displayField="label"
+                        [value]="form.hhFuente"
+                        [compact]="true"
+                        [showLabel]="false"
+                        [allowClear]="false"
+                        [sortAlpha]="false"
+                        placeholder="Selecciona fuente"
+                        (valueChange)="form.hhFuente = $event">
+                      </app-search-select>
+                    </label>
+                    <label class="check-label">
+                      <input type="checkbox" [(ngModel)]="form.recalcularRatios" />
+                      Recalcular ratios automáticamente
+                    </label>
+                  </div>
+
+                  <div class="edit-actions">
+                    <button class="btn-save" (click)="guardar(d.projectId)">
+                      <i class="ti ti-check"></i> Guardar
+                    </button>
+                    <button class="btn-cancel" (click)="cancelarEdicion()">
+                      <i class="ti ti-x"></i> Cancelar
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+      <div class="shrink-0 max-w-[440px]" style="margin-top:10px;">
+        <app-paginator
+          [totalRecords]="driversFiltrados.length"
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          (pageChange)="changePage($event)">
+        </app-paginator>
+      </div>
+    </div>
+  </div>
+</div>

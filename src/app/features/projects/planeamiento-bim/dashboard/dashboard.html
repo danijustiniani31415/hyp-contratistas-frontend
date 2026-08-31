@@ -1,0 +1,371 @@
+<div class="bim-dash-page">
+  <!-- Encabezado Estándar Abril -->
+  <app-abril-page-header
+    titulo="PLANEAMIENTO"
+    subtitulo="Control de avance, plan maestro, PPC y causas de incumplimiento por proyecto"
+    [tabs]="tabs"
+  ></app-abril-page-header>
+
+  <!-- Sub-navegación Secundaria de Planeamiento BIM -->
+  <app-planeamiento-bim-subnav></app-planeamiento-bim-subnav>
+
+  <div class="bim-container">
+    <!-- Bar de Filtros: Proyecto + Rango de Fechas -->
+    <div class="bim-card selector-card">
+      <div class="filters-grid">
+        <div class="filter-item">
+          <label class="project-label" for="projectSelect">PROYECTO SELECCIONADO:</label>
+          <select
+            id="projectSelect"
+            class="bim-select project-select"
+            [ngModel]="selectedProjectId"
+            (ngModelChange)="onProjectChange($event)"
+            [disabled]="loadingProjects"
+          >
+            <option [ngValue]="null" disabled>-- Seleccione un proyecto --</option>
+            <option *ngFor="let p of projects" [ngValue]="p.projectId">
+              {{ p.projectDescription }}
+            </option>
+          </select>
+        </div>
+
+        <ng-container *ngIf="selectedProjectId">
+          <div class="filter-item">
+            <label class="project-label" for="desdeInput">PERÍODO DESDE:</label>
+            <input
+              id="desdeInput"
+              type="date"
+              class="bim-input date-select"
+              [(ngModel)]="desde"
+            />
+          </div>
+          <div class="filter-item">
+            <label class="project-label" for="hastaInput">HASTA:</label>
+            <input
+              id="hastaInput"
+              type="date"
+              class="bim-input date-select"
+              [(ngModel)]="hasta"
+            />
+          </div>
+          <button type="button" class="btn-primary-udp" (click)="aplicarFiltroFechas()">
+            <i class="ti ti-filter"></i> Aplicar filtro
+          </button>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Error al Cargar Proyectos (F9) -->
+    <div *ngIf="projectsError" class="bim-alert bim-alert--danger">
+      <i class="ti ti-alert-triangle-filled alert-icon"></i>
+      <div class="alert-content"><strong>Error:</strong> {{ projectsError }}</div>
+      <button type="button" class="btn-retry" (click)="cargarProyectos()">
+        <i class="ti ti-refresh"></i> Reintentar
+      </button>
+    </div>
+
+    <!-- Mensaje cuando aún no se ha seleccionado proyecto -->
+    <div *ngIf="!selectedProjectId && !projectsError" class="empty-state">
+      <i class="ti ti-click empty-icon"></i>
+      <p class="empty-title">Selección de Proyecto Requerida</p>
+      <p class="empty-sub">Por favor, seleccione un proyecto en el menú desplegable para ver su dashboard de planeamiento BIM.</p>
+    </div>
+
+    <ng-container *ngIf="selectedProjectId">
+      <!-- ═══════════════ 1. CONTROL DE AVANCE ═══════════════ -->
+      <div class="bim-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title"><i class="ti ti-grid-dots title-icon"></i> CONTROL DE AVANCE</h3>
+            <p class="card-subtitle">Cumplimiento por zona, nivel y sector en el período seleccionado</p>
+          </div>
+          <span class="card-badge" *ngIf="avanceData">{{ avanceData.porcentajeAvance | number:'1.0-0' }}% GENERAL</span>
+        </div>
+
+        <div *ngIf="loadingAvance" class="skeleton-wrapper">
+          <div class="skeleton-line" *ngFor="let i of [1,2,3]"></div>
+        </div>
+
+        <div *ngIf="avanceError && !loadingAvance" class="bim-alert bim-alert--danger">
+          <i class="ti ti-alert-triangle-filled alert-icon"></i>
+          <div class="alert-content"><strong>Error:</strong> {{ avanceError }}</div>
+          <button type="button" class="btn-retry" (click)="cargarAvance()">
+            <i class="ti ti-refresh"></i> Reintentar
+          </button>
+        </div>
+
+        <ng-container *ngIf="!loadingAvance && !avanceError && avanceData">
+          <div *ngIf="avanceData.zonas.length === 0" class="empty-sub-list">
+            Este proyecto no tiene zonas configuradas. Diríjase a "Configuración Inicial" para definirlas.
+          </div>
+
+          <div *ngFor="let zona of avanceData.zonas" class="avance-zona-block">
+            <div class="avance-zona-header">
+              <span class="zona-nombre">{{ zona.zonaNombre }}</span>
+              <span class="zona-pct">{{ zona.porcentajeAvance | number:'1.0-0' }}% ({{ zona.cumplidosRegistros }}/{{ zona.totalRegistros }})</span>
+            </div>
+
+            <div *ngIf="zona.celdas.length === 0" class="empty-sub-list">Sin registros en el rango para esta zona.</div>
+
+            <div *ngIf="zona.celdas.length > 0" class="avance-grid">
+              <div *ngFor="let celda of zona.celdas" class="avance-cell-wrap">
+                <span
+                  class="avance-cell"
+                  role="img"
+                  [attr.aria-label]="semaforoLabel(celda.nivelNombre, celda.sectorNombre, celda.totalRegistros, celda.cumplidosRegistros, celda.porcentajeAvance)"
+                  [title]="semaforoLabel(celda.nivelNombre, celda.sectorNombre, celda.totalRegistros, celda.cumplidosRegistros, celda.porcentajeAvance)"
+                  [style.background-color]="semaforoColor(semaforoDeCelda(celda.totalRegistros, celda.porcentajeAvance))"
+                >
+                  {{ celda.totalRegistros === 0 ? '—' : (celda.porcentajeAvance | number:'1.0-0') + '%' }}
+                </span>
+                <span class="avance-cell-label">{{ celda.nivelNombre }} · {{ celda.sectorNombre }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="avance-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#1B6B3A"></span> ≥90% cumplido</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#D97706"></span> 70-89% cumplido</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#C0392B"></span> &lt;70% cumplido</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#94A3B8"></span> Sin registros</span>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- ═══════════════ 2. PLAN MAESTRO ═══════════════ -->
+      <div class="bim-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title"><i class="ti ti-timeline title-icon"></i> PLAN MAESTRO</h3>
+            <p class="card-subtitle">Meta vs. avance real acumulado por semana y macro-actividad</p>
+          </div>
+          <div class="header-actions" *ngIf="!loadingPlanMaestro && !planMaestroError && planMaestro.length > 0">
+            <ng-container *ngIf="!editandoMetas">
+              <button type="button" class="btn-secondary-udp" (click)="toggleEdicionMetas()">
+                <i class="ti ti-edit"></i> Editar metas
+              </button>
+            </ng-container>
+            <ng-container *ngIf="editandoMetas">
+              <button type="button" class="btn-secondary-udp" (click)="toggleEdicionMetas()" [disabled]="savingMetas">
+                Cancelar
+              </button>
+              <button type="button" class="btn-primary-udp" (click)="guardarMetas()" [disabled]="savingMetas">
+                <i class="ti ti-device-floppy"></i> {{ savingMetas ? 'Guardando...' : 'Guardar metas' }}
+              </button>
+            </ng-container>
+          </div>
+        </div>
+
+        <div *ngIf="loadingPlanMaestro" class="skeleton-wrapper">
+          <div class="skeleton-line" *ngFor="let i of [1,2,3,4]"></div>
+        </div>
+
+        <div *ngIf="planMaestroError && !loadingPlanMaestro" class="bim-alert bim-alert--danger">
+          <i class="ti ti-alert-triangle-filled alert-icon"></i>
+          <div class="alert-content"><strong>Error:</strong> {{ planMaestroError }}</div>
+          <button type="button" class="btn-retry" (click)="cargarPlanMaestro()">
+            <i class="ti ti-refresh"></i> Reintentar
+          </button>
+        </div>
+
+        <ng-container *ngIf="!loadingPlanMaestro && !planMaestroError">
+          <div *ngIf="planMaestro.length === 0" class="empty-sub-list">
+            Sin metas semanales registradas para este proyecto.
+          </div>
+
+          <div *ngIf="planMaestro.length > 0" class="table-responsive">
+            <table class="bim-grid-table plan-maestro-table">
+              <thead>
+                <tr>
+                  <th>MACRO-ACTIVIDAD</th>
+                  <th>SEMANA</th>
+                  <th>META (%)</th>
+                  <th>REAL (%)</th>
+                  <th>ESTADO</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of planMaestro">
+                  <td class="text-left font-bold text-navy">{{ row.macroActividadNombre }}</td>
+                  <td>{{ row.fechaInicioSemana | date:'dd/MM/yyyy' }} – {{ row.fechaFinSemana | date:'dd/MM/yyyy' }}</td>
+                  <td>
+                    <span *ngIf="!editandoMetas">{{ row.metaAvance | number:'1.0-1' }}%</span>
+                    <input
+                      *ngIf="editandoMetas"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      class="meta-input"
+                      [ngModel]="metaActual(row)"
+                      (ngModelChange)="onMetaChange(row, $event)"
+                      [attr.aria-label]="'Meta de avance para ' + row.macroActividadNombre + ', semana del ' + (row.fechaInicioSemana | date:'dd/MM/yyyy')"
+                    />
+                  </td>
+                  <td>{{ row.avanceReal | number:'1.0-1' }}%</td>
+                  <td>
+                    <span
+                      class="badge-estado"
+                      [class.badge-estado--ok]="row.avanceReal >= row.metaAvance"
+                      [class.badge-estado--atraso]="row.avanceReal < row.metaAvance"
+                    >
+                      <i class="ti" [class.ti-check]="row.avanceReal >= row.metaAvance" [class.ti-alert-triangle]="row.avanceReal < row.metaAvance"></i>
+                      {{ row.avanceReal >= row.metaAvance ? 'AL DÍA' : 'CON RETRASO' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- ═══════════════ 3. PPC DIARIO + HISTÓRICO ═══════════════ -->
+      <div class="bim-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title"><i class="ti ti-chart-line title-icon"></i> PPC DIARIO E HISTÓRICO</h3>
+            <p class="card-subtitle">Porcentaje de Plan Cumplido vs. meta del proyecto</p>
+          </div>
+        </div>
+
+        <div *ngIf="loadingPpc" class="skeleton-wrapper">
+          <div class="skeleton-line skeleton-line--chart"></div>
+        </div>
+
+        <div *ngIf="ppcError && !loadingPpc" class="bim-alert bim-alert--danger">
+          <i class="ti ti-alert-triangle-filled alert-icon"></i>
+          <div class="alert-content"><strong>Error:</strong> {{ ppcError }}</div>
+          <button type="button" class="btn-retry" (click)="cargarPpc()">
+            <i class="ti ti-refresh"></i> Reintentar
+          </button>
+        </div>
+
+        <div *ngIf="!loadingPpc && !ppcError && ppcData && ppcData.dias.length === 0" class="empty-sub-list">
+          Sin registros de PPC en el rango seleccionado.
+        </div>
+
+        <div class="chart-wrap" [style.display]="!loadingPpc && !ppcError && ppcData && ppcData.dias.length > 0 ? 'block' : 'none'">
+          <canvas #ppcCanvas></canvas>
+        </div>
+      </div>
+
+      <!-- ═══════════════ 4. PARETO DE CAUSAS ═══════════════ -->
+      <div class="bim-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title"><i class="ti ti-chart-bar title-icon"></i> PARETO DE CAUSAS DE INCUMPLIMIENTO</h3>
+            <p class="card-subtitle">Causas ordenadas por frecuencia con línea de acumulado (regla 80/20)</p>
+          </div>
+          <span class="card-badge" *ngIf="paretoData">{{ paretoData.totalNoCumplidas }} NO CUMPLIDAS</span>
+        </div>
+
+        <div *ngIf="loadingPareto" class="skeleton-wrapper">
+          <div class="skeleton-line skeleton-line--chart"></div>
+        </div>
+
+        <div *ngIf="paretoError && !loadingPareto" class="bim-alert bim-alert--danger">
+          <i class="ti ti-alert-triangle-filled alert-icon"></i>
+          <div class="alert-content"><strong>Error:</strong> {{ paretoError }}</div>
+          <button type="button" class="btn-retry" (click)="cargarPareto()">
+            <i class="ti ti-refresh"></i> Reintentar
+          </button>
+        </div>
+
+        <div *ngIf="!loadingPareto && !paretoError && paretoCausas.length === 0" class="empty-sub-list">
+          Sin causas de incumplimiento registradas en el rango seleccionado.
+        </div>
+
+        <div class="chart-wrap" [style.display]="!loadingPareto && !paretoError && paretoCausas.length > 0 ? 'block' : 'none'">
+          <canvas #paretoCanvas></canvas>
+        </div>
+      </div>
+
+      <!-- ═══════════════ 5. EVIDENCIA FOTOGRÁFICA DEL DÍA ═══════════════ -->
+      <div class="bim-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title"><i class="ti ti-photo title-icon"></i> EVIDENCIA FOTOGRÁFICA DEL DÍA</h3>
+            <p class="card-subtitle">Fotografías registradas en la carga diaria de la fecha seleccionada</p>
+          </div>
+          <div class="filter-item">
+            <label class="project-label" for="fechaEvidenciasInput">FECHA:</label>
+            <input
+              id="fechaEvidenciasInput"
+              type="date"
+              class="bim-input date-select"
+              [ngModel]="fechaEvidencias"
+              (ngModelChange)="onFechaEvidenciasChange($event)"
+            />
+          </div>
+        </div>
+
+        <div *ngIf="loadingEvidencias" class="skeleton-wrapper">
+          <div class="skeleton-line" *ngFor="let i of [1,2]"></div>
+        </div>
+
+        <div *ngIf="evidenciasError && !loadingEvidencias" class="bim-alert bim-alert--danger">
+          <i class="ti ti-alert-triangle-filled alert-icon"></i>
+          <div class="alert-content"><strong>Error:</strong> {{ evidenciasError }}</div>
+          <button type="button" class="btn-retry" (click)="cargarEvidencias()">
+            <i class="ti ti-refresh"></i> Reintentar
+          </button>
+        </div>
+
+        <ng-container *ngIf="!loadingEvidencias && !evidenciasError">
+          <div *ngIf="evidencias.length === 0" class="empty-state">
+            <i class="ti ti-photo-off empty-icon"></i>
+            <p class="empty-title">Sin evidencias fotográficas</p>
+            <p class="empty-sub">No se registraron imágenes para la fecha seleccionada.</p>
+          </div>
+
+          <div *ngIf="evidencias.length > 0" class="gallery-grid">
+            <div *ngFor="let foto of evidencias" class="gallery-card">
+              <img [src]="foto.url" alt="Evidencia fotográfica de planeamiento BIM" class="gallery-img" />
+              <div class="gallery-meta">{{ foto.createdDateTime | date:'dd/MM/yyyy HH:mm' }}</div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- ═══════════════ 6. RESTRICCIONES ABIERTAS ═══════════════ -->
+      <div class="bim-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title"><i class="ti ti-barrier-block title-icon"></i> RESTRICCIONES ABIERTAS</h3>
+            <p class="card-subtitle">Restricciones activas del proyecto (fecha de cierre no registrada)</p>
+          </div>
+          <span class="card-badge" *ngIf="!loadingRestricciones && !restriccionesError">{{ restriccionesActivas.length }} ACTIVAS</span>
+        </div>
+
+        <div *ngIf="loadingRestricciones" class="skeleton-wrapper">
+          <div class="skeleton-line" *ngFor="let i of [1,2]"></div>
+        </div>
+
+        <div *ngIf="restriccionesError && !loadingRestricciones" class="bim-alert bim-alert--danger">
+          <i class="ti ti-alert-triangle-filled alert-icon"></i>
+          <div class="alert-content"><strong>Error:</strong> {{ restriccionesError }}</div>
+          <button type="button" class="btn-retry" (click)="cargarRestriccionesActivas()">
+            <i class="ti ti-refresh"></i> Reintentar
+          </button>
+        </div>
+
+        <ng-container *ngIf="!loadingRestricciones && !restriccionesError">
+          <div *ngIf="restriccionesActivas.length === 0" class="empty-sub-list">
+            No hay restricciones activas registradas para este proyecto.
+          </div>
+
+          <ul *ngIf="restriccionesActivas.length > 0" class="bloqueos-list">
+            <li *ngFor="let r of restriccionesActivas" class="bloqueo-item">
+              <span class="badge-estado" [class.badge-estado--atraso]="r.estado === 'ABIERTO'" [class.badge-estado--pendiente]="r.estado === 'EN_GESTION'">
+                <i class="ti ti-alert-triangle"></i> {{ r.estado === 'ABIERTO' ? 'ABIERTO' : 'EN GESTIÓN' }}
+              </span>
+              <span class="bloqueo-desc">{{ r.descripcion }}</span>
+              <span class="bloqueo-fecha">{{ r.fechaCreacion | date:'dd/MM/yyyy' }}</span>
+            </li>
+          </ul>
+        </ng-container>
+      </div>
+    </ng-container>
+  </div>
+</div>

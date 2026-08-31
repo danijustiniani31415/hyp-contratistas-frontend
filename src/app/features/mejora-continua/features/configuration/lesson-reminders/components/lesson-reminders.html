@@ -1,0 +1,162 @@
+<app-abril-page-header
+  [badge]="'MEJORA CONTINUA · ' + anioActual"
+  titulo="Recordatorios"
+  subtitulo="Configuración de recordatorios de lecciones aprendidas."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="bg-white flex-1 overflow-y-auto p-[20px] flex flex-col gap-5">
+  <app-section-tabs
+    [tabs]="sectionTabs"
+    [value]="activeSection"
+    (valueChange)="onSectionChange($event)"
+  ></app-section-tabs>
+
+  <!-- SECCIÓN: Usuarios (CRUD user_project) -->
+  <div *ngIf="activeSection === 'users'" class="flex flex-col gap-3">
+    <div class="flex w-full items-end justify-between gap-3 flex-wrap">
+      <div class="flex items-end gap-3 flex-wrap">
+        <div class="w-[260px]">
+          <app-search-select
+            label="Área"
+            [options]="subareaOptions"
+            valueField="value"
+            displayField="label"
+            [value]="selectedSubarea"
+            (valueChange)="onSubareaChange($event)"
+            placeholder="Todas las áreas"
+          ></app-search-select>
+        </div>
+
+        <div class="w-[260px]">
+          <app-search-select
+            label="Trabajador"
+            [options]="workerOptions"
+            valueField="workerId"
+            displayField="fullName"
+            [value]="selectedWorkerId"
+            (valueChange)="onWorkerChange($event)"
+            placeholder="Todos los trabajadores"
+          ></app-search-select>
+        </div>
+      </div>
+
+      <button
+        (click)="openCreateModal($event)"
+        class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer"
+      >
+        <div class="flex items-center gap-[10px]">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+              fill="#64BC04"
+            />
+          </svg>
+          <p>Nuevo registro</p>
+        </div>
+      </button>
+    </div>
+
+    <div class="w-full rounded-lg overflow-auto border border-[#D6DEE5] bg-white">
+      <table class="w-full">
+        <thead class="bg-[#E5F7D1]">
+          <tr class="text-[#64BC04]">
+            <th class="text-center px-[16px] py-[10px] font-semibold w-[90px]"></th>
+            <th class="text-left px-[16px] py-[10px] font-semibold">Trabajador</th>
+            <th class="text-left px-[16px] py-[10px] font-semibold">Proyecto</th>
+            <th class="text-center px-[16px] py-[10px] font-semibold w-[140px]">Estado</th>
+            <th class="text-center px-[16px] py-[10px] font-semibold w-[140px]">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of paged.data" class="border-b border-[#D6DEE5] hover:bg-gray-50">
+            <td class="px-[16px] py-[8px] text-center">
+              <div class="flex items-center justify-center gap-2">
+                <button class="cursor-pointer" title="Editar proyecto" (click)="openEditModal(item, $event)">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+                      fill="#64BC04"
+                    />
+                  </svg>
+                </button>
+                <button class="cursor-pointer" title="Eliminar" (click)="delete(item, $event)">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z"
+                      fill="#D30000"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </td>
+            <td class="px-[16px] py-[8px] text-gray-700" [title]="item.workerFullName ?? ''">
+              {{ item.workerFullName }}
+            </td>
+            <td class="px-[16px] py-[8px] text-gray-700" [title]="item.projectDescription ?? ''">
+              {{ item.projectDescription }}
+            </td>
+            <td class="px-[16px] py-[8px] text-center">
+              <app-status-badge
+                [text]="item.active ? 'ACTIVO' : 'INACTIVO'"
+                [bgColor]="item.active ? '#D7FAF4' : '#FAD5D4'"
+                [textColor]="item.active ? '#009C87' : '#D30000'"
+              />
+            </td>
+            <td class="px-[16px] py-[8px] text-center">
+              <button
+                (click)="toggle(item, $event)"
+                class="text-xs font-medium px-[10px] py-[4px] rounded-[6px] border transition-colors cursor-pointer"
+                [ngClass]="
+                  item.active
+                    ? 'border-red-200 text-red-600 hover:bg-red-50'
+                    : 'border-green-300 text-green-700 hover:bg-green-50'
+                "
+              >
+                {{ item.active ? 'Desactivar' : 'Activar' }}
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!paged.data?.length">
+            <td colspan="5" class="px-[16px] py-[32px] text-center text-gray-400 text-sm">Sin registros</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <app-paginator
+      [totalRecords]="paged.totalRecords"
+      [currentPage]="paged.page"
+      [totalPages]="paged.totalPages"
+      (pageChange)="changePage($event)"
+    ></app-paginator>
+  </div>
+
+  <!-- SECCIÓN: Staff de proyectos (toggle filter) -->
+  <div *ngIf="activeSection === 'staff'">
+    <app-project-staff-list></app-project-staff-list>
+  </div>
+
+  <!-- SECCIÓN: Jefaturas (toggle recordatorio 4.º día) -->
+  <div *ngIf="activeSection === 'jefes'">
+    <app-jefe-list></app-jefe-list>
+  </div>
+
+  <!-- SECCIÓN: Revisor de Trabajadores (jefe directo por worker) -->
+  <div *ngIf="activeSection === 'revisores'">
+    <app-worker-revisor-list></app-worker-revisor-list>
+  </div>
+</div>
+
+<app-lesson-reminder-create
+  *ngIf="showCreateModal"
+  (closeModal)="showCreateModal = false"
+  (saved)="onCreated()"
+></app-lesson-reminder-create>
+
+<app-lesson-reminder-edit
+  *ngIf="showEditModal && editingItem"
+  [item]="editingItem"
+  (closeModal)="closeEditModal()"
+  (saved)="onEdited()"
+></app-lesson-reminder-edit>

@@ -1,0 +1,143 @@
+<app-abril-page-header
+  [badge]="'CONTABILIDAD · ' + anioActual"
+  titulo="Dashboard"
+  subtitulo="Indicadores de facturas de proveedores."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="bg-white rounded-lg flex flex-col flex-1 min-h-0 overflow-y-auto p-5 gap-4">
+
+  <!-- ── FILTROS (mismos que la tabla de facturas) ─────────────────── -->
+  <div class="flex flex-wrap items-end gap-4 py-1">
+
+    <div class="w-full sm:w-[230px]">
+      <app-search-select label="Razón social proveedor" placeholder="— Todos —"
+        [options]="suppliers" valueField="contributorId" displayField="contributorName"
+        [value]="filters.contributorId" (valueChange)="filters.contributorId = $event" [allowClear]="true">
+      </app-search-select>
+    </div>
+
+    <div class="w-full sm:w-[150px] flex flex-col gap-[6px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">RUC proveedor</label>
+      <input type="text" [(ngModel)]="filters.contributorRuc" (keyup.enter)="onSearch()" placeholder="Buscar…"
+        class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+    </div>
+
+    <div class="w-full sm:w-[230px]">
+      <app-search-select label="Razón social Abril" placeholder="— Todas —"
+        [options]="abrilCompanies" valueField="contributorId" displayField="contributorName"
+        [value]="filters.abrilContributorId" (valueChange)="filters.abrilContributorId = $event" [allowClear]="true">
+      </app-search-select>
+    </div>
+
+    <ng-container *ngIf="showAdvanced">
+      <div class="w-full sm:w-[150px] flex flex-col gap-[6px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">RUC Abril</label>
+        <input type="text" [(ngModel)]="filters.abrilContributorRuc" (keyup.enter)="onSearch()" placeholder="Buscar…"
+          class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      </div>
+
+      <div class="w-[calc(50%-8px)] sm:w-[110px] flex flex-col gap-[6px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Serie</label>
+        <input type="text" [(ngModel)]="filters.serie" (keyup.enter)="onSearch()" placeholder="F001"
+          class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      </div>
+
+      <div class="w-[calc(50%-8px)] sm:w-[130px] flex flex-col gap-[6px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Correlativo</label>
+        <input type="text" [(ngModel)]="filters.correlativo" (keyup.enter)="onSearch()" placeholder="1234"
+          class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      </div>
+
+      <div class="w-full sm:w-[200px]">
+        <app-search-select label="Forma de pago" placeholder="— Todas —"
+          [options]="paymentForms" valueField="invoicePaymentFormId" displayField="invoicePaymentFormDescription"
+          [value]="filters.invoicePaymentFormId" (valueChange)="filters.invoicePaymentFormId = $event" [allowClear]="true">
+        </app-search-select>
+      </div>
+
+      <div class="w-[calc(50%-8px)] sm:w-[120px] flex flex-col gap-[6px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Total mín.</label>
+        <input type="number" min="0" step="0.01" [(ngModel)]="filters.totalMin" (keyup.enter)="onSearch()" placeholder="0.00"
+          class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      </div>
+      <div class="w-[calc(50%-8px)] sm:w-[120px] flex flex-col gap-[6px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Total máx.</label>
+        <input type="number" min="0" step="0.01" [(ngModel)]="filters.totalMax" (keyup.enter)="onSearch()" placeholder="0.00"
+          class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      </div>
+
+      <div class="w-[calc(50%-8px)] sm:w-[170px]">
+        <app-date-picker label="Emisión desde" color="var(--color-abril-primary)"
+          [value]="filters.issueDateFrom" (valueChange)="filters.issueDateFrom = $event">
+        </app-date-picker>
+      </div>
+      <div class="w-[calc(50%-8px)] sm:w-[170px]">
+        <app-date-picker label="Emisión hasta" color="var(--color-abril-primary)"
+          [value]="filters.issueDateTo" (valueChange)="filters.issueDateTo = $event">
+        </app-date-picker>
+      </div>
+    </ng-container>
+
+    <button type="button" (click)="showAdvanced = !showAdvanced"
+      class="h-[42px] px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center justify-center gap-2 self-end grow sm:grow-0" style="background:var(--color-abril-primary-light); color:var(--color-abril-primary)">
+      <svg class="w-4 h-4" viewBox="0 0 15 15" fill="none">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M6.417 0v9.167H5.5V11H6.417v3.667H8.25V11h.917V9.167H8.25V0H6.417ZM.917 0v3.668H0V5.5h.917v9.167H2.75V5.5h.917V3.668H2.75V0H.917ZM11.916.0002V5.5h-.917v1.833h.917v7.334h1.834V7.333h.917V5.5h-.917V0l-1.834.0002Z" fill="currentColor"/>
+      </svg>
+      {{ showAdvanced ? 'Ocultar filtros' : 'Búsqueda avanzada' }}
+    </button>
+
+    <button type="button" (click)="onSearch()"
+      class="h-[42px] px-5 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors flex items-center justify-center gap-2 self-end grow sm:grow-0" style="background:var(--color-abril-primary)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/></svg>
+      Buscar
+    </button>
+
+    <button type="button" (click)="clearFilters()"
+      class="h-[42px] px-4 rounded-lg border text-sm font-medium cursor-pointer self-end text-gray-600 hover:bg-gray-50 grow sm:grow-0" style="border-color:var(--color-abril-border)">
+      Limpiar
+    </button>
+  </div>
+
+  @if (data) {
+    <!-- ── KPIs ─────────────────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div class="rounded-xl border p-4" style="border-color:var(--color-abril-border)">
+        <div class="text-xs text-gray-400">Facturas</div>
+        <div class="text-2xl font-bold text-gray-800">{{ data.totalCount }}</div>
+      </div>
+      @for (c of data.totalsByCurrency; track c.currencyCode) {
+        <div class="rounded-xl border p-4" style="border-color:var(--color-abril-border)">
+          <div class="text-xs text-gray-400">Total {{ c.currencyCode }} ({{ c.count }})</div>
+          <div class="text-2xl font-bold" style="color:var(--color-abril-primary)">
+            {{ c.currencySymbol || c.currencyCode }} {{ c.total | number: '1.2-2' }}
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- ── GRÁFICOS ─────────────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div class="rounded-xl border p-4 flex flex-col" style="border-color:var(--color-abril-border)">
+        <div class="text-sm font-semibold mb-3" style="color:var(--color-abril-primary-dark)">Total por mes de emisión</div>
+        <div class="h-[240px] sm:h-[300px]"><canvas id="chart-mes"></canvas></div>
+      </div>
+      <div class="rounded-xl border p-4 flex flex-col" style="border-color:var(--color-abril-border)">
+        <div class="text-sm font-semibold mb-3" style="color:var(--color-abril-primary-dark)">Top 10 proveedores por total</div>
+        <div class="h-[240px] sm:h-[300px]"><canvas id="chart-proveedores"></canvas></div>
+      </div>
+      <div class="rounded-xl border p-4 flex flex-col" style="border-color:var(--color-abril-border)">
+        <div class="text-sm font-semibold mb-3" style="color:var(--color-abril-primary-dark)">Total por forma de pago</div>
+        <div class="h-[240px] sm:h-[300px]"><canvas id="chart-pago"></canvas></div>
+      </div>
+      <div class="rounded-xl border p-4 flex flex-col" style="border-color:var(--color-abril-border)">
+        <div class="text-sm font-semibold mb-3" style="color:var(--color-abril-primary-dark)">Total por razón social Abril</div>
+        <div class="h-[240px] sm:h-[300px]"><canvas id="chart-abril"></canvas></div>
+      </div>
+    </div>
+
+    <p class="text-xs text-gray-400">
+      Nota: los montos de los gráficos suman todas las monedas. Usa los KPIs superiores para ver el total por moneda.
+    </p>
+  }
+</div>

@@ -1,0 +1,135 @@
+<app-base-modal [title]="'Editar factura'" width="w-[760px]" [preventCloseWhenDirty]="true" (closeModal)="closeModal.emit()">
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+
+    <!-- Fecha de emisión -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Fecha de emisión *</label>
+      <input type="date" [(ngModel)]="form.issueDate"
+        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+    </div>
+
+    <!-- Serie + correlativo -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">N° de factura *</label>
+      <div class="flex items-center gap-2">
+        <input type="text" [(ngModel)]="form.serie" maxlength="4" placeholder="Serie (F001)"
+          class="w-[110px] rounded-lg border border-gray-300 px-3 py-2 text-sm uppercase focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        <span class="text-gray-400">-</span>
+        <input type="text" [(ngModel)]="form.correlativo" maxlength="8" placeholder="Correlativo (1234)"
+          class="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+      </div>
+    </div>
+
+    <!-- Proveedor -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Proveedor *</label>
+      <app-search-select
+        [options]="suppliers"
+        valueField="contributorId"
+        displayField="contributorName"
+        [value]="form.contributorId"
+        (valueChange)="onSupplierChange($event)"
+        [showLabel]="false"
+        placeholder="— Selecciona proveedor —"
+        [allowClear]="true">
+      </app-search-select>
+    </div>
+
+    <!-- RUC del proveedor (bidireccional) -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">RUC del proveedor</label>
+      <input type="text" maxlength="11" [ngModel]="supplierRuc" (ngModelChange)="onRucChange($event)"
+        placeholder="Escribe un RUC o elige un proveedor"
+        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+    </div>
+
+    <!-- Razón social de Abril -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Razón social Abril *</label>
+      <app-search-select
+        [options]="abrilCompanies"
+        valueField="contributorId"
+        displayField="contributorName"
+        [value]="form.abrilContributorId"
+        (valueChange)="form.abrilContributorId = $event"
+        [showLabel]="false"
+        placeholder="— Selecciona razón social —"
+        [allowClear]="true">
+      </app-search-select>
+    </div>
+
+    <!-- Descripción -->
+    <div class="md:col-span-2">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Descripción del bien o servicio *</label>
+      <textarea [(ngModel)]="form.description" rows="2"
+        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none"></textarea>
+    </div>
+
+    <!-- Forma de pago -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Forma de pago *</label>
+      <app-search-select
+        [options]="paymentForms"
+        valueField="invoicePaymentFormId"
+        displayField="invoicePaymentFormDescription"
+        [value]="form.invoicePaymentFormId"
+        (valueChange)="form.invoicePaymentFormId = $event"
+        [showLabel]="false"
+        placeholder="— Selecciona —"
+        [allowClear]="false">
+      </app-search-select>
+    </div>
+
+    <!-- Moneda -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Moneda *</label>
+      <app-search-select
+        [options]="currencies"
+        valueField="currencyId"
+        displayField="currencyCode"
+        [value]="form.currencyId"
+        (valueChange)="form.currencyId = $event"
+        [showLabel]="false"
+        placeholder="— Selecciona moneda —"
+        [allowClear]="true">
+      </app-search-select>
+    </div>
+
+    <!-- Total -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Total de la factura *</label>
+      <input type="number" min="0" step="0.01" [(ngModel)]="form.total" placeholder="0.00"
+        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+    </div>
+
+    <!-- Documento -->
+    <div class="md:col-span-2">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Documento / factura (opcional, reemplaza el actual)</label>
+      @if (!documentName) {
+        <app-file-selector
+          accept=".pdf,.png,.jpg,.jpeg,.webp"
+          hint="Deja vacío para conservar el documento actual"
+          color="var(--color-abril-primary)"
+          (fileSelected)="onFileSelected($event)">
+        </app-file-selector>
+      } @else {
+        <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+          <span class="truncate text-gray-700">{{ documentName }}</span>
+          <button type="button" (click)="removeFile()" class="ml-3 text-red-500 hover:underline">Quitar</button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Acciones -->
+  <div class="mt-6 flex justify-end gap-3">
+    <button type="button" (click)="closeModal.emit()"
+      class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">
+      Cancelar
+    </button>
+    <button type="button" (click)="save()"
+      class="rounded-lg px-5 py-2 text-sm font-medium text-white hover:opacity-90" style="background:var(--color-abril-primary)">
+      Guardar cambios
+    </button>
+  </div>
+</app-base-modal>

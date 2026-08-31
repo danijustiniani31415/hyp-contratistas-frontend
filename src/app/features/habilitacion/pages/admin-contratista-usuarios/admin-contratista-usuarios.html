@@ -1,0 +1,35 @@
+<section class="px-3 py-4 space-y-4">
+  <header class="flex items-center justify-between">
+    <h2 class="text-base font-semibold text-gray-800">Gestión de Usuarios Contratista</h2>
+  </header>
+
+  <!-- Selector de empresa -->
+  <div class="empresa-selector-card">
+    <label class="selector-label">Empresa contratista</label>
+    <div *ngIf="loadingEmpresas" class="text-sm text-gray-400">Cargando empresas...</div>
+    <select
+      *ngIf="!loadingEmpresas"
+      class="empresa-select"
+      [ngModel]="empresaSeleccionada"
+      (ngModelChange)="onEmpresaChange($event)"
+    >
+      <option value="">— Selecciona una empresa —</option>
+      <option *ngFor="let e of empresas" [value]="e.id">
+        {{ e.razonSocial }}{{ e.nombreComercial ? ' · ' + e.nombreComercial : '' }}
+      </option>
+    </select>
+  </div>
+
+  <!-- Panel de usuarios -->
+  <div *ngIf="empresaSeleccionada != null">
+    <app-contratista-usuarios
+      [contractorId]="empresaSeleccionada!"
+      [currentUserId]="null"
+      [forceAdminMode]="true"
+    ></app-contratista-usuarios>
+  </div>
+
+  <div *ngIf="empresaSeleccionada == null && !loadingEmpresas" class="empty-hint">
+    Selecciona una empresa para ver y gestionar sus usuarios.
+  </div>
+</section>

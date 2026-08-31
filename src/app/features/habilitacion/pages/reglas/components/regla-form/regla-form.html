@@ -1,0 +1,67 @@
+<app-base-modal *ngIf="open" [title]="title" width="w-[680px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <div class="grid-2">
+      <div class="col-span-2">
+        <label class="field-label">Entregable *</label>
+        <select class="field-input" [(ngModel)]="model.itemId">
+          <option [ngValue]="undefined">— Seleccionar —</option>
+          <option *ngFor="let i of items" [ngValue]="i.id">{{ i.nombre }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Categoría (ID)</label>
+        <input
+          type="number"
+          class="field-input"
+          [(ngModel)]="model.categoriaId"
+          placeholder="Vacío = todas"
+          min="1"
+        />
+      </div>
+      <div>
+        <label class="field-label">Tipo trabajador</label>
+        <select class="field-input" [(ngModel)]="model.tipoTrabajador">
+          <option *ngFor="let t of tipoOptions" [value]="t.id">{{ t.label }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Evaluador (rol)</label>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="model.evaluadorRol"
+          placeholder="Ej: Jefe Corporativo SSOMA"
+        />
+      </div>
+      <div>
+        <label class="field-label">Nota</label>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="model.nota"
+          placeholder="Nota libre…"
+        />
+      </div>
+
+      <div class="check-row col-span-2">
+        <label>
+          <input type="checkbox" [(ngModel)]="model.requerido" />
+          <span>Requerido</span>
+        </label>
+        <label>
+          <input type="checkbox" [(ngModel)]="model.activo" />
+          <span>Activo</span>
+        </label>
+      </div>
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

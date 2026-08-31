@@ -1,0 +1,407 @@
+<app-abril-modal-panel
+  [titulo]="isNuevo ? 'Nuevo Caso Social' : 'Caso Social · ' + (detalle?.estado ?? '')"
+  icono="ti-heart-handshake"
+  variant="blue"
+  [width]="isNuevo ? '560px' : '720px'"
+  (closeModal)="close()">
+
+  <!-- ── Loading ───────────────────────────────────────────────────────────── -->
+  @if (loading) {
+    <div class="modal-loading">Cargando...</div>
+  }
+
+  <!-- ══════════════ MODO CREAR ══════════════ -->
+  @if (!loading && isNuevo) {
+    <div class="form-grid">
+
+      <!-- Worker search -->
+      <div class="form-col-full abril-field">
+        <label class="abril-field-label">Trabajador *</label>
+        <app-worker-search-input
+          color="var(--color-abril-logo-blue)"
+          [selected]="workerSelected"
+          (selectedChange)="onWorkerSelectedChange($event)">
+        </app-worker-search-input>
+      </div>
+
+      <!-- Tipo + Prioridad -->
+      <div class="abril-field">
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Tipo de caso *"
+          [options]="tiposOptsForSelect"
+          valueField="id"
+          displayField="label"
+          [sortAlpha]="false"
+          [value]="fTipo"
+          [allowClear]="false"
+          placeholder="Selecciona tipo"
+          (valueChange)="fTipo = $event">
+        </app-search-select>
+      </div>
+      <div class="abril-field">
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Prioridad *"
+          [options]="prioridadesOptsForSelect"
+          valueField="id"
+          displayField="label"
+          [sortAlpha]="false"
+          [value]="fPrioridad"
+          [allowClear]="false"
+          placeholder="Selecciona prioridad"
+          (valueChange)="fPrioridad = $event">
+        </app-search-select>
+      </div>
+
+      <!-- Fecha apertura -->
+      <div class="abril-field">
+        <label class="abril-field-label">Fecha apertura *</label>
+        <input class="abril-field-input" type="date" [(ngModel)]="fFechaApertura" />
+      </div>
+
+      <!-- Motivo -->
+      <div class="form-col-full abril-field">
+        <label class="abril-field-label">Motivo</label>
+        <input class="abril-field-input" type="text" [(ngModel)]="fMotivo" placeholder="Motivo del caso" />
+      </div>
+
+      <!-- Descripción -->
+      <div class="form-col-full abril-field">
+        <label class="abril-field-label">Descripción</label>
+        <textarea class="abril-field-input" [(ngModel)]="fDescripcion" rows="3" placeholder="Descripción detallada"></textarea>
+      </div>
+    </div>
+
+    <div modalFooter>
+      <button type="button" class="btn-ghost" (click)="close()" [disabled]="saving">Cancelar</button>
+      <button type="button" class="btn-primary" (click)="guardar()" [disabled]="saving">
+        <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
+        {{ saving ? 'Guardando…' : 'Crear Caso' }}
+      </button>
+    </div>
+  }
+
+  <!-- ══════════════ MODO EDITAR / VER ══════════════ -->
+  @if (!loading && !isNuevo && detalle) {
+
+    <!-- Info header -->
+    <div class="caso-header">
+      <div class="caso-header-left">
+        <span class="caso-worker">{{ detalle.workerNombre ?? '—' }}</span>
+        <span class="caso-worker-meta">DNI {{ detalle.workerDni }} · {{ detalle.empresaNombre ?? '—' }}</span>
+      </div>
+      <div class="caso-header-right">
+        <span class="badge" [class]="estadoBadge(detalle.estado)">{{ detalle.estado }}</span>
+        <span class="badge" [class]="prioridadBadge(detalle.prioridad)">{{ detalle.prioridad }}</span>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-nav">
+      <button [class.active]="tab === 'info'" (click)="tab = 'info'">Info</button>
+      <button [class.active]="tab === 'seguimientos'" (click)="tab = 'seguimientos'">
+        Seguimientos ({{ detalle.seguimientos.length }})
+      </button>
+      <button [class.active]="tab === 'sctr'" (click)="tab = 'sctr'">SCTR</button>
+    </div>
+
+    <!-- ── Tab Info ── -->
+    @if (tab === 'info') {
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Tipo de caso</span>
+          <span class="info-value">{{ detalle.tipoCaso }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Fecha apertura</span>
+          <span class="info-value">{{ detalle.fechaApertura | date:'dd/MM/yyyy' }}</span>
+        </div>
+        @if (detalle.fechaCierre) {
+          <div class="info-item">
+            <span class="info-label">Fecha cierre</span>
+            <span class="info-value">{{ detalle.fechaCierre | date:'dd/MM/yyyy' }}</span>
+          </div>
+        }
+        @if (detalle.resultado) {
+          <div class="info-item form-col-full">
+            <span class="info-label">Resultado</span>
+            <span class="info-value">{{ detalle.resultado }}</span>
+          </div>
+        }
+        @if (detalle.motivo) {
+          <div class="info-item form-col-full">
+            <span class="info-label">Motivo</span>
+            <span class="info-value">{{ detalle.motivo }}</span>
+          </div>
+        }
+        @if (detalle.descripcion) {
+          <div class="info-item form-col-full">
+            <span class="info-label">Descripción</span>
+            <span class="info-value">{{ detalle.descripcion }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Editar datos -->
+      <details class="edit-section">
+        <summary>Editar datos del caso</summary>
+        <div class="form-grid mt-3">
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Tipo"
+              [options]="tiposOptsForSelect"
+              valueField="id"
+              displayField="label"
+              [sortAlpha]="false"
+              [value]="fTipo"
+              [allowClear]="false"
+              placeholder="Selecciona tipo"
+              (valueChange)="fTipo = $event">
+            </app-search-select>
+          </div>
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Prioridad"
+              [options]="prioridadesOptsForSelect"
+              valueField="id"
+              displayField="label"
+              [sortAlpha]="false"
+              [value]="fPrioridad"
+              [allowClear]="false"
+              placeholder="Selecciona prioridad"
+              (valueChange)="fPrioridad = $event">
+            </app-search-select>
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Fecha apertura</label>
+            <input class="abril-field-input" type="date" [(ngModel)]="fFechaApertura" />
+          </div>
+          <div class="form-col-full abril-field">
+            <label class="abril-field-label">Motivo</label>
+            <input class="abril-field-input" type="text" [(ngModel)]="fMotivo" />
+          </div>
+          <div class="form-col-full abril-field">
+            <label class="abril-field-label">Descripción</label>
+            <textarea class="abril-field-input" [(ngModel)]="fDescripcion" rows="3"></textarea>
+          </div>
+          <div class="form-col-full flex justify-end">
+            <button type="button" class="btn-primary" (click)="guardar()" [disabled]="saving">
+              <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
+              {{ saving ? 'Guardando…' : 'Guardar cambios' }}
+            </button>
+          </div>
+        </div>
+      </details>
+
+      <!-- Cerrar caso -->
+      @if (detalle.estado !== 'Cerrado') {
+        @if (!cerrando) {
+          <div class="action-row">
+            <button type="button" class="btn-danger" (click)="confirmarCerrar()">Cerrar caso</button>
+          </div>
+        } @else {
+          <div class="close-form">
+            <h4>Cerrar caso</h4>
+            <div class="form-grid">
+              <div class="abril-field">
+                <label class="abril-field-label">Fecha cierre *</label>
+                <input class="abril-field-input" type="date" [(ngModel)]="cFechaCierre" />
+              </div>
+              <div class="form-col-full abril-field">
+                <label class="abril-field-label">Resultado</label>
+                <textarea class="abril-field-input" [(ngModel)]="cResultado" rows="2" placeholder="Resultado o conclusión del caso"></textarea>
+              </div>
+            </div>
+            <div class="flex gap-2 justify-end mt-2">
+              <button type="button" class="btn-ghost" (click)="cerrando = false">Cancelar</button>
+              <button type="button" class="btn-danger" (click)="ejecutarCerrar()" [disabled]="saving">
+                {{ saving ? 'Cerrando…' : 'Confirmar cierre' }}
+              </button>
+            </div>
+          </div>
+        }
+      }
+    }
+
+    <!-- ── Tab Seguimientos ── -->
+    @if (tab === 'seguimientos') {
+      <div class="seg-list">
+        @for (s of detalle.seguimientos; track s.id) {
+          <div class="seg-item">
+            <div class="seg-item-head">
+              <span class="seg-tipo">{{ s.tipo }}</span>
+              <span class="seg-fecha">{{ s.fecha | date:'dd/MM/yyyy' }}</span>
+              <button class="row-action btn-del" title="Eliminar" (click)="eliminarSeguimiento(s)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+                </svg>
+              </button>
+            </div>
+            @if (s.descripcion) { <p class="seg-desc">{{ s.descripcion }}</p> }
+            @if (s.proximaAccion) {
+              <p class="seg-proxima">→ {{ s.proximaAccion }}</p>
+            }
+          </div>
+        }
+        @if (detalle.seguimientos.length === 0) {
+          <p class="empty-msg">Sin seguimientos registrados.</p>
+        }
+      </div>
+
+      @if (!addingSeg) {
+        <div class="action-row">
+          <button type="button" class="btn-primary" (click)="addingSeg = true">
+            <i class="ti ti-plus"></i> Agregar seguimiento
+          </button>
+        </div>
+      } @else {
+        <div class="seg-form">
+          <div class="form-grid">
+            <div class="abril-field">
+              <label class="abril-field-label">Fecha *</label>
+              <input class="abril-field-input" type="date" [(ngModel)]="sgFecha" />
+            </div>
+            <div class="abril-field">
+              <app-search-select
+                color="var(--color-abril-logo-blue)"
+                label="Tipo *"
+                [options]="seguimientoTiposForSelect"
+                valueField="id"
+                displayField="label"
+                [sortAlpha]="false"
+                [value]="sgTipo"
+                [allowClear]="false"
+                placeholder="Selecciona tipo"
+                (valueChange)="sgTipo = $event">
+              </app-search-select>
+            </div>
+            <div class="form-col-full abril-field">
+              <label class="abril-field-label">Descripción</label>
+              <textarea class="abril-field-input" [(ngModel)]="sgDescripcion" rows="2"></textarea>
+            </div>
+            <div class="form-col-full abril-field">
+              <label class="abril-field-label">Próxima acción</label>
+              <input class="abril-field-input" type="text" [(ngModel)]="sgProxima" />
+            </div>
+          </div>
+          <div class="flex gap-2 justify-end mt-2">
+            <button type="button" class="btn-ghost" (click)="addingSeg = false">Cancelar</button>
+            <button type="button" class="btn-primary" (click)="agregarSeguimiento()" [disabled]="savingSeg">
+              {{ savingSeg ? 'Guardando…' : 'Guardar' }}
+            </button>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ── Tab SCTR ── -->
+    @if (tab === 'sctr') {
+      @if (loadingSctr) {
+        <p class="empty-msg">Cargando SCTR…</p>
+      } @else if (sctr && !editandoSctr) {
+        <!-- Vista SCTR -->
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Estado</span>
+            <span class="badge" [class]="sctrBadge(sctr.estadoNombre)">{{ sctr.estadoNombre }}</span>
+          </div>
+          @if (sctr.numeroSiniestro) {
+            <div class="info-item">
+              <span class="info-label">N° siniestro</span>
+              <span class="info-value">{{ sctr.numeroSiniestro }}</span>
+            </div>
+          }
+          @if (sctr.aseguradora) {
+            <div class="info-item">
+              <span class="info-label">Aseguradora</span>
+              <span class="info-value">{{ sctr.aseguradora }}</span>
+            </div>
+          }
+          @if (sctr.fechaReporteSctr) {
+            <div class="info-item">
+              <span class="info-label">Fecha reporte</span>
+              <span class="info-value">{{ sctr.fechaReporteSctr | date:'dd/MM/yyyy' }}</span>
+            </div>
+          }
+          @if (sctr.fechaAtencionSctr) {
+            <div class="info-item">
+              <span class="info-label">Fecha atención</span>
+              <span class="info-value">{{ sctr.fechaAtencionSctr | date:'dd/MM/yyyy' }}</span>
+            </div>
+          }
+          @if (sctr.montoCubierto != null) {
+            <div class="info-item">
+              <span class="info-label">Monto cubierto</span>
+              <span class="info-value">S/ {{ sctr.montoCubierto | number:'1.2-2' }}</span>
+            </div>
+          }
+          @if (sctr.observaciones) {
+            <div class="info-item form-col-full">
+              <span class="info-label">Observaciones</span>
+              <span class="info-value">{{ sctr.observaciones }}</span>
+            </div>
+          }
+        </div>
+        <div class="action-row">
+          <button type="button" class="btn-secondary" (click)="editandoSctr = true">Editar</button>
+          <button type="button" class="btn-danger" (click)="eliminarSctr()">Eliminar</button>
+        </div>
+      } @else if (!sctr || editandoSctr) {
+        <!-- Formulario SCTR -->
+        <div class="form-grid">
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Estado *"
+              [options]="sctrEstados"
+              valueField="id"
+              displayField="nombre"
+              [sortAlpha]="false"
+              [value]="sctrEstadoId"
+              [allowClear]="false"
+              placeholder="Selecciona estado"
+              (valueChange)="sctrEstadoId = $event">
+            </app-search-select>
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">N° siniestro</label>
+            <input class="abril-field-input" type="text" [(ngModel)]="sctrNumeroSiniestro" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Aseguradora</label>
+            <input class="abril-field-input" type="text" [(ngModel)]="sctrAseguradora" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Monto cubierto (S/)</label>
+            <input class="abril-field-input" type="number" step="0.01" min="0" [(ngModel)]="sctrMonto" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Fecha reporte SCTR</label>
+            <input class="abril-field-input" type="date" [(ngModel)]="sctrFechaReporte" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Fecha atención SCTR</label>
+            <input class="abril-field-input" type="date" [(ngModel)]="sctrFechaAtencion" />
+          </div>
+          <div class="form-col-full abril-field">
+            <label class="abril-field-label">Observaciones</label>
+            <textarea class="abril-field-input" [(ngModel)]="sctrObservaciones" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="flex gap-2 justify-end mt-3">
+          @if (editandoSctr) {
+            <button type="button" class="btn-ghost" (click)="editandoSctr = false">Cancelar</button>
+          }
+          <button type="button" class="btn-primary" (click)="guardarSctr()" [disabled]="savingSctr">
+            {{ savingSctr ? 'Guardando…' : (sctr ? 'Actualizar SCTR' : 'Registrar SCTR') }}
+          </button>
+        </div>
+      }
+    }
+
+  }
+
+</app-abril-modal-panel>

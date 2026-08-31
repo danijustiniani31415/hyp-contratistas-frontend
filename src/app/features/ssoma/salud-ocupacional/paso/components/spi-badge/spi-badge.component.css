@@ -1,0 +1,29 @@
+:host {
+  display: inline-flex;
+}
+
+.spi-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  transition: box-shadow 0.2s ease;
+}
+
+.spi-badge:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.10); }
+
+.spi-badge.sm  { padding: 0.1rem 0.5rem;   font-size: 0.68rem; gap: 0.2rem; }
+.spi-badge.md  { padding: 0.22rem 0.65rem; font-size: 0.78rem; }
+.spi-badge.lg  { padding: 0.38rem 0.95rem; font-size: 0.95rem; gap: 0.45rem; }
+
+.spi-badge.lg .spi-val { font-size: 1.1rem; font-weight: 800; }
+
+.spi-badge.success { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+.spi-badge.warning { background: #fef9c3; color: #92400e; border-color: #fde047; }
+.spi-badge.danger  { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+.spi-badge.none    { background: #f3f4f6; color: #6b7280; border-color: #e5e7eb; }

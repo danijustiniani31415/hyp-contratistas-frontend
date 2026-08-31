@@ -1,0 +1,558 @@
+/* Modal de decisión de Gerencia. El chrome (fondo, header azul, footer fijo) lo pone
+   `app-abril-modal-panel`: acá solo va el contenido. */
+
+/* ── Aviso de destinatarios ───────────────────────────────────────────── */
+/* Único aviso que queda en el modal (a qué correo llega la decisión). El de
+   instrucciones que iba arriba se eliminó: era puro texto explicativo. */
+.ad-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border: 1px solid #bfdbfe;
+  background: var(--color-abril-logo-blue-light, #e6f0f8);
+  color: #1f2937;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.ad-note i {
+  font-size: 17px;
+  color: var(--color-abril-logo-blue, #005d9d);
+  flex-shrink: 0;
+}
+
+.ad-note--done {
+  border-color: #e5e7eb;
+  background: #f8fafc;
+}
+
+.ad-note--done i {
+  color: #6b7280;
+}
+
+.ad-note--mail {
+  margin-top: 12px;
+}
+
+.ad-note--warn {
+  border-color: #fde68a;
+  background: #fef9c3;
+  color: #92400e;
+}
+
+.ad-note--warn i {
+  color: #92400e;
+}
+
+.ad-mail {
+  font-weight: 600;
+  color: var(--color-abril-logo-blue, #005d9d);
+  word-break: break-all;
+}
+
+/* "Con copia a …" baja a su propia línea: es contexto del destinatario principal, no un dato aparte. */
+.ad-note-sub {
+  display: block;
+  margin-top: 3px;
+  color: #6b7280;
+}
+
+/* ── Secciones ────────────────────────────────────────────────────────── */
+.ad-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-abril-logo-blue, #005d9d);
+  margin: 16px 0 0;
+}
+
+.ad-section-title--flush {
+  margin: 0;
+}
+
+/* Tres datos (el área ya está en el subtítulo del header del modal). */
+.ad-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin-top: 8px;
+}
+
+.ad-meta-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.ad-meta-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-top: 3px;
+}
+
+.ad-block {
+  margin-top: 14px;
+}
+
+.ad-block-text {
+  font-size: 12.5px;
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 4px 0 0;
+  white-space: pre-line;
+}
+
+.ad-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-abril-logo-blue, #005d9d);
+  margin-top: 4px;
+  text-decoration: none;
+}
+
+.ad-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Las dos casillas de decisión ─────────────────────────────────────── */
+/* Una al lado de la otra, con la del usuario resaltada. Se muestran siempre,
+   incluso en lectura: la postura del otro nivel es contexto, no adorno.
+   Son el primer bloque del modal (antes iba un aviso de instrucciones arriba),
+   así que no llevan margen superior. */
+.ad-niveles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ad-nivel {
+  border: 1px solid var(--color-abril-border, #e2e8f0);
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+/* La casilla que le toca al usuario: mismo azul del header del modal. */
+.ad-nivel--mio {
+  border-color: var(--color-abril-logo-blue, #005d9d);
+  background: var(--color-abril-logo-blue-light, #e6f0f8);
+}
+
+/* Título, chips y estado en una sola línea. El estado estaba en su propio renglón
+   debajo: con la casilla pendiente (el caso normal) eso hacía una tarjeta de tres
+   renglones para decir una cosa. Sin `margin-bottom`: cuando no hay nada que
+   mostrar debajo la tarjeta queda de una línea, y el aire lo pone el
+   `margin-top` de `.ad-nivel-meta` cuando sí hay. */
+.ad-nivel-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ad-nivel-titulo {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.ad-nivel-chip {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--color-abril-logo-blue, #005d9d);
+  color: #fff;
+}
+
+/* "Obligatoria": distingue la aprobación que realmente hace avanzar la solicitud. */
+.ad-nivel-chip--req {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* `margin-left:auto` lo pega a la derecha de su tarjeta cuando hay espacio, así los
+   dos estados quedan alineados entre casillas aunque los títulos midan distinto. */
+.ad-nivel-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.ad-nivel-meta {
+  font-size: 11.5px;
+  color: #6b7280;
+  line-height: 1.45;
+  margin: 6px 0 0;
+}
+
+.ad-nivel-comentario {
+  font-size: 11.5px;
+  font-style: italic;
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 6px 0 0;
+  white-space: pre-line;
+}
+
+/* ── Vacantes ─────────────────────────────────────────────────────────── */
+.ad-vac-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.ad-bulk {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ad-bulk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #fff;
+  transition: background 0.15s ease;
+}
+
+.ad-bulk-btn--ok {
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+
+.ad-bulk-btn--ok:hover {
+  background: #f0fdf4;
+}
+
+.ad-bulk-btn--no {
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.ad-bulk-btn--no:hover {
+  background: #fef2f2;
+}
+
+.ad-vac-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Cada vacante es una tarjeta: en desktop info a la izquierda y decisión a la derecha; en
+   teléfono la decisión pasa debajo (los dos botones a ancho completo). */
+.ad-vac {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid var(--color-abril-border, #e2e8f0);
+  border-left: 4px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 11px 13px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.ad-vac--ok {
+  border-left-color: #15803d;
+  background: #f6fdf9;
+}
+
+.ad-vac--no {
+  border-left-color: #b91c1c;
+  background: #fef7f7;
+}
+
+.ad-vac-info {
+  min-width: 0;
+}
+
+.ad-vac-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ad-vac-code {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.ad-vac-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-abril-logo-blue-light, #e6f0f8);
+  color: var(--color-abril-logo-blue, #005d9d);
+}
+
+/* Ingreso directo FFT: verde de acción para que se distinga del azul del tipo de
+   requerimiento, que es la etiqueta de al lado. */
+.ad-vac-tag--fft {
+  background: var(--color-abril-standard-light, #eef7f3);
+  color: var(--color-abril-standard, #0f6e56);
+}
+
+.ad-vac-puesto {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 3px 0 0;
+}
+
+.ad-vac-detail {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+.ad-vac-detail span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Salario bruto mensual de la vacante. Va en negrita y en el gris fuerte del cuerpo:
+   es una cifra que se está aprobando, no un dato de contexto como el proyecto. */
+.ad-vac-salario {
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Postura del otro nivel sobre esta vacante. Gris cuando no opinó; en color cuando
+   sí, porque ahí sí es un dato que puede cambiar la decisión del que está firmando. */
+.ad-vac-otro {
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.ad-vac-otro--ok {
+  color: #15803d;
+}
+
+.ad-vac-otro--no {
+  color: #b91c1c;
+}
+
+.ad-vac-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ad-vac-result i {
+  font-size: 17px;
+}
+
+/* ── Toggle Aprobar / Rechazar ────────────────────────────────────────── */
+.ad-toggle-row {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ad-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 100px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--color-abril-border, #e2e8f0);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ad-toggle:hover {
+  background: #f8fafc;
+}
+
+.ad-toggle--ok.ad-toggle--on {
+  background: #15803d;
+  border-color: #15803d;
+  color: #fff;
+}
+
+.ad-toggle--no.ad-toggle--on {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #fff;
+}
+
+/* ── Comentario ───────────────────────────────────────────────────────── */
+/* Solo lo que la clase global .abril-field/.abril-field-input NO cubre: alto y
+   redimensionado del textarea. Nada de position/top/left/padding acá — eso vive
+   una sola vez en styles.css. */
+.ad-field {
+  margin-top: 18px;
+}
+
+.ad-textarea {
+  resize: vertical;
+  min-height: 62px;
+  font-family: inherit;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+.modal-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.ad-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.ad-footer-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.ad-footer-text--warn {
+  color: #b45309;
+}
+
+.ad-btn {
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.ad-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ad-btn--ghost {
+  background: #fff;
+  border-color: var(--color-abril-border, #e2e8f0);
+  color: #6b7280;
+}
+
+.ad-btn--ghost:hover {
+  background: #f8fafc;
+}
+
+.ad-btn--primary {
+  background: var(--color-abril-logo-blue, #005d9d);
+  color: #fff;
+}
+
+.ad-btn--primary:not(:disabled):hover {
+  opacity: 0.92;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ad-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Las dos casillas se apilan: en pantalla angosta, lado a lado el estado y el
+     nombre de quien decidió quedan cortados a la mitad. */
+  .ad-niveles {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  /* La decisión baja debajo de los datos de la vacante: los dos botones lado a
+     lado no entran junto al texto en un teléfono. */
+  .ad-vac {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .ad-toggle-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ad-toggle {
+    min-width: 0;
+  }
+
+  .ad-bulk {
+    width: 100%;
+  }
+
+  .ad-bulk-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* El resumen ("Faltan decidir N vacantes") no cabe junto a los dos botones:
+     se apila arriba y los botones quedan a lo ancho. */
+  .modal-footer-row {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .ad-footer-right {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .ad-footer-text {
+    text-align: center;
+  }
+
+  .ad-btn {
+    justify-content: center;
+  }
+}

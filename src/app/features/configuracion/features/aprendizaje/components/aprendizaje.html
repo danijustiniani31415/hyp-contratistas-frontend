@@ -1,0 +1,206 @@
+<app-abril-page-header
+  badge="CONFIGURACIÓN"
+  titulo="Centro de aprendizaje"
+  subtitulo="Videos-guía del login y del inicio, agrupados por área/módulo."
+  [tabs]="tabs"
+  [hasExtra]="true"
+  [botonPrimario]="botonPrimario"
+  (primaryClick)="onPrimary()">
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
+
+  <app-section-tabs
+    class="shrink-0"
+    [tabs]="sectionTabs"
+    [value]="vista"
+    color="var(--color-abril-primary)"
+    (valueChange)="onSectionChange($event)">
+  </app-section-tabs>
+
+  <!-- ══════════════════════ GRUPOS ══════════════════════ -->
+  <ng-container *ngIf="vista === 'grupos'">
+    <div class="abril-table-wrap">
+      <table class="abril-table abril-table--th-center">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Nombre</th>
+            <th class="text-center">Superficie</th>
+            <th class="text-center">Visibilidad</th>
+            <th class="text-center">Videos</th>
+            <th class="text-center">Orden</th>
+            <th class="text-center">Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="filteredGrupos.length === 0">
+            <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">
+              {{ filtrosActivos ? 'Sin resultados.' : 'No hay grupos registrados.' }}
+            </td>
+          </tr>
+
+          <tr *ngFor="let c of pagedGrupos" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+            <td class="text-gray-700">{{ c.nombre }}</td>
+            <td class="text-center">
+              <span class="text-[11px] px-[10px] py-[3px] rounded-full font-medium whitespace-nowrap"
+                    [ngClass]="c.surfaceCode === 'LOGIN' ? 'bg-[#E0E7FF] text-[#4338CA]' : 'bg-[#DCFCE7] text-[#166534]'">
+                {{ surfaceLabel(c.surfaceCode) }}
+              </span>
+            </td>
+            <td class="text-center text-gray-600 text-[13px]">{{ visibilidadLabel(c) }}</td>
+            <td class="text-center text-gray-600">{{ c.videos.length }}</td>
+            <td class="text-center text-gray-600">{{ c.orden }}</td>
+            <td class="text-center">
+              <app-status-badge
+                [text]="c.activo ? 'ACTIVO' : 'INACTIVO'"
+                [bgColor]="c.activo ? '#D7FAF4' : '#FAD5D4'"
+                [textColor]="c.activo ? '#009C87' : '#D30000'" />
+            </td>
+            <td class="text-center">
+              <div class="flex items-center justify-center gap-[8px]">
+                <button (click)="editCategory(c)" abrilBulkAction="default">Editar</button>
+                <button (click)="toggleCategory(c)" [abrilBulkAction]="c.activo ? 'danger' : 'default'">
+                  {{ c.activo ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button (click)="deleteCategory(c)" abrilBulkAction="danger">Eliminar</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="filteredGrupos.length"
+        [currentPage]="gruposCurrentPage"
+        [totalPages]="gruposTotalPages"
+        (pageChange)="changeGruposPage($event)">
+      </app-paginator>
+    </div>
+  </ng-container>
+
+  <!-- ══════════════════════ VIDEOS ══════════════════════ -->
+  <ng-container *ngIf="vista === 'videos'">
+    <div class="abril-table-wrap">
+      <table class="abril-table abril-table--th-center">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Título</th>
+            <th>Grupo</th>
+            <th class="text-center">Superficie</th>
+            <th class="text-center">Orden</th>
+            <th class="text-center">Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="filteredVideos.length === 0">
+            <td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">
+              {{ filtrosActivos ? 'Sin resultados.' : 'No hay videos registrados.' }}
+            </td>
+          </tr>
+
+          <tr *ngFor="let v of pagedVideos" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+            <td class="text-gray-700">
+              <a [href]="v.url" target="_blank" rel="noopener noreferrer"
+                 class="text-[var(--color-abril-primary)] hover:underline">{{ v.titulo }}</a>
+            </td>
+            <td class="text-gray-600">{{ v.categoriaNombre }}</td>
+            <td class="text-center">
+              <span class="text-[11px] px-[10px] py-[3px] rounded-full font-medium whitespace-nowrap"
+                    [ngClass]="v.surfaceCode === 'LOGIN' ? 'bg-[#E0E7FF] text-[#4338CA]' : 'bg-[#DCFCE7] text-[#166534]'">
+                {{ surfaceLabel(v.surfaceCode) }}
+              </span>
+            </td>
+            <td class="text-center text-gray-600">{{ v.orden }}</td>
+            <td class="text-center">
+              <app-status-badge
+                [text]="v.activo ? 'ACTIVO' : 'INACTIVO'"
+                [bgColor]="v.activo ? '#D7FAF4' : '#FAD5D4'"
+                [textColor]="v.activo ? '#009C87' : '#D30000'" />
+            </td>
+            <td class="text-center">
+              <div class="flex items-center justify-center gap-[8px]">
+                <button (click)="editVideo(v)" abrilBulkAction="default">Editar</button>
+                <button (click)="toggleVideo(v)" [abrilBulkAction]="v.activo ? 'danger' : 'default'">
+                  {{ v.activo ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button (click)="deleteVideo(v)" abrilBulkAction="danger">Eliminar</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="filteredVideos.length"
+        [currentPage]="videosCurrentPage"
+        [totalPages]="videosTotalPages"
+        (pageChange)="changeVideosPage($event)">
+      </app-paginator>
+    </div>
+  </ng-container>
+
+</div>
+
+<!-- ── Modales ─────────────────────────────────────────────────────────── -->
+<app-aprendizaje-category-modal
+  *ngIf="showCategoryModal"
+  [categoria]="categoryToEdit"
+  [superficies]="superficies"
+  [roles]="roles"
+  (closeModal)="closeCategoryModal()"
+  (saved)="load()" />
+
+<app-aprendizaje-video-modal
+  *ngIf="showVideoModal"
+  [video]="videoToEdit"
+  [categorias]="categorias"
+  [categoriaIdPreset]="videosCategoria"
+  [categoriaNombre]="videoToEdit?.categoriaNombre || ''"
+  (closeModal)="closeVideoModal()"
+  (saved)="load()" />
+
+<!-- ── Modal de filtros (según la vista activa) ────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <ng-container *ngIf="vista === 'grupos'">
+    <div class="w-full">
+      <app-search-input placeholder="Buscar por nombre..." [(value)]="gruposSearch"
+        (valueChange)="onFilterChange()" width="100%"></app-search-input>
+    </div>
+    <div class="w-full">
+      <app-search-select label="Superficie" [options]="surfaceOptions" valueField="value" displayField="label"
+        [value]="gruposSurface" [sortAlpha]="false" (valueChange)="gruposSurface = $event; onFilterChange()">
+      </app-search-select>
+    </div>
+    <div class="w-full">
+      <app-search-select label="Estado" [options]="estadoOptions" valueField="value" displayField="label"
+        [value]="gruposEstado" [sortAlpha]="false" (valueChange)="gruposEstado = $event; onFilterChange()">
+      </app-search-select>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="vista === 'videos'">
+    <div class="w-full">
+      <app-search-input placeholder="Buscar por título..." [(value)]="videosSearch"
+        (valueChange)="onFilterChange()" width="100%"></app-search-input>
+    </div>
+    <div class="w-full">
+      <app-search-select label="Grupo" [options]="categoriaOptions" valueField="value" displayField="label"
+        [value]="videosCategoria" [sortAlpha]="false" (valueChange)="videosCategoria = $event; onFilterChange()">
+      </app-search-select>
+    </div>
+    <div class="w-full">
+      <app-search-select label="Estado" [options]="estadoOptions" valueField="value" displayField="label"
+        [value]="videosEstado" [sortAlpha]="false" (valueChange)="videosEstado = $event; onFilterChange()">
+      </app-search-select>
+    </div>
+  </ng-container>
+
+</app-filter-modal>

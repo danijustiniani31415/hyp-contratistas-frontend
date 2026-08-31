@@ -1,0 +1,209 @@
+<app-abril-modal-panel
+  titulo="Generar Amonestación"
+  icono="ti-edit"
+  variant="blue"
+  (closeModal)="cerrar()">
+
+  @if (loadingInit) {
+    <div class="panel-loading">Cargando catálogos…</div>
+  } @else if (init) {
+
+    <!-- Trabajador -->
+    <div class="abril-field">
+      <label class="abril-field-label">Buscar trabajador *</label>
+      <div class="search-wrapper">
+        <input type="text" class="abril-field-input"
+               [ngModel]="workerQuery"
+               (ngModelChange)="onWorkerQueryChange($event)"
+               placeholder="Nombre o DNI..."
+               [disabled]="!!workerSelected" />
+        @if (workerSelected) {
+          <button class="btn-clear" (click)="clearWorker()">✕</button>
+        }
+      </div>
+      @if (workerSearching) {
+        <div class="search-hint">Buscando…</div>
+      }
+      @if (workerResults.length > 0) {
+        <ul class="search-dropdown">
+          @for (w of workerResults; track w.id) {
+            <li (click)="selectWorker(w)"
+                [class.inhabilitado]="w.inhabilitadoSsoma">
+              <span class="worker-name">{{ w.apellidoNombre }}</span>
+              <span class="worker-meta">DNI: {{ w.dni }} | {{ w.empresaActual }}</span>
+              @if (w.inhabilitadoSsoma) {
+                <span class="badge-inhabilitado">INHABILITADO</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    @if (workerSelected) {
+      <div class="worker-card">
+        <div class="worker-info">
+          <strong>{{ workerSelected.apellidoNombre }}</strong>
+          <span>DNI: {{ workerSelected.dni }}</span>
+          <span>Cargo: {{ workerSelected.cargo || '—' }}</span>
+          <span>Empresa: {{ workerSelected.empresaActual || '—' }}</span>
+        </div>
+      </div>
+    }
+
+    <!-- Datos del evento -->
+    <div class="abril-section-title">Datos del evento</div>
+    <div class="form-row">
+      <div>
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Proyecto *"
+          [options]="init.proyectos"
+          valueField="id"
+          displayField="nombre"
+          [value]="proyectoId"
+          placeholder="Buscar proyecto..."
+          (valueChange)="proyectoId = $event"
+        ></app-search-select>
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Fecha *</label>
+        <input type="date" class="abril-field-input" [(ngModel)]="fecha" />
+      </div>
+    </div>
+
+    <div>
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Partida"
+        [options]="init.partidas"
+        valueField="id"
+        displayField="nombre"
+        [value]="partidaId"
+        [allowClear]="true"
+        placeholder="Buscar partida..."
+        (valueChange)="partidaId = $event"
+      ></app-search-select>
+    </div>
+
+    <!-- Sanción e infracción -->
+    <div class="abril-section-title">Tipo de sanción e infracción</div>
+    <div class="form-row">
+      <div>
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Tipo de sanción *"
+          [options]="tiposSancionOpts"
+          valueField="id"
+          displayField="label"
+          [value]="tipoSancionId"
+          placeholder="Buscar tipo de sanción..."
+          (valueChange)="tipoSancionId = $event"
+        ></app-search-select>
+      </div>
+      <div>
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Infracción cometida *"
+          [options]="init.infraccionesTipo"
+          valueField="id"
+          displayField="nombre"
+          [value]="infraccionTipoId"
+          placeholder="Buscar infracción..."
+          (valueChange)="infraccionTipoId = $event"
+        ></app-search-select>
+      </div>
+    </div>
+
+    <!-- Puntos -->
+    <div class="abril-field abril-field--puntos">
+      <label class="abril-field-label">Puntos por infracción (0-10) *</label>
+      <div class="puntos-row">
+        <input type="range" min="0" max="10" [(ngModel)]="puntosInfraccion" class="puntos-slider" />
+        <span class="puntos-valor" [class.puntos-alto]="puntosInfraccion >= 7">
+          {{ puntosInfraccion }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Suspensión -->
+    @if (generaSuspension) {
+      <div class="abril-field abril-field--suspension">
+        <label class="abril-field-label">Días de suspensión</label>
+        <input type="number" class="abril-field-input" [(ngModel)]="diasSuspension" min="1" />
+      </div>
+      <div class="form-row">
+        <div class="abril-field">
+          <label class="abril-field-label">Fecha inicio suspensión</label>
+          <input type="date" class="abril-field-input" [(ngModel)]="fechaInicioSuspension" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Fecha fin suspensión</label>
+          <input type="date" class="abril-field-input" [(ngModel)]="fechaFinSuspension" />
+        </div>
+      </div>
+    }
+
+    <!-- Penalización (solo contratistas) -->
+    @if (workerSelected && !workerSelected.esAbril) {
+      <div class="abril-section-title">Penalización económica</div>
+      <div class="form-check">
+        <label class="check-label">
+          <input type="checkbox" [(ngModel)]="aplicaPenalizacion" />
+          Aplicar penalización económica a la contratista
+        </label>
+      </div>
+      @if (aplicaPenalizacion) {
+        <div>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Sanción (RAC infracciones)"
+            [options]="racInfraccionesOpts"
+            valueField="id"
+            displayField="label"
+            [value]="sancionInfraccionId"
+            [allowClear]="true"
+            placeholder="Buscar infracción..."
+            (valueChange)="sancionInfraccionId = $event"
+          ></app-search-select>
+        </div>
+      }
+    }
+
+    <!-- Descripción -->
+    <div class="abril-section-title">Descripción del hecho</div>
+    <div class="abril-field">
+      <label class="abril-field-label">Descripción *</label>
+      <textarea class="abril-field-input" [(ngModel)]="descripcion" rows="4"
+                placeholder="Descripción detallada de la infracción..."></textarea>
+    </div>
+
+    <!-- Fotos -->
+    <div class="abril-section-title">Evidencias fotográficas (máximo 3)</div>
+    <app-photo-grid-picker
+      color="var(--color-abril-logo-blue)"
+      [previews]="fotoPreviews"
+      [max]="3"
+      (filesSelected)="onFotosChange($event)"
+      (remove)="removeFoto($event)"
+    ></app-photo-grid-picker>
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrar()" [disabled]="saving">
+        Cancelar
+      </button>
+      <div class="footer-nav">
+        <button class="btn btn-outline" (click)="guardarBorrador()"
+                [disabled]="!canSubmit" title="Guardar sin generar PDF ni enviar correo">
+          @if (saving) { Guardando… } @else { Guardar borrador }
+        </button>
+        <button class="btn btn-primary" (click)="submit()"
+                [disabled]="!canSubmit">
+          @if (saving) { Guardando… } @else { Registrar amonestación }
+        </button>
+      </div>
+    </div>
+
+  }
+
+</app-abril-modal-panel>

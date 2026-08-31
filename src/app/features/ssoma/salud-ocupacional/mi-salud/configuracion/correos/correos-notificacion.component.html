@@ -1,0 +1,42 @@
+<div class="config-card">
+  <div class="config-card__head">
+    <h3 class="config-card__title">
+      <i class="ti ti-mail"></i>
+      Correos al registrar un descanso médico
+    </h3>
+    <p class="config-card__sub">
+      Controla a qué destinatarios se les envía el correo cuando un trabajador registra un
+      descanso médico en <strong>Mi Salud</strong>. Desactiva un destinatario para que ese correo
+      no se envíe. Útil para hacer pruebas en desarrollo y en producción.
+    </p>
+  </div>
+
+  <ul class="correo-list" *ngIf="correos.length; else vacio">
+    <li class="correo-item" *ngFor="let c of correos">
+      <div class="correo-item__info">
+        <span class="correo-item__name">{{ c.nombre }}</span>
+        <span class="correo-item__desc" *ngIf="c.descripcion">{{ c.descripcion }}</span>
+      </div>
+      <div class="correo-item__right">
+        <span class="correo-item__state" [class.correo-item__state--on]="c.active">
+          {{ c.active ? 'Se envía' : 'No se envía' }}
+        </span>
+        <button
+          type="button"
+          class="switch"
+          role="switch"
+          [attr.aria-checked]="c.active"
+          [attr.aria-label]="'Activar o desactivar correo a ' + c.nombre"
+          [class.switch--on]="c.active"
+          [disabled]="savingId === c.id"
+          (click)="toggle(c)">
+          <span class="switch__knob"></span>
+        </button>
+      </div>
+    </li>
+  </ul>
+
+  <ng-template #vacio>
+    <p class="correo-empty" *ngIf="!loading">No hay destinatarios de correo configurados.</p>
+  </ng-template>
+</div>

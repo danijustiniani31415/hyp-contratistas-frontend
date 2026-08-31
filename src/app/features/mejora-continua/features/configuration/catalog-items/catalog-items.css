@@ -1,0 +1,385 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+.ci-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Tarjetas planas UDP (DESIGN-VICTOR.md §6.1) ───────────────── */
+.ci-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ci-toolbar {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  gap: 1rem;
+}
+
+/* ── Pills de tipo ──────────────────────────────────────────────── */
+.ci-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.ci-pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border: 1px solid #E2E8F0;
+  background: #F8FAFC;
+  color: #64748B;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease-in-out;
+}
+
+.ci-pill:hover {
+  border-color: #2E6DB4;
+  color: #2E6DB4;
+  background: #EDF4FB;
+}
+
+.ci-pill--active {
+  background: #EDF4FB;
+  border-color: #1E3A5F;
+  color: #1E3A5F;
+}
+
+.skeleton-pill {
+  width: 90px;
+  height: 26px;
+  border-radius: 999px;
+  margin-bottom: 0;
+}
+
+/* ── Card Header ────────────────────────────────────────────────── */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.card-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.card-subtitle {
+  font-size: 0.8rem;
+  color: #64748B;
+  margin: 0.25rem 0 0 0;
+}
+
+.title-icon {
+  font-size: 1.1rem;
+  color: #1E3A5F;
+}
+
+.card-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #EDF4FB;
+  color: #1E3A5F;
+  white-space: nowrap;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Buscador ───────────────────────────────────────────────────── */
+.ci-search {
+  position: relative;
+  max-width: 360px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94A3B8;
+  font-size: 0.95rem;
+  pointer-events: none;
+}
+
+.ci-search-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px 0 34px;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #1E293B;
+  background: #FFFFFF;
+  outline: none;
+  transition: border-color 0.15s ease-in-out;
+}
+
+.ci-search-input:focus {
+  border-color: #2E6DB4;
+  outline: 2px solid rgba(46, 109, 180, 0.2);
+}
+
+.ci-search-input::placeholder {
+  color: #94A3B8;
+}
+
+/* ── Tablas Flat UDP (DESIGN-VICTOR.md §6.7) ───────────────────── */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.ci-table {
+  width: 100%;
+  font-size: 0.85rem;
+  border-collapse: collapse;
+}
+
+.ci-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748B;
+  background: #F8FAFC;
+  border-bottom: 2px solid #E2E8F0;
+}
+
+.ci-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+
+.ci-table tbody tr {
+  transition: background 0.15s ease-in-out;
+}
+
+.ci-table tbody tr:hover {
+  background: #F8FAFC;
+}
+
+.desc-cell {
+  max-width: 600px;
+}
+
+.desc-text {
+  font-weight: 500;
+  color: #1E293B;
+  line-height: 1.4;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* ── Acciones en Fila ───────────────────────────────────────────── */
+.actions-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-action {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-action--edit {
+  color: #1E3A5F;
+}
+
+.btn-action--edit:hover {
+  background: #EDF4FB;
+  border-color: #1E3A5F;
+}
+
+.btn-action--delete {
+  color: #DC2626;
+}
+
+.btn-action--delete:hover {
+  background: #FEF2F2;
+  border-color: #FCA5A5;
+}
+
+/* ── Botón primario UDP ─────────────────────────────────────────── */
+.btn-primary-udp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 36px;
+  padding: 0 1.25rem;
+  background: #1E3A5F;
+  color: #FFFFFF;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.btn-primary-udp:hover:not(:disabled) {
+  background: #162C48;
+}
+
+.btn-primary-udp:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Alertas (DESIGN-VICTOR.md §2.1 warning) ───────────────────── */
+.ci-alert {
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  font-size: 0.85rem;
+}
+
+.ci-alert--warning {
+  background: #FEF3C7;
+  border: 1px solid #FCD34D;
+  color: #92400E;
+}
+
+.ci-alert--warning .alert-icon {
+  color: #D97706;
+}
+
+.alert-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.alert-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  line-height: 1.4;
+}
+
+.dup-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.dup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 1px solid #FCD34D;
+  color: #92400E;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ── Estados vacíos (DESIGN-VICTOR.md §6.10) ───────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  background: #F8FAFC;
+  border: 2px dashed #E2E8F0;
+  border-radius: 8px;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  color: #94A3B8;
+  margin-bottom: 0.5rem;
+}
+
+.empty-title {
+  font-weight: 700;
+  color: #1E3A5F;
+  font-size: 0.95rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.empty-sub {
+  font-size: 0.8rem;
+  color: #64748B;
+  margin: 0;
+}
+
+/* ── Skeleton Loaders (DESIGN-VICTOR.md §7) ────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -400% 0; }
+  100% { background-position: 400% 0; }
+}
+
+.skeleton-line {
+  background: linear-gradient(90deg, #dde5ef 25%, #eaeff6 50%, #dde5ef 75%);
+  background-size: 400% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 4px;
+  height: 16px;
+}
+
+.skeleton-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-table .skeleton-line {
+  height: 42px;
+  border-radius: 6px;
+}

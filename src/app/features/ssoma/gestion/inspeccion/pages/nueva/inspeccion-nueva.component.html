@@ -1,0 +1,474 @@
+<app-abril-modal-panel
+  titulo="Nueva Inspección"
+  icono="ti-clipboard-check"
+  variant="blue"
+  width="820px"
+  (closeModal)="cancelar()">
+
+  @if (loadingCatalogos || resolviendoObservador) {
+    <div class="loading-catalogos">
+      <i class="ti ti-loader-2 spin"></i> Cargando catálogos...
+    </div>
+  }
+  @if (!loadingCatalogos && !resolviendoObservador && sinWorkerVinculado) {
+    <div class="bloqueo-sin-worker">
+      <i class="ti ti-alert-triangle"></i>
+      <div>
+        <div class="bloqueo-sin-worker__titulo">No puedes registrar una Inspección</div>
+        <div class="bloqueo-sin-worker__texto">
+          Tu usuario no está vinculado a una ficha de trabajador dentro de la plataforma.
+          Comunícate con el área de SSOMA o Administración para que te asocien como trabajador
+          antes de poder reportar.
+        </div>
+      </div>
+    </div>
+  }
+  @if (!loadingCatalogos && !resolviendoObservador && !sinWorkerVinculado) {
+
+  <!-- STEPPER -->
+  <div class="stepper">
+    @for (label of pasoLabels; track $index) {
+      <div class="step" [class.step--active]="paso === $index + 1" [class.step--done]="paso > $index + 1">
+        <div class="step-circle">
+          @if (paso > $index + 1) { <i class="ti ti-check"></i> }
+          @else { {{ $index + 1 }} }
+        </div>
+        <span class="step-label">{{ label }}</span>
+      </div>
+      @if ($index < pasoLabels.length - 1) {
+        <div class="step-line" [class.step-line--done]="paso > $index + 1"></div>
+      }
+    }
+  </div>
+
+  <!-- BODY -->
+  <div class="wizard-body">
+
+    <!-- ═══ PASO 1 — CABECERA ═══════════════════════════════════════ -->
+    @if (paso === 1) {
+      <div class="abril-form-section">
+        <h2 class="abril-section-title">Datos de la inspección</h2>
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Proyecto *"
+            [options]="proyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            placeholder="Buscar proyecto..."
+            [value]="proyectoId"
+            (valueChange)="proyectoId = $event">
+          </app-search-select>
+        </div>
+
+        <div>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Tipo de inspección *"
+            [options]="tiposOpts"
+            valueField="id"
+            displayField="label"
+            [value]="tipoId"
+            placeholder="Buscar tipo de inspección..."
+            (valueChange)="tipoId = $event"
+          ></app-search-select>
+        </div>
+
+        <div class="form-row">
+          <div class="abril-field">
+            <label class="abril-field-label">Fecha <span class="required">*</span></label>
+            <input type="date" class="abril-field-input" [(ngModel)]="fecha" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Hora inicio</label>
+            <input type="time" class="abril-field-input" [(ngModel)]="horaInicio" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Hora fin</label>
+            <input type="time" class="abril-field-input" [(ngModel)]="horaFin" />
+          </div>
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Área inspeccionada</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="area" placeholder="Ej. Almacén, Frente de trabajo..." />
+        </div>
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Responsable del área"
+            [options]="workers"
+            valueField="workerId"
+            displayField="apellidoNombre"
+            placeholder="Buscar por nombre o DNI..."
+            [value]="responsableAreaId"
+            (valueChange)="onResponsableChange($event)">
+          </app-search-select>
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Planificación</label>
+          <div class="toggle-row">
+            <button type="button" class="toggle-opt" [class.toggle-opt--active]="esPlanificada" (click)="esPlanificada = true">
+              Planeada
+            </button>
+            <button type="button" class="toggle-opt" [class.toggle-opt--active]="!esPlanificada" (click)="esPlanificada = false">
+              No planeada
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ═══ PASO 2 — CHECKLIST ══════════════════════════════════════ -->
+    @if (paso === 2) {
+
+      @if (checklistLoading) {
+        <div class="checklist-loading">
+          <i class="ti ti-loader-2 spin"></i> Cargando checklist...
+        </div>
+      }
+
+      @if (!checklistLoading && grupos.length === 0) {
+        <div class="checklist-empty">
+          No hay items de checklist para este tipo de inspección.
+        </div>
+      }
+
+      @if (!checklistLoading && grupos.length > 0) {
+
+        <!-- Score sticky header -->
+        <div class="checklist-score-header">
+          <div class="score-counts">
+            <span class="score-cnt score-cnt--verde">✓ {{ cntCumple }}</span>
+            <span class="score-cnt score-cnt--rojo">✗ {{ cntNoCumple }}</span>
+            <span class="score-cnt score-cnt--gris">— {{ cntNA }}</span>
+          </div>
+          <div class="score-progress-wrap">
+            <div class="score-progress-bar" [style.width.%]="respuestas.length ? (cntRespondidos / respuestas.length * 100) : 0"></div>
+          </div>
+          <div class="score-tasa" [ngClass]="tasaClass">
+            {{ cntRespondidos }}/{{ respuestas.length }} · {{ tasaRealtime }}%
+          </div>
+        </div>
+
+        <!-- Checklist items -->
+        @for (grupo of grupos; track grupo.categoria) {
+          <div class="checklist-categoria">{{ grupo.categoria }}</div>
+
+          @for (item of grupo.items; track item.itemId) {
+            <div class="checklist-item" [class.checklist-item--nocumple]="item.resultado === 'NoCumple'">
+              <div class="checklist-pregunta">{{ item.pregunta }}</div>
+              <div class="checklist-acciones">
+                <button type="button" class="btn-resultado btn-resultado--cumple"
+                  [class.active]="item.resultado === 'Cumple'"
+                  (click)="setRespuesta(item, 'Cumple')">
+                  <i class="ti ti-check"></i>
+                </button>
+                <button type="button" class="btn-resultado btn-resultado--nocumple"
+                  [class.active]="item.resultado === 'NoCumple'"
+                  (click)="setRespuesta(item, 'NoCumple')">
+                  <i class="ti ti-x"></i>
+                </button>
+                <button type="button" class="btn-resultado btn-resultado--na"
+                  [class.active]="item.resultado === 'NA'"
+                  (click)="setRespuesta(item, 'NA')">
+                  —
+                </button>
+              </div>
+            </div>
+            @if (item.showObs) {
+              <div class="obs-slide">
+                <textarea class="obs-textarea" [(ngModel)]="item.observacion"
+                  placeholder="Describe la desviación observada..."
+                  rows="2">
+                </textarea>
+              </div>
+            }
+          }
+        }
+
+      }
+    }
+
+    <!-- ═══ PASO 3 — HALLAZGOS ══════════════════════════════════════ -->
+    @if (paso === 3) {
+      <div class="abril-form-section">
+        <div class="hallazgos-header">
+          <h2 class="abril-section-title">Hallazgos</h2>
+          <button type="button" class="btn-agregar-hallazgo" (click)="agregarHallazgo()">
+            <i class="ti ti-plus"></i> Agregar hallazgo
+          </button>
+        </div>
+
+        <!-- Form nuevo hallazgo -->
+        @if (mostrarFormHallazgo) {
+          <div class="hallazgo-form">
+            <div class="hallazgo-form__title">Nuevo hallazgo</div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Descripción <span class="required">*</span></label>
+              <textarea class="abril-field-input" [(ngModel)]="nuevoHallazgo.descripcion" rows="2" placeholder="Describe el hallazgo..."></textarea>
+            </div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Tipo</label>
+              <div class="tipo-btns">
+                @for (t of ['Critico', 'Mayor', 'Menor']; track t) {
+                  <button type="button" class="btn-tipo" [ngClass]="tipoHallazgoClass(t)"
+                    [class.btn-tipo--active]="nuevoHallazgo.tipo === t"
+                    (click)="setTipoHallazgo(nuevoHallazgo, $any(t))">
+                    {{ t }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="abril-field">
+                <label class="abril-field-label">Área</label>
+                <input type="text" class="abril-field-input" [(ngModel)]="nuevoHallazgo.area" />
+              </div>
+              <div class="abril-field">
+                <label class="abril-field-label">Fecha límite</label>
+                <input type="date" class="abril-field-input" [(ngModel)]="nuevoHallazgo.fechaLimite" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="abril-field">
+                <app-search-select
+                  color="var(--color-abril-logo-blue)"
+                  label="Responsable"
+                  [options]="workers"
+                  valueField="workerId"
+                  displayField="apellidoNombre"
+                  placeholder="Buscar por nombre o DNI..."
+                  [value]="hallazgoResponsableId"
+                  (valueChange)="onHallazgoResponsableChange($event)">
+                </app-search-select>
+              </div>
+              <div class="abril-field">
+                <label class="abril-field-label">Cargo</label>
+                <input type="text" class="abril-field-input" [(ngModel)]="nuevoHallazgo.responsableCargo" placeholder="Cargo" />
+              </div>
+            </div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Acción correctiva</label>
+              <textarea class="abril-field-input" [(ngModel)]="nuevoHallazgo.accionCorrectiva" rows="2" placeholder="Acción a tomar..."></textarea>
+            </div>
+
+            <!-- Fotos -->
+            <div class="abril-field">
+              <label class="abril-field-label">Fotos (máx. 5)</label>
+              @if (nuevoHallazgo.fotosBase64.length < 5) {
+                <label class="btn-foto-add">
+                  <i class="ti ti-camera"></i> Agregar foto
+                  <input #fotoInput type="file" accept="image/*" (change)="onFotoChange($event)" style="display:none" />
+                </label>
+              }
+              @if (nuevoHallazgo.fotosPreview.length) {
+                <div class="fotos-grid">
+                  @for (url of nuevoHallazgo.fotosPreview; track $index) {
+                    <div class="foto-thumb">
+                      <img [src]="url" />
+                      <button type="button" class="foto-del" (click)="quitarFoto(nuevoHallazgo, $index)">
+                        <i class="ti ti-x"></i>
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="hallazgo-form__actions">
+              <button type="button" class="btn-cancelar-hallazgo" (click)="cancelarHallazgo()">Cancelar</button>
+              <button type="button" class="btn-confirmar-hallazgo" (click)="confirmarHallazgo()"
+                [disabled]="!nuevoHallazgo.descripcion.trim() || nuevoHallazgo.fotosBase64.length === 0">Agregar</button>
+            </div>
+          </div>
+        }
+
+        <!-- Lista de hallazgos agregados -->
+        @if (hallazgos.length === 0 && !mostrarFormHallazgo) {
+          <div class="hallazgos-empty">
+            <i class="ti ti-clipboard-check"></i>
+            <span>No se han registrado hallazgos</span>
+          </div>
+        }
+
+        @for (h of hallazgos; track h.uid) {
+          <div class="hallazgo-item" [class.hallazgo-item--critico]="h.tipo === 'Critico'">
+            <div class="hallazgo-item__top">
+              <span class="badge-tipo" [ngClass]="tipoHallazgoClass(h.tipo)">{{ h.tipo }}</span>
+              <span class="hallazgo-desc">{{ h.descripcion }}</span>
+              <button type="button" class="btn-del-hallazgo" (click)="quitarHallazgo(h.uid)">
+                <i class="ti ti-trash"></i>
+              </button>
+            </div>
+            @if (h.area || h.responsableNombre) {
+              <div class="hallazgo-item__meta">
+                @if (h.area) { <span>{{ h.area }}</span> }
+                @if (h.responsableNombre) { <span>{{ h.responsableNombre }}</span> }
+              </div>
+            }
+            @if (h.fotosPreview.length) {
+              <div class="fotos-grid-sm">
+                @for (url of h.fotosPreview; track $index) {
+                  <img [src]="url" class="foto-thumb-sm" />
+                }
+              </div>
+            }
+          </div>
+        }
+
+      </div>
+    }
+
+    <!-- ═══ PASO 4 — CIERRE ══════════════════════════════════════════ -->
+    @if (paso === 4) {
+      <div class="abril-form-section">
+        <h2 class="abril-section-title">
+          Fotos del área inspeccionada
+          <span class="fotos-counter" [class.fotos-ok]="fotosAreaBase64.length >= 3">
+            {{ fotosAreaBase64.length }} / mín. 3
+          </span>
+        </h2>
+        <p class="fotos-hint">Se requieren al menos 3 fotos del área. Máximo 10.</p>
+
+        <div class="fotos-area-grid">
+          @for (preview of fotosAreaPreview; track $index) {
+            <div class="foto-area-thumb">
+              <img [src]="preview" alt="Foto área {{ $index + 1 }}" />
+              <button type="button" class="foto-remove" (click)="quitarFotoArea($index)">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+          }
+          @if (fotosAreaBase64.length < 10) {
+            <label class="foto-area-add">
+              <i class="ti ti-camera-plus"></i>
+              <span>Agregar foto</span>
+              <input #fotoAreaInput type="file" accept="image/*" multiple hidden
+                (change)="onFotoAreaChange($event)" />
+            </label>
+          }
+        </div>
+
+        <h2 class="abril-section-title" style="margin-top: 2rem">Conclusiones</h2>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Descripción de causas de resultados desfavorables</label>
+          <textarea class="abril-field-input" [(ngModel)]="descripcionCausas" rows="3"
+            placeholder="Describe las causas de los incumplimientos observados..."></textarea>
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Conclusiones y recomendaciones</label>
+          <textarea class="abril-field-input" [(ngModel)]="conclusiones" rows="3"
+            placeholder="Conclusiones generales de la inspección..."></textarea>
+        </div>
+
+        <h2 class="abril-section-title">Inspector</h2>
+
+        <div class="observador-fijo">
+          <i class="ti ti-user-check"></i>
+          <div>
+            <div class="observador-fijo__nombre">{{ inspectorNombre }}</div>
+            <div class="observador-fijo__cargo">
+              {{ inspectorCargo || '—' }}
+              <span *ngIf="inspectorEmpresa"> · {{ inspectorEmpresa }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Firma del inspector</label>
+          <div class="canvas-wrap">
+            <canvas #canvasInspector width="360" height="120"
+              (mousedown)="startDrawInspector($event)"
+              (mousemove)="drawInspector($event)"
+              (mouseup)="stopDrawInspector()"
+              (mouseleave)="stopDrawInspector()"
+              (touchstart)="startDrawInspectorTouch($event)"
+              (touchmove)="drawInspectorTouch($event)"
+              (touchend)="stopDrawInspector()">
+            </canvas>
+            <button type="button" class="btn-clear-canvas" (click)="clearCanvasInspector()">Limpiar</button>
+          </div>
+        </div>
+
+        <h2 class="abril-section-title">Representante del área (RM 050)</h2>
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Buscar representante"
+            [options]="workers"
+            valueField="workerId"
+            displayField="apellidoNombre"
+            placeholder="Buscar por nombre o DNI..."
+            [value]="representanteId"
+            (valueChange)="onRepresentanteChange($event)">
+          </app-search-select>
+        </div>
+
+        <div class="form-row">
+          <div class="abril-field">
+            <label class="abril-field-label">Nombre</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="representanteNombre" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Cargo</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="representanteCargo" />
+          </div>
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Firma del representante</label>
+          <div class="canvas-wrap">
+            <canvas #canvasRepresentante width="360" height="120"
+              (mousedown)="startDrawRepresentante($event)"
+              (mousemove)="drawRepresentante($event)"
+              (mouseup)="stopDrawRepresentante()"
+              (mouseleave)="stopDrawRepresentante()"
+              (touchstart)="startDrawRepresentanteTouch($event)"
+              (touchmove)="drawRepresentanteTouch($event)"
+              (touchend)="stopDrawRepresentante()">
+            </canvas>
+            <button type="button" class="btn-clear-canvas" (click)="clearCanvasRepresentante()">Limpiar</button>
+          </div>
+        </div>
+
+      </div>
+    }
+
+  </div><!-- /wizard-body -->
+  }<!-- /!loadingCatalogos -->
+
+  <div modalFooter *ngIf="!loadingCatalogos && !resolviendoObservador">
+    <button type="button" class="btn-cancelar" (click)="cancelar()">Cancelar</button>
+    <div class="footer-nav" *ngIf="!sinWorkerVinculado">
+      @if (paso > 1) {
+        <button type="button" class="btn-anterior" (click)="anterior()">
+          <i class="ti ti-arrow-left"></i> Anterior
+        </button>
+      }
+      @if (paso < totalPasos) {
+        <button type="button" class="btn-siguiente" [disabled]="!puedeAvanzar" (click)="siguiente()">
+          Siguiente <i class="ti ti-arrow-right"></i>
+        </button>
+      }
+      @if (paso === totalPasos) {
+        <button type="button" class="btn-guardar" [disabled]="guardando" (click)="guardar()">
+          @if (guardando) { <i class="ti ti-loader-2 spin"></i> Guardando... }
+          @else { <i class="ti ti-device-floppy"></i> Guardar inspección }
+        </button>
+      }
+    </div>
+  </div>
+
+</app-abril-modal-panel>

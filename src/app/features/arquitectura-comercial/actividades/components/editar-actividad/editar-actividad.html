@@ -1,0 +1,122 @@
+<app-base-modal *ngIf="open" title="Editar Actividad" width="w-[800px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <div class="grid-2">
+
+      <div class="col-span-2">
+        <label class="field-label">Nombre *</label>
+        <input type="text" class="field-input" [(ngModel)]="model.nombre" placeholder="Nombre de la actividad" />
+      </div>
+
+      <div>
+        <label class="field-label">Tipo</label>
+        <select class="field-input" [(ngModel)]="model.tipo">
+          <option value="">— sin tipo —</option>
+          <option *ngFor="let t of tipoOpciones" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Etapa</label>
+        <select class="field-input" [(ngModel)]="model.etapaId" [disabled]="loadingEtapas">
+          <option [ngValue]="null">{{ loadingEtapas ? 'Cargando…' : 'Sin etapa' }}</option>
+          <option *ngFor="let e of etapas; trackBy: trackByEtapa" [ngValue]="e.id">{{ e.nombre }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Categoría</label>
+        <select class="field-input" [(ngModel)]="model.categoriaId">
+          <option [ngValue]="null">Sin categoría</option>
+          <option *ngFor="let c of categorias" [ngValue]="c.id">{{ c.nombre }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Especialidad</label>
+        <select class="field-input" [(ngModel)]="model.especialidadId">
+          <option [ngValue]="null">Sin especialidad</option>
+          <option *ngFor="let e of especialidades" [ngValue]="e.id">{{ e.nombre }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Responsable 1</label>
+        <select class="field-input" [(ngModel)]="model.userId">
+          <option [ngValue]="null">— sin responsable —</option>
+          <option *ngFor="let s of supervisores; trackBy: trackBySupervisor" [ngValue]="s.id">
+            {{ s.apellidoNombre }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Responsable 2</label>
+        <select class="field-input" [(ngModel)]="model.userId2">
+          <option [ngValue]="null">— sin responsable —</option>
+          <option *ngFor="let s of supervisores; trackBy: trackBySupervisor" [ngValue]="s.id">
+            {{ s.apellidoNombre }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Fechas programadas — grid 3 cols -->
+      <div class="col-span-2" style="display:grid; grid-template-columns:1fr 120px 1fr; gap:0.75rem 1rem;">
+        <div>
+          <label class="field-label">Inicio programado</label>
+          <input type="date" class="field-input"
+                 [(ngModel)]="model.inicioProgramado"
+                 (change)="onInicioProgChange()" />
+        </div>
+        <div>
+          <label class="field-label">Días hábiles</label>
+          <input type="number" class="field-input" min="1"
+                 [(ngModel)]="model.diasHabiliesProg"
+                 (change)="onDiasProgChange()"
+                 placeholder="—" />
+        </div>
+        <div>
+          <label class="field-label">Fin programado</label>
+          <input type="date" class="field-input"
+                 [(ngModel)]="model.finProgramado"
+                 (change)="onFinProgChange()" />
+        </div>
+      </div>
+
+      <!-- Fechas efectivas — grid 3 cols -->
+      <div class="col-span-2" style="display:grid; grid-template-columns:1fr 120px 1fr; gap:0.75rem 1rem;">
+        <div>
+          <label class="field-label">Inicio efectivo</label>
+          <input type="date" class="field-input"
+                 [(ngModel)]="model.inicioEfectivo"
+                 (change)="onInicioEfectChange()" />
+        </div>
+        <div>
+          <label class="field-label">Días hábiles</label>
+          <input type="number" class="field-input" min="1"
+                 [(ngModel)]="model.diasHabilesEfect"
+                 (change)="onDiasEfectChange()"
+                 placeholder="—" />
+        </div>
+        <div>
+          <label class="field-label">Fin efectivo</label>
+          <input type="date" class="field-input"
+                 [(ngModel)]="model.finEfectivo"
+                 (change)="onFinEfectChange()" />
+        </div>
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Observaciones</label>
+        <textarea class="field-input" rows="3" [(ngModel)]="model.observaciones" placeholder="—"></textarea>
+      </div>
+
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Guardar cambios' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

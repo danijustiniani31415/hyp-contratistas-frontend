@@ -1,0 +1,276 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Dashboard"
+  subtitulo="Performance de residentes y métricas de evaluación."
+    [tabGroups]="[
+    { label: 'Residentes',   icono: 'ti-user-check', tabs: [
+      { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
+      { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
+      { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
+      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' },
+      { label: 'Asignaciones',  icono: 'ti-users',            route: '/evaluaciones/asignaciones',   featureKey: 'evaluaciones.asignaciones' }
+    ]},
+    { label: 'Contratistas', icono: 'ti-building', tabs: [
+      { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
+      { label: 'Evaluar',          icono: 'ti-pencil',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
+      { label: 'Ver evaluaciones', icono: 'ti-list',      route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' }
+    ]},
+    { label: 'Superv. Contratista', icono: 'ti-shield-check', tabs: [
+      { label: 'Evaluar supervisor', icono: 'ti-pencil', route: '/evaluaciones/evaluar-supervisor-contratista', featureKey: 'evaluaciones.evaluar-supervisor-contratista' },
+      { label: 'Ver evaluaciones',   icono: 'ti-list',   route: '/evaluaciones/ver-supervisores-contratista',   featureKey: 'evaluaciones.ver-supervisores-contratista' }
+    ]},
+    { label: 'Jefe SSOMA', icono: 'ti-user-shield', tabs: [
+      { label: 'Evaluar Jefe SSOMA', icono: 'ti-pencil', route: '/evaluaciones/evaluar-jefe-ssoma', featureKey: 'evaluaciones.evaluar-jefe-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-jefe-ssoma', featureKey: 'evaluaciones.resultados-jefe-ssoma' }
+    ]},
+    { label: 'Prevencionistas', icono: 'ti-vest', tabs: [
+      { label: 'Mi perfil', icono: 'ti-user', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
+      { label: 'Dashboard', icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' }
+    ]},
+    { label: 'Gestión SSOMA', icono: 'ti-users-group', tabs: [
+      { label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-gestion-ssoma', featureKey: 'evaluaciones.resultados-gestion-ssoma' }
+    ]}
+  ]">
+</app-abril-page-header>
+
+<div class="db-root">
+
+  <!-- SUB-HEADER -->
+  <div class="sub-header" *ngIf="!loading">
+    <div>
+      <div class="sh-title">Performance de residentes</div>
+      <div class="sh-sub">Evaluación multidimensional · {{ dashboard?.promediosPorArea?.length ?? 0 }} áreas · {{ periodo?.nombreMes }} {{ periodo?.anio }}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="view-toggle">
+        <span class="vt-btn" [class.active]="vistaActiva==='mensual'" (click)="setVista('mensual')">Mensual</span>
+        <span class="vt-btn" [class.active]="vistaActiva==='tendencia'" (click)="setVista('tendencia')">Tendencia</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <span>Cargando dashboard...</span>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content" *ngIf="!loading && dashboard">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb-section">
+        <div class="sb-label">Residentes activos</div>
+        <div class="resident-card"
+          *ngFor="let r of dashboard.residentes; let i = index"
+          [class.active]="residenteActivo?.userId === r.userId"
+          (click)="selectResidente(r)">
+          <div class="rc-header">
+            <div class="rc-av" [style.background]="avatarColor(i)" [style.color]="avatarTextColor(i)">
+              {{ iniciales(r.nombre) }}
+            </div>
+            <div class="rc-info">
+              <div class="rc-name">{{ r.nombre }}</div>
+              <div class="rc-project">{{ r.projectNombre ?? 'Sin proyecto' }}</div>
+            </div>
+          </div>
+          <div class="rc-score-row">
+            <span class="rc-num" [ngClass]="scoreClass(r.promedioGeneral)">
+              {{ r.promedioGeneral ?? '—' }}
+            </span>
+            <span class="rc-trend" [ngClass]="'trend-' + tendencia(r)">
+              <i class="ti" [ngClass]="{
+                'ti-arrow-up': tendencia(r)==='up',
+                'ti-arrow-down': tendencia(r)==='dn',
+                'ti-minus': tendencia(r)==='eq'
+              }"></i>
+              {{ diffMes(r) }}
+            </span>
+          </div>
+          <div class="rc-bar">
+            <div class="rc-fill"
+              [style.width.%]="((r.promedioGeneral ?? 0) / 20) * 100"
+              [style.background]="scoreColor(r.promedioGeneral)">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-alerts" *ngIf="dashboard">
+        <div class="sb-label">Alertas</div>
+        <div class="alert-card alert-r" *ngIf="dashboard.bajoRendimiento > 0">
+          <div class="ac-icon"><i class="ti ti-alert-triangle"></i></div>
+          <div class="ac-body">
+            <div class="ac-title">{{ dashboard.bajoRendimiento }} bajo rendimiento</div>
+            <div class="ac-sub">Menos de 12 pts este mes</div>
+          </div>
+        </div>
+        <div class="alert-card alert-y" *ngIf="periodo && periodo.diasRestantes <= 5">
+          <div class="ac-icon"><i class="ti ti-clock"></i></div>
+          <div class="ac-body">
+            <div class="ac-title">{{ periodo.diasRestantes }} días restantes</div>
+            <div class="ac-sub">Vence {{ periodo.fechaCierre | date:'dd MMM' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <!-- KPI BAR -->
+      <div class="kpi-bar">
+        <div class="kpi-cell">
+          <div class="kc-lbl"><i class="ti ti-chart-line"></i> Promedio general</div>
+          <div class="kc-num kc-purple">{{ dashboard.promedioGeneral ?? '—' }}</div>
+          <div class="kc-sub"><span class="kc-badge kb-p">{{ periodo?.nombreMes }} {{ periodo?.anio }}</span></div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kc-lbl"><i class="ti ti-users"></i> Residentes</div>
+          <div class="kc-num kc-white">{{ dashboard.totalResidentes }}</div>
+          <div class="kc-sub"><span class="kc-badge kb-b">Evaluados este mes</span></div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kc-lbl"><i class="ti ti-circle-check"></i> Evaluaciones registradas</div>
+          <div class="kc-num kc-green">{{ dashboard.evaluacionesCompletadas }}</div>
+          <div class="kc-sub"><span class="kc-badge kb-g">{{ periodo?.nombreMes }} {{ periodo?.anio }}</span></div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kc-lbl"><i class="ti ti-alert-triangle"></i> Bajo rendimiento</div>
+          <div class="kc-num" [ngClass]="dashboard.bajoRendimiento > 0 ? 'kc-red' : 'kc-green'">
+            {{ dashboard.bajoRendimiento }}
+          </div>
+          <div class="kc-sub"><span class="kc-badge kb-r">≤12 pts</span></div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kc-lbl"><i class="ti ti-trophy"></i> Top performer</div>
+          <div class="kc-num kc-green">{{ dashboard.residentes[0]?.promedioGeneral ?? '—' }}</div>
+          <div class="kc-sub">
+            <span class="kc-badge kb-p">
+              {{ dashboard.residentes[0]?.nombre ?? '—' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS AREA — vista mensual -->
+      <div class="charts-area" *ngIf="vistaActiva === 'mensual'">
+        <!-- Panel 1: Barras mensuales -->
+        <div class="chart-panel">
+          <div class="cp-header">
+            <div class="cp-title"><i class="ti ti-chart-bar"></i> Notas mensuales</div>
+            <span class="cp-badge">{{ periodo?.nombreMes }} {{ periodo?.anio }}</span>
+          </div>
+          <div class="chart-container">
+            <canvas [id]="chartBarrasId"></canvas>
+          </div>
+        </div>
+
+        <!-- Panel 2: Heatmap áreas -->
+        <div class="chart-panel">
+          <div class="cp-header">
+            <div class="cp-title"><i class="ti ti-layout-grid"></i> Promedio por área</div>
+            <span class="cp-action" (click)="mostrarDetalleArea = !mostrarDetalleArea">
+              <i class="ti ti-eye"></i> {{ mostrarDetalleArea ? 'Cerrar' : 'Detalle' }}
+            </span>
+          </div>
+          <div class="area-heatmap" *ngIf="!mostrarDetalleArea">
+            <div class="ah-cell"
+              *ngFor="let a of (residenteActivo?.promediosPorArea ?? dashboard.promediosPorArea)"
+              (click)="areaSeleccionada = a.areaNombre; mostrarDetalleArea = true">
+              <div class="ah-area">{{ a.areaNombre }}</div>
+              <div class="ah-score" [ngClass]="scoreClass(a.promedio)">{{ a.promedio ?? '—' }}</div>
+              <div class="ah-evals">{{ a.totalEvaluaciones }} eval.</div>
+            </div>
+          </div>
+          <div class="detalle-area" *ngIf="mostrarDetalleArea && residenteActivo">
+            <div class="da-header">
+              <div class="da-tabs">
+                <span class="da-tab"
+                  *ngFor="let a of residenteActivo.promediosPorArea"
+                  [class.da-tab-active]="areaSeleccionada === a.areaNombre"
+                  (click)="areaSeleccionada = a.areaNombre">
+                  {{ a.areaNombre.split(' ')[0] }}
+                  <b [ngClass]="scoreClass(a.promedio)">{{ a.promedio }}</b>
+                </span>
+              </div>
+              <span class="cp-action" (click)="mostrarDetalleArea = false"><i class="ti ti-x"></i></span>
+            </div>
+            <div class="criterios-grid">
+              <ng-container *ngFor="let ev of residenteActivo.evaluaciones">
+                <ng-container *ngIf="ev.areaNombre === areaSeleccionada">
+                  <!-- Header del evaluador -->
+                  <div class="crit-evaluador-header">
+                    <i class="ti ti-user"></i> {{ ev.evaluadorNombre || 'Evaluador' }}
+                    <span class="crit-eval-nota" [ngClass]="scoreClass(ev.nota)">{{ ev.nota ?? '—' }}</span>
+                  </div>
+                  <!-- Criterios -->
+                  <div class="crit-item" *ngFor="let det of ev.detalles">
+                    <span class="crit-score" [ngClass]="scoreClass(det.puntaje !== null ? det.puntaje * 4 : null)">
+                      {{ det.esNa ? 'N/A' : det.puntaje }}
+                    </span>
+                    <div class="crit-text">{{ det.criterio }}</div>
+                  </div>
+                  <!-- Comentario -->
+                  <div class="crit-comentario" *ngIf="ev.comentario">
+                    <i class="ti ti-quote"></i> {{ ev.comentario }}
+                  </div>
+                </ng-container>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TENDENCIA AREA — vista tendencia -->
+      <div class="tendencia-area" *ngIf="vistaActiva === 'tendencia'">
+        <!-- Panel tendencia full -->
+        <div class="chart-panel tend-main">
+          <div class="cp-header">
+            <div class="cp-title"><i class="ti ti-chart-line"></i> Tendencia histórica</div>
+            <span class="cp-badge">{{ periodo?.anio }}</span>
+          </div>
+          <div class="chart-container">
+            <canvas [id]="chartTendenciaId" (click)="onTendenciaClick($event)"></canvas>
+          </div>
+        </div>
+
+        <!-- Panel comentarios full -->
+        <div class="chart-panel tend-comments">
+          <div class="cp-header">
+            <div class="cp-title"><i class="ti ti-message-circle"></i> Comentarios</div>
+            <span class="cp-badge" style="background:#EEF2FF;color:#4338CA">
+              {{ (residenteActivo?.nombre ?? '').split(' ').slice(0,2).join(' ') }}
+            </span>
+          </div>
+          <div class="comment-list" *ngIf="residenteActivo">
+            <ng-container *ngFor="let c of dashboard.ultimosComentarios">
+              <div class="comment-item"
+                *ngIf="c.evaluadoUserId === residenteActivo.userId && c.comentario"
+                [style.borderLeftColor]="scoreColor(c.nota)">
+                <div class="ci-header">
+                  <span class="ci-area">{{ c.areaNombre }}</span>
+                  <span class="ci-score" [ngClass]="scoreClass(c.nota)">{{ c.nota ?? '—' }}</span>
+                </div>
+                <div class="ci-text">{{ c.comentario }}</div>
+                <div class="ci-evaluator">{{ c.evaluadorNombre }}</div>
+              </div>
+            </ng-container>
+            <div class="empty-comments"
+              *ngIf="!dashboard.ultimosComentarios.some(c => c.evaluadoUserId === residenteActivo!.userId && c.comentario)">
+              <i class="ti ti-message-off" style="font-size:24px"></i>
+              <span>Sin comentarios para {{ residenteActivo.nombre.split(' ')[0] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div class="empty-state" *ngIf="!loading && !dashboard">
+    <i class="ti ti-chart-off" style="font-size:40px;color:#334155"></i>
+    <div>No hay período activo configurado</div>
+    <span routerLink="/evaluaciones/configuracion" class="link-action">Configurar período</span>
+  </div>
+</div>

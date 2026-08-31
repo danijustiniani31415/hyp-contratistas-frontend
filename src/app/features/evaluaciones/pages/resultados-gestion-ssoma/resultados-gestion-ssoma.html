@@ -1,0 +1,114 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Resultados — Gestión SSOMA"
+  subtitulo="Evaluaciones internas de liderazgo/gestión de personas: Jefe SSOMA ↔ Coordinadores/Prevencionistas, Coordinador ↔ sus Prevencionistas, y Prevencionista ↔ Prevencionista."
+  [tabGroups]="[
+    { label: 'Residentes',   icono: 'ti-user-check', tabs: [
+      { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
+      { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
+      { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
+      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' },
+      { label: 'Asignaciones',  icono: 'ti-users',            route: '/evaluaciones/asignaciones',   featureKey: 'evaluaciones.asignaciones' }
+    ]},
+    { label: 'Contratistas', icono: 'ti-building', tabs: [
+      { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
+      { label: 'Evaluar',          icono: 'ti-pencil',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
+      { label: 'Ver evaluaciones', icono: 'ti-list',      route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' }
+    ]},
+    { label: 'Superv. Contratista', icono: 'ti-shield-check', tabs: [
+      { label: 'Evaluar supervisor', icono: 'ti-pencil', route: '/evaluaciones/evaluar-supervisor-contratista', featureKey: 'evaluaciones.evaluar-supervisor-contratista' },
+      { label: 'Ver evaluaciones',   icono: 'ti-list',   route: '/evaluaciones/ver-supervisores-contratista',   featureKey: 'evaluaciones.ver-supervisores-contratista' }
+    ]},
+    { label: 'Jefe SSOMA', icono: 'ti-user-shield', tabs: [
+      { label: 'Evaluar Jefe SSOMA', icono: 'ti-pencil', route: '/evaluaciones/evaluar-jefe-ssoma', featureKey: 'evaluaciones.evaluar-jefe-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-jefe-ssoma', featureKey: 'evaluaciones.resultados-jefe-ssoma' }
+    ]},
+    { label: 'Prevencionistas', icono: 'ti-vest', tabs: [
+      { label: 'Mi perfil', icono: 'ti-user', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
+      { label: 'Dashboard', icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' }
+    ]},
+    { label: 'Gestión SSOMA', icono: 'ti-users-group', tabs: [
+      { label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-gestion-ssoma', featureKey: 'evaluaciones.resultados-gestion-ssoma' }
+    ]}
+  ]">
+</app-abril-page-header>
+
+<div class="rj-root">
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div><span>Cargando resultados...</span>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && !resultados?.periodo">
+    <i class="ti ti-calendar-off"></i>
+    <h3>Sin período activo</h3>
+    <p>No hay un período de evaluación abierto en este momento.</p>
+  </div>
+
+  <div class="rj-content" *ngIf="!loading && resultados?.periodo">
+
+    <!-- FILA SUPERIOR: promedio general + cumplimiento -->
+    <div class="top-row">
+      <div class="stat-card">
+        <div class="stat-label">Promedio general</div>
+        <div class="stat-num" [ngClass]="notaClase(resultados!.promedioGeneral)">
+          {{ notaDisplay(resultados!.promedioGeneral) }}
+        </div>
+        <div class="stat-sub">{{ resultados!.totalRespuestas }} respuesta(s) · {{ resultados!.periodo!.nombreMes }} {{ resultados!.periodo!.anio }}</div>
+      </div>
+
+      <div class="stat-card" *ngIf="cumplimiento">
+        <div class="stat-label">Cumplimiento</div>
+        <div class="stat-num stat-cumplimiento">{{ porcentajeCompletado }}%</div>
+        <div class="stat-sub">{{ cumplimiento.totalCompletadas }} de {{ cumplimiento.totalEsperadas }} relaciones evaluadas</div>
+        <div class="progress-bar"><div class="progress-fill" [style.width.%]="porcentajeCompletado"></div></div>
+      </div>
+    </div>
+
+    <!-- PROMEDIO POR CRITERIO -->
+    <div class="section-card" *ngIf="resultados!.promediosPorCriterio.length">
+      <div class="section-title">Promedio por criterio</div>
+      <div class="criterio-row" *ngFor="let c of resultados!.promediosPorCriterio">
+        <div class="cr-nombre">{{ c.criterio }}</div>
+        <div class="cr-barra-wrap">
+          <div class="cr-barra" [style.width.%]="(c.promedio / 5) * 100" [ngClass]="notaClase(c.promedio * 4)"></div>
+        </div>
+        <div class="cr-valor">{{ c.promedio.toFixed(2) }} / 5</div>
+      </div>
+    </div>
+
+    <!-- DETALLE DE EVALUACIONES (filtrable por relación) -->
+    <div class="section-card" *ngIf="resultados!.evaluaciones.length">
+      <div class="section-title-row">
+        <div class="section-title">Evaluaciones registradas</div>
+        <select class="relacion-filtro" [(ngModel)]="filtroRelacion">
+          <option value="">Todas las relaciones</option>
+          <option *ngFor="let r of relacionesDisponibles" [value]="r">{{ relacionLabel[r] ?? r }}</option>
+        </select>
+      </div>
+      <div class="eval-row" *ngFor="let e of evaluacionesFiltradas">
+        <div class="er-main">
+          <span class="er-relacion">{{ relacionLabel[e.relacion] ?? e.relacion }}</span>
+          <span class="er-evaluado">{{ e.evaluadoNombre }}</span>
+          <span class="er-por" *ngIf="e.evaluadorNombre">por {{ e.evaluadorNombre }}</span>
+          <span class="er-por er-anon" *ngIf="!e.evaluadorNombre"><i class="ti ti-shield-lock"></i> anónima</span>
+        </div>
+        <span class="er-nota" [ngClass]="notaClase(e.nota)">{{ notaDisplay(e.nota) }}</span>
+      </div>
+    </div>
+
+    <!-- PENDIENTES DE EVALUAR -->
+    <div class="section-card" *ngIf="cumplimiento?.pendientes?.length">
+      <div class="section-title">Aún no han evaluado</div>
+      <div class="pendiente-item" *ngFor="let p of cumplimiento!.pendientes">
+        <div class="pe-avatar">{{ p.nombreCompleto.charAt(0) }}</div>
+        <div class="pe-info">
+          <div class="pe-nombre">{{ p.nombreCompleto }}</div>
+          <div class="pe-email">{{ p.emailCorporativo }} · {{ relacionLabel[p.relacion] ?? p.relacion }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

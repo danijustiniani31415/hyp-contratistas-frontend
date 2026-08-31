@@ -1,0 +1,101 @@
+<app-base-modal
+  [title]="'Consolidado del S10'"
+  width="w-[560px]"
+  [preventCloseWhenDirty]="true"
+  (closeModal)="cerrar()">
+
+  <div class="flex flex-col gap-4 pt-4">
+
+    <!-- ── Consolidado ya adjunto: aviso de estado, no instrucción ───────── -->
+    <div *ngIf="actual"
+         class="border rounded-lg p-3 flex flex-col gap-1"
+         style="border-color:var(--color-abril-standard-border);background:var(--color-abril-standard-light)">
+      <div class="text-xs text-gray-500 uppercase">
+        Adjunto {{ actual.ambito === 'Rendicion' ? 'a la planilla' : 'a esta salida' }}
+      </div>
+      <a
+        [href]="actual.pdfUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+        style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+        {{ actual.pdfFilename }}
+      </a>
+      <!-- La fecha solo viene cuando el consolidado se acaba de subir o llega del detalle;
+           desde la tabla el listado no la trae, así que se omite en vez de dejar el punto suelto. -->
+      <div class="text-xs text-gray-400">
+        <span *ngIf="actual.uploadedAt">{{ actual.uploadedAt | date:'dd/MM/yyyy HH:mm' }} · </span>subir otro lo reemplaza
+      </div>
+    </div>
+
+    <!-- ── Ámbito (por defecto, toda la planilla) ────────────────────────── -->
+    <div class="flex flex-col gap-2">
+      <div class="text-xs text-gray-500 uppercase">Asociar a</div>
+      <div class="flex gap-3">
+        <button
+          type="button"
+          (click)="setAmbito('Rendicion')"
+          [disabled]="!tieneRendicion"
+          class="ambito-opt"
+          [class.ambito-opt--on]="ambito === 'Rendicion'">
+          <span class="ambito-opt__title">Toda la planilla</span>
+          <span class="ambito-opt__hint">Todas las salidas de esa rendición</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="setAmbito('Solicitud')"
+          class="ambito-opt"
+          [class.ambito-opt--on]="ambito === 'Solicitud'">
+          <span class="ambito-opt__title">Solo esta salida</span>
+          <span class="ambito-opt__hint">Únicamente el registro seleccionado</span>
+        </button>
+      </div>
+      <div *ngIf="!tieneRendicion" class="text-xs" style="color:#D97706">
+        Esta salida no tiene planilla de rendición asociada.
+      </div>
+    </div>
+
+    <!-- ── Archivo ──────────────────────────────────────────────────────── -->
+    <div>
+      <app-file-selector
+        *ngIf="!archivo"
+        accept=".pdf"
+        label="Arrastra el PDF aquí o"
+        hint="PDF"
+        color="var(--color-abril-standard)"
+        background="var(--color-abril-standard-light)"
+        (fileSelected)="onFileSelected($event)" />
+
+      <app-file-preview
+        *ngIf="archivo"
+        [files]="archivoPreview"
+        color="var(--color-abril-standard-border)"
+        iconColor="var(--color-abril-standard)"
+        (remove)="quitarArchivo()" />
+    </div>
+
+    <!-- ── Acciones ─────────────────────────────────────────────────────── -->
+    <div class="flex justify-end gap-3 pt-1">
+      <button
+        type="button"
+        (click)="cerrar()"
+        class="h-[36px] px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-[7px] text-sm font-medium cursor-pointer transition-colors">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        (click)="guardar()"
+        [disabled]="!archivo"
+        class="consolidado-guardar">
+        {{ actual ? 'Reemplazar' : 'Adjuntar' }}
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

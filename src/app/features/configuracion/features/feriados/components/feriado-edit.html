@@ -1,0 +1,61 @@
+<app-base-modal title="EDITAR FERIADO / DÍA NO LABORABLE" width="w-[560px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-[15px] mt-[15px]">
+    <div class="flex justify-between gap-[20px] w-full">
+      <div class="flex flex-col flex-1">
+        <p class="text-[#64BC04]">Tipo</p>
+        <app-search-select
+          [options]="typeOptions"
+          [value]="dto.holidayTypeId"
+          (valueChange)="onTypeChange($event)"
+          [allowClear]="false"
+          [showLabel]="false"
+        ></app-search-select>
+      </div>
+      <div class="flex flex-col flex-1">
+        <p class="text-[#64BC04]">Fecha</p>
+        <input
+          type="date"
+          [(ngModel)]="dto.holidayDate"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]"
+        />
+      </div>
+    </div>
+
+    <div class="flex flex-col w-full">
+      <p class="text-[#64BC04]">Descripción</p>
+      <input
+        type="text"
+        [(ngModel)]="dto.description"
+        placeholder="Ej. Día de la Independencia"
+        class="border border-[#E2E2E2] rounded-lg p-[10px]"
+      />
+    </div>
+
+    <div class="flex justify-between gap-[20px] w-full items-center">
+      <label *ngIf="!isFeriado" class="flex items-center gap-[8px] cursor-pointer">
+        <input type="checkbox" [(ngModel)]="dto.recurringYearly" class="w-[16px] h-[16px] accent-[#64BC04]" />
+        <span class="text-gray-700">Se repite cada año</span>
+      </label>
+      <span *ngIf="isFeriado" class="text-sm text-gray-500 italic">Los feriados se repiten cada año.</span>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Estado</p>
+        <app-search-select
+          [options]="estadoOptions"
+          [value]="dto.active"
+          (valueChange)="dto.active = $event"
+          [allowClear]="false"
+          [showLabel]="false"
+        ></app-search-select>
+      </div>
+    </div>
+
+    <div class="flex justify-center">
+      <button
+        (click)="save()"
+        class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer"
+      >
+        <p class="text-[#ffffff] text-lg">Guardar</p>
+      </button>
+    </div>
+  </div>
+</app-base-modal>

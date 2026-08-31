@@ -1,0 +1,263 @@
+<app-base-modal [title]="'Agendar reunión'" width="w-[760px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-4 p-1">
+
+    <!-- Tema promovido desde otra reunión -->
+    <div *ngIf="reunionAnteriorId"
+      class="flex items-center gap-2 text-xs bg-[#F5F8FA] border border-[#E5EAF0] rounded-lg px-3 py-2 text-gray-600">
+      <span class="ti ti-arrow-forward-up text-[var(--color-abril-primary)]"></span>
+      Tema promovido desde: <span class="font-medium">{{ reunionAnteriorLabel }}</span>
+    </div>
+
+    <!-- ── Ámbito de la reunión ─────────────────────────────────────────────── -->
+    <div *ngIf="projectIdFijo == null">
+      <label class="block text-sm text-gray-600 mb-2">Esta reunión es de...</label>
+      <div class="flex gap-4">
+        <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer select-none">
+          <input type="radio" name="tipoAmbito" value="PROYECTO" [(ngModel)]="tipoAmbito" (ngModelChange)="onTipoAmbitoChange()"
+            class="accent-[var(--color-abril-primary)]" />
+          Un proyecto
+        </label>
+        <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer select-none">
+          <input type="radio" name="tipoAmbito" value="AREA" [(ngModel)]="tipoAmbito" (ngModelChange)="onTipoAmbitoChange()"
+            class="accent-[var(--color-abril-primary)]" />
+          Un área/gerencia
+        </label>
+        <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer select-none">
+          <input type="radio" name="tipoAmbito" value="ORGANIZACION" [(ngModel)]="tipoAmbito" (ngModelChange)="onTipoAmbitoChange()"
+            class="accent-[var(--color-abril-primary)]" />
+          Toda la organización
+        </label>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div *ngIf="projectIdFijo != null || tipoAmbito === 'PROYECTO'">
+        <app-search-select
+          label="Proyecto *"
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="projectId"
+          (valueChange)="onProjectIdChange($event)"
+          [disabled]="projectIdFijo != null"
+          placeholder="Selecciona un proyecto">
+        </app-search-select>
+      </div>
+      <div *ngIf="projectIdFijo == null && tipoAmbito === 'AREA'" class="flex flex-col gap-2">
+        <label class="block text-sm text-gray-600">Área/gerencia *</label>
+        <div class="flex flex-col gap-2">
+          <select *ngFor="let opciones of nivelesAreaScope; let i = index"
+            [ngModel]="areaScopePath[i]?.areaScopeId ?? null"
+            (ngModelChange)="onNivelAreaScopeChange(i, $event)"
+            class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]">
+            <option [ngValue]="null">{{ placeholderNivel(opciones, i) }}</option>
+            <option *ngFor="let n of opciones" [ngValue]="n.areaScopeId">{{ n.areaItemName }}</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="text-sm text-gray-600">Tema de la reunión *</label>
+          <label class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+            <input type="checkbox" [(ngModel)]="temaPersonalizado" (ngModelChange)="onTemaPersonalizadoChange()"
+              class="accent-[var(--color-abril-primary)] cursor-pointer" />
+            Tema personalizado
+          </label>
+        </div>
+        <app-search-select *ngIf="!temaPersonalizado"
+          [options]="temasFiltrados"
+          valueField="descripcion"
+          displayField="descripcion"
+          [showLabel]="false"
+          [value]="tema || null"
+          (valueChange)="onTemaSeleccionado($event)"
+          placeholder="Selecciona un tema">
+        </app-search-select>
+        <input *ngIf="temaPersonalizado" type="text" [(ngModel)]="tema" maxlength="300"
+          class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+          placeholder="Ej. Comité de obra, revisión de acabados..." />
+        <label *ngIf="temaPersonalizado" class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none mt-1">
+          <input type="checkbox" [(ngModel)]="guardarTemaComoRecurrente" (ngModelChange)="onGuardarTemaComoRecurrenteChange()"
+            class="accent-[var(--color-abril-primary)] cursor-pointer" />
+          Guardar como tema recurrente (quedará disponible en el desplegable la próxima vez)
+        </label>
+
+        <div *ngIf="temaPersonalizado && guardarTemaComoRecurrente && convocatoriaTemaConfig"
+          class="mt-2 flex items-center justify-between gap-2 bg-[#F5F8FA] border border-[#E5EAF0] rounded-lg px-3 py-2">
+          <p class="text-[11px] text-gray-500">
+            <span class="ti ti-check text-[var(--color-abril-primary)]"></span>
+            Convocatoria configurada
+            <span> · con agenda {{ convocatoriaTemaConfig.agendaFija ? 'fija' : 'dinámica' }}</span>
+          </p>
+          <button type="button" (click)="showConvocatoriaTemaModal = true"
+            class="text-[11px] text-[var(--color-abril-primary)] hover:underline cursor-pointer whitespace-nowrap">
+            Editar
+          </button>
+        </div>
+
+        <!-- Reunión puntual: no queda vinculada a ningún tema del catálogo, así que su agenda
+             se define aquí mismo (mínimo 1 punto), en vez de depender de un recordatorio posterior. -->
+        <div *ngIf="temaPersonalizado && !guardarTemaComoRecurrente" class="mt-2 flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">Agenda de la reunión * (mínimo 1 punto)</label>
+          <textarea [(ngModel)]="agendaTexto" rows="3" maxlength="2000"
+            class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+            placeholder="Ej.&#10;1. Revisión de avance&#10;2. Riesgos y bloqueos"></textarea>
+          <p class="text-[11px] text-gray-400">
+            Al ser puntual (no queda guardada como tema recurrente), define aquí los puntos a
+            tratar; no se pedirá a los participantes que carguen los suyos.
+          </p>
+        </div>
+      </div>
+      <div>
+        <app-search-select
+          label="Convocado por"
+          [options]="opcionesConvocadoPor"
+          valueField="fullName"
+          displayField="fullName"
+          [value]="convocadoPor || null"
+          (valueChange)="convocadoPor = $event ?? ''"
+          placeholder="Selecciona un trabajador">
+        </app-search-select>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="text-sm text-gray-600">Lugar</label>
+          <label class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+            <input type="checkbox" [(ngModel)]="lugarPersonalizado" (ngModelChange)="onLugarPersonalizadoChange()"
+              class="accent-[var(--color-abril-primary)] cursor-pointer" />
+            Lugar personalizado
+          </label>
+        </div>
+        <app-search-select *ngIf="!lugarPersonalizado"
+          [options]="proyectos"
+          valueField="projectDescription"
+          displayField="projectDescription"
+          [showLabel]="false"
+          [value]="lugar || null"
+          (valueChange)="lugar = $event ?? ''"
+          placeholder="Selecciona un proyecto">
+        </app-search-select>
+        <input *ngIf="lugarPersonalizado" type="text" [(ngModel)]="lugar" maxlength="200"
+          class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+          placeholder="Ej. Oficina - obra" />
+      </div>
+      <div>
+        <app-date-picker label="Fecha *" color="var(--color-abril-primary)" [value]="fecha" (valueChange)="fecha = $event"></app-date-picker>
+        <p class="text-[11px] text-gray-400 mt-1">
+          La fecha se puede reprogramar las veces que sea necesario.
+        </p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">Hora de inicio</label>
+          <input type="time" [(ngModel)]="horaInicio"
+            class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">Hora de término</label>
+          <input type="time" [(ngModel)]="horaFin"
+            class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Participantes ──────────────────────────────────────────────────── -->
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <label class="text-sm font-medium text-gray-700">Participantes</label>
+        <div class="flex items-center gap-3">
+          <button *ngIf="projectIdParaStaff != null" type="button" (click)="agregarStaffDelProyecto()"
+            class="text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
+            <span class="ti ti-building"></span> Todo el staff de este proyecto
+          </button>
+          <button type="button" (click)="abrirConvocatoriaMasiva()"
+            class="text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
+            <span class="ti ti-users"></span> Agregar por área/puesto
+          </button>
+          <button type="button" (click)="addParticipante()"
+            class="text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
+            <span class="ti ti-plus"></span> Agregar participante
+          </button>
+        </div>
+      </div>
+      <div class="border border-[#E5EAF0] rounded-lg overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-[#F5F8FA] text-[var(--color-abril-primary)]">
+            <tr class="text-left">
+              <th class="px-3 py-2 font-medium">Nombre</th>
+              <th class="px-3 py-2 font-medium">Cargo</th>
+              <th class="px-3 py-2 font-medium w-24">Iniciales</th>
+              <th class="px-3 py-2 w-10"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="participantes.length === 0">
+              <td colspan="4" class="px-4 py-5 text-center text-gray-400 text-sm">
+                Sin participantes. Usa "Agregar participante" para elegirlos de la lista de trabajadores.
+              </td>
+            </tr>
+            <tr *ngFor="let p of participantes; let i = index" class="border-t border-[#E5EAF0]">
+              <td class="px-2 py-1.5">
+                <input type="text" [(ngModel)]="p.nombre" (ngModelChange)="onNombreChange(p)" maxlength="200"
+                  class="w-full h-[34px] px-2 border border-[#E5EAF0] rounded text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+                  placeholder="Nombre completo" />
+              </td>
+              <td class="px-2 py-1.5">
+                <input type="text" [(ngModel)]="p.cargo" maxlength="200"
+                  class="w-full h-[34px] px-2 border border-[#E5EAF0] rounded text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+                  placeholder="Cargo" />
+              </td>
+              <td class="px-2 py-1.5">
+                <input type="text" [(ngModel)]="p.iniciales" (ngModelChange)="onInicialesChange(p)" maxlength="10"
+                  class="w-full h-[34px] px-2 border border-[#E5EAF0] rounded text-sm text-center focus:outline-none focus:border-[var(--color-abril-primary)]" />
+              </td>
+              <td class="px-2 py-1.5 text-center">
+                <button type="button" (click)="removeParticipante(i)"
+                  class="text-red-400 hover:text-red-600 cursor-pointer">
+                  <span class="ti ti-trash text-base"></span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Acciones ───────────────────────────────────────────────────────── -->
+    <div class="flex justify-end gap-3 pt-2">
+      <button type="button" (click)="closeModal.emit()"
+        class="h-[42px] px-5 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors">
+        Cancelar
+      </button>
+      <button type="button" (click)="submit()"
+        class="h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
+        <span class="ti ti-calendar-plus text-base"></span>
+        Agendar reunión
+      </button>
+    </div>
+  </div>
+</app-base-modal>
+
+<app-participante-add
+  *ngIf="showParticipanteModal"
+  [trabajadores]="trabajadores"
+  [inicialesExistentes]="inicialesActuales"
+  (closeModal)="showParticipanteModal = false"
+  (add)="onParticipanteAgregado($event)">
+</app-participante-add>
+
+<app-convocatoria-masiva
+  *ngIf="showConvocatoriaMasivaModal"
+  [proyectos]="proyectos"
+  (closeModal)="showConvocatoriaMasivaModal = false"
+  (agregarTrabajadores)="onTrabajadoresAgregadosMasivamente($event)">
+</app-convocatoria-masiva>
+
+<app-convocatoria-tema
+  *ngIf="showConvocatoriaTemaModal"
+  [arbol]="arbolAreaScope"
+  [proyectos]="proyectos"
+  [inicial]="convocatoriaTemaConfig"
+  (closeModal)="onConvocatoriaTemaCancelada()"
+  (guardar)="onConvocatoriaTemaGuardada($event)">
+</app-convocatoria-tema>

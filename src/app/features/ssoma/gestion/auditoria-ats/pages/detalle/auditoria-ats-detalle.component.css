@@ -1,0 +1,224 @@
+.detalle-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: 3rem;
+  color: #718096;
+}
+
+/* Card */
+.card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 4px rgb(0 0 0 / .05);
+}
+
+.card-title {
+  font-size: .875rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 1rem;
+  padding-bottom: .6rem;
+  border-bottom: 1px solid #edf2f7;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* Info grid */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: .75rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+}
+.info-item--full { grid-column: 1 / -1; }
+
+.info-label {
+  font-size: .72rem;
+  font-weight: 700;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.info-value {
+  font-size: .9rem;
+  color: #2d3748;
+}
+.info-sub {
+  font-size: .78rem;
+  color: #9ca3af;
+}
+
+/* Escala legend */
+.escala-legend {
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.leg-item {
+  flex: 1;
+  text-align: center;
+  padding: .35rem .2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .1rem;
+}
+.leg-num { font-size: 1.1rem; font-weight: 700; }
+.leg-lbl { font-size: .65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center; }
+
+/* Respuestas */
+.respuestas-list {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.resp-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .65rem .75rem;
+  background: #f7fafc;
+  border-radius: 7px;
+  border: 1px solid #edf2f7;
+}
+
+.resp-info {
+  display: flex;
+  align-items: flex-start;
+  gap: .5rem;
+  flex: 1;
+}
+
+.resp-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #edf2f7;
+  color: #4a5568;
+  font-size: .72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: .05rem;
+}
+
+.resp-content {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+
+.resp-texto {
+  font-size: .875rem;
+  color: #2d3748;
+  line-height: 1.4;
+}
+
+.resp-comentario {
+  font-size: .8rem;
+  color: #4a5568;
+  display: flex;
+  align-items: flex-start;
+  gap: .3rem;
+  font-style: italic;
+}
+
+.resp-score {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 7px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgb(0 0 0 / .15);
+}
+
+/* Fotos */
+.fotos-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+}
+
+.foto-thumb {
+  width: 110px;
+  height: 110px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
+}
+.foto-thumb:hover { transform: scale(1.03); box-shadow: 0 2px 8px rgb(0 0 0 / .15); }
+.foto-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Lightbox */
+.foto-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / .85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  cursor: zoom-out;
+  overflow: hidden;
+}
+.foto-lightbox img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  cursor: default;
+  box-shadow: 0 4px 24px rgb(0 0 0 / .4);
+  transition: transform .08s ease-out;
+  will-change: transform;
+}
+.foto-lightbox-cerrar {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.5rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgb(255 255 255 / .15);
+  color: #fff;
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .12s;
+}
+.foto-lightbox-cerrar:hover { background: rgb(255 255 255 / .3); }
+
+.spin { animation: spin .7s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }

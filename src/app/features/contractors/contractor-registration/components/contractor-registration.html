@@ -1,0 +1,423 @@
+<!-- ════════════ MODO INTERNO (personal del sistema, dentro del shell) ════════════ -->
+<!-- Ruta /contractors/registro-interno: header con pestañas + logo OPCIONAL. -->
+<ng-container *ngIf="modoInterno">
+  <app-abril-page-header
+    badge="CONTRATISTAS"
+    titulo="Registro de Contratistas"
+    subtitulo="Registra un contratista en el sistema."
+    [tabs]="contractorTabs">
+  </app-abril-page-header>
+
+  <div class="flex-1 min-h-0 overflow-y-auto bg-white rounded-lg p-5">
+    <ng-container *ngTemplateOutlet="formCard"></ng-container>
+  </div>
+</ng-container>
+
+<!-- ════════════ MODO PÚBLICO (contratista externo vía login) ════════════ -->
+<!-- Ruta pública /contractors/registro: página standalone + logo OBLIGATORIO. -->
+<div *ngIf="!modoInterno" class="min-h-screen bg-gradient-to-br from-[#1E3A5F] to-[#0F2340] flex flex-col items-center justify-start py-10 px-4">
+
+  <!-- Botón volver arriba a la izquierda -->
+  <div class="w-full max-w-[680px] mb-3">
+    <button type="button" (click)="goToLogin()"
+      class="flex items-center gap-2 text-sm text-blue-200 hover:text-white transition-colors cursor-pointer">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Volver al inicio
+    </button>
+  </div>
+
+  <!-- Header -->
+  <div class="flex flex-col items-center gap-3 mb-8">
+    <div class="w-12 h-12 bg-[#64BC04] rounded-lg flex items-center justify-center shadow-md">
+      <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+      </svg>
+    </div>
+    <div class="text-center">
+      <p class="text-xs font-semibold text-[#64BC04] uppercase tracking-widest">Abril Grupo Inmobiliario</p>
+      <h1 class="text-2xl font-bold text-white mt-1">Registro de contratista</h1>
+      <p class="text-sm text-blue-200 mt-1">Completa el formulario para solicitar tu acceso como contratista</p>
+    </div>
+  </div>
+
+  <ng-container *ngTemplateOutlet="formCard"></ng-container>
+
+  <p class="text-xs text-blue-200 mt-6">© {{ currentYear }} Abril Grupo Inmobiliario</p>
+
+</div>
+
+<!-- ════════════ FORMULARIO (compartido por ambos modos) ════════════ -->
+<ng-template #formCard>
+  <!-- Card principal -->
+  <div class="w-full max-w-[680px] mx-auto bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden">
+
+    <!-- ── SECCIÓN 1: Búsqueda RUC ───────────────────────────────── -->
+    <div class="bg-[#F7FBF3] border-b border-[#E5F0D8] px-8 py-6">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+        Búsqueda en SUNAT
+      </p>
+      <div class="flex gap-3">
+        <div class="flex-1 flex flex-col gap-1">
+          <div class="flex items-center border rounded-lg overflow-hidden transition-all"
+            class="border-[#D6DEE5]">
+            <span class="px-3 text-xs text-gray-400 font-medium border-r border-[#D6DEE5] py-[11px] bg-white whitespace-nowrap">RUC</span>
+            <input
+              type="text"
+              [(ngModel)]="rucInput"
+              (keydown)="onRucKeydown($event)"
+              maxlength="11"
+              placeholder="Ingresa el RUC de tu empresa"
+              class="flex-1 px-3 py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none bg-white"
+            />
+          </div>
+          <p class="text-xs text-gray-400 pl-1">11 dígitos · Presiona Enter o haz clic en Consultar</p>
+        </div>
+        <button
+          type="button"
+          (click)="searchSunat()"
+          [disabled]="rucInput.length !== 11"
+          class="shrink-0 flex items-center gap-2 px-5 py-[10px] rounded-lg text-sm font-medium transition-all self-start"
+          [ngClass]="rucInput.length === 11
+            ? 'bg-[#64BC04] text-white hover:bg-[#57a803] cursor-pointer shadow-sm'
+            : 'bg-gray-100 text-gray-400 cursor-not-allowed'">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+          </svg>
+          Consultar
+        </button>
+      </div>
+    </div>
+
+    <div class="px-8 py-6 flex flex-col gap-6">
+
+      <!-- ── SECCIÓN 2: Datos de la empresa ─────────────────────── -->
+      <div>
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+          Información de la empresa
+        </p>
+        <div class="flex flex-col gap-4">
+
+          <!-- RUC + Razón social -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm text-[#64BC04] font-medium">RUC <span class="text-red-400">*</span></label>
+              <input
+                type="text"
+                [(ngModel)]="form.contributorRuc"
+                maxlength="11"
+                placeholder="20XXXXXXXXX"
+                [readonly]="!!sunatData"
+                class="border rounded-lg p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors"
+                [ngClass]="sunatData ? 'border-[#D6DEE5] bg-gray-50 text-gray-500 cursor-not-allowed' : 'border-[#D6DEE5] bg-white'"
+              />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm text-[#64BC04] font-medium">Razón social <span class="text-red-400">*</span></label>
+              <input
+                type="text"
+                [(ngModel)]="form.contributorName"
+                placeholder="Nombre de tu empresa"
+                class="border border-[#D6DEE5] rounded-lg p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 bg-white"
+              />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm text-[#64BC04] font-medium">Dirección <span class="text-red-400">*</span></label>
+            <input
+              type="text"
+              [(ngModel)]="form.address"
+              placeholder="Dirección fiscal de la empresa"
+              class="border border-[#D6DEE5] rounded-lg p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 bg-white"
+            />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm text-[#64BC04] font-medium">Distrito <span class="text-red-400">*</span></label>
+              <input
+                type="text"
+                [(ngModel)]="form.contributorDistrict"
+                placeholder="Distrito"
+                [readonly]="!!sunatData"
+                class="border rounded-lg p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors"
+                [ngClass]="sunatData ? 'border-[#D6DEE5] bg-gray-50 text-gray-500 cursor-not-allowed' : 'border-[#D6DEE5] bg-white'"
+              />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm text-[#64BC04] font-medium">Provincia <span class="text-red-400">*</span></label>
+              <input
+                type="text"
+                [(ngModel)]="form.contributorProvince"
+                placeholder="Provincia"
+                [readonly]="!!sunatData"
+                class="border rounded-lg p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors"
+                [ngClass]="sunatData ? 'border-[#D6DEE5] bg-gray-50 text-gray-500 cursor-not-allowed' : 'border-[#D6DEE5] bg-white'"
+              />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm text-[#64BC04] font-medium">Departamento <span class="text-red-400">*</span></label>
+              <input
+                type="text"
+                [(ngModel)]="form.contributorDepartment"
+                placeholder="Departamento"
+                [readonly]="!!sunatData"
+                class="border rounded-lg p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors"
+                [ngClass]="sunatData ? 'border-[#D6DEE5] bg-gray-50 text-gray-500 cursor-not-allowed' : 'border-[#D6DEE5] bg-white'"
+              />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm text-[#64BC04] font-medium">Actividad económica <span class="text-red-400">*</span></label>
+            <input
+              type="text"
+              [(ngModel)]="form.economicActivityDescription"
+              placeholder="Rubro principal de la empresa"
+              class="border border-[#D6DEE5] rounded-lg p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 bg-white"
+            />
+          </div>
+
+          <!-- ── N° de partida registral ── -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm text-[#64BC04] font-medium">N° de partida registral <span class="text-red-400">*</span></label>
+            <input
+              type="text"
+              inputmode="numeric"
+              [(ngModel)]="form.legalEntityRegistryNumber"
+              (keydown)="onNumericKeydown($event)"
+              placeholder="Ej. 01234567"
+              class="border border-[#D6DEE5] rounded-lg p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 bg-white"
+            />
+          </div>
+
+          <!-- ── Logo de la empresa ── -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm text-[#64BC04] font-medium">
+              Logo / imagen de la empresa
+              <span *ngIf="logoRequerido" class="text-red-400">*</span>
+              <span *ngIf="!logoRequerido" class="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <app-file-selector
+              *ngIf="!logoFile"
+              accept="image/*"
+              hint="PNG, JPG, JPEG"
+              (fileSelected)="onFileSelected($event, 'logoFile')">
+            </app-file-selector>
+            <app-image-preview [previews]="logoPreviews" (remove)="removeFile('logoFile')"></app-image-preview>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="border-t border-[#F0F0F0]"></div>
+
+      <!-- ── SECCIÓN 3: Representante legal ────────────────────── -->
+      <div>
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+          Representante legal
+        </p>
+        <div class="flex flex-col gap-4">
+
+          <!-- DNI search -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm text-[#64BC04] font-medium">DNI del representante <span class="text-red-400">*</span></label>
+            <div class="flex gap-3">
+              <div class="flex-1 flex items-center border rounded-lg overflow-hidden transition-all"
+                [ngClass]="reniecData ? 'border-[#D6DEE5] bg-gray-50' : 'border-[#D6DEE5]'">
+                <span class="px-3 text-xs text-gray-400 font-medium border-r border-[#D6DEE5] py-[11px] bg-white whitespace-nowrap">DNI</span>
+                <input
+                  type="text"
+                  inputmode="numeric"
+                  [(ngModel)]="dniInput"
+                  (keydown)="onDniKeydown($event)"
+                  maxlength="8"
+                  placeholder="8 dígitos"
+                  [readonly]="!!reniecData"
+                  class="flex-1 px-3 py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
+                  [ngClass]="reniecData ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'bg-white'"
+                />
+              </div>
+              <button *ngIf="!reniecData"
+                type="button"
+                (click)="searchReniec()"
+                [disabled]="dniInput.length !== 8 || dniLookupLoading"
+                class="shrink-0 flex items-center gap-2 px-5 py-[10px] rounded-lg text-sm font-medium transition-all self-start"
+                [ngClass]="dniInput.length === 8 && !dniLookupLoading
+                  ? 'bg-[#64BC04] text-white hover:bg-[#57a803] cursor-pointer shadow-sm'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'">
+                <svg *ngIf="!dniLookupLoading" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+                </svg>
+                <svg *ngIf="dniLookupLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                </svg>
+                {{ dniLookupLoading ? 'Consultando...' : 'Consultar' }}
+              </button>
+              <button *ngIf="reniecData"
+                type="button"
+                (click)="clearReniec()"
+                class="shrink-0 flex items-center gap-2 px-5 py-[10px] rounded-lg text-sm font-medium bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-500 cursor-pointer transition-all self-start">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Limpiar
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm text-[#64BC04] font-medium">Nombre completo <span class="text-red-400">*</span></label>
+            <input
+              type="text"
+              [(ngModel)]="form.legalRepresentativeFullName"
+              placeholder="Se completará al consultar el DNI"
+              [readonly]="!!reniecData"
+              class="border rounded-lg p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors"
+              [ngClass]="reniecData ? 'border-[#D6DEE5] bg-gray-50 text-gray-600 cursor-not-allowed' : 'border-[#D6DEE5] bg-white'"
+            />
+          </div>
+
+        </div>
+      </div>
+
+      <div class="border-t border-[#F0F0F0]"></div>
+
+      <!-- ── SECCIÓN 4: Correos de contacto ───────────────────────── -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+            Correos de contacto <span class="text-red-400 normal-case font-normal text-[11px]">* mín. 1</span>
+          </p>
+          <button
+            type="button"
+            (click)="addEmail()"
+            class="flex items-center gap-1.5 text-xs text-[#64BC04] font-medium hover:text-[#57a803] cursor-pointer transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
+            </svg>
+            Agregar correo
+          </button>
+        </div>
+
+        <div class="flex flex-col gap-3">
+          <div *ngFor="let item of emailItems; let i = index; trackBy: trackByIndex"
+            class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+
+            <!-- Input correo -->
+            <div class="flex-1 flex items-center border border-[#D6DEE5] rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#64BC04]/30 focus-within:border-[#64BC04] transition-all">
+              <span class="px-3 py-[10px] border-r border-[#D6DEE5] bg-gray-50">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+              </span>
+              <input
+                type="email"
+                [(ngModel)]="item.email"
+                [placeholder]="i === 0 ? 'correo@empresa.com' : 'correo adicional'"
+                class="flex-1 px-3 py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none bg-white"
+              />
+            </div>
+
+            <!-- Clasificación -->
+            <div class="sm:w-52">
+              <app-search-select
+                [options]="personTypes"
+                valueField="contractorPersonTypeId"
+                displayField="description"
+                [value]="item.personTypeId"
+                (valueChange)="item.personTypeId = $event"
+                [showLabel]="false"
+                placeholder="— Clasificación * —"
+                [allowClear]="false">
+              </app-search-select>
+            </div>
+
+            <!-- Quitar -->
+            <button
+              *ngIf="emailItems.length > 1"
+              type="button"
+              (click)="removeEmail(i)"
+              class="p-2 text-gray-300 hover:text-red-400 transition-colors cursor-pointer rounded-lg hover:bg-red-50 self-center">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-[#F0F0F0]"></div>
+
+      <!-- ── SECCIÓN 5: Documentos ──────────────────────────────── -->
+      <div>
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+          Documentos
+        </p>
+        <div class="flex flex-col gap-4">
+
+          <!-- Brochure -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm text-[#64BC04] font-medium">Brochure <span class="text-red-400">*</span></label>
+            <app-file-selector
+              *ngIf="!brochureFile"
+              accept="*"
+              hint="Cualquier archivo"
+              (fileSelected)="onFileSelected($event, 'brochureFile')">
+            </app-file-selector>
+            <app-file-preview [files]="fileItems.brochureFile" (remove)="removeFile('brochureFile')"></app-file-preview>
+          </div>
+
+          <!-- Ficha RUC -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm text-[#64BC04] font-medium">Ficha RUC <span class="text-red-400">*</span></label>
+            <app-file-selector
+              *ngIf="!fichaRucFile"
+              accept="*"
+              hint="Cualquier archivo"
+              (fileSelected)="onFileSelected($event, 'fichaRucFile')">
+            </app-file-selector>
+            <app-file-preview [files]="fileItems.fichaRucFile" (remove)="removeFile('fichaRucFile')"></app-file-preview>
+          </div>
+
+          <!-- Lista de referencias -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm text-[#64BC04] font-medium">Lista de referencias <span class="text-red-400">*</span></label>
+            <app-file-selector
+              *ngIf="!referencesListFile"
+              accept="*"
+              hint="Cualquier archivo"
+              (fileSelected)="onFileSelected($event, 'referencesListFile')">
+            </app-file-selector>
+            <app-file-preview [files]="fileItems.referencesListFile" (remove)="removeFile('referencesListFile')"></app-file-preview>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="border-t border-[#F0F0F0]"></div>
+
+      <!-- ── BOTÓN ENVIAR ────────────────────────────────────────── -->
+      <div class="flex flex-col items-center gap-3">
+        <button
+          type="button"
+          (click)="submit()"
+          class="w-full sm:w-auto sm:min-w-[220px] flex items-center justify-center gap-2 px-8 py-3 rounded-lg text-base font-semibold transition-all bg-[#64BC04] text-white hover:bg-[#57a803] shadow-md hover:shadow-lg cursor-pointer">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Enviar solicitud
+        </button>
+        <!-- Solo en la ruta pública: el personal interno no necesita este aviso. -->
+        <p *ngIf="!modoInterno" class="text-xs text-gray-400 text-center">
+          Un representante de Abril revisará tus datos y te enviará tus credenciales de acceso.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</ng-template>

@@ -1,0 +1,203 @@
+.registro-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #182233 0%, #2a3675 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.registro-card {
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  width: 100%;
+  max-width: 720px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.registro-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.registro-logo {
+  max-width: 180px;
+  margin: 0 auto 0.75rem;
+  display: block;
+  background: linear-gradient(135deg, #182233, #2a3675);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+}
+
+.registro-header h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.registro-header p {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem 1rem;
+}
+
+.grid-2 .col-span-2 {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 600px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: #6b7280;
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.field-input {
+  width: 100%;
+  border: 1px solid #d6dee5;
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+  color: #111827;
+  background: #ffffff;
+}
+
+.field-input:focus {
+  outline: 0;
+  border-color: #64bc04;
+  box-shadow: 0 0 0 3px rgba(100, 188, 4, 0.18);
+}
+
+.error-line {
+  display: block;
+  font-size: 0.75rem;
+  color: #dc2626;
+  margin-top: 0.25rem;
+}
+
+.registro-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.7rem 1.6rem;
+  background: #64bc04;
+  color: #ffffff;
+  border: 0;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  min-width: 220px;
+  justify-content: center;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #5aa904;
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-link {
+  color: #64bc04;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Logo upload ── */
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.file-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px dashed #d6dee5;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  background: #f9fafb;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  user-select: none;
+}
+
+.file-btn:hover:not(.file-btn--disabled) {
+  border-color: #64bc04;
+  background: #f0fce4;
+  color: #166534;
+}
+
+.file-btn--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.file-uploading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.file-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  color: #166534;
+  font-weight: 600;
+}
+
+.file-hint {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}

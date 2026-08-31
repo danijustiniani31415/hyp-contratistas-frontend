@@ -1,0 +1,37 @@
+/* ── Dato de solo lectura (DESIGN-VICTOR §3) ──────────────────────────────
+   Label 11px uppercase gris sobre valor 14px navy. Deliberadamente SIN borde ni
+   fondo: antes eran cajas que parecían inputs editables y no lo son. */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.campo__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b; /* text secondary */
+}
+
+.campo__valor {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e3a5f; /* text primary */
+  word-break: break-word;
+}
+
+.campo__texto {
+  font-size: 14px;
+  line-height: 1.55;
+  color: #1e3a5f;
+  white-space: pre-line;
+  word-break: break-word;
+}
+
+.separador {
+  height: 1px;
+  background: #e2e8f0; /* border */
+}

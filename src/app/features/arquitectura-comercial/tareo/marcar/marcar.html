@@ -1,0 +1,67 @@
+<app-abril-page-header
+  badge="ARQ. COMERCIAL · TAREO"
+  titulo="Marcar tareo"
+  subtitulo="Párate frente a la cámara — te reconocemos automáticamente y registramos tu hora."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="mrc-root">
+
+  <div class="mrc-camara-wrap">
+    <app-camera-capture (listo)="onCamaraLista()"></app-camera-capture>
+
+    <div class="mrc-identif-overlay" *ngIf="camaraLista && !workerId">
+      <span class="mrc-spinner"></span>
+      <span>Buscándote entre los enrolados…</span>
+    </div>
+  </div>
+
+  <div *ngIf="!workerId" class="mrc-sin-identificar">
+    <i class="ti ti-face-id" style="font-size:22px"></i>
+    <span>Aún no te reconocemos. Asegúrate de tener buena luz y mirar directo a la cámara.</span>
+  </div>
+
+  <div *ngIf="workerId" class="mrc-identificado">
+    <i class="ti ti-circle-check" style="font-size:20px;color:#16A34A"></i>
+    <span>Hola, <strong>{{ nombreTrabajador }}</strong></span>
+    <button type="button" class="mrc-no-soy-btn" (click)="reintentarIdentificacion()">¿No eres tú?</button>
+  </div>
+
+  <div *ngIf="cargandoHoy" class="mrc-loading"><span class="mrc-spinner"></span> Cargando…</div>
+
+  <div *ngIf="workerId && !cargandoHoy" class="mrc-pasos">
+    <div *ngFor="let paso of pasos" class="mrc-paso"
+         [class.mrc-paso-hecho]="registroDe(paso.tipo)"
+         [class.mrc-paso-activo]="esSiguientePendiente(paso.tipo)"
+         [class.mrc-paso-bloqueado]="!registroDe(paso.tipo) && !esSiguientePendiente(paso.tipo)">
+      <div class="mrc-paso-icon">
+        <i class="ti" [class]="registroDe(paso.tipo) ? 'ti-circle-check' : paso.icono"></i>
+      </div>
+      <div class="mrc-paso-info">
+        <span class="mrc-paso-label">{{ paso.label }}</span>
+        <span *ngIf="registroDe(paso.tipo) as r" class="mrc-paso-hora">
+          {{ r.horaServidor | date: 'HH:mm' }}
+          <span class="mrc-paso-estado" [class]="'mrc-estado-' + r.estado.toLowerCase()">{{ r.estado }}</span>
+        </span>
+        <span *ngIf="!registroDe(paso.tipo) && !esSiguientePendiente(paso.tipo)" class="mrc-paso-hint">Pendiente de los pasos anteriores</span>
+      </div>
+      <button type="button" class="mrc-paso-btn"
+              [disabled]="!esSiguientePendiente(paso.tipo) || procesando"
+              (click)="marcarPaso(paso)">
+        <span *ngIf="!procesando"><i class="ti ti-camera"></i> Marcar</span>
+        <span *ngIf="procesando"><span class="mrc-spinner mrc-spinner-sm"></span></span>
+      </button>
+    </div>
+
+    <div *ngIf="registroDe('FIN_JORNADA')" class="mrc-completo">
+      <i class="ti ti-confetti" style="font-size:22px"></i> Jornada de hoy completa.
+    </div>
+  </div>
+
+  <div class="mrc-gps-row">
+    <i class="ti" [class]="gpsEstado === 'ok' ? 'ti-map-pin-check' : gpsEstado === 'error' ? 'ti-map-pin-off' : 'ti-map-pin-search'"></i>
+    <span *ngIf="gpsEstado === 'buscando'">Obteniendo ubicación…</span>
+    <span *ngIf="gpsEstado === 'ok'">Ubicación obtenida ({{ gpsCoords?.accuracy | number: '1.0-0' }}m de precisión)</span>
+    <span *ngIf="gpsEstado === 'error'">Sin ubicación disponible — se guardará igual, quedará para revisión</span>
+  </div>
+</div>

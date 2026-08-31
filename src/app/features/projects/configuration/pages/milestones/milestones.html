@@ -1,0 +1,260 @@
+<app-abril-page-header
+  [badge]="'PROYECTOS · ' + anioActual"
+  titulo="Configuraciones"
+  subtitulo="Plantilla de hitos y proyectos activos para los cronogramas."
+  [tabs]="tabs"
+  [botonPrimario]="activeTab === 'hitos' ? { label: 'Nuevo hito', icono: 'ti-plus' } : undefined"
+  (primaryClick)="showCreateModal = true">
+</app-abril-page-header>
+
+<div class="bg-white flex-1 overflow-y-auto p-[20px]">
+
+    <!-- Sub-tabs internos de la página -->
+    <div class="flex gap-[8px] mb-[16px]">
+        <button type="button" class="subtab-btn" [class.subtab-btn--active]="activeTab === 'hitos'"
+            (click)="setTab('hitos')">
+            Plantilla de Hitos
+        </button>
+        <button type="button" class="subtab-btn" [class.subtab-btn--active]="activeTab === 'proyectos'"
+            (click)="setTab('proyectos')">
+            Proyectos Activos
+        </button>
+    </div>
+
+    <div *ngIf="activeTab === 'hitos'" class="flex flex-col justify-center items-center">
+        <div class="w-full rounded-[10px] overflow-auto border" style="border-color:#E2E8F0">
+
+            <table class="w-full table-fixed">
+                <thead>
+                    <tr>
+                        <th class="milestones-th w-[50px]"></th>
+                        <th class="milestones-th w-[150px]">Descripción</th>
+                        <th class="milestones-th w-[150px]">Estado</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr *ngFor="let item of milestones.data" class="milestones-row border-b h-[30px]" style="border-color:#E2E8F0">
+                        <td class="text-center">
+                            <div class="flex items-center justify-center">
+                                <button class="cursor-pointer" (click)="openEditModal(item, $event)">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg" style="color:#1E3A5F">
+                                        <path
+                                            d="M14.06 9L15 9.94L5.92 19H5V18.08L14.06 9ZM17.66 3C17.41 3 17.15 3.1 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04C21.1 6.65 21.1 6 20.71 5.63L18.37 3.29C18.17 3.09 17.92 3 17.66 3ZM14.06 6.19L3 17.25V21H6.75L17.81 9.94L14.06 6.19Z"
+                                            fill="currentColor" />
+                                    </svg>
+                                </button>
+                                <button class="cursor-pointer" (click)="deleteMilestone(item.milestoneId, $event)">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg" style="color:#1E3A5F">
+                                        <path
+                                            d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z"
+                                            fill="currentColor" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+
+                        <!-- Ver
+                    <td class="text-center">
+                        <button class="cursor-pointer" (click)="openModal(item.lessonId, $event)">
+                            <svg *ngIf="item.stateDescription.toUpperCase() == 'SUBIDO'" width="24" height="24"
+                                viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M15 12C15 12.7956 14.6839 13.5587 14.1213 14.1213C13.5587 14.6839 12.7956 15 12 15C11.2044 15 10.4413 14.6839 9.87868 14.1213C9.31607 13.5587 9 12.7956 9 12C9 11.2044 9.31607 10.4413 9.87868 9.87868C10.4413 9.31607 11.2044 9 12 9C12.7956 9 13.5587 9.31607 14.1213 9.87868C14.6839 10.4413 15 11.2044 15 12Z"
+                                    stroke="#686971" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                                <path
+                                    d="M2 12C3.6 7.903 7.336 5 12 5C16.664 5 20.4 7.903 22 12C20.4 16.097 16.664 19 12 19C7.336 19 3.6 16.097 2 12Z"
+                                    stroke="#686971" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </button>
+                    </td>
+                    -->
+
+                        <td><span [title]="item.milestoneDescription"
+                                class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{
+                                item.milestoneDescription }}</span></td>
+
+                        <td class="text-center">
+                            <span class="milestones-badge" [ngClass]="{
+                              'bg-[#dcfce7] text-[#166534]': item.active == true,
+                              'bg-[#f1f5f9] text-[#64748B]': item.active == false }">
+                                {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="flex gap-2 mt-4 justify-around w-full border rounded-[10px] h-[30px]" style="border-color:#E2E8F0">
+            <span class="text-[13px]" style="color:#64748B"># Registros: {{totalRecords}}</span>
+            <div class="flex gap-[10px] items-center">
+                <button class="cursor-pointer" style="color:#2E6DB4" (click)="prevPage()" [disabled]="currentPage === 1">
+                    «
+                </button>
+
+                <button class="cursor-pointer py-1 px-2 rounded-[6px] transition-colors" *ngFor="let page of pages"
+                    (click)="goToPage(page)"
+                    [ngClass]="{'bg-[#2E6DB4] text-white': page === currentPage, 'text-black hover:bg-gray-100': page !== currentPage }">
+                    {{ page }}
+                </button>
+
+                <button class="cursor-pointer" style="color:#2E6DB4" (click)="nextPage()"
+                    [disabled]="currentPage === totalPages">
+                    »
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="activeTab === 'proyectos'" class="flex flex-col justify-center items-center">
+        <div class="w-full rounded-[10px] overflow-auto border" style="border-color:#E2E8F0">
+
+            <table class="w-full table-fixed">
+                <thead>
+                    <tr>
+                        <th class="milestones-th milestones-th--left w-[300px]">Proyecto</th>
+                        <th class="milestones-th w-[150px]">Estado</th>
+                        <th class="milestones-th w-[100px]">Activo</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <ng-container *ngIf="proyectosLoading">
+                        <tr *ngFor="let i of [1,2,3,4,5]" class="border-b h-[40px]" style="border-color:#E2E8F0">
+                            <td class="pl-[12px]"><div class="skeleton-line" style="width:70%;height:12px;"></div></td>
+                            <td class="text-center"><div class="skeleton-line" style="width:60px;height:18px;margin:0 auto;"></div></td>
+                            <td class="text-center"><div class="skeleton-line" style="width:36px;height:18px;margin:0 auto;"></div></td>
+                        </tr>
+                    </ng-container>
+
+                    <ng-container *ngIf="!proyectosLoading">
+                        <tr *ngFor="let item of proyectos.data" class="milestones-row border-b h-[40px]" style="border-color:#E2E8F0">
+                            <td class="pl-[12px]">
+                                <span [title]="item.projectDescription"
+                                    class="block line-clamp-1 text-ellipsis overflow-hidden">{{ item.projectDescription }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="milestones-badge" [ngClass]="{
+                                  'bg-[#dcfce7] text-[#166534]': item.active,
+                                  'bg-[#f1f5f9] text-[#64748B]': !item.active }">
+                                    {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <label class="proyecto-switch" [class.proyecto-switch--disabled]="togglingProjectId === item.projectId">
+                                    <input type="checkbox" [checked]="item.active"
+                                        [disabled]="togglingProjectId === item.projectId"
+                                        (change)="toggleProyectoActive(item)" />
+                                    <span class="proyecto-switch__slider"></span>
+                                </label>
+                            </td>
+                        </tr>
+                        <tr *ngIf="proyectos.data.length === 0">
+                            <td colspan="3" class="text-center py-[20px]" style="color:#94A3B8">No hay proyectos registrados.</td>
+                        </tr>
+                    </ng-container>
+                </tbody>
+            </table>
+        </div>
+        <div class="flex gap-2 mt-4 justify-around w-full border rounded-[10px] h-[30px]" style="border-color:#E2E8F0">
+            <span class="text-[13px]" style="color:#64748B"># Registros: {{proyectosTotalRecords}}</span>
+            <div class="flex gap-[10px] items-center">
+                <button class="cursor-pointer" style="color:#2E6DB4" (click)="prevProyectosPage()" [disabled]="proyectosCurrentPage === 1">
+                    «
+                </button>
+
+                <button class="cursor-pointer py-1 px-2 rounded-[6px] transition-colors" *ngFor="let page of proyectosPages"
+                    (click)="goToProyectosPage(page)"
+                    [ngClass]="{'bg-[#2E6DB4] text-white': page === proyectosCurrentPage, 'text-black hover:bg-gray-100': page !== proyectosCurrentPage }">
+                    {{ page }}
+                </button>
+
+                <button class="cursor-pointer" style="color:#2E6DB4" (click)="nextProyectosPage()"
+                    [disabled]="proyectosCurrentPage === proyectosTotalPages">
+                    »
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="showCreateModal" class="fixed inset-0 z-50 overflow-y-auto" style="background:rgba(13,27,42,0.4)">
+        <div class="absolute inset-0" (click)="closeModal($event, 0)">
+        </div>
+        <div class="min-h-screen flex items-center justify-center py-10">
+            <div class="bg-white w-[500px] rounded-[10px] relative"
+                style="box-shadow:0 4px 12px rgba(0,0,0,0.08)"
+                (click)="$event.stopPropagation()">
+                <div class="py-[24px] px-[24px] flex flex-col gap-[16px] items-center">
+                    <h1 class="text-2xl font-bold text-center" style="color:#1E3A5F">AGREGAR HITO</h1>
+                    <div class="flex justify-between w-full">
+                        <div class="flex flex-col">
+                            <p class="milestones-field-label">Descripción</p>
+                            <input type="text" [(ngModel)]="createDto.milestoneDescription"
+                                class="milestones-input" />
+                        </div>
+                        <div class="flex flex-col jus">
+                            <p class="milestones-field-label">Estado</p>
+                            <select [(ngModel)]="createDto.active" class="milestones-input cursor-pointer">
+                                <option [ngValue]="true">ACTIVO</option>
+                                <option [ngValue]="false">INACTIVO</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button (click)="saveMilestone()" class="btn-udp-primary w-[120px] py-[5px] cursor-pointer">
+                        <p class="text-lg">Guardar</p>
+                    </button>
+                </div>
+                <button class="modal-close-btn absolute top-6 right-6 cursor-pointer" (click)="closeModal($event, 1)">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 20L4 4M20 4L4 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="showEditModal" class="fixed inset-0 z-50 overflow-y-auto" style="background:rgba(13,27,42,0.4)">
+        <div class="absolute inset-0" (click)="closeModal($event, 0)">
+        </div>
+        <div class="min-h-screen flex items-center justify-center py-10">
+            <div class="bg-white w-[500px] rounded-[10px] relative"
+                style="box-shadow:0 4px 12px rgba(0,0,0,0.08)"
+                (click)="$event.stopPropagation()">
+                <div class="py-[24px] px-[24px] flex flex-col gap-[16px] items-center">
+                    <h1 class="text-2xl font-bold text-center" style="color:#1E3A5F">EDITAR HITO</h1>
+                    <div class="flex justify-between w-full">
+                        <div class="flex flex-col">
+                            <p class="milestones-field-label">Descripción</p>
+                            <input type="text" [(ngModel)]="editDto.milestoneDescription"
+                                class="milestones-input" />
+                        </div>
+                        <div class="flex flex-col jus">
+                            <p class="milestones-field-label">Estado</p>
+                            <select [(ngModel)]="editDto.active" class="milestones-input cursor-pointer">
+                                <option [ngValue]="true">ACTIVO</option>
+                                <option [ngValue]="false">INACTIVO</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button (click)="editMilestone($event)" class="btn-udp-primary w-[120px] py-[5px] cursor-pointer">
+                        <p class="text-lg">Guardar</p>
+                    </button>
+                </div>
+                <button class="modal-close-btn absolute top-6 right-6 cursor-pointer" (click)="closeModal($event, 1)">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 20L4 4M20 4L4 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div *ngIf="loader" class="loader-overlay">
+    <div class="loader"></div>
+</div>

@@ -1,0 +1,153 @@
+/* .panel-overlay/.panel-container/.panel-header/.panel-footer viven ahora en
+   el shared shell app-abril-modal-panel — no reimplementarlos aquí. */
+.panel-loading {
+  padding: 40px 0;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+/* .abril-section-title es global (src/styles.css) — no reimplementar el
+   título de sección aquí. */
+.abril-section-title:first-child { margin-top: 0; }
+.abril-section-title { margin-top: 18px; }
+
+/* .abril-field / .abril-field-label / .abril-field-input son globales
+   (src/styles.css) — no reimplementar el label flotante aquí. */
+.abril-field { margin-bottom: 14px; }
+.abril-field--puntos { margin-top: 20px; }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Búsqueda worker */
+.search-wrapper {
+  position: relative;
+}
+.btn-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 14px;
+  padding: 2px;
+}
+.search-hint { font-size: 11px; color: #6b7280; margin-top: 3px; }
+
+.search-dropdown {
+  list-style: none;
+  padding: 0;
+  margin: 2px 0 0;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 10;
+}
+.search-dropdown li {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.search-dropdown li:last-child { border-bottom: none; }
+.search-dropdown li:hover { background: var(--color-abril-logo-blue-light); }
+.search-dropdown li.inhabilitado { background: #fff5f5; }
+.search-dropdown li.inhabilitado:hover { background: #fee2e2; }
+
+.worker-name { font-size: 13px; font-weight: 500; color: #111827; }
+.worker-meta { font-size: 11px; color: #6b7280; }
+.badge-inhabilitado {
+  display: inline-block;
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  width: fit-content;
+}
+
+.worker-card {
+  background: var(--color-abril-logo-blue-light);
+  border: 1px solid var(--color-abril-logo-blue);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+.worker-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: #374151;
+}
+.worker-info strong { width: 100%; font-size: 14px; color: var(--color-abril-logo-blue); }
+
+/* Puntos slider */
+.puntos-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.puntos-slider { flex: 1; accent-color: var(--color-abril-logo-blue); }
+.puntos-valor {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-abril-logo-blue);
+  min-width: 28px;
+  text-align: center;
+}
+.puntos-valor.puntos-alto { color: #dc2626; }
+
+/* Suspensión highlight */
+.abril-field--suspension .abril-field-input { border-color: #f59e0b; }
+
+/* Check */
+.form-check .check-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+.form-check input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--color-abril-logo-blue); }
+
+/* Botones */
+.btn {
+  padding: 9px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--color-abril-logo-blue); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--color-abril-logo-blue-hover); }
+.btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+.btn-secondary:hover:not(:disabled) { background: #e5e7eb; }
+.btn-outline {
+  background: #fff;
+  color: var(--color-abril-logo-blue);
+  border: 1px solid var(--color-abril-logo-blue-light);
+}
+.btn-outline:hover:not(:disabled) { background: var(--color-abril-logo-blue-light); }
+
+/* Separa el último bloque de contenido (fotos) del footer fijo del shell,
+   que ya trae su propio border-top — sin esto quedaban pegados. */
+app-photo-grid-picker { display: block; margin-bottom: 14px; }

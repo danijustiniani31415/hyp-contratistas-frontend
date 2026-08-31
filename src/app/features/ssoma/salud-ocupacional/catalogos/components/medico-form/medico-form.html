@@ -1,0 +1,80 @@
+<app-abril-modal-panel
+  *ngIf="open"
+  [titulo]="title"
+  icono="ti-stethoscope"
+  variant="blue"
+  width="700px"
+  (closeModal)="close()">
+
+  <div class="form-row">
+    <div class="abril-field">
+      <label class="abril-field-label">Apellidos y nombres *</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="model.apellidoNombre" />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="abril-field">
+      <label class="abril-field-label">DNI</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="model.dni" />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">CMP</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="model.cmp" />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="abril-field">
+      <label class="abril-field-label">Especialidad</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="model.especialidad" />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="abril-field">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Clínica"
+        [options]="clinicas"
+        valueField="id"
+        displayField="nombre"
+        [value]="model.clinicaId"
+        placeholder="Sin asignar"
+        (valueChange)="model.clinicaId = $event">
+      </app-search-select>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="abril-field">
+      <label class="abril-field-label">Email</label>
+      <input type="email" class="abril-field-input" [(ngModel)]="model.email" />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Celular</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="model.celular" />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="abril-field">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Estado"
+        [options]="estadoOpts"
+        valueField="id"
+        displayField="label"
+        [sortAlpha]="false"
+        [value]="model.activo"
+        [allowClear]="false"
+        placeholder="Selecciona estado"
+        (valueChange)="model.activo = $event">
+      </app-search-select>
+    </div>
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+      <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
+      {{ saving ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+
+</app-abril-modal-panel>

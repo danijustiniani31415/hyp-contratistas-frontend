@@ -1,0 +1,26 @@
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Catálogos"
+  subtitulo="Maestros de Clínicas, Médicos Ocupacionales y Tipos de EMO."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<section class="p-6 space-y-4 flex-1 min-h-0 overflow-y-auto">
+  <nav class="tabs">
+    <button type="button" [class.active]="activeTab === 'clinicas'" (click)="setTab('clinicas')">
+      Clínicas
+    </button>
+    <button type="button" [class.active]="activeTab === 'medicos'" (click)="setTab('medicos')">
+      Médicos
+    </button>
+    <button type="button" [class.active]="activeTab === 'emo-tipos'" (click)="setTab('emo-tipos')">
+      Tipos de EMO
+    </button>
+  </nav>
+
+  <div class="tab-panel">
+    <app-catalogo-clinicas *ngIf="activeTab === 'clinicas'"></app-catalogo-clinicas>
+    <app-catalogo-medicos *ngIf="activeTab === 'medicos'"></app-catalogo-medicos>
+    <app-catalogo-emo-tipos *ngIf="activeTab === 'emo-tipos'"></app-catalogo-emo-tipos>
+  </div>
+</section>

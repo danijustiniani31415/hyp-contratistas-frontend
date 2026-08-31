@@ -1,0 +1,145 @@
+/* ── Host ─────────────────────────────────────────── */
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Root ─────────────────────────────────────────── */
+.prog-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #ffffff;
+  color: #1e293b;
+}
+
+/* ── Table zone ───────────────────────────────────── */
+.table-zone {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 20px 28px;
+  background: #f0f4f8;
+}
+
+.table-card {
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+/* ── Loading / empty states ───────────────────────── */
+.state-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 1rem;
+}
+
+.loading-dots {
+  display: flex;
+  gap: 7px;
+}
+.loading-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #64bc04;
+  animation: dot-pulse 1.2s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dot-pulse {
+  0%, 80%, 100% { opacity: 0.25; transform: scale(0.8); }
+  40%           { opacity: 1;    transform: scale(1); }
+}
+
+.empty-state { gap: 10px; }
+.empty-icon  { font-size: 2.2rem; line-height: 1; }
+.empty-text  { color: #94a3b8; font-size: 14px; margin: 0; }
+
+/* ── Table ────────────────────────────────────────── */
+.prog-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  table-layout: fixed;
+}
+
+.prog-table thead th {
+  background: #f8fafc;
+  padding: 11px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prog-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s;
+}
+.prog-table tbody tr:last-child { border-bottom: none; }
+.prog-table tbody tr:hover td { background: #f8fafc; }
+
+.prog-table tbody td {
+  padding: 12px 16px;
+  color: #475569;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Worker cell ──────────────────────────────────── */
+.worker-cell { display: flex; flex-direction: column; overflow: hidden; }
+.worker-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.worker-dni {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* ── Generic cells ────────────────────────────────── */
+.td-cell        { color: #475569; font-size: 13px; }
+.td-empty-val   { color: #cbd5e1; }
+.td-checkin     { color: #94a3b8; font-size: 12px; }
+
+/* ── Estado badges ────────────────────────────────── */
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.chip-blue   { background: #eff6ff; color: #2563eb; }
+.chip-orange { background: #fff7ed; color: #ea580c; }
+.chip-green  { background: #f0fdf4; color: #16a34a; }
+.chip-red    { background: #fef2f2; color: #dc2626; }
+.chip-gray   { background: #f8fafc; color: #64748b; }

@@ -1,0 +1,290 @@
+<app-abril-page-header
+  [badge]="'MEJORA CONTINUA · ' + anioActual"
+  titulo="Dashboard de Lecciones"
+  subtitulo="Indicadores y tendencias de lecciones aprendidas."
+  [tabs]="tabs"
+  [botonSecundario]="{ label: 'Exportar PDF', icono: 'ti-file-download' }"
+  (secondaryClick)="downloadPDF()">
+</app-abril-page-header>
+
+<div id="dashboard" class="flex flex-col flex-1 w-full overflow-y-auto overflow-x-hidden gap-[20px]">
+
+  <!-- Barra superior: filtros + acciones -->
+  <div class="flex flex-wrap items-end gap-3 bg-white p-[15px] rounded-lg">
+    <!-- Área en cascada (PRIMERO, recuadro verde): al escoger un área padre aparece
+         otro desplegable con sus subáreas; detente en el padre para todas sus
+         lecciones, o baja a una subárea específica. Mantiene padding vertical (py-2)
+         y el margen inferior negativo (-mb-2) cancela ese padding inferior para que,
+         con items-end, los controles queden alineados con el resto de filtros. -->
+    <div class="bg-[#E5F7D1] rounded-lg px-3 py-2 -mb-2 flex flex-wrap items-end gap-3">
+      <ng-container *ngFor="let level of areaLevels; let i = index">
+        <div class="w-[200px]">
+          <app-search-select
+            [label]="i === 0 ? 'Área' : 'Subárea'"
+            [options]="level"
+            valueField="id"
+            displayField="name"
+            [value]="selectedAreaNodes[i]?.id"
+            (valueChange)="onAreaNodeChange(i, $event)"
+            [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'">
+          </app-search-select>
+        </div>
+      </ng-container>
+
+      <!-- Obra / Oficina: desplegable propio (workers_obra_oficina_staff), ya no un
+           nivel más del árbol de áreas. -->
+      <div class="w-[200px]">
+        <app-search-select
+          label="Obra / Oficina"
+          [options]="obraOficinaOptions"
+          valueField="obraOficinaStaffId"
+          displayField="name"
+          [sortAlpha]="false"
+          [value]="selected.obraOficinaStaffId"
+          (valueChange)="selected.obraOficinaStaffId = $event"
+          placeholder="Todos">
+        </app-search-select>
+      </div>
+    </div>
+
+    <!-- Período -->
+    <div class="w-[200px]">
+      <app-search-select
+        label="Período"
+        [options]="periodOptions"
+        valueField="value"
+        displayField="label"
+        [value]="selected.periodDate"
+        (valueChange)="selected.periodDate = $event"
+        placeholder="Todos los periodos">
+      </app-search-select>
+    </div>
+
+    <!-- Estado (primario) — por defecto 'Aprobada' -->
+    <div class="w-[200px]">
+      <app-search-select
+        label="Estado"
+        [options]="approvalStatusOptions"
+        valueField="value"
+        displayField="label"
+        [value]="selected.approvalStatus"
+        (valueChange)="selected.approvalStatus = $event"
+        placeholder="Todos los estados">
+      </app-search-select>
+    </div>
+
+    <!-- Filtros avanzados (colapsados tras "Búsqueda avanzada") -->
+    <ng-container *ngIf="showFilters">
+      <!-- Usuario -->
+      <div class="w-[260px]">
+        <app-search-select
+          label="Usuario"
+          [options]="filters.users"
+          valueField="userId"
+          displayField="fullName"
+          [value]="selected.userId"
+          (valueChange)="selected.userId = $event ?? 0"
+          placeholder="Todos los usuarios">
+        </app-search-select>
+      </div>
+
+      <!-- Proyectos (selección múltiple) -->
+      <div class="w-[240px]">
+        <app-multi-search-select
+          label="Proyectos"
+          [options]="filters.projects"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="selected.projectIds"
+          (valueChange)="selected.projectIds = $event"
+          placeholder="Todos los proyectos">
+        </app-multi-search-select>
+      </div>
+    </ng-container>
+
+    <button type="button" (click)="showFilters = !showFilters"
+      class="h-[38px] px-4 bg-[var(--color-abril-lime-light)] rounded-lg text-[var(--color-abril-lime)] text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-lime-light)] transition-colors flex items-center gap-2">
+      <svg class="w-4 h-4" viewBox="0 0 15 15" fill="none">
+        <path fill-rule="evenodd" clip-rule="evenodd"
+          d="M6.417 0v9.167H5.5V11H6.417v3.667H8.25V11h.917V9.167H8.25V0H6.417ZM.917 0v3.668H0V5.5h.917v9.167H2.75V5.5h.917V3.668H2.75V0H.917ZM11.916.0002V5.5h-.917v1.833h.917v7.334h1.834V7.333h.917V5.5h-.917V0l-1.834.0002Z"
+          fill="var(--color-abril-lime)"/>
+      </svg>
+      {{ showFilters ? 'Ocultar filtros' : 'Busqueda avanzada' }}
+    </button>
+
+    <button type="button" (click)="loadDashboard()"
+      class="h-[38px] px-5 bg-[#64BC04] rounded-[10px] cursor-pointer flex items-center gap-2">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19.6 21L13.3 14.7C12.8 15.1 12.225 15.4167 11.575 15.65C10.925 15.8833 10.2333 16 9.5 16C7.68333 16 6.146 15.3707 4.888 14.112C3.63 12.8533 3.00067 11.316 3 9.5C2.99933 7.684 3.62867 6.14667 4.888 4.888C6.14733 3.62933 7.68467 3 9.5 3C11.3153 3 12.853 3.62933 14.113 4.888C15.373 6.14667 16.002 7.684 16 9.5C16 10.2333 15.8833 10.925 15.65 11.575C15.4167 12.225 15.1 12.8 14.7 13.3L21 19.6L19.6 21Z" fill="white" />
+      </svg>
+      <span class="text-white text-sm">Buscar</span>
+    </button>
+
+    <div class="flex-1"></div>
+
+    <button (click)="sendPDF()" class="cursor-pointer group flex items-center gap-[5px] h-[38px]">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 20C3.45 20 2.97933 19.8043 2.588 19.413C2.19667 19.0217 2.00067 18.5507 2 18V6C2 5.45 2.196 4.97933 2.588 4.588C2.98 4.19667 3.45067 4.00067 4 4H20C20.55 4 21.021 4.196 21.413 4.588C21.805 4.98 22.0007 5.45067 22 6V18C22 18.55 21.8043 19.021 21.413 19.413C21.0217 19.805 20.5507 20.0007 20 20H4ZM12 13L4 8V18H20V8L12 13ZM12 11L20 6H4L12 11Z" fill="#0086A5" /></svg>
+      <p class="text-[#64BC04] group-hover:underline text-sm">Enviar PDF</p>
+    </button>
+    <button (click)="downloadPDF()" class="cursor-pointer group flex items-center gap-[5px] h-[38px]">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 16L16 11H13V4H11V11H8L12 16Z" fill="#0086A5" /><path d="M20 18H4V11H2V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V11H20V18Z" fill="#0086A5" /></svg>
+      <p class="text-[#64BC04] group-hover:underline text-sm">Exportar a PDF</p>
+    </button>
+  </div>
+
+  <!-- Tarjetas resumen -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-8 gap-[15px]">
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1">
+      <span class="text-xs text-gray-500">Total lecciones</span>
+      <span class="text-3xl font-bold text-[#64BC04]">{{ data?.summary?.totalLessons ?? 0 }}</span>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1 justify-between">
+      <span class="text-xs text-gray-500">Lecciones {{ penultMonth?.label || 'mes' }}</span>
+      <span class="text-3xl font-bold text-[#74c31d]">{{ penultMonth?.value ?? 0 }}</span>
+      <span class="text-xs font-semibold flex items-center gap-1"
+        [ngClass]="{
+          'text-[#009C87]': monthVariationPct !== null && monthVariationPct > 0,
+          'text-[#D30000]': monthVariationPct !== null && monthVariationPct < 0,
+          'text-gray-400': monthVariationPct === null || monthVariationPct === 0
+        }">
+        <ng-container *ngIf="monthVariationPct !== null; else noBase">
+          {{ monthVariationPct > 0 ? '▲' : (monthVariationPct < 0 ? '▼' : '=') }}
+          {{ monthVariationPct > 0 ? '+' : '' }}{{ monthVariationPct }}% vs. {{ antepenultMonth?.label }}
+        </ng-container>
+        <ng-template #noBase>sin comparación</ng-template>
+      </span>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1">
+      <span class="text-xs text-gray-500">Proyectos</span>
+      <span class="text-3xl font-bold text-[#0086A5]">{{ data?.summary?.totalProjects ?? 0 }}</span>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1">
+      <span class="text-xs text-gray-500">Áreas</span>
+      <span class="text-3xl font-bold text-[#509603]">{{ data?.summary?.totalAreas ?? 0 }}</span>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1">
+      <span class="text-xs text-gray-500">Fases</span>
+      <span class="text-3xl font-bold text-[#a2d768]">{{ data?.summary?.totalPhases ?? 0 }}</span>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1">
+      <span class="text-xs text-gray-500">Usuarios</span>
+      <span class="text-3xl font-bold text-[#3c7102]">{{ data?.summary?.totalUsers ?? 0 }}</span>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1 justify-between">
+      <span class="text-xs text-gray-500">Proyecto líder</span>
+      <span class="text-base font-bold text-gray-800 line-clamp-2 leading-tight" [title]="leaderProject?.label || ''">
+        {{ leaderProject?.label || '—' }}
+      </span>
+      <span *ngIf="leaderProject" class="text-xs text-[#64BC04] font-semibold">
+        {{ leaderProject?.value }} lecciones
+      </span>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1">
+      <span class="text-xs text-gray-500">Prom. por proyecto</span>
+      <span class="text-3xl font-bold text-[#83c936]">{{ avgPerProject }}</span>
+    </div>
+  </div>
+
+  <!-- Tendencia mensual -->
+  <div class="rounded-lg border border-gray-200 bg-gradient-to-br from-white to-lime-50/50 p-5">
+    <div class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-2">
+        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-lime-50 text-sm text-[#509603]"><i class="ti ti-trending-up"></i></span>
+        <h3 class="font-semibold text-gray-800">TENDENCIA MENSUAL DE LECCIONES</h3>
+      </div>
+      <span class="text-xs text-gray-400">Evolución por mes (no afectada por el filtro de período)</span>
+    </div>
+    <div class="relative h-[260px] sm:h-[320px]">
+      <canvas #lessonsTrendChart class="absolute inset-0 w-full"></canvas>
+    </div>
+  </div>
+
+  <!-- Fila: barras + pie -->
+  <div class="flex flex-col lg:flex-row gap-[20px]">
+    <div class="flex-[2] rounded-lg border border-gray-200 bg-gradient-to-br from-white to-lime-50/50 p-5">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-lime-50 text-sm text-[#509603]"><i class="ti ti-building-estate"></i></span>
+        <h3 class="font-semibold text-gray-800">LECCIONES APRENDIDAS POR PROYECTO</h3>
+      </div>
+      <div class="relative h-[300px] sm:h-[400px]">
+        <canvas #lessonsChart class="absolute inset-0 w-full"></canvas>
+      </div>
+    </div>
+    <div class="flex-1 rounded-lg border border-gray-200 bg-gradient-to-br from-white to-cyan-50/50 p-5">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-50 text-sm text-[#0086A5]"><i class="ti ti-chart-pie"></i></span>
+        <h3 class="font-semibold text-gray-800">LECCIONES APRENDIDAS POR FASE</h3>
+      </div>
+      <div class="relative h-[300px] sm:h-[400px]">
+        <canvas #lessonsPieChart class="absolute inset-0 w-full"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lecciones por área (chips) -->
+  <div *ngIf="data?.lessonsByArea?.length" class="rounded-lg border border-gray-200 bg-gradient-to-br from-white to-emerald-50/50 p-5">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-sm text-[#509603]"><i class="ti ti-category"></i></span>
+      <h3 class="font-semibold text-gray-800">LECCIONES APRENDIDAS POR ÁREA</h3>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <div *ngFor="let area of data?.lessonsByArea"
+        class="flex items-center gap-2 bg-[#E5F7D1] border border-[#64BC04] rounded-lg px-3 py-2">
+        <span class="text-sm text-gray-700">{{ area.label }}</span>
+        <span class="text-sm font-bold text-[#509603]">{{ area.value }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fase → Etapa -->
+  <div class="rounded-lg border border-gray-200 bg-gradient-to-br from-white to-indigo-50/50 p-5">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-sm text-indigo-500"><i class="ti ti-chart-donut"></i></span>
+      <h3 class="font-semibold text-gray-800">LECCIONES APRENDIDAS POR ETAPA SEGÚN LA FASE</h3>
+    </div>
+    <div *ngIf="phaseStageCharts.length; else noPhaseStage"
+      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+      <div *ngFor="let phase of phaseStageCharts">
+        <h3 class="text-center text-xs text-gray-500 font-semibold mb-2">{{ phase.phaseLabel }}</h3>
+        <div class="flex flex-col items-center gap-[10px]">
+          <div class="w-full h-[250px] relative">
+            <canvas [id]="'phaseChart-' + phase.phaseId" class="absolute inset-0 w-full h-full"></canvas>
+          </div>
+          <div class="flex flex-wrap justify-center gap-2 mt-3 min-h-[40px]">
+            <div *ngFor="let stage of phase.stages; let i = index" class="flex items-center gap-1 text-xs">
+              <span class="w-3 h-3 rounded-full flex-shrink-0" [style.backgroundColor]="doughnutColors[i]"></span>
+              {{ stage.label }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ng-template #noPhaseStage>
+      <p class="text-center text-gray-400 text-sm py-6">Sin datos para mostrar.</p>
+    </ng-template>
+  </div>
+
+  <!-- Fila: Top usuarios + Subetapa/especialidad -->
+  <div class="flex flex-col lg:flex-row gap-[20px]">
+    <div class="flex-1 rounded-lg border border-gray-200 bg-gradient-to-br from-white to-emerald-50/50 p-5">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-sm text-[#509603]"><i class="ti ti-trophy"></i></span>
+        <h3 class="font-semibold text-gray-800">TOP USUARIOS (RANKING DE APORTES)</h3>
+      </div>
+      <div class="relative h-[300px] sm:h-[400px]">
+        <canvas #lessonsUserChart class="absolute inset-0 w-full"></canvas>
+      </div>
+    </div>
+
+    <div class="flex-1 rounded-lg border border-gray-200 bg-gradient-to-br from-white to-cyan-50/50 p-5">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-50 text-sm text-[#0086A5]"><i class="ti ti-chart-line"></i></span>
+        <h3 class="font-semibold text-gray-800">LECCIONES APRENDIDAS POR SUBETAPA / ESPECIALIDAD</h3>
+      </div>
+      <div class="relative h-[300px] sm:h-[400px]">
+        <canvas #lessonsLineChart class="absolute inset-0 w-full"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>

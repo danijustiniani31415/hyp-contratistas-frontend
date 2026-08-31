@@ -1,0 +1,12 @@
+<app-abril-page-header
+  badge="SSOMA · CONFIGURACIÓN"
+  titulo="Configuración de EMOs"
+  subtitulo="Administra quién recibe cada correo de EMO según el tipo de trabajador."
+  [tabs]="tabs"
+  [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+  (secondaryClick)="volver()">
+</app-abril-page-header>
+
+<section class="page-container px-3 py-4 flex flex-col gap-[16px] flex-1 min-h-0 overflow-auto">
+  <app-emo-correos-config></app-emo-correos-config>
+</section>

@@ -1,0 +1,271 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+/* ── Shell ──────────────────────────────────────────────── */
+.cu-shell {
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  border: 1px solid #e8edf2;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.cu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.cu-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cu-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.cu-section-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.cu-section-sub {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 2px 0 0;
+}
+
+/* ── Invite button ──────────────────────────────────────── */
+.cu-btn-invite {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  background: #64bc04;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+
+.cu-btn-invite:hover {
+  background: #5aa904;
+}
+
+/* ── Loading skeleton ───────────────────────────────────── */
+.cu-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+}
+
+.cu-skeleton-row {
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f1f5f9 0%, #e8edf2 50%, #f1f5f9 100%);
+  background-size: 200% 100%;
+  animation: cu-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes cu-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Empty state ────────────────────────────────────────── */
+.cu-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  padding: 32px;
+}
+
+.cu-empty p {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* ── Table ──────────────────────────────────────────────── */
+.cu-table-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+}
+
+.cu-table-wrapper::-webkit-scrollbar { width: 4px; }
+.cu-table-wrapper::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+
+.cu-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+}
+
+.cu-table thead tr {
+  background: #f8fafc;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.cu-table thead th {
+  padding: 9px 16px;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  border-bottom: 1px solid #f1f5f9;
+  white-space: nowrap;
+}
+
+.cu-row {
+  border-bottom: 1px solid #f8fafc;
+  transition: background 0.1s;
+}
+
+.cu-row:hover {
+  background: #f8fafc;
+}
+
+.cu-table td {
+  padding: 11px 16px;
+  vertical-align: middle;
+}
+
+.cu-td-name {
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.cu-td-email {
+  font-size: 0.78rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.cu-td-scope {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+/* ── Role badge ─────────────────────────────────────────── */
+.cu-rol-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  white-space: nowrap;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.cu-rol-badge--owner  { background: #fef9c3; color: #854d0e; }
+.cu-rol-badge--admin  { background: #dbeafe; color: #1d4ed8; }
+.cu-rol-badge--gestor { background: #dcfce7; color: #15803d; }
+
+/* ── Status badge ───────────────────────────────────────── */
+.cu-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cu-status--active   { background: #dcfce7; color: #15803d; }
+.cu-status--inactive { background: #f1f5f9; color: #94a3b8; }
+
+/* ── Action buttons ─────────────────────────────────────── */
+.cu-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.cu-btn-edit {
+  padding: 4px 10px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.cu-btn-edit:hover {
+  background: #e2e8f0;
+}
+
+.cu-btn-toggle {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.1s;
+}
+
+.cu-btn-toggle--deactivate {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.cu-btn-toggle--deactivate:hover {
+  background: #fecaca;
+}
+
+.cu-btn-toggle--activate {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.cu-btn-toggle--activate:hover {
+  background: #bbf7d0;
+}

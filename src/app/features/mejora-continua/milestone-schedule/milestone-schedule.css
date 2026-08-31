@@ -1,0 +1,265 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+}
+
+.kpi-cards {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.kpi-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  border: 1px solid #D6DEE5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kpi-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+}
+
+.kpi-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.kpi-sub {
+  font-size: 0.68rem;
+  color: #9ca3af;
+}
+
+/* Barras normales */
+.gantt_task_line.gantt-task-future {
+  background-color: #64bc04;
+  border-color: #4fa003;
+}
+
+.gantt_task_line.gantt-task-inprogress {
+  background-color: #0086a5;
+  border-color: #006880;
+}
+
+.gantt_task_line.gantt-task-overdue {
+  background-color: #d30000;
+  border-color: #a80000;
+}
+
+/* Hitos (diamante) */
+.gantt_task_line.gantt_milestone.gantt-task-future,
+.gantt_task_line.gantt_milestone.gantt-task-future::before {
+  background-color: #64bc04;
+  border-color: #4fa003;
+}
+
+.gantt_task_line.gantt_milestone.gantt-task-inprogress,
+.gantt_task_line.gantt_milestone.gantt-task-inprogress::before {
+  background-color: #0086a5;
+  border-color: #006880;
+}
+
+.gantt_task_line.gantt_milestone.gantt-task-overdue,
+.gantt_task_line.gantt_milestone.gantt-task-overdue::before {
+  background-color: #d30000;
+  border-color: #a80000;
+}
+
+/* ── Plantilla de hitos (noMilestones table view) ───────────────────────── */
+
+/* Chip PLANTILLA en el header */
+.chip-plantilla {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: #E6F1FB;
+  color: #185FA5;
+  border: 0.5px solid #B5D4F4;
+  border-radius: 6px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Subheader stats */
+.subheader-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 14px;
+  border: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+.stat-text { font-size: 12px; color: #6b7280; }
+.stat-sep  { font-size: 12px; color: #cbd5e1; }
+.stat-pct  { font-size: 12px; font-weight: 600; color: #2563eb; }
+
+.progress-bar-thin  { flex: 1; min-width: 60px; height: 3px; background: #e2e8f0; border-radius: 2px; overflow: hidden; }
+.progress-fill-thin { height: 100%; background: #2563eb; border-radius: 2px; transition: width .4s ease; }
+
+/* Toolbar: búsqueda + filtros */
+.plantilla-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 0.5px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.plantilla-search {
+  flex: 1;
+  min-width: 160px;
+  border: 0.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 0.82rem;
+  outline: none;
+  color: #374151;
+  background: #fafafa;
+  transition: border-color .12s;
+}
+.plantilla-search:focus { border-color: #3b82f6; background: #fff; }
+
+.filtros-wrap { display: flex; gap: 4px; }
+
+.filtro-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 0.5px solid #e2e8f0;
+  background: #fff;
+  font-size: 0.78rem;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background .1s, color .1s, border-color .1s;
+}
+.filtro-btn:hover { background: #f8fafc; border-color: #94a3b8; }
+
+.filtro-active-todos     { background: #f1f5f9 !important; color: #1e293b !important; border-color: #94a3b8 !important; font-weight: 600; }
+.filtro-active-sin-fecha { background: #f1f5f9 !important; color: #475569 !important; border-color: #94a3b8 !important; font-weight: 600; }
+.filtro-active-con-fecha { background: #E6F1FB !important; color: #185FA5 !important; border-color: #B5D4F4 !important; font-weight: 600; }
+
+/* Tabla */
+.hitos-tabla { width: 100%; border-collapse: collapse; }
+
+.hitos-tabla th {
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 6px 10px;
+  border-bottom: 0.5px solid #e2e8f0;
+  text-align: left;
+}
+
+.hitos-tabla td {
+  padding: 6px 10px;
+  border-bottom: 0.5px solid #e2e8f0;
+  vertical-align: middle;
+}
+.hitos-tabla tr:last-child td { border-bottom: none; }
+.hitos-tabla tr:hover td      { background: #f8fafc; }
+
+.td-num    { font-size: 12px; color: #94a3b8; font-weight: 500; width: 28px; }
+.td-nombre { font-size: 13px; font-weight: 500; }
+.td-fecha  { width: 150px; }
+.td-badge  { width: 90px; text-align: right; }
+.td-empty  { text-align: center; color: #94a3b8; font-size: 13px; padding: 24px; }
+
+.td-fecha input[type="date"] {
+  border: 0.5px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  width: 100%;
+  background: white;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.td-fecha input[type="date"]:hover { border-color: #93c5fd; }
+.td-fecha input[type="date"]:focus { outline: none; border-color: #3b82f6; }
+
+.badge { font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
+.badge-sin-fecha { background: #f1f5f9; color: #94a3b8; }
+.badge-con-fecha { background: #E6F1FB; color: #185FA5; }
+
+/* ── Modal "Ver historial de cronograma de hitos" ───────────────────────── */
+
+.historial-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 20px;
+  background: #1E3A5F;
+  color: #ffffff;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background .15s ease;
+}
+.historial-btn-primary:hover { background: #17304A; }
+
+.historial-table thead tr { border-bottom: 1px solid #E2E8F0; }
+
+.historial-table th {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #64748B;
+  padding-bottom: 8px;
+}
+
+.historial-table tbody tr:hover { background: #F8FAFC; }
+
+/* BaseModal es compartido — se sobrescribe con ::ng-deep solo dentro de esta
+   instancia (host de MilestoneSchedule) para no afectar otros usos del modal. */
+:host ::ng-deep app-base-modal .bg-white.rounded-lg.shadow-xl {
+  box-shadow: none;
+  border-radius: 10px;
+  border: 0.5px solid #E2E8F0;
+}
+
+:host ::ng-deep app-base-modal h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1E3A5F;
+  font-family: var(--font-sans);
+}
+
+:host ::ng-deep app-base-modal button.absolute svg path {
+  stroke: #64748B;
+}
+
+/* ── Modal "Editar característica del proyecto" ─────────────────────────── */
+
+.skeleton-line {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #dde5ef 25%, #eaeff6 50%, #dde5ef 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.edit-caracteristica-btn {
+  color: #94a3b8;
+  transition: color .15s ease;
+}
+.edit-caracteristica-btn:hover { color: var(--color-abril-accent); }

@@ -1,0 +1,608 @@
+<!-- ══════════════════ CONTRATISTA ══════════════════ -->
+<ng-container *ngIf="esContratista">
+
+  <!-- ALERT BAR -->
+  <div class="alert-bar" *ngIf="alertasCount > 0">
+    <i class="ti ti-alert-triangle alert-icon"></i>
+    <span class="alert-msg">Atención requerida · Documentos críticos pendientes</span>
+    <div class="alert-chips">
+      <span class="achip ac-r" *ngIf="trabNoHabilitados > 0">{{ trabNoHabilitados }} no habilitados</span>
+    </div>
+  </div>
+
+  <!-- DASHBOARD BODY -->
+  <div class="db-body">
+
+    <!-- KPI STRIP -->
+    <div class="kpi-strip">
+      <div class="kpi kpi-g">
+        <div class="kpi-icon ki-g"><i class="ti ti-users"></i></div>
+        <div class="kpi-data">
+          <div class="kpi-label">Trabajadores</div>
+          <div class="kpi-num">{{ totalTrabajadores }}</div>
+          <div class="kpi-chips">
+            <span class="chip chip-g">{{ trabHabilitados }} habilitados</span>
+            <span class="chip chip-r">{{ trabNoHabilitados }} no hab.</span>
+          </div>
+        </div>
+      </div>
+      <div class="kpi kpi-b">
+        <div class="kpi-icon ki-b"><i class="ti ti-building"></i></div>
+        <div class="kpi-data">
+          <div class="kpi-label">Entregables empresa</div>
+          <div class="kpi-num">{{ totalEntregables }}</div>
+          <div class="kpi-chips">
+            <span class="chip chip-g">{{ entregablesAprobados }} aprob.</span>
+            <span class="chip chip-y" *ngIf="entregablesFalta > 0">{{ entregablesFalta }} falta</span>
+            <span class="chip chip-a" *ngIf="entregablesEnviados > 0">{{ entregablesEnviados }} env.</span>
+          </div>
+        </div>
+      </div>
+      <div class="kpi kpi-a">
+        <div class="kpi-icon ki-a"><i class="ti ti-clock-exclamation"></i></div>
+        <div class="kpi-data">
+          <div class="kpi-label">Por vencer</div>
+          <div class="kpi-num">{{ proximosVencer.length }}</div>
+          <div class="kpi-chips">
+            <span class="chip chip-g" *ngIf="proximosVencer.length === 0">Sin alertas</span>
+          </div>
+        </div>
+      </div>
+      <div class="kpi kpi-p">
+        <div class="kpi-icon ki-p"><i class="ti ti-building-community"></i></div>
+        <div class="kpi-data">
+          <div class="kpi-label">Proyectos activos</div>
+          <div class="kpi-num">{{ totalProyectosActivos }}</div>
+          <div class="kpi-chips">
+            <span class="chip" *ngFor="let p of proyectos; let i = index"
+              [style.background]="colorProyecto(i) + '22'"
+              [style.color]="colorProyecto(i)">{{ p.proyectoNombre }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MID ROW -->
+    <div class="mid-row">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><i class="ti ti-building-community"></i> Habilitación por proyecto</div>
+        </div>
+        <div class="proj-list" *ngIf="!loadingProyectos; else skelProj">
+          <div class="proj-item" *ngFor="let p of proyectos; let i = index">
+            <div class="proj-meta">
+              <span class="proj-name">{{ p.proyectoNombre }}</span>
+              <div class="proj-right">
+                <span class="proj-status ps-proceso">En proceso</span>
+                <span class="proj-pct" [style.color]="colorProyecto(i)">{{ progresoPorProyecto.get(p.proyectoId)?.porcentaje ?? 0 }}%</span>
+              </div>
+            </div>
+            <div class="proj-track">
+              <div class="proj-fill" [style.width.%]="progresoPorProyecto.get(p.proyectoId)?.porcentaje ?? 0" [style.background]="colorProyecto(i)"></div>
+            </div>
+          </div>
+          <div class="proj-divider"></div>
+          <div class="stat-row-sm">
+            <div class="sl">Habilitados</div>
+            <div class="st"><div class="sf" [style.width.%]="pctHabilitados" style="background:#22c55e"></div></div>
+            <div class="sv">{{ trabHabilitados }}</div>
+          </div>
+          <div class="stat-row-sm">
+            <div class="sl">No hab.</div>
+            <div class="st"><div class="sf" [style.width.%]="100 - pctHabilitados" style="background:#ef4444"></div></div>
+            <div class="sv">{{ trabNoHabilitados }}</div>
+          </div>
+        </div>
+        <ng-template #skelProj>
+          <div class="skel-row" *ngFor="let x of [1,2,3]"></div>
+        </ng-template>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><i class="ti ti-building"></i> Entregables empresa</div>
+        </div>
+        <div class="proj-tabs">
+          <span class="pt" *ngFor="let p of proyectos; let i = index"
+            [class.active]="proyectoTabSeleccionado === i" (click)="selectTab(i)">{{ p.proyectoNombre }}</span>
+        </div>
+        <div class="ring-area">
+          <div class="ring-wrap">
+            <svg width="52" height="52" viewBox="0 0 52 52">
+              <circle cx="26" cy="26" r="20" fill="none" stroke="#f1f5f9" stroke-width="6"/>
+              <circle cx="26" cy="26" r="20" fill="none" stroke="#22c55e" stroke-width="6"
+                stroke-dasharray="125.7" [attr.stroke-dashoffset]="ringOffset" stroke-linecap="round"/>
+            </svg>
+            <div class="ring-center">{{ pctEntregables }}%</div>
+          </div>
+          <div class="ring-info">
+            <div class="ring-big">{{ entregablesAprobados }} / {{ totalEntregables }}</div>
+            <div class="ring-sm">aprobados · {{ proyectoTabActual?.proyectoNombre }}</div>
+          </div>
+        </div>
+        <div class="ent-list">
+          <div class="ent-row" *ngFor="let e of entregablesTabActual | slice:0:5">
+            <div class="ent-name">{{ e.nombreItem }}</div>
+            <span class="ent-b" [ngClass]="{'ef': e.estado==='Falta'||e.estado==='Rechazado','ee':e.estado==='Enviado','ea':e.estado==='Aprobado'}">{{ e.estado }}</span>
+          </div>
+        </div>
+        <div class="card-link" routerLink="/habilitacion/gestion/empresa">
+          <i class="ti ti-arrow-right"></i> Ver todos los entregables
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><i class="ti ti-clock-exclamation"></i> Próximos a vencer</div>
+          <span class="cbadge badge-g">Sin alertas</span>
+        </div>
+        <div class="empty-state">
+          <i class="ti ti-circle-check" style="font-size:28px;color:#22c55e"></i>
+          <div class="empty-text">Todos los documentos<br>están vigentes</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM ROW -->
+    <div class="bottom-row">
+      <div class="mini-card span-2">
+        <div class="mc-label"><i class="ti ti-users"></i> Trabajadores no habilitados</div>
+        <div class="wm-list" *ngIf="topNoHabilitados.length > 0">
+          <div class="wm-row wm-n" *ngFor="let w of topNoHabilitados">
+            <div class="wm-dot wm-dot-r"></div>
+            <div class="wm-name">{{ w.nombre }}</div>
+            <span class="wm-s wm-ns">{{ w.motivo }}</span>
+          </div>
+        </div>
+        <div class="empty-sm" *ngIf="topNoHabilitados.length === 0 && !loadingTrabajadores">
+          <i class="ti ti-circle-check" style="color:#22c55e"></i> Todos habilitados
+        </div>
+        <div class="card-link" routerLink="/habilitacion/gestion/trabajadores">
+          <i class="ti ti-arrow-right"></i> Ver {{ totalTrabajadores }} trabajadores
+        </div>
+      </div>
+      <div class="mini-card">
+        <div class="mc-label"><i class="ti ti-chart-bar"></i> Tasa habilitación</div>
+        <div class="tasa-area">
+          <div class="ring-wrap-sm">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+              <circle cx="22" cy="22" r="17" fill="none" stroke="#f1f5f9" stroke-width="5"/>
+              <circle cx="22" cy="22" r="17" fill="none" stroke="#22c55e" stroke-width="5"
+                stroke-dasharray="106.8" [attr.stroke-dashoffset]="ringOffsetTasa"
+                stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:50% 50%"/>
+            </svg>
+            <div class="ring-center-sm">{{ pctHabilitados }}%</div>
+          </div>
+          <div>
+            <div class="tasa-big">{{ trabHabilitados }} / {{ totalTrabajadores }}</div>
+            <div class="tasa-sm">habilitados</div>
+          </div>
+        </div>
+        <div class="stat-row-sm" style="margin-top:6px">
+          <div class="sl">Habilitado</div>
+          <div class="st"><div class="sf" [style.width.%]="pctHabilitados" style="background:#22c55e"></div></div>
+          <div class="sv">{{ trabHabilitados }}</div>
+        </div>
+        <div class="stat-row-sm">
+          <div class="sl">No hab.</div>
+          <div class="st"><div class="sf" [style.width.%]="100 - pctHabilitados" style="background:#ef4444"></div></div>
+          <div class="sv">{{ trabNoHabilitados }}</div>
+        </div>
+      </div>
+      <div class="mini-card wsp-card">
+        <div class="mc-label"><i class="ti ti-brand-whatsapp"></i> Grupo WhatsApp</div>
+        <div class="wsp-body">
+          <div class="wsp-icon"><i class="ti ti-brand-whatsapp"></i></div>
+          <div>
+            <div class="wsp-title">Únete al grupo</div>
+            <div class="wsp-sub">Gestión de Ingresos · Abril</div>
+          </div>
+        </div>
+        <a [href]="getWhatsappUrl()" target="_blank" class="wsp-btn">Unirme al grupo</a>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<!-- ══════════════════ ADMIN ══════════════════ -->
+<ng-container *ngIf="!esContratista">
+<div class="dashboard-hab-container">
+
+  <div class="db-proyecto-header">
+    <i class="ti ti-building-community db-proyecto-icon"></i>
+    <span class="db-proyecto-label">Proyecto</span>
+    <app-search-select
+      class="db-proyecto-search"
+      [options]="proyectosAdmin"
+      valueField="projectId"
+      displayField="projectDescription"
+      [value]="selectedProyectoId"
+      placeholder="Selecciona un proyecto"
+      [showLabel]="false"
+      (valueChange)="onProyectoChange($event)"
+    />
+  </div>
+
+  @if (!selectedProyectoId) {
+    <div class="empty-state"><p>Selecciona un proyecto para continuar</p></div>
+  }
+
+  @if (selectedProyectoId && loading) {
+    <div class="skeleton-wrap">
+      <div class="skeleton-grid-4">
+        @for (_ of [1,2,3,4,5,6,7,8]; track $index) {
+          <div class="skeleton-card"></div>
+        }
+      </div>
+      <div class="skeleton-table mt-6"></div>
+      <div class="skeleton-table mt-4"></div>
+    </div>
+  }
+
+  @if (selectedProyectoId && !loading && data) {
+    <section class="kpi-groups">
+
+      <!-- EMPRESAS -->
+      <div class="kg-card">
+        <div class="kg-title"><i class="ti ti-building"></i> Empresas</div>
+        <a class="kg-hero kg-hero-link" routerLink="/habilitacion/gestion/empresa" [queryParams]="{ proyectoId: selectedProyectoId }">
+          <div class="kg-num">{{ kpis?.empresasActivas ?? 0 }}</div>
+          <div class="kg-lbl">Empresas activas</div>
+        </a>
+        <div class="kg-breakdown">
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/empresa" [queryParams]="{ proyectoId: selectedProyectoId, habilitada: 'true' }">
+            <span class="kg-dot kg-dot-g"></span><span class="kg-row-lbl">Habilitadas</span>
+            <span class="kg-row-val kg-val-g">{{ kpis?.empresasHabilitadas ?? 0 }}</span>
+            <span class="kg-row-pct">{{ pct(kpis?.empresasHabilitadas ?? 0, kpis?.empresasActivas ?? 0) }}%</span>
+          </a>
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/empresa" [queryParams]="{ proyectoId: selectedProyectoId, habilitada: 'false' }">
+            <span class="kg-dot kg-dot-r"></span><span class="kg-row-lbl">No habilitadas</span>
+            <span class="kg-row-val kg-val-r">{{ kpis?.empresasNoHabilitadas ?? 0 }}</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- TRABAJADORES CONTRATISTA -->
+      <div class="kg-card">
+        <div class="kg-title"><i class="ti ti-users"></i> Trabajadores contratista</div>
+        <a class="kg-hero kg-hero-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Contratista' }">
+          <div class="kg-num">{{ kpis?.workersTotal ?? 0 }}</div>
+          <div class="kg-lbl">Total trabajadores</div>
+        </a>
+        <div class="kg-breakdown">
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Contratista', estado: 'Habilitado' }">
+            <span class="kg-dot kg-dot-g"></span><span class="kg-row-lbl">Habilitados</span>
+            <span class="kg-row-val kg-val-g">{{ kpis?.workersHabilitados ?? 0 }}</span>
+            <span class="kg-row-pct">{{ pct(kpis?.workersHabilitados ?? 0, kpis?.workersTotal ?? 0) }}%</span>
+          </a>
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Contratista', estado: 'No Autorizado' }">
+            <span class="kg-dot kg-dot-r"></span><span class="kg-row-lbl">No autorizados</span>
+            <span class="kg-row-val kg-val-r">{{ kpis?.workersNoAutorizados ?? 0 }}</span>
+          </a>
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Contratista', estado: 'Autorizado Temporalmente' }">
+            <span class="kg-dot kg-dot-y"></span><span class="kg-row-lbl">Autorizados temporalmente</span>
+            <span class="kg-row-val kg-val-y">{{ kpis?.workersAutorizadoTemporal ?? 0 }}</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- PERSONAL CASA (separado de contratista) -->
+      <div class="kg-card">
+        <div class="kg-title"><i class="ti ti-home"></i> Personal casa</div>
+        <a class="kg-hero kg-hero-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Casa' }">
+          <div class="kg-num">{{ kpis?.personalCasaTotal ?? 0 }}</div>
+          <div class="kg-lbl">Total personal casa</div>
+        </a>
+        <div class="kg-breakdown">
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Casa', estado: 'Habilitado' }">
+            <span class="kg-dot kg-dot-g"></span><span class="kg-row-lbl">Habilitado</span>
+            <span class="kg-row-val kg-val-g">{{ kpis?.personalCasaHabilitado ?? 0 }}</span>
+            <span class="kg-row-pct">{{ pct(kpis?.personalCasaHabilitado ?? 0, kpis?.personalCasaTotal ?? 0) }}%</span>
+          </a>
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Casa', estado: 'No Autorizado' }">
+            <span class="kg-dot kg-dot-r"></span><span class="kg-row-lbl">No habilitado</span>
+            <span class="kg-row-val kg-val-r">{{ kpis?.personalCasaNoHabilitado ?? 0 }}</span>
+          </a>
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Casa', soloEmoVencido: 'true' }">
+            <span class="kg-dot kg-dot-y"></span><span class="kg-row-lbl">EMOs vencidos</span>
+            <span class="kg-row-val kg-val-y">{{ kpis?.emosVencidos ?? 0 }}</span>
+          </a>
+          <span class="kg-row">
+            <span class="kg-dot kg-dot-o"></span><span class="kg-row-lbl">Interconsultas pend.</span>
+            <span class="kg-row-val kg-val-o">{{ kpis?.interconsultasPendientes ?? 0 }}</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- ENTREGABLES -->
+      <div class="kg-card">
+        <div class="kg-title"><i class="ti ti-file-alert"></i> Entregables pendientes</div>
+        <div class="kg-ent-sub">Documentos que cada empresa/trabajador debe presentar. <strong>Vencido</strong>: se subió pero venció y falta renovar. <strong>Falta</strong>: nunca se subió.</div>
+
+        <div class="kg-ent-group">
+          <div class="kg-ent-group-lbl"><i class="ti ti-building"></i> Empresa (documentos de la razón social)</div>
+          <div class="kg-entregables">
+            <div class="kg-ent-cell">
+              <div class="kg-ent-num kg-val-r">{{ kpis?.entregablesEmpresaVencidos ?? 0 }}</div>
+              <div class="kg-ent-lbl">Vencidos</div>
+            </div>
+            <div class="kg-ent-cell">
+              <div class="kg-ent-num kg-val-o">{{ kpis?.entregablesEmpresaFalta ?? 0 }}</div>
+              <div class="kg-ent-lbl">Falta</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kg-ent-group">
+          <div class="kg-ent-group-lbl"><i class="ti ti-users"></i> Trabajadores contratista</div>
+          <div class="kg-entregables">
+            <div class="kg-ent-cell">
+              <div class="kg-ent-num kg-val-r">{{ kpis?.entregablesTrabajadorVencidos ?? 0 }}</div>
+              <div class="kg-ent-lbl">Vencidos</div>
+            </div>
+            <div class="kg-ent-cell">
+              <div class="kg-ent-num kg-val-o">{{ kpis?.entregablesTrabajadorFalta ?? 0 }}</div>
+              <div class="kg-ent-lbl">Falta</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kg-ent-group">
+          <div class="kg-ent-group-lbl"><i class="ti ti-home"></i> Personal casa</div>
+          <div class="kg-entregables">
+            <div class="kg-ent-cell">
+              <div class="kg-ent-num kg-val-r">{{ kpis?.entregablesCasaVencidos ?? 0 }}</div>
+              <div class="kg-ent-lbl">Vencidos</div>
+            </div>
+            <div class="kg-ent-cell">
+              <div class="kg-ent-num kg-val-o">{{ kpis?.entregablesCasaFalta ?? 0 }}</div>
+              <div class="kg-ent-lbl">Falta</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    @if (empresas.length > 0) {
+      <section class="table-section">
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('empresas')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('empresas')" [class.ti-chevron-down]="seccionAbierta('empresas')"></i>
+          Empresas <span class="section-count">({{ empresas.length }})</span>
+        </button>
+        @if (seccionAbierta('empresas')) {
+          <div class="table-wrap">
+            <table class="hab-table">
+              <thead><tr><th>Nombre</th><th>Habilitada</th><th>Trabajadores Hab. / Total</th></tr></thead>
+              <tbody>
+                @for (emp of empresas; track emp.empresaId) {
+                  <tr>
+                    <td class="font-medium">{{ emp.nombre }}</td>
+                    <td><span [class]="'badge-riesgo ' + (emp.habilitada ? 'badge-riesgo-bajo' : 'badge-riesgo-alto')">{{ emp.habilitada ? 'Habilitada' : 'No habilitada' }}</span></td>
+                    <td class="text-center">{{ emp.workersHabilitados }} / {{ emp.workersTotal }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+
+    @if (trabajadoresNoAutorizados.length > 0) {
+      <section class="table-section">
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('noAutorizados')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('noAutorizados')" [class.ti-chevron-down]="seccionAbierta('noAutorizados')"></i>
+          Trabajadores No Autorizados <span class="section-count">({{ trabajadoresNoAutorizados.length }})</span>
+        </button>
+        @if (seccionAbierta('noAutorizados')) {
+          <div class="table-wrap">
+            <table class="hab-table">
+              <thead><tr><th>Nombre</th><th>DNI</th><th>Empresa</th><th>Motivo</th></tr></thead>
+              <tbody>
+                @for (w of trabajadoresNoAutorizados; track w.workerId) {
+                  <tr>
+                    <td class="font-medium">{{ w.nombre }}</td>
+                    <td class="text-gray-500">{{ w.dni }}</td>
+                    <td>{{ w.empresa }}</td>
+                    <td class="text-sm">{{ w.motivo }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="card-link" routerLink="/habilitacion/gestion/trabajadores">
+            <i class="ti ti-arrow-right"></i> Ver todos los trabajadores
+          </div>
+        }
+      </section>
+    }
+
+    @if (emosVencidos.length > 0) {
+      <section class="table-section">
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('emosVencidos')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('emosVencidos')" [class.ti-chevron-down]="seccionAbierta('emosVencidos')"></i>
+          EMOs Vencidos <span class="section-count">({{ emosVencidos.length }})</span>
+        </button>
+        @if (seccionAbierta('emosVencidos')) {
+          <div class="table-wrap">
+            <table class="hab-table">
+              <thead><tr><th>Nombre</th><th>DNI</th><th>Empresa</th></tr></thead>
+              <tbody>
+                @for (w of emosVencidos; track w.workerId) {
+                  <tr>
+                    <td class="font-medium">{{ w.nombre }}</td>
+                    <td class="text-gray-500">{{ w.dni }}</td>
+                    <td>{{ w.empresa }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+
+    @if (interconsultas.length > 0) {
+      <section class="table-section">
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('interconsultas')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('interconsultas')" [class.ti-chevron-down]="seccionAbierta('interconsultas')"></i>
+          Interconsultas Pendientes <span class="section-count">({{ interconsultas.length }})</span>
+        </button>
+        @if (seccionAbierta('interconsultas')) {
+          <div class="table-wrap">
+            <table class="hab-table">
+              <thead><tr><th>Nombre</th><th>Empresa</th><th>Especialidad</th><th>Días en espera</th></tr></thead>
+              <tbody>
+                @for (i of interconsultas; track i.workerId) {
+                  <tr>
+                    <td class="font-medium">{{ i.nombre }}</td>
+                    <td>{{ i.empresa }}</td>
+                    <td>{{ i.especialidad }}</td>
+                    <td class="text-center">{{ i.diasDesdeDerivacion }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+
+    @if (personalCasaNoHabilitado.length > 0) {
+      <section class="table-section">
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('casaNoHabilitado')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('casaNoHabilitado')" [class.ti-chevron-down]="seccionAbierta('casaNoHabilitado')"></i>
+          Personal Casa No Habilitado <span class="section-count">({{ personalCasaNoHabilitado.length }})</span>
+        </button>
+        @if (seccionAbierta('casaNoHabilitado')) {
+          <div class="table-wrap">
+            <table class="hab-table">
+              <thead><tr><th>Nombre</th><th>DNI</th><th>Motivo</th></tr></thead>
+              <tbody>
+                @for (w of personalCasaNoHabilitado; track w.workerId) {
+                  <tr>
+                    <td class="font-medium">{{ w.nombre }}</td>
+                    <td class="text-gray-500">{{ w.dni }}</td>
+                    <td class="text-sm">{{ w.motivo }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+
+    @if (entregablesEmpresaVencidos.length > 0 || entregablesEmpresaFalta.length > 0) {
+      <section class="table-section">
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('entEmpresa')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('entEmpresa')" [class.ti-chevron-down]="seccionAbierta('entEmpresa')"></i>
+          Entregables de Empresa <span class="section-count">({{ entregablesEmpresaVencidos.length + entregablesEmpresaFalta.length }})</span>
+        </button>
+        @if (seccionAbierta('entEmpresa')) {
+          <div class="table-wrap">
+            <table class="hab-table">
+              <thead><tr><th>Empresa</th><th>Entregable</th><th>Vigencia</th><th>Estado</th></tr></thead>
+              <tbody>
+                @for (e of entregablesEmpresaVencidos; track $index) {
+                  <tr>
+                    <td class="font-medium">{{ e.entidad }}</td>
+                    <td>{{ e.item }}</td>
+                    <td class="text-gray-500 text-sm">{{ e.vigencia | date: 'dd/MM/yyyy' }}</td>
+                    <td><span class="badge-riesgo badge-riesgo-alto">Vencido</span></td>
+                  </tr>
+                }
+                @for (e of entregablesEmpresaFalta; track $index) {
+                  <tr>
+                    <td class="font-medium">{{ e.entidad }}</td>
+                    <td>{{ e.item }}</td>
+                    <td class="text-gray-500 text-sm">—</td>
+                    <td><span class="badge-riesgo badge-riesgo-medio">Falta</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+
+    @if (entregablesTrabajadorVencidos.length > 0 || entregablesTrabajadorFalta.length > 0) {
+      <section class="table-section">
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('entContratista')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('entContratista')" [class.ti-chevron-down]="seccionAbierta('entContratista')"></i>
+          Entregables de Trabajador Contratista <span class="section-count">({{ entregablesTrabajadorVencidos.length + entregablesTrabajadorFalta.length }})</span>
+        </button>
+        @if (seccionAbierta('entContratista')) {
+          <div class="table-wrap">
+            <table class="hab-table">
+              <thead><tr><th>Trabajador</th><th>Entregable</th><th>Vigencia</th><th>Estado</th></tr></thead>
+              <tbody>
+                @for (e of entregablesTrabajadorVencidos; track $index) {
+                  <tr>
+                    <td class="font-medium">{{ e.entidad }}</td>
+                    <td>{{ e.item }}</td>
+                    <td class="text-gray-500 text-sm">{{ e.vigencia | date: 'dd/MM/yyyy' }}</td>
+                    <td><span class="badge-riesgo badge-riesgo-alto">Vencido</span></td>
+                  </tr>
+                }
+                @for (e of entregablesTrabajadorFalta; track $index) {
+                  <tr>
+                    <td class="font-medium">{{ e.entidad }}</td>
+                    <td>{{ e.item }}</td>
+                    <td class="text-gray-500 text-sm">—</td>
+                    <td><span class="badge-riesgo badge-riesgo-medio">Falta</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+
+    @if (entregablesCasaVencidos.length > 0 || entregablesCasaFalta.length > 0) {
+      <section class="table-section">
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('entCasa')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('entCasa')" [class.ti-chevron-down]="seccionAbierta('entCasa')"></i>
+          Entregables de Personal Casa <span class="section-count">({{ entregablesCasaVencidos.length + entregablesCasaFalta.length }})</span>
+        </button>
+        @if (seccionAbierta('entCasa')) {
+        <div class="table-wrap">
+          <table class="hab-table">
+            <thead><tr><th>Trabajador</th><th>Entregable</th><th>Vigencia</th><th>Estado</th></tr></thead>
+            <tbody>
+              @for (e of entregablesCasaVencidos; track $index) {
+                <tr>
+                  <td class="font-medium">{{ e.entidad }}</td>
+                  <td>{{ e.item }}</td>
+                  <td class="text-gray-500 text-sm">{{ e.vigencia | date: 'dd/MM/yyyy' }}</td>
+                  <td><span class="badge-riesgo badge-riesgo-alto">Vencido</span></td>
+                </tr>
+              }
+              @for (e of entregablesCasaFalta; track $index) {
+                <tr>
+                  <td class="font-medium">{{ e.entidad }}</td>
+                  <td>{{ e.item }}</td>
+                  <td class="text-gray-500 text-sm">—</td>
+                  <td><span class="badge-riesgo badge-riesgo-medio">Falta</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        }
+      </section>
+    }
+  }
+
+  @if (selectedProyectoId && !loading && !data) {
+    <div class="empty-state">
+      <p>No se pudo cargar el dashboard. Intente nuevamente.</p>
+      <button class="btn-retry" (click)="load()">Reintentar</button>
+    </div>
+  }
+
+</div>
+</ng-container>

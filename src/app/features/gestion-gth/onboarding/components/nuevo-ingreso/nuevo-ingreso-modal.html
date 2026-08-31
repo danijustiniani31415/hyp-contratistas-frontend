@@ -1,0 +1,174 @@
+<app-abril-modal-panel
+  titulo="Nuevo ingreso"
+  subtitulo="Inicia el onboarding enviando el enlace de la carta oferta"
+  icono="ti-user-plus"
+  variant="blue"
+  width="640px"
+  [preventCloseWhenDirty]="true"
+  (closeModal)="closeModal.emit()">
+
+  <!-- ── Colaborador ────────────────────────────────────────────────────────
+       Solo los que ya terminaron reclutamiento: seleccionados de procesos
+       cerrados sin onboarding abierto. La lista la calcula el backend. -->
+  <div class="abril-section-title">Colaborador</div>
+
+  @if (candidatos.length === 0) {
+    <div class="aviso aviso--vacio">
+      <i class="ti ti-info-circle"></i>
+      <span>
+        Todavía no hay candidatos listos para onboarding. Aparecen acá cuando el área solicitante
+        selecciona a un finalista y su requerimiento queda <b>Cerrado</b> en Reclutamiento.
+      </span>
+    </div>
+  } @else {
+    <app-search-select
+      color="var(--color-abril-logo-blue)"
+      label="Colaborador seleccionado *"
+      [options]="opciones"
+      valueField="id"
+      displayField="nombre"
+      [value]="candidatoId"
+      [fullText]="true"
+      placeholder="Buscar por nombre o N° de requerimiento..."
+      (valueChange)="onCandidatoChange($event)">
+    </app-search-select>
+  }
+
+  <!-- Resumen de la vacante que ganó: se lee del requerimiento, no se captura. -->
+  @if (seleccionado) {
+    <div class="colaborador-card">
+      <strong>{{ seleccionado.nombre | titleCase }}</strong>
+      <span><i class="ti ti-file-text"></i> {{ seleccionado.codigo }}</span>
+      <span><i class="ti ti-briefcase"></i> {{ (seleccionado.puesto | titleCase) || '—' }}</span>
+      <span><i class="ti ti-sitemap"></i> {{ (seleccionado.area | titleCase) || '—' }}</span>
+      <span><i class="ti ti-building"></i> {{ seleccionado.empresa || '—' }}</span>
+      <span><i class="ti ti-map-pin"></i> {{ (seleccionado.proyectoObra | titleCase) || '—' }}</span>
+      <span><i class="ti ti-user-check"></i> Jefe directo: {{ (seleccionado.jefeDirecto | titleCase) || '—' }}</span>
+    </div>
+  }
+
+  <!-- ── Carta oferta ───────────────────────────────────────────────────── -->
+  @if (candidatos.length > 0) {
+    <div class="abril-section-title">Carta oferta</div>
+
+    <div class="form-row">
+      <!-- El hint del correo va DENTRO de esta columna, no debajo de la fila: colgado de la fila
+           se metía bajo el campo de fecha (y al colapsar a una columna en móvil, encima de él). -->
+      <div class="form-col">
+        <div class="abril-field">
+          <label class="abril-field-label">Correo del colaborador *</label>
+          <input type="email" class="abril-field-input" [(ngModel)]="correo"
+                 placeholder="correo@ejemplo.com" [disabled]="candidatoId === null" />
+        </div>
+
+        <!-- El correo no se pide: sale de la base maestra. Se muestra de dónde vino
+             para que GTH sepa qué está confirmando y cuándo debe corregirlo. -->
+        @if (candidatoId !== null && seleccionado?.correo) {
+          <p class="campo-hint">
+            <i class="ti ti-database"></i>
+            <span>Correo personal registrado en la base maestra. Corrígelo solo si cambió.</span>
+          </p>
+        }
+      </div>
+
+      <!-- dense + floatingLabel: mismas medidas (34px) y mismo label flotante que el campo de
+           correo, para que ambos queden a la misma altura y arranquen en la misma línea. -->
+      <app-date-picker
+        label="Fecha de ingreso"
+        color="var(--color-abril-logo-blue)"
+        [dense]="true"
+        [floatingLabel]="true"
+        [value]="fechaIngreso"
+        [disabled]="candidatoId === null"
+        (valueChange)="fechaIngreso = $event">
+      </app-date-picker>
+    </div>
+
+    @if (candidatoId !== null && !seleccionado?.correo) {
+      <div class="aviso aviso--alerta">
+        <i class="ti ti-alert-triangle"></i>
+        <span>
+          Este colaborador no tiene correo personal en la base maestra: su formulario de postulante
+          no está aprobado. Apruébalo en <b>Reclutamiento</b> para que quede registrado, o escribe
+          el correo aquí.
+        </span>
+      </div>
+    }
+
+    <!-- La firma que el colaborador va a dibujar en el enlace se guarda en su ficha de la base
+         maestra, así que sin ficha el envío no puede salir: el enlace llegaría a una página que no
+         puede terminar. Se avisa acá y no al enviar. -->
+    @if (candidatoId !== null && seleccionado && !seleccionado.tieneFichaMaestra) {
+      <div class="aviso aviso--alerta">
+        <i class="ti ti-alert-triangle"></i>
+        <span>
+          Este colaborador no tiene ficha en la <b>base maestra</b> y ahí se guarda la firma que va a
+          registrar al abrir el enlace. Aprueba su formulario de postulante en <b>Reclutamiento</b>
+          para crearla.
+        </span>
+      </div>
+    }
+
+    <!-- El DNI, a diferencia del correo, no se puede escribir a mano: nombra la carpeta del
+         colaborador en el file de SharePoint y tiene que ser el mismo que el de su ficha. -->
+    @if (candidatoId !== null && !seleccionado?.dni) {
+      <div class="aviso aviso--alerta">
+        <i class="ti ti-alert-triangle"></i>
+        <span>
+          Este colaborador no tiene documento de identidad en la base maestra, y con él se crea su
+          carpeta en el <b>file de colaboradores</b>. Aprueba su formulario de postulante en
+          <b>Reclutamiento</b> para que quede registrado.
+        </span>
+      </div>
+    }
+
+    <!-- Los colores del selector y de la tarjeta del archivo adjunto se pasan explícitos porque el
+         default de ambos componentes es el verde lima histórico y este modal es azul. Van con los
+         mismos valores en los dos estados (vacío y con archivo) para que se lea como la misma caja
+         y no cambie de color al adjuntar. Se derivan del token del azul del logo, sin hex nuevos. -->
+    @if (carta) {
+      <app-file-preview
+        [files]="cartaPreview"
+        color="var(--color-abril-logo-blue)"
+        iconColor="var(--color-abril-logo-blue)"
+        background="color-mix(in srgb, var(--color-abril-logo-blue) 5%, #fff)"
+        (remove)="quitarCarta()" />
+    } @else {
+      <app-file-selector
+        accept=".pdf"
+        label="Arrastra la carta oferta aquí o"
+        hint="Solo PDF · máximo 15 MB"
+        color="var(--color-abril-logo-blue)"
+        background="color-mix(in srgb, var(--color-abril-logo-blue) 5%, #fff)"
+        backgroundHover="color-mix(in srgb, var(--color-abril-logo-blue) 10%, #fff)"
+        (fileSelected)="onCartaSelected($event)">
+      </app-file-selector>
+    }
+
+    <div class="abril-field">
+      <label class="abril-field-label">Observación interna</label>
+      <textarea class="abril-field-input" rows="2" [(ngModel)]="observacion"
+                placeholder="Opcional: nota de GTH sobre este ingreso."></textarea>
+    </div>
+
+    <p class="campo-hint">
+      <i class="ti ti-mail-forward"></i>
+      <span>
+        La carta se guarda en el file de SharePoint del colaborador y se le envía un correo con un
+        <b>enlace</b> —no la carta adjunta— para que la lea, registre su firma y la firme en línea. El
+        onboarding queda en la fase <b>Carta oferta firmada</b>, esperando esa firma.
+      </span>
+    </p>
+  }
+
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn btn-secondary" (click)="closeModal.emit()" [disabled]="guardando">
+      Cancelar
+    </button>
+    <button type="button" class="btn btn-primary" (click)="enviar()"
+            [disabled]="!puedeEnviar" [title]="motivoBloqueo || 'Enviar el enlace de la carta oferta'">
+      @if (guardando) { Enviando… } @else { Enviar enlace de firma }
+    </button>
+  </div>
+
+</app-abril-modal-panel>

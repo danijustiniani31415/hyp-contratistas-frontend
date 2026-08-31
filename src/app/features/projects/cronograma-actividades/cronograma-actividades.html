@@ -1,0 +1,951 @@
+<div class="page-wrapper">
+
+  <!-- ── Header ── -->
+  <div class="header-card card header-dark">
+    <div class="header-content">
+      <div class="header-info-row">
+        <button class="btn-volver" (click)="volver()" title="Volver a proyectos">
+          <i class="ti ti-arrow-left text-base mr-1"></i>
+          Volver
+        </button>
+        <div class="header-info">
+          <span class="page-title">{{ proyectoHeader?.projectDescription || 'Cronograma de Actividades' }}</span>
+          <div class="header-sub-row">
+            <span class="page-sub" *ngIf="proyectoHeader?.responsableUdp">
+              <i class="ti ti-user opacity-70 mr-1"></i>Responsable UDP: {{ proyectoHeader!.responsableUdp }}
+            </span>
+            <div class="header-metrics-summary" *ngIf="actividades.length">
+              <span class="metric-pill">
+                <i class="ti ti-list-check opacity-70 mr-1"></i>{{ actividades.length }} actividades
+              </span>
+              <span class="metric-pill pill-avance">
+                <i class="ti ti-chart-line opacity-70 mr-1"></i>{{ porcentajeAvanceGlobal }}% avance global
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tabla de actividades ── -->
+  <div class="card table-card" *ngIf="selectedProyectoId">
+
+    <!-- Selector Dinámico de Etapas del Proyecto (Pipeline) -->
+    <div class="stage-pipeline-container">
+      <div class="stage-pipeline-bar">
+        
+        <!-- Etapa 1: Anteproyecto -->
+        <button
+          type="button"
+          class="stage-pipeline-step"
+          [class.active]="tipoCronogramaActivo === 'ANTEPROYECTO'"
+          (click)="onTabChange('ANTEPROYECTO')"
+        >
+          <div class="step-icon-wrap">
+            <i class="ti ti-file-text step-icon"></i>
+          </div>
+          <div class="step-info">
+            <span class="step-number">ETAPA 01</span>
+            <span class="step-label">Anteproyecto</span>
+          </div>
+        </button>
+
+        <div class="pipeline-connector">
+          <i class="ti ti-chevron-right connector-arrow"></i>
+        </div>
+
+        <!-- Etapa 2: Proyecto -->
+        <button
+          type="button"
+          class="stage-pipeline-step"
+          [class.active]="tipoCronogramaActivo === 'PROYECTO'"
+          (click)="onTabChange('PROYECTO')"
+        >
+          <div class="step-icon-wrap">
+            <i class="ti ti-building step-icon"></i>
+          </div>
+          <div class="step-info">
+            <span class="step-number">ETAPA 02</span>
+            <span class="step-label">Proyecto</span>
+          </div>
+        </button>
+
+        <div class="pipeline-connector">
+          <i class="ti ti-chevron-right connector-arrow"></i>
+        </div>
+
+        <!-- Etapa 3: Proyecto de Actualización -->
+        <button
+          type="button"
+          class="stage-pipeline-step"
+          [class.active]="tipoCronogramaActivo === 'PROYECTO_ACTUALIZACION'"
+          (click)="onTabChange('PROYECTO_ACTUALIZACION')"
+        >
+          <div class="step-icon-wrap">
+            <i class="ti ti-refresh step-icon"></i>
+          </div>
+          <div class="step-info">
+            <span class="step-number">ETAPA 03</span>
+            <span class="step-label">Actualización</span>
+          </div>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Placeholder: ninguna pestaña seleccionada -->
+    <div class="table-empty-state" *ngIf="!tipoCronogramaActivo && !loadingActividades">
+      <div class="empty-icon">
+        <i class="ti ti-calendar-off text-3xl opacity-50"></i>
+      </div>
+      <p class="empty-title">Selecciona un cronograma para comenzar</p>
+    </div>
+
+    <!-- Skeleton mientras cargan las actividades -->
+    <ng-container *ngIf="loadingActividades">
+      <div class="skeleton-toolbar">
+        <div class="skel skel-toolbar-info"></div>
+        <div class="skeleton-toolbar-btns">
+          <div class="skel skel-btn-sm"></div>
+          <div class="skel skel-btn-lg"></div>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="col-order">#</th>
+              <th class="col-actividad">Actividad</th>
+              <th class="col-fecha">Inicio Prog.</th>
+              <th class="col-fecha">Fin Prog.</th>
+              <th class="col-dur">Duración</th>
+              <th class="col-fecha">Fin Real</th>
+              <th class="col-avance">Avance</th>
+              <th class="col-estado">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let i of [1,2,3,4,5,6,7]" class="skeleton-data-row">
+              <td><div class="skel skel-order"></div></td>
+              <td><div class="skel skel-act"></div></td>
+              <td><div class="skel skel-date"></div></td>
+              <td><div class="skel skel-date"></div></td>
+              <td><div class="skel skel-date"></div></td>
+              <td><div class="skel skel-date"></div></td>
+              <td>
+                <div class="avance-wrap">
+                  <div class="avance-bar-bg"><div class="skel-bar-light"></div></div>
+                  <div class="skel skel-pct-val"></div>
+                </div>
+              </td>
+              <td><div class="skel skel-badge-pill"></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <!-- Contenido cuando cargó -->
+    <ng-container *ngIf="!loadingActividades && tipoCronogramaActivo">
+
+      <div class="table-toolbar">
+        <span class="toolbar-info">
+          {{ actividades.length }} actividad{{ actividades.length !== 1 ? 'es' : '' }}
+        </span>
+        <div class="toolbar-actions">
+          <button class="btn-secondary" [class.btn-lb-on]="!lineaBaseVisible" (click)="toggleLineaBase()">
+            <i class="ti ti-chart-arcs text-sm mr-1.5"></i>
+            Línea Base
+          </button>
+          <button *ngIf="esAdmin" class="btn-secondary" (click)="abrirModalMpp()">
+            <i class="ti ti-file-import text-sm mr-1.5"></i>
+            Importar desde MS Project
+          </button>
+          <button class="btn-secondary" (click)="exportarPdf()" title="Exportar como PDF">
+            <i class="ti ti-file-type-pdf text-sm mr-1.5"></i>
+            Exportar PDF
+          </button>
+          <button class="btn-secondary" [class.btn-lb-on]="vistaGantt"
+            (click)="toggleVistaGantt()" [disabled]="!actividades.length"
+            [title]="vistaGantt ? 'Ver tabla' : 'Ver Gantt'">
+            <i class="ti ti-chart-gantt text-sm mr-1.5"></i>
+            {{ vistaGantt ? 'Ver Tabla' : 'Ver Gantt' }}
+          </button>
+          <button class="btn-primary" (click)="abrirModalCrear()">
+            <i class="ti ti-plus text-sm mr-1"></i>
+            Nueva Actividad
+          </button>
+        </div>
+      </div>
+
+
+      <!-- Contenedor dhtmlx-Gantt -->
+      <div *ngIf="vistaGantt && actividades.length" class="gantt-full-container" #ganttContainer></div>
+
+      <!-- Estado vacío (sin actividades) -->
+      <div class="table-empty-state" *ngIf="!actividades.length && !vistaGantt">
+        <div class="empty-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="11" x2="12" y2="17"/>
+            <line x1="9" y1="14" x2="15" y2="14"/>
+          </svg>
+        </div>
+        <p class="empty-title">Este proyecto no tiene actividades aún</p>
+        <div class="empty-actions">
+          <button *ngIf="tipoCronogramaActivo === 'PROYECTO' || tipoCronogramaActivo === 'ANTEPROYECTO'" class="btn-secondary" (click)="usarPlantilla()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              style="margin-right:0.35rem;flex-shrink:0">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="9" y1="13" x2="15" y2="13"/>
+              <line x1="9" y1="17" x2="13" y2="17"/>
+            </svg>
+            Usar plantilla
+          </button>
+          <button class="btn-primary" (click)="abrirModalCrear()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              style="margin-right:0.3rem;flex-shrink:0">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Nueva Actividad
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="table-wrapper" *ngIf="actividades.length && !vistaGantt">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="col-order">#</th>
+              <th class="col-actividad">Actividad</th>
+              <th class="col-fecha">Inicio Prog.</th>
+              <th class="col-fecha">Fin Prog.</th>
+              <th class="col-dur">Duración</th>
+              <ng-container *ngIf="lineaBaseVisible">
+                <th class="col-fecha">LB Inicio</th>
+                <th class="col-fecha">LB Fin</th>
+                <th class="col-desfase">Desfase Ini.</th>
+                <th class="col-desfase">Desfase Fin</th>
+                <th class="col-sema">Semáforo</th>
+              </ng-container>
+              <th class="col-fecha">Fin Real</th>
+              <th class="col-avance">Avance</th>
+              <th class="col-estado">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let act of actividades">
+            <tr
+              *ngIf="isVisible(act)"
+              class="row-clickable"
+              [class.row-dark]="isDarkBg(act)"
+              [class.row-light]="!isDarkBg(act)"
+              [class.row-bordered]="getNivelClase(act) === 'lvl-deep'"
+              [class.lvl-0]="getNivelClase(act) === 'lvl-0'"
+              [class.lvl-1]="getNivelClase(act) === 'lvl-1'"
+              [class.lvl-2]="getNivelClase(act) === 'lvl-2'"
+              [class.lvl-deep]="getNivelClase(act) === 'lvl-deep'"
+              [class.row-dragging]="dragActId === act.projectActivityId"
+              [class.drop-above]="dropTargetId === act.projectActivityId && dropPosition === 'before'"
+              [class.drop-below]="dropTargetId === act.projectActivityId && dropPosition === 'after'"
+              [class.drop-inside]="dropTargetId === act.projectActivityId && dropPosition === 'inside'"
+              [ngStyle]="getRowStyle(act)"
+              [attr.draggable]="true"
+              (click)="onRowClick(act)"
+              (dragstart)="onDragStart(act, $event)"
+              (dragover)="onDragOver(act, $event)"
+              (dragleave)="onDragLeave(act, $event)"
+              (drop)="onDrop(act, $event)"
+              (dragend)="onDragEnd()"
+            >
+              <td
+                class="td-order td-drag-handle"
+                (click)="$event.stopPropagation()"
+              >
+                <div class="order-cell">
+                  <span class="drag-grip-handle" title="Arrastrar para reordenar">
+                    <i class="ti ti-grip-vertical text-sm text-slate-400 hover:text-slate-700"></i>
+                  </span>
+                  <button
+                    class="btn-nivel btn-nivel-move"
+                    [disabled]="!canMoveUp(act)"
+                    (click)="moveUp(act, $event)"
+                    title="Mover arriba"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="18 15 12 9 6 15"/>
+                    </svg>
+                  </button>
+                  <button
+                    class="btn-nivel btn-nivel-move"
+                    [disabled]="!canMoveDown(act)"
+                    (click)="moveDown(act, $event)"
+                    title="Mover abajo"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                  <button
+                    class="btn-nivel"
+                    [disabled]="!canSubirNivel(act)"
+                    (click)="subirNivelActividad(act, $event)"
+                    title="Subir nivel"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                  </button>
+                  <span class="order-num">{{ getDisplayIndex(act) }}</span>
+                  <button
+                    class="btn-nivel"
+                    [disabled]="!canBajarNivel(act)"
+                    (click)="bajarNivelActividad(act, $event)"
+                    title="Bajar nivel"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+              <td class="td-actividad">
+                <!-- Línea conectora del árbol: cada fila descendiente dibuja su propio tramo
+                     (tronco vertical a x fija + codo horizontal hacia su propio contenido); en
+                     conjunto, filas consecutivas de la misma rama se ven como una sola línea. -->
+                <ng-container *ngIf="getNivelClase(act) !== 'lvl-0'">
+                  <span class="tree-trunk" [class.tree-trunk-end]="esUltimoDeRama(act)"></span>
+                  <span class="tree-elbow" [style.width.px]="act.hierarchyLevel * 20 - badgeHalfWidth"></span>
+                </ng-container>
+                <div class="actividad-cell" [style.padding-left.px]="act.hierarchyLevel * 20">
+                  <span *ngIf="getNivelClase(act) === 'lvl-0'" class="phase-badge">{{ getFaseIndex(act) }}</span>
+                  <button
+                    *ngIf="hasChildren(act)"
+                    class="btn-chevron"
+                    (click)="toggleCollapse(act, $event)"
+                    [title]="collapsedIds.has(act.projectActivityId) ? 'Expandir' : 'Colapsar'"
+                  >
+                    <svg
+                      width="16" height="16" viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" stroke-width="2.5"
+                      class="chevron-icon"
+                      [class.chevron-collapsed]="collapsedIds.has(act.projectActivityId)"
+                    >
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                  <span *ngIf="!hasChildren(act)" class="chevron-spacer"></span>
+                  <span>{{ act.activityDescription }}</span>
+                  <span
+                    *ngIf="act.predecesoras?.length"
+                    class="pred-badge"
+                    [title]="getPredTooltip(act)"
+                  >{{ getPredecessorasLabel(act) }}</span>
+                </div>
+              </td>
+              <!-- Inicio Prog — doble click abre popover flotante (solo hojas) -->
+              <td class="td-fecha"
+                  [class.td-fecha-editable]="!act.esPadre"
+                  [class.td-fecha-editing]="inlineEditCell?.id === act.projectActivityId && inlineEditCell?.field === 'start'"
+                  (click)="!act.esPadre && $event.stopPropagation()"
+                  (dblclick)="startInlineEdit(act, 'start', $event)">
+                <span class="fecha-cell-inner">
+                  <span class="fecha-text">{{ formatDate(act.plannedStartDate) }}</span>
+                  <svg *ngIf="!act.esPadre" class="fecha-edit-icon" width="11" height="11"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                  </svg>
+                </span>
+              </td>
+              <!-- Fin Prog -->
+              <td class="td-fecha"
+                  [class.td-fecha-editable]="!act.esPadre"
+                  [class.td-fecha-editing]="inlineEditCell?.id === act.projectActivityId && inlineEditCell?.field === 'end'"
+                  (click)="!act.esPadre && $event.stopPropagation()"
+                  (dblclick)="startInlineEdit(act, 'end', $event)">
+                <span class="fecha-cell-inner">
+                  <span class="fecha-text">{{ formatDate(act.plannedEndDate) }}</span>
+                  <svg *ngIf="!act.esPadre" class="fecha-edit-icon" width="11" height="11"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                  </svg>
+                </span>
+              </td>
+              <!-- Duración -->
+              <td class="td-dur">{{ getDuracion(act) }}</td>
+              <!-- Columnas de Línea Base + Desfase + Semáforo -->
+              <ng-container *ngIf="lineaBaseVisible">
+                <td class="td-fecha td-lb"
+                    [class.td-fecha-editable]="!act.esPadre"
+                    [class.td-fecha-editing]="inlineEditCell?.id === act.projectActivityId && inlineEditCell?.field === 'lbStart'"
+                    (click)="!act.esPadre && $event.stopPropagation()"
+                    (dblclick)="startInlineEdit(act, 'lbStart', $event)">
+                  <span class="fecha-cell-inner">
+                    <span class="fecha-text">{{ formatDate(act.baselineStartDate) }}</span>
+                    <svg *ngIf="!act.esPadre" class="fecha-edit-icon" width="11" height="11"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                    </svg>
+                  </span>
+                </td>
+                <td class="td-fecha td-lb"
+                    [class.td-fecha-editable]="!act.esPadre"
+                    [class.td-fecha-editing]="inlineEditCell?.id === act.projectActivityId && inlineEditCell?.field === 'lbEnd'"
+                    (click)="!act.esPadre && $event.stopPropagation()"
+                    (dblclick)="startInlineEdit(act, 'lbEnd', $event)">
+                  <span class="fecha-cell-inner">
+                    <span class="fecha-text">{{ formatDate(act.baselineEndDate) }}</span>
+                    <svg *ngIf="!act.esPadre" class="fecha-edit-icon" width="11" height="11"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                    </svg>
+                  </span>
+                </td>
+                <td class="td-desfase">
+                  <span class="desfase-chip" [ngClass]="getDesfaseClass(getDesfaseDias(act, 'start'))">
+                    {{ formatDesfase(getDesfaseDias(act, 'start')) }}
+                  </span>
+                </td>
+                <td class="td-desfase">
+                  <span class="desfase-chip" [ngClass]="getDesfaseClass(getDesfaseDias(act, 'end'))">
+                    {{ formatDesfase(getDesfaseDias(act, 'end')) }}
+                  </span>
+                </td>
+                <td class="td-sema">
+                  <span class="sema-chip">
+                    <span class="semaforo-dot" [ngClass]="getSemaforoClass(act)"></span>
+                  </span>
+                </td>
+              </ng-container>
+              <td class="td-fecha" [ngStyle]="getFechaRealStyle(act)">
+                {{ formatDate(act.actualEndDate) }}
+              </td>
+              <td class="td-avance">
+                <div class="avance-wrap">
+                  <div class="avance-bar-bg">
+                    <div
+                      class="avance-bar-fill"
+                      [ngClass]="isDarkBg(act) ? getAvanceColor(getAvance(act)) : ''"
+                      [style.background]="isDarkBg(act) ? null : getBarFillColor(act)"
+                      [style.width.%]="getAvance(act)"
+                    ></div>
+                  </div>
+                  <span class="avance-pct">{{ getAvance(act) }}%</span>
+                </div>
+              </td>
+              <td>
+                <span
+                  class="badge"
+                  [ngClass]="isDarkBg(act) ? '' : getEstadoCss(act)"
+                  [ngStyle]="getBadgeStyle(act)"
+                >
+                  {{ getEstado(act) }}
+                </span>
+              </td>
+            </tr>
+
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+
+    </ng-container>
+
+  </div>
+
+</div>
+
+<!-- ── Popover edición inline de fechas ── -->
+<div class="inline-date-backdrop" *ngIf="inlineEditCell" (click)="cancelInlineEdit()"></div>
+<div class="inline-date-popover" *ngIf="inlineEditCell"
+     [ngStyle]="inlinePopoverStyle"
+     (click)="$event.stopPropagation()">
+  <span class="inline-popover-label">{{ getInlineFieldLabel() }}</span>
+  <input #popoverDateInput
+         type="date"
+         class="inline-date-picker"
+         [value]="inlineEditValue"
+         (change)="inlineEditValue = $any($event.target).value"
+         (input)="inlineEditValue = $any($event.target).value"
+         (keydown.enter)="$event.stopPropagation(); commitInlineEdit()"
+         (keydown.escape)="cancelInlineEdit()" />
+  <div class="inline-popover-footer">
+    <button class="inline-btn-cancel" type="button" (click)="cancelInlineEdit()">✗ Cancelar</button>
+    <button class="inline-btn-confirm" type="button" (click)="commitInlineEdit()">✓ Confirmar</button>
+  </div>
+</div>
+
+<!-- ── Modal importar MPP ── -->
+<div class="modal-overlay" *ngIf="mppModalOpen" (click)="onMppOverlayClick($event)">
+  <div class="modal-box">
+
+    <div class="modal-header">
+      <h3 class="modal-title">Importar desde MS Project</h3>
+      <button class="btn-modal-close" (click)="cerrarModalMpp()" [disabled]="importando" title="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="field">
+        <label class="field-label">Archivo MS Project (.mpp) *</label>
+        <input
+          type="file"
+          class="field-input"
+          accept=".mpp"
+          (change)="onMppFileChange($event)"
+          [disabled]="importando"
+        />
+        <span class="field-hint" *ngIf="mppFile">{{ mppFile.name }}</span>
+      </div>
+
+      <div class="mpp-importing" *ngIf="importando">
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+        <p class="loading-text">Procesando archivo, por favor espere...</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" (click)="cerrarModalMpp()" [disabled]="importando">Cancelar</button>
+      <button class="btn-primary" (click)="importarMpp()" [disabled]="!mppFile || importando">
+        {{ importando ? 'Importando...' : 'Importar' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Modal crear / editar ── -->
+<div class="modal-overlay" *ngIf="modalOpen" (click)="onOverlayClick($event)">
+  <div class="modal-box">
+
+    <div class="modal-header">
+      <h3 class="modal-title">Editar Actividad</h3>
+      <button class="btn-modal-close" (click)="cerrarModal()" title="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Actividad -->
+      <div class="field">
+        <label class="field-label">Actividad *</label>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="formActividad"
+          placeholder="Descripción de la actividad..."
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Fechas programadas -->
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Inicio Programado</label>
+          <input
+            type="date"
+            class="field-input"
+            [class.field-input-readonly]="editandoAct?.esPadre"
+            [(ngModel)]="formPlannedStart"
+            [disabled]="!!editandoAct?.esPadre"
+          />
+        </div>
+        <div class="field">
+          <label class="field-label">Fin Programado</label>
+          <input
+            type="date"
+            class="field-input"
+            [class.field-input-readonly]="editandoAct?.esPadre"
+            [ngModel]="formPlannedEnd"
+            (ngModelChange)="onFormPlannedEndChange($event)"
+            [disabled]="!!editandoAct?.esPadre"
+          />
+        </div>
+      </div>
+
+      <!-- Avance -->
+      <div class="field">
+        <label class="field-label">Avance (%)</label>
+        <div class="avance-btn-group">
+          <button type="button"
+            class="avance-opt avance-opt-0"
+            [class.avance-opt-active]="formProgress === 0"
+            (click)="onProgressChange(0)">
+            0%
+          </button>
+          <button type="button"
+            class="avance-opt avance-opt-50"
+            [class.avance-opt-active]="formProgress === 50"
+            (click)="onProgressChange(50)">
+            50%
+          </button>
+          <button type="button"
+            class="avance-opt avance-opt-100"
+            [class.avance-opt-active]="formProgress === 100"
+            (click)="onProgressChange(100)">
+            100%
+          </button>
+        </div>
+        <div class="avance-preview-bar">
+          <div
+            class="avance-bar-fill"
+            [ngClass]="getAvanceColor(+formProgress)"
+            [style.width.%]="formProgress"
+          ></div>
+        </div>
+      </div>
+
+      <!-- Predecesoras -->
+      <div class="field pred-field" *ngIf="modalMode === 'editar'">
+        <label class="field-label">Predecesoras</label>
+
+        <!-- Chips de predecesoras seleccionadas -->
+        <div class="pred-chips" *ngIf="formPredecesoras.length">
+          <span class="pred-chip" *ngFor="let pid of formPredecesoras">
+            <span class="pred-chip-label">{{ getPredChipLabel(pid) }}</span>
+            <button class="pred-chip-remove" type="button" (click)="quitarPredecesora(pid)" title="Quitar">×</button>
+          </span>
+        </div>
+
+        <!-- Input de búsqueda -->
+        <input
+          #predInput
+          type="text"
+          class="field-input"
+          placeholder="Buscar por # o nombre..."
+          [(ngModel)]="predSearch"
+          (ngModelChange)="predDropdownIdx = -1"
+          (keydown)="onPredKeydown($event)"
+          autocomplete="off"
+        />
+
+        <!-- Resultados de búsqueda -->
+        <div class="pred-results" *ngIf="predSearch.trim() && filtrarPredecesoras().length">
+          <button
+            class="pred-result-item"
+            [class.pred-result-active]="predDropdownIdx === i && !item.disabled"
+            [class.pred-result-disabled]="item.disabled"
+            [disabled]="item.disabled"
+            type="button"
+            *ngFor="let item of filtrarPredecesoras(); let i = index"
+            (click)="agregarPredecesora(item.act)"
+          >
+            <span class="pred-result-idx">{{ getDisplayIndex(item.act) }}</span>
+            <span class="pred-result-name">{{ item.act.activityDescription }}</span>
+            <span *ngIf="item.disabled" class="pred-result-hint">{{ item.hint }}</span>
+          </button>
+        </div>
+        <p class="pred-empty" *ngIf="predSearch.trim() && !filtrarPredecesoras().length">
+          Sin resultados
+        </p>
+      </div>
+
+      <!-- Fin Real (solo en editar) -->
+      <div class="field" *ngIf="modalMode === 'editar'">
+        <label class="field-label">
+          Fecha Real de Fin
+          <span *ngIf="formProgress === 100" class="field-label-required">*</span>
+        </label>
+        <input
+          type="date"
+          class="field-input"
+          [class.field-input-error]="errorFechaReal"
+          [(ngModel)]="formActualEnd"
+          (ngModelChange)="errorFechaReal = false"
+        />
+        <span class="field-error" *ngIf="errorFechaReal">
+          La fecha real de fin es obligatoria cuando el avance es 100%
+        </span>
+        <span class="field-hint" *ngIf="!errorFechaReal">Dejar vacío si la actividad no ha culminado</span>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button
+        *ngIf="modalMode === 'editar'"
+        class="btn-danger modal-btn-left"
+        (click)="eliminarDesdeModal()"
+        [disabled]="guardando"
+      >
+        Eliminar
+      </button>
+      <button
+        *ngIf="modalMode === 'editar'"
+        class="btn-ghost-verde"
+        (click)="culminarDesdeModal()"
+        [disabled]="guardando"
+      >
+        {{ editandoAct?.actualEndDate ? 'Desculminar' : 'Culminar' }}
+      </button>
+      <button class="btn-ghost" (click)="cerrarModal()" [disabled]="guardando">Cancelar</button>
+      <button class="btn-primary" (click)="guardar()" [disabled]="guardando">
+        {{ guardando ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Modal Nueva Actividad (creación masiva) ── -->
+<div class="modal-overlay" *ngIf="masivoModalOpen" (click)="onMasivoOverlayClick($event)">
+  <div class="modal-box modal-box-masivo">
+
+    <div class="modal-header" style="border-bottom: 1px solid #E2E8F0; padding-bottom: 12px;">
+      <h3 class="modal-title">Nueva Actividad</h3>
+      <button class="btn-modal-close" (click)="cerrarModalMasivo()" [disabled]="guardandoMasivo" title="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body" style="padding: 0; overflow: hidden;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 1px solid #E2E8F0;">
+            <th style="width:35px; padding:8px 6px; text-align:center; font-size:11px; font-weight:600; text-transform:uppercase; color:#64748B;">#</th>
+            <th style="padding:8px 6px; text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; color:#64748B;">Actividad</th>
+            <th style="width:130px; padding:8px 6px; text-align:center; font-size:11px; font-weight:600; text-transform:uppercase; color:#64748B;">Inicio Prog.</th>
+            <th style="width:130px; padding:8px 6px; text-align:center; font-size:11px; font-weight:600; text-transform:uppercase; color:#64748B;">Fin Prog.</th>
+            <th style="width:36px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let fila of masivoFilas; let i = index; let even = even"
+              [style.background]="even ? '#F8FAFC' : '#ffffff'">
+            <td style="width:35px; padding:5px 6px; text-align:center; font-size:13px; color:#94A3B8; font-variant-numeric:tabular-nums;">
+              {{ i + 1 }}
+            </td>
+            <td style="padding:5px 6px;">
+              <input type="text"
+                class="masivo-input"
+                [(ngModel)]="fila.nombre"
+                placeholder="Nombre de la actividad..."
+              />
+            </td>
+            <td style="width:130px; padding:5px 6px;">
+              <input type="date"
+                class="masivo-input masivo-input-date"
+                [(ngModel)]="fila.inicioProgramado"
+              />
+            </td>
+            <td style="width:130px; padding:5px 6px;">
+              <input type="date"
+                class="masivo-input masivo-input-date"
+                [(ngModel)]="fila.finProgramado"
+              />
+            </td>
+            <td style="width:36px; padding:5px 6px; text-align:center;">
+              <button type="button"
+                class="masivo-del-btn"
+                (click)="eliminarFilaMasivo(i)"
+                [disabled]="masivoFilas.length <= 1 || guardandoMasivo"
+                title="Eliminar fila">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal-footer" style="border-top:1px solid #E2E8F0; padding-top:16px; justify-content:space-between; align-items:center;">
+      <button type="button"
+        class="masivo-btn-agregar"
+        (click)="agregarFilaMasivo()"
+        [disabled]="guardandoMasivo">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Agregar fila
+      </button>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn-ghost" (click)="cerrarModalMasivo()" [disabled]="guardandoMasivo">Cancelar</button>
+        <button class="btn-primary" (click)="guardarMasivo()" [disabled]="guardandoMasivo">
+          {{ guardandoMasivo ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Modal cascada ── -->
+<div class="modal-overlay" *ngIf="cascadaModalOpen">
+  <div class="modal-box cascada-modal-box">
+
+    <div class="modal-header cascada-modal-header">
+      <h3 class="modal-title cascada-modal-title">Cambios de cascada</h3>
+      <button class="btn-modal-close cascada-close-btn" (click)="cancelarCascada()"
+              [disabled]="aplicandoCascada" title="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p class="cascada-desc">
+        Las siguientes actividades serán reprogramadas en cascada a partir de las predecesoras modificadas:
+      </p>
+      <div class="cascada-table-wrap">
+        <table class="cascada-table">
+          <thead>
+            <tr>
+              <th>Actividad</th>
+              <th>Inicio ant → nuevo</th>
+              <th>Fin ant → nuevo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of cascadaPreview?.cambios">
+              <td class="cascada-td-act">{{ c.activityDescription }}</td>
+              <td class="cascada-td-fecha">
+                <div class="cascada-fecha-inner">
+                  <span class="cascada-fecha-ant">{{ formatDate(c.inicioAnterior) }}</span>
+                  <span class="cascada-arrow">↓</span>
+                  <span class="cascada-fecha-nueva">{{ formatDate(c.inicioNuevo) }}</span>
+                </div>
+              </td>
+              <td class="cascada-td-fecha">
+                <div class="cascada-fecha-inner">
+                  <span class="cascada-fecha-ant">{{ formatDate(c.finAnterior) }}</span>
+                  <span class="cascada-arrow">↓</span>
+                  <span class="cascada-fecha-nueva">{{ formatDate(c.finNuevo) }}</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" (click)="cancelarCascada()" [disabled]="aplicandoCascada">Cancelar</button>
+      <button class="btn-primary" (click)="aplicarCascada()" [disabled]="aplicandoCascada">
+        {{ aplicandoCascada ? 'Aplicando...' : 'Aplicar cambios' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Modal Gantt (nivel 1) ── -->
+<div class="modal-overlay" *ngIf="ganttModalAct" (click)="onGanttOverlayClick($event)">
+  <div class="gantt-modal-box"
+       [style.--g-accent]="getGanttAccentColor(ganttModalAct!)">
+
+    <div class="gantt-modal-header">
+      <div class="gantt-modal-title-wrap">
+        <h3 class="gantt-modal-title">{{ ganttModalAct!.activityDescription }}</h3>
+        <ng-container *ngIf="getGanttRange(getGanttChildren(ganttModalAct!)) as r">
+          <span class="gantt-range-label gantt-range-label-header">
+            {{ formatDate(r.min.toISOString()) }} → {{ formatDate(r.max.toISOString()) }}
+          </span>
+        </ng-container>
+      </div>
+      <button class="btn-modal-close gantt-modal-close-btn" (click)="cerrarGanttModal()" title="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="gantt-modal-body">
+      <ng-container *ngIf="getGanttChildren(ganttModalAct!) as kids">
+        <ng-container *ngIf="getGanttRange(kids) as range; else ganttModalSinFechas">
+          <ng-container *ngIf="getGanttWeeks(range) as weeks">
+
+            <div class="gantt-layout">
+
+              <!-- ── Columna de nombres (fija) ── -->
+              <div class="gantt-names-col">
+                <div class="gantt-names-spacer"></div>
+                <div
+                  class="gantt-name-row"
+                  *ngFor="let kid of kids"
+                  [title]="kid.activityDescription"
+                >{{ kid.activityDescription }}</div>
+              </div>
+
+              <!-- ── Columna de barras (scrollable) ── -->
+              <div class="gantt-chart-col">
+                <div class="gantt-chart-inner" [style.width.px]="getGanttChartWidth(weeks)">
+
+                  <!-- Fila 1: Meses -->
+                  <div class="gantt-scale-months">
+                    <div
+                      class="gantt-month-cell"
+                      *ngFor="let month of getGanttMonths(weeks)"
+                      [style.width.px]="month.spanWeeks * 50"
+                    >{{ month.label }}</div>
+                  </div>
+
+                  <!-- Fila 2: Semanas -->
+                  <div class="gantt-scale-weeks">
+                    <div
+                      class="gantt-week-cell"
+                      *ngFor="let week of weeks"
+                      [class.gantt-week-today]="week.isCurrentWeek"
+                    >{{ week.label }}</div>
+                  </div>
+
+                  <!-- Área de barras -->
+                  <div class="gantt-bars-area">
+                    <!-- Línea HOY -->
+                    <div
+                      class="gantt-today-line"
+                      *ngIf="getTodayPosition(range, weeks) as todayLeft"
+                      [style.left]="todayLeft"
+                    ></div>
+                    <!-- Una fila por actividad hijo -->
+                    <div class="gantt-bar-row" *ngFor="let kid of kids">
+                      <div
+                        class="gantt-bar-container"
+                        [ngStyle]="getBarLayerStyle(kid, weeks)"
+                      >
+                        <div class="gantt-bar-bg"
+                             [style.background]="getGanttBarColorAlpha(ganttModalAct!)"></div>
+                        <div class="gantt-bar-fill"
+                             [style.width.%]="getAvance(kid)"
+                             [style.background]="getGanttAccentColor(ganttModalAct!)"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+
+          </ng-container>
+        </ng-container>
+        <ng-template #ganttModalSinFechas>
+          <p class="gantt-no-data">Sin fechas programadas en este grupo</p>
+        </ng-template>
+      </ng-container>
+    </div>
+
+  </div>
+</div>

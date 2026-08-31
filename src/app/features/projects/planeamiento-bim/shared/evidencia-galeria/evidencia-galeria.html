@@ -1,0 +1,53 @@
+<div class="bim-card">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">
+        <i [class]="icono" class="title-icon"></i> {{ titulo }}
+      </h3>
+      <p class="card-subtitle">{{ subtitulo }}</p>
+    </div>
+
+    <label class="btn-primary-udp file-upload-btn" *ngIf="editable">
+      <i class="ti ti-upload"></i> {{ uploading ? 'Subiendo...' : 'SUBIR FOTO(S)' }}
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        (change)="onFilesSelected($event)"
+        [disabled]="uploading"
+        style="display: none;"
+      />
+    </label>
+  </div>
+
+  <!-- Error (F9) -->
+  <div *ngIf="error" class="bim-alert bim-alert--danger">
+    <i class="ti ti-alert-triangle-filled alert-icon"></i>
+    <div class="alert-content"><strong>Error:</strong> {{ error }}</div>
+    <button type="button" class="btn-retry" (click)="retry.emit()">
+      <i class="ti ti-refresh"></i> Reintentar
+    </button>
+  </div>
+
+  <!-- Skeleton loading (F8) -->
+  <div *ngIf="loading && !error" class="skeleton-gallery">
+    <div class="skeleton-card-ph" *ngFor="let i of [1, 2, 3, 4]"></div>
+  </div>
+
+  <div class="card-body" *ngIf="!loading && !error">
+    <div *ngIf="!evidencias || evidencias.length === 0" class="empty-state">
+      <i class="ti ti-photo-off empty-icon"></i>
+      <p class="empty-title">{{ emptyTitulo }}</p>
+      <p class="empty-sub">{{ emptySub }}</p>
+    </div>
+
+    <div *ngIf="evidencias && evidencias.length > 0" class="gallery-grid">
+      <div *ngFor="let foto of evidencias" class="gallery-card">
+        <img [src]="foto.url" [alt]="titulo" class="gallery-img" />
+        <div class="gallery-meta">
+          {{ foto.createdDateTime | date:'dd/MM/yyyy HH:mm' }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

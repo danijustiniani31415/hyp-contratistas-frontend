@@ -1,0 +1,32 @@
+<app-abril-modal-panel
+  [titulo]="'Historial — ' + item.tipoDescripcion"
+  icono="ti-history"
+  variant="teal"
+  width="520px"
+  (closeModal)="close()">
+
+  <div class="flex flex-col gap-2">
+    <div *ngFor="let h of historial" class="border border-gray-200 rounded-lg p-3 flex flex-col gap-1">
+      <a [href]="fileUrl(h.archivoUrl)" target="_blank"
+        class="text-sm text-[var(--color-abril-standard)] hover:underline inline-flex items-center gap-1 truncate">
+        <i class="ti ti-file"></i> {{ h.originalFileName || 'Ver archivo' }}
+      </a>
+      <span class="text-xs text-gray-500" *ngIf="h.fechaVencimiento">
+        Vencía: {{ h.fechaVencimiento | date: 'dd/MM/yyyy' }}
+      </span>
+      <span class="text-[11px] text-gray-400">
+        Reemplazado el {{ h.createdDateTime | date: 'dd/MM/yyyy HH:mm' }}
+        <ng-container *ngIf="h.createdUserName"> por {{ h.createdUserName }}</ng-container>
+      </span>
+      <span class="text-[11px] text-gray-400 italic" *ngIf="h.motivo">{{ h.motivo }}</span>
+    </div>
+
+    <p *ngIf="loaded && historial.length === 0" class="text-center text-sm text-gray-400 italic py-6">
+      Sin versiones anteriores.
+    </p>
+  </div>
+
+  <div modalFooter class="flex justify-end w-full">
+    <button type="button" (click)="close()" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Cerrar</button>
+  </div>
+</app-abril-modal-panel>

@@ -1,0 +1,94 @@
+<app-base-modal *ngIf="open" [title]="title" width="w-[860px]" (closeModal)="close()">
+  <div class="form-wrapper" *ngIf="documento">
+    <div class="info-grid">
+      <div>
+        <span class="info-label">Proyecto</span>
+        <span class="info-value">{{ documento.proyectoNombre }}</span>
+      </div>
+      <div>
+        <span class="info-label">Período</span>
+        <span class="info-value">{{ documento.mes }}/{{ documento.anio }}</span>
+      </div>
+      <div>
+        <span class="info-label">Tipo</span>
+        <span class="info-value">{{ documento.tipo }}</span>
+      </div>
+      <div>
+        <span class="info-label">Estado actual</span>
+        <span class="info-value">{{ documento.estado }}</span>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label class="field-label">Vigencia *</label>
+        <input type="date" class="field-input" [(ngModel)]="vigencia" />
+      </div>
+      <div>
+        <label class="field-label">Observaciones</label>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="observaciones"
+          placeholder="Comentarios para el contratista…"
+        />
+      </div>
+    </div>
+
+    <div class="workers-section">
+      <div class="workers-header">
+        <label class="check-row">
+          <input
+            type="checkbox"
+            [checked]="allChecked"
+            [indeterminate]="!allChecked && !noneChecked"
+            (change)="toggleAll($any($event.target).checked)"
+          />
+          <span>Marcar todos</span>
+        </label>
+        <div class="conteo">
+          <span class="chip-green">{{ totalAprobados }} aprobados</span>
+          <span class="chip-orange">{{ totalRechazados }} rechazados</span>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>DNI</th>
+              <th>Apellidos y Nombres</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="workersState.length === 0">
+              <td colspan="3" class="empty-row">Sin trabajadores asociados al documento.</td>
+            </tr>
+            <tr
+              *ngFor="let s of workersState; let i = index"
+              [class.row-rechazado]="!s.aprobado"
+            >
+              <td>
+                <input
+                  type="checkbox"
+                  [checked]="s.aprobado"
+                  (change)="toggleWorker(i)"
+                />
+              </td>
+              <td>{{ s.worker.dni }}</td>
+              <td>{{ s.worker.apellidoNombre }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Confirmar' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

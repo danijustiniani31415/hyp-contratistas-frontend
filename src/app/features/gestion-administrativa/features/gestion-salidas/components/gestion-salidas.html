@@ -1,0 +1,582 @@
+﻿<app-abril-page-header
+  [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
+  titulo="Gestión de Salidas"
+  [subtitulo]="esTesorero
+    ? 'Reembolsos firmados por la jefatura, listos para pagar.'
+    : 'Aprobación, rendición y reembolso de solicitudes de salida.'"
+  [botonSecundario]="{ label: 'Exportar a excel', icono: 'ti-download' }"
+  (secondaryClick)="exportarExcel()"
+  [tabs]="tabs">
+
+  <!-- Toggle "Hoy": acota la tabla al día en curso y arranca encendido. Va aquí, al costado del
+       botón "Filtros" y no dentro del modal, porque es el filtro que más se prende y apaga y su
+       estado tiene que leerse de un vistazo sin abrir nada. -->
+  <button tabsExtra type="button" class="hoy-toggle" [class.hoy-toggle--on]="soloHoy"
+          (click)="toggleSoloHoy()"
+          [title]="soloHoy
+            ? 'Mostrando solo las salidas de hoy — clic para ver todas las fechas'
+            : 'Mostrar solo las salidas de hoy'">
+    <i class="ti ti-calendar-event text-[14px]"></i>
+    <span class="btn-label">Hoy</span>
+  </button>
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden pb-[64px]">
+
+  <!-- ── Acciones bulk sobre la selección ──────────────────────────────────
+       Siempre visibles (deshabilitadas si no aplica), estilo neutro con
+       ícono de color — mismo lenguaje que el botón "Filtros". -->
+  <div class="flex flex-wrap items-center gap-2">
+    <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">{{ selectedIds.size }} seleccionada{{ selectedIds.size === 1 ? '' : 's' }}</span>
+
+    <!-- Acciones de aprobación / rendición: no son de Tesorería, que solo paga. -->
+    <ng-container *ngIf="!esTesorero">
+    <button
+      type="button"
+      abrilBulkAction="default"
+      (click)="aprobarBulk()"
+      [disabled]="!puedeAprobarSeleccion"
+      [title]="aprobacionIncluyePropia ? 'No puedes aprobar tus propias salidas — deselecciona las tuyas' : null">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+      Aprobar<span *ngIf="puedeAprobarSeleccion"> ({{ selectedPendientes.length }})</span>
+    </button>
+
+    <button
+      type="button"
+      abrilBulkAction="danger"
+      (click)="rechazarBulk()"
+      [disabled]="!puedeRechazarSeleccion"
+      [title]="rechazoIncluyePropia ? 'No puedes rechazar tus propias salidas — deselecciona las tuyas' : null">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>
+      </svg>
+      Rechazar<span *ngIf="puedeRechazarSeleccion"> ({{ selectedRechazables.length }})</span>
+    </button>
+
+    <button
+      type="button"
+      abrilBulkAction="primary"
+      (click)="marcarRendidasBulk()"
+      [disabled]="selectedRendibles.length === 0">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
+      </svg>
+      Marcar como rendidas<span *ngIf="selectedRendibles.length > 0"> ({{ selectedRendibles.length }})</span>
+    </button>
+
+    <button
+      type="button"
+      abrilBulkAction="default"
+      (click)="rendirMesAnterior()"
+      [title]="rendicionMesAnteriorFiltrada
+        ? 'Rinde las salidas de ' + mesAnteriorLabel + ' que dejan ver los filtros activos y ya tengan sus capturas'
+        : 'Rinde todas las salidas de ' + mesAnteriorLabel + ' que ya tengan sus capturas'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2">
+        <rect x="3" y="4" width="18" height="17" rx="2"/>
+        <path stroke-linecap="round" d="M8 2v4M16 2v4M3 10h18"/>
+      </svg>
+      {{ rendirMesAnteriorLabel }}
+    </button>
+
+    <button
+      type="button"
+      abrilBulkAction="danger"
+      (click)="cancelarBulk()"
+      [disabled]="selectedCancelables.length === 0"
+      title="Solo puedes cancelar tus propias solicitudes pendientes">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
+        <circle cx="12" cy="12" r="9"/>
+        <path stroke-linecap="round" d="M6.3 6.3l11.4 11.4"/>
+      </svg>
+      Cancelar<span *ngIf="selectedCancelables.length > 0"> ({{ selectedCancelables.length }})</span>
+    </button>
+
+    <!-- ── Reembolso: solo sobre salidas rendidas con el Consolidado del S10 adjunto ── -->
+    <span class="w-px h-[22px] bg-gray-200 mx-1"></span>
+
+    <button
+      type="button"
+      abrilBulkAction="default"
+      (click)="aprobarReembolsoBulk()"
+      [disabled]="!puedeDecidirReembolso"
+      [title]="reembolsoIncluyePropia
+        ? 'No puedes aprobar el reembolso de tus propias salidas — deselecciona las tuyas'
+        : 'Solo salidas rendidas con el Consolidado del S10 adjunto'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+      Aprobar reembolso<span *ngIf="puedeDecidirReembolso"> ({{ selectedReembolsoRevisables.length }})</span>
+    </button>
+
+    <button
+      type="button"
+      abrilBulkAction="danger"
+      (click)="rechazarReembolsoBulk()"
+      [disabled]="!puedeDecidirReembolso"
+      [title]="reembolsoIncluyePropia
+        ? 'No puedes rechazar el reembolso de tus propias salidas — deselecciona las tuyas'
+        : 'Se le pedirá una observación para que el trabajador sepa qué corregir'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
+        <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
+      </svg>
+      Rechazar reembolso<span *ngIf="puedeDecidirReembolso"> ({{ selectedReembolsoRevisables.length }})</span>
+    </button>
+
+    <button
+      type="button"
+      abrilBulkAction="primary"
+      (click)="firmarBulk()"
+      [disabled]="selectedFirmables.length === 0"
+      title="Estampa tu firma en la planilla de rendición (el PDF original se conserva)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 20h18M4.5 16.5 16 5a2.1 2.1 0 0 1 3 3L7.5 19.5 3 21l1.5-4.5Z"/>
+      </svg>
+      Firmar<span *ngIf="selectedFirmables.length > 0"> ({{ selectedFirmables.length }})</span>
+    </button>
+    </ng-container>
+
+    <!-- ── Tesorería: lo único que hace en esta pantalla ── -->
+    <button
+      *ngIf="esTesorero"
+      type="button"
+      abrilBulkAction="primary"
+      (click)="marcarPagadasBulk()"
+      [disabled]="selectedPagables.length === 0"
+      title="Solo se puede marcar como pagado lo que la jefatura ya firmó">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <rect x="2.5" y="5.5" width="19" height="13" rx="2"/>
+        <path stroke-linecap="round" d="M2.5 10h19M6 15h4"/>
+      </svg>
+      Marcar como pagadas<span *ngIf="selectedPagables.length > 0"> ({{ selectedPagables.length }})</span>
+    </button>
+  </div>
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <!-- Sin caja/borde propio: ocupa el máximo espacio disponible. flex-1 + scroll
+       interno propio (no de toda la página) para que filtros/acciones/paginador
+       queden siempre visibles sin necesidad de bajar la página entera. -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>
+            <input
+              type="checkbox"
+              [checked]="allSelected"
+              [disabled]="salidas.length === 0"
+              (change)="toggleSelectAll()"
+              class="cursor-pointer disabled:cursor-not-allowed"
+              style="accent-color:var(--color-abril-accent)"
+              title="Seleccionar / deseleccionar todo" />
+          </th>
+          <th>#</th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('trabajador')" title="Ordenar por trabajador">
+            <span class="inline-flex items-center gap-1">Trabajador
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('trabajador')">{{ sortDirOf('trabajador') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('area')" title="Ordenar por área">
+            <span class="inline-flex items-center gap-1">Área
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('area')">{{ sortDirOf('area') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('revisorNombre')" title="Ordenar por revisor">
+            <span class="inline-flex items-center gap-1">Revisor
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('revisorNombre')">{{ sortDirOf('revisorNombre') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('fechaSalida')" title="Ordenar por fecha">
+            <span class="inline-flex items-center gap-1">Fecha
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('fechaSalida')">{{ sortDirOf('fechaSalida') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('horaSalida')" title="Ordenar por hora de salida">
+            <span class="inline-flex items-center gap-1">Salida
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('horaSalida')">{{ sortDirOf('horaSalida') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('horaRetorno')" title="Ordenar por hora de retorno">
+            <span class="inline-flex items-center gap-1">Retorno
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('horaRetorno')">{{ sortDirOf('horaRetorno') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('motivo')" title="Ordenar por motivo">
+            <span class="inline-flex items-center gap-1">Motivo
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('motivo')">{{ sortDirOf('motivo') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('lugarOrigen')" title="Ordenar por origen">
+            <span class="inline-flex items-center gap-1">Origen
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('lugarOrigen')">{{ sortDirOf('lugarOrigen') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('lugarDestino')" title="Ordenar por destino">
+            <span class="inline-flex items-center gap-1">Destino
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('lugarDestino')">{{ sortDirOf('lugarDestino') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('estadoAprobacion')" title="Ordenar por estado">
+            <span class="inline-flex items-center gap-1">Estado
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('estadoAprobacion')">{{ sortDirOf('estadoAprobacion') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('estadoRendicion')" title="Ordenar por rendición">
+            <span class="inline-flex items-center gap-1">Rendición
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('estadoRendicion')">{{ sortDirOf('estadoRendicion') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('estadoReembolso')" title="Ordenar por reembolso">
+            <span class="inline-flex items-center gap-1">Reembolso
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('estadoReembolso')">{{ sortDirOf('estadoReembolso') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('createdAt')" title="Ordenar por fecha de registro">
+            <span class="inline-flex items-center gap-1">Registrada
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('createdAt')">{{ sortDirOf('createdAt') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th *ngIf="esRecepcion"
+              title="Solo visible para usuarios con rol USUARIO DE RECEPCIÓN">
+            Hora real salida
+          </th>
+          <th *ngIf="esRecepcion"
+              title="Solo visible para usuarios con rol USUARIO DE RECEPCIÓN">
+            Hora real retorno
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="salidas.length === 0">
+          <td [attr.colspan]="esRecepcion ? 17 : 15" class="text-center py-[40px] text-gray-400 text-sm">
+            No hay solicitudes registradas.
+          </td>
+        </tr>
+
+        <tr
+          *ngFor="let s of salidas; let i = index"
+          (click)="onRowClick($event, i)"
+          title="Ver detalle (Shift+clic para seleccionar)"
+          class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
+          [style.background]="selectedIds.has(s.id) ? '#EAF6FF' : null"
+          style="border-color:var(--color-abril-border)">
+
+          <!-- Selección (Shift+clic para rango). select-none evita que Shift resalte texto. -->
+          <td class="select-none" (click)="onSelectClick($event, i)">
+            <input
+              type="checkbox"
+              [checked]="selectedIds.has(s.id)"
+              class="cursor-pointer pointer-events-none"
+              style="accent-color:var(--color-abril-accent)" />
+          </td>
+
+          <td class="text-gray-500">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+
+          <td class="text-gray-700 whitespace-nowrap">{{ s.trabajador | titleCase }}</td>
+
+          <!-- Área más baja del trabajador. El detalle muestra el árbol completo.
+               Sin titleCase: area_item_name ya viene con su capitalización correcta y el
+               pipe rompería siglas como "SSOMA". -->
+          <td class="text-gray-500 whitespace-nowrap">{{ s.area || '—' }}</td>
+
+          <!-- Jefe/revisor al que se le notificó la solicitud (nombre, no correo). -->
+          <td class="text-gray-500 whitespace-nowrap">{{ (s.revisorNombre | titleCase) || '—' }}</td>
+
+          <td class="text-gray-700 whitespace-nowrap">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
+
+          <td class="text-gray-700">
+            {{ s.horaSalida }}
+            <span *ngIf="s.trayectosCount > 1"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
+                  style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
+                  [title]="s.trayectosCount + ' trayectos'">
+              +{{ s.trayectosCount - 1 }}
+            </span>
+          </td>
+
+          <td class="text-gray-400">
+            {{ s.horaRetorno ?? '—' }}
+            <span *ngIf="s.trayectosCount > 1"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
+                  style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
+                  [title]="s.trayectosCount + ' trayectos'">
+              +{{ s.trayectosCount - 1 }}
+            </span>
+          </td>
+
+          <td class="text-gray-700">
+            {{ s.motivo | titleCase }}
+            <span *ngIf="s.trayectosCount > 1"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
+                  style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
+                  [title]="s.trayectosCount + ' trayectos'">
+              +{{ s.trayectosCount - 1 }}
+            </span>
+          </td>
+
+          <td class="text-gray-500">
+            {{ (s.lugarOrigen | titleCase) || '—' }}
+            <span *ngIf="s.trayectosCount > 1"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
+                  style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
+                  [title]="s.trayectosCount + ' trayectos'">
+              +{{ s.trayectosCount - 1 }}
+            </span>
+          </td>
+
+          <td class="text-gray-500">
+            {{ (s.lugarDestino | titleCase) || '—' }}
+            <span *ngIf="s.trayectosCount > 1"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
+                  style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
+                  [title]="s.trayectosCount + ' trayectos'">
+              +{{ s.trayectosCount - 1 }}
+            </span>
+          </td>
+
+          <td >
+            <app-status-badge
+              [text]="s.estadoAprobacion"
+              [bgColor]="aprobacionColors(s.estadoAprobacion).bg"
+              [textColor]="aprobacionColors(s.estadoAprobacion).text" />
+          </td>
+
+          <td >
+            <!-- No aprobada → guion -->
+            <span *ngIf="s.estadoAprobacion !== 'Aprobado'" class="text-gray-300">—</span>
+
+            <!-- Aprobada y ya rendida → badge + acceso al Consolidado del S10 -->
+            <div *ngIf="s.estadoAprobacion === 'Aprobado' && s.estadoRendicion === 'Rendido'"
+                 class="inline-flex items-center gap-1.5">
+              <app-status-badge
+                [text]="s.estadoRendicion"
+                [bgColor]="rendicionColors(s.estadoRendicion).bg"
+                [textColor]="rendicionColors(s.estadoRendicion).text" />
+              <button
+                type="button"
+                (click)="abrirConsolidado(s, $event)"
+                [title]="s.consolidadoS10Url
+                  ? 'Consolidado del S10 adjunto — clic para reemplazarlo'
+                  : 'Adjuntar el PDF Consolidado del S10'"
+                class="consolidado-chip"
+                [class.consolidado-chip--on]="!!s.consolidadoS10Url">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                S10
+              </button>
+            </div>
+
+            <!-- Aprobada y no rendida + con capturas → badge (rendible vía selección) -->
+            <app-status-badge
+              *ngIf="esSeleccionable(s)"
+              [text]="s.estadoRendicion"
+              [bgColor]="rendicionColors(s.estadoRendicion).bg"
+              [textColor]="rendicionColors(s.estadoRendicion).text" />
+
+            <!-- Aprobada + no rendida pero INCOMPLETA (algún trayecto sin capturas) -->
+            <span
+              *ngIf="s.estadoAprobacion === 'Aprobado'
+                  && s.estadoRendicion === 'No rendido'
+                  && !s.puedeRendirse"
+              title="No se puede rendir: faltan capturas en al menos un trayecto"
+              class="inline-flex items-center gap-[6px] text-xs text-gray-500 italic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path stroke-linecap="round" d="M12 8v4m0 4h.01"/>
+              </svg>
+              Capturas incompletas
+            </span>
+          </td>
+
+          <!-- Reembolso: el visto bueno al gasto. Mientras no haya S10 adjunto no hay nada que
+               revisar, así que se muestra el motivo en vez de un badge "Pendiente" engañoso. -->
+          <td>
+            <div *ngIf="s.reembolsoRevisable || s.estadoReembolso !== 'Pendiente'"
+                 class="inline-flex items-center gap-1.5">
+              <app-status-badge
+                [text]="s.estadoReembolso"
+                [bgColor]="reembolsoColors(s.estadoReembolso).bg"
+                [textColor]="reembolsoColors(s.estadoReembolso).text"
+                [title]="s.estadoReembolso === 'Rechazado' && s.observacionReembolso
+                  ? 'Observación: ' + s.observacionReembolso
+                  : (s.reembolsoDecididoPor ? 'Revisado por ' + s.reembolsoDecididoPor : null)" />
+
+              <button
+                *ngIf="s.planillaFirmadaUrl"
+                type="button"
+                (click)="abrirPlanillaFirmada(s, $event)"
+                class="consolidado-chip consolidado-chip--on"
+                title="Abrir la planilla de rendición firmada">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 20h18M4.5 16.5 16 5a2.1 2.1 0 0 1 3 3L7.5 19.5 3 21l1.5-4.5Z"/>
+                </svg>
+                Firma
+              </button>
+            </div>
+
+            <span *ngIf="!s.reembolsoRevisable && s.estadoReembolso === 'Pendiente'"
+                  class="text-gray-300"
+                  [title]="s.estadoRendicion === 'Rendido'
+                    ? 'Falta adjuntar el Consolidado del S10 para poder revisar el reembolso'
+                    : 'El reembolso se revisa recién cuando la salida está rendida'">—</span>
+          </td>
+
+          <td class="text-gray-400 whitespace-nowrap">
+            {{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}
+          </td>
+
+          <!-- Hora real de salida (recepción). Con motivo de hora estimada no se registra. -->
+          <td *ngIf="esRecepcion"  (click)="$event.stopPropagation()">
+            <div *ngIf="!s.esHoraEstimada" class="w-[120px]" title="Registra la hora real en que la persona salió">
+              <app-time-picker
+                [showLabel]="false"
+                color="var(--color-abril-standard)"
+                [value]="horaSalidaRealInput(s)"
+                (valueChange)="guardarHoraSalidaReal(s, $event)" />
+            </div>
+            <span *ngIf="s.esHoraEstimada" class="text-gray-300"
+                  title="Motivo con hora estimada: no se registra hora real">—</span>
+          </td>
+
+          <!-- Hora real de retorno (recepción). Con motivo de hora estimada no se registra. -->
+          <td *ngIf="esRecepcion"  (click)="$event.stopPropagation()">
+            <div *ngIf="!s.esHoraEstimada" class="w-[120px]" title="Registra la hora real en que la persona retornó">
+              <app-time-picker
+                [showLabel]="false"
+                color="var(--color-abril-standard)"
+                [value]="horaRetornoRealInput(s)"
+                (valueChange)="guardarHoraRetornoReal(s, $event)" />
+            </div>
+            <span *ngIf="s.esHoraEstimada" class="text-gray-300"
+                  title="Motivo con hora estimada: no se registra hora real">—</span>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Paginador ─────────────────────────────────────────────────────────
+       Ancho limitado y alineado a la izquierda: nunca invade la esquina
+       inferior derecha donde vive el botón flotante. -->
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<app-fab *ngIf="!esTesorero" label="Solicitar salida" (clicked)="irASolicitarSalida()"></app-fab>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="flex flex-wrap gap-3">
+    <ng-container *ngFor="let level of areaLevels; let i = index">
+      <div class="w-[220px]">
+        <app-search-select
+          label="Área"
+          [showLabel]="i === 0"
+          [options]="level"
+          valueField="areaScopeId"
+          displayField="name"
+          [value]="selectedAreaNodes[i]?.areaScopeId"
+          (valueChange)="onAreaNodeChange(i, $event); onSearch()"
+          [fullText]="true"
+          [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'"
+        ></app-search-select>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Trabajador"
+      [options]="trabajadorOptions"
+      valueField="workerId"
+      displayField="nombreCompleto"
+      [value]="filters.workerId"
+      (valueChange)="filters.workerId = $event; onSearch()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Lugar de proyecto"
+      [options]="lugarProyectoOptions"
+      valueField="gaLugarId"
+      displayField="nombreDisplay"
+      [value]="filters.lugarProyectoId"
+      (valueChange)="filters.lugarProyectoId = $event; onSearch()">
+    </app-search-select>
+  </div>
+
+  <!-- Estado y rendición no le dicen nada a Tesorería: todo lo que ve está aprobado y rendido. -->
+  <div class="flex gap-3" *ngIf="!esTesorero">
+    <div class="flex-1">
+      <app-search-select
+        label="Estado"
+        [options]="estadoAprobacionOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filters.estadoAprobacion"
+        (valueChange)="filters.estadoAprobacion = $event; onSearch()">
+      </app-search-select>
+    </div>
+
+    <div class="flex-1">
+      <app-search-select
+        label="Rendición"
+        [options]="estadoRendicionOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filters.estadoRendicion"
+        (valueChange)="filters.estadoRendicion = $event; onSearch()">
+      </app-search-select>
+    </div>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Reembolso"
+      [options]="estadoReembolsoOptions"
+      valueField="value"
+      displayField="label"
+      [value]="filters.estadoReembolso"
+      (valueChange)="filters.estadoReembolso = $event; onSearch()">
+    </app-search-select>
+  </div>
+
+</app-filter-modal>
+
+<!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->
+<app-consolidado-s10-modal
+  *ngIf="consolidadoDe !== null"
+  [upload]="subirConsolidado"
+  [actual]="consolidadoActual"
+  (close)="cerrarConsolidado($event)" />
+
+<!-- ── Modal detalle de solicitud rendida ─────────────────────────────── -->
+<app-gestion-salida-detalle-modal
+  *ngIf="detalle"
+  [detalle]="detalle"
+  (close)="cerrarDetalle()" />
+
+<!-- ── Modal para registrar la firma la primera vez ────────────────────
+     Salta con el 409 de "Firmar": el usuario dibuja su firma sin salir de la pantalla y la
+     firma que había pedido se reintenta sola. -->
+<app-firma-registrar-modal
+  *ngIf="firmaModalAbierto"
+  (guardada)="onFirmaRegistrada()"
+  (cerrar)="cerrarFirmaModal()" />

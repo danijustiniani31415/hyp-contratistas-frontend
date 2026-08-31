@@ -1,0 +1,127 @@
+<app-base-modal [title]="'EDITAR ROL'" width="w-[640px]" (closeModal)="closeModal.emit()">
+  <div class="re-body">
+
+    <!-- Nombre del rol -->
+    <div class="re-field">
+      <label class="re-field-label">Nombre del rol</label>
+      <input
+        type="text"
+        [(ngModel)]="editedDescription"
+        placeholder="Nombre del rol"
+        class="re-input re-input--name"
+      />
+    </div>
+
+    <!-- Funcionalidades -->
+    <div class="re-features">
+
+      <!-- Header -->
+      <div class="re-features-header">
+        <label class="re-field-label">Funcionalidades asignadas</label>
+        <span class="re-count-badge">{{ checkedCount }} / {{ features.length }}</span>
+      </div>
+
+      <!-- Filtro por módulo -->
+      <div class="re-pills" *ngIf="modules.length > 0">
+        <button
+          type="button"
+          class="re-pill"
+          [class.re-pill--active]="selectedModuleId === null"
+          (click)="selectedModuleId = null"
+        >
+          Todos
+        </button>
+        <button
+          type="button"
+          *ngFor="let m of modules; trackBy: trackByModuleId"
+          class="re-pill"
+          [class.re-pill--active]="selectedModuleId === m.moduleId"
+          (click)="selectedModuleId = m.moduleId"
+        >
+          {{ m.moduleName }}
+        </button>
+      </div>
+
+      <!-- Buscador -->
+      <div class="re-search">
+        <i class="ti ti-search re-search-icon"></i>
+        <input
+          type="text"
+          placeholder="Buscar funcionalidad..."
+          [(ngModel)]="searchTerm"
+          class="re-search-input"
+        />
+      </div>
+
+      <!-- Seleccionar todos los visibles -->
+      <label *ngIf="!loading && filteredFeatures.length > 0" class="re-select-all">
+        <input
+          type="checkbox"
+          [checked]="allFeaturesChecked()"
+          [indeterminate]="someFeaturesChecked()"
+          (change)="toggleAll($any($event.target).checked)"
+        />
+        <span>Seleccionar todos los visibles</span>
+      </label>
+
+      <!-- Acordeón por módulo -->
+      <ng-container *ngIf="!loading; else loadingTpl">
+        <div class="re-accordion">
+          <div class="re-group" *ngFor="let g of visibleGroups; trackBy: trackByGroupId">
+
+            <button type="button" class="re-group-header" (click)="toggleExpand(g.moduleId)">
+              <i class="ti re-group-chevron" [ngClass]="isExpanded(g) ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+              <span class="re-group-name">{{ g.moduleName }}</span>
+              <span class="re-group-count" [class.re-group-count--active]="groupCheckedCount(g) > 0">
+                {{ groupCheckedCount(g) }}/{{ g.allItems.length }}
+              </span>
+            </button>
+
+            <div class="re-group-body" *ngIf="isExpanded(g)">
+              <label class="re-group-select-all" *ngIf="g.items.length > 1">
+                <input
+                  type="checkbox"
+                  [checked]="moduleAllChecked(g)"
+                  [indeterminate]="moduleSomeChecked(g)"
+                  (change)="toggleModule(g, $any($event.target).checked)"
+                />
+                <span>Seleccionar todos en {{ g.moduleName }}</span>
+              </label>
+
+              <label
+                class="re-item"
+                *ngFor="let f of g.items; trackBy: trackByFeatureId"
+                [title]="f.featureKey"
+              >
+                <input type="checkbox" [(ngModel)]="f.checked" class="re-item-checkbox" />
+                <span class="re-item-text">
+                  <span class="re-item-label">{{ f.label }}</span>
+                  <span class="re-item-key">{{ f.featureKey }}</span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <p class="re-empty" *ngIf="visibleGroups.length === 0">Sin resultados.</p>
+        </div>
+      </ng-container>
+
+      <ng-template #loadingTpl>
+        <div class="re-skeleton">
+          <div class="re-skeleton-line" *ngFor="let i of [1,2,3,4,5]"></div>
+        </div>
+      </ng-template>
+
+    </div>
+  </div>
+
+  <div class="re-footer">
+    <button type="button" class="btn-secondary-udp" (click)="closeModal.emit()">
+      Cancelar
+    </button>
+    <button type="button" class="btn-primary-udp" (click)="save()">
+      <i class="ti ti-device-floppy"></i>
+      <span>Guardar</span>
+    </button>
+  </div>
+</app-base-modal>

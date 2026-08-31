@@ -1,0 +1,317 @@
+/* ── STEPPER ─────────────────────────────────────────────── */
+/* Progreso siempre teal (--color-abril-standard), incluso en formularios
+   variant="blue" — es un indicador de avance, no un acento de marca. */
+.stepper {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  background: #fff;
+  border-bottom: 0.5px solid #e8e5df;
+  flex-shrink: 0;
+  gap: 0;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.step-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #d4d0c8;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #a8a59e;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.step--active .step-circle {
+  background: var(--color-abril-standard);
+  border-color: var(--color-abril-standard);
+  color: #fff;
+}
+
+.step--done .step-circle {
+  background: var(--color-abril-standard-light);
+  border-color: var(--color-abril-standard);
+  color: var(--color-abril-standard);
+}
+
+.step-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a8a59e;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.step--active .step-label { color: var(--color-abril-standard); }
+.step--done   .step-label { color: #5a5850; }
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: #e8e5df;
+  margin: 0 6px;
+  margin-bottom: 14px;
+  transition: background 0.2s;
+}
+
+.step-line--done { background: var(--color-abril-standard); }
+
+/* ── PASO BODY ───────────────────────────────────────────── */
+.paso-body {
+  padding: 16px;
+  display: block;
+}
+
+.paso-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a18;
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.paso-title i { color: var(--color-abril-logo-blue); }
+
+.mt-6 { margin-top: 1.2rem; }
+
+/* .abril-field / .abril-field-label / .abril-field-input son globales
+   (src/styles.css) — no reimplementar el label flotante aquí. */
+.abril-field { margin-bottom: 14px; }
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.aptitud-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.55rem;
+}
+
+.aptitud-option {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #374151;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.aptitud-option:hover {
+  background: #f9fafb;
+}
+
+.aptitud-option.selected {
+  border-color: var(--color-abril-logo-blue);
+  background: var(--color-abril-logo-blue-light);
+  color: #111827;
+  font-weight: 600;
+}
+
+.aptitud-option input[type='radio'] {
+  accent-color: var(--color-abril-logo-blue);
+}
+
+.interconsulta-box {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  padding: 0.75rem 0.95rem;
+  color: #9a3412;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.interconsulta-box input[type='checkbox'] {
+  accent-color: #f97316;
+}
+
+.restriction-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.restriction-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  border: 1px solid #fde68a;
+}
+
+.btn-remove {
+  background: transparent;
+  color: #92400e;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+
+.btn-remove:hover {
+  color: #ef4444;
+}
+
+.flex { display: flex; }
+.gap-2 { gap: 0.5rem; }
+
+.hint {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  padding: 0.25rem 0;
+}
+
+.examenes-table-wrapper {
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.examenes-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.examenes-table thead th {
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.examenes-table tbody td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.examen-name {
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+}
+
+.table-input {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  color: #111827;
+  background: #ffffff;
+}
+
+.table-input:focus {
+  outline: 0;
+  border-color: var(--color-abril-logo-blue);
+  box-shadow: 0 0 0 2px rgba(0, 93, 157, 0.18);
+}
+
+.empty-row {
+  text-align: center;
+  color: #9ca3af;
+  padding: 1.5rem;
+}
+
+/* ── FOOTER ──────────────────────────────────────────────── */
+/* El reparto Cancelar (izquierda) / Atrás-Siguiente-Guardar (derecha) y el
+   flex de .footer-nav ahora son globales ([modalFooter] en src/styles.css)
+   — no reimplementar acá. */
+
+.btn-ghost {
+  padding: 9px 14px;
+  border-radius: 9px;
+  border: 0.5px solid #d4d0c8;
+  background: transparent;
+  color: #8a8880;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 14px;
+  border-radius: 9px;
+  border: 0.5px solid #d4d0c8;
+  background: #fff;
+  color: #1a1a18;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: none;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) { background: var(--color-abril-logo-blue-hover); }
+.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── RESPONSIVE ≥768px ────────────────────────────────────── */
+@media (min-width: 768px) {
+  .stepper { padding: 16px 32px; max-width: 720px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+  .paso-body { padding: 24px 32px; max-width: 720px; margin: 0 auto; width: 100%; }
+  .form-row { flex-direction: row; gap: 16px; }
+  .form-row .abril-field { flex: 1; margin-bottom: 14px; }
+}

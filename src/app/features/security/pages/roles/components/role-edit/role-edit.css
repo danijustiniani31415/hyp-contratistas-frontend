@@ -1,0 +1,364 @@
+.re-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0.5rem 0 0.25rem 0;
+}
+
+/* ── Campo nombre del rol ───────────────────────────────────────── */
+.re-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.re-field-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.re-input {
+  height: 38px;
+  padding: 0 12px;
+  width: 100%;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #1E293B;
+  background: #FFFFFF;
+  outline: none;
+  transition: border-color 0.15s ease-in-out;
+}
+
+.re-input--name {
+  font-weight: 600;
+}
+
+.re-input:focus {
+  border-color: #2E6DB4;
+}
+
+/* ── Sección de funcionalidades ─────────────────────────────────── */
+.re-features {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.re-features-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.re-count-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #EDF4FB;
+  color: #1E3A5F;
+  border: 1px solid #CBD5E1;
+}
+
+/* ── Pills de módulo ────────────────────────────────────────────── */
+.re-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.re-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid #E2E8F0;
+  background: #F8FAFC;
+  color: #64748B;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease-in-out;
+}
+
+.re-pill:hover {
+  border-color: #2E6DB4;
+  color: #2E6DB4;
+  background: #EDF4FB;
+}
+
+.re-pill--active {
+  background: #EDF4FB;
+  border-color: #1E3A5F;
+  color: #1E3A5F;
+}
+
+/* ── Buscador ───────────────────────────────────────────────────── */
+.re-search {
+  position: relative;
+}
+
+.re-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94A3B8;
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+.re-search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px 0 34px;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #1E293B;
+  background: #FFFFFF;
+  outline: none;
+  transition: border-color 0.15s ease-in-out;
+}
+
+.re-search-input:focus {
+  border-color: #2E6DB4;
+  outline: 2px solid rgba(46, 109, 180, 0.2);
+}
+
+.re-search-input::placeholder {
+  color: #94A3B8;
+}
+
+/* ── Seleccionar todos (global) ─────────────────────────────────── */
+.re-select-all {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 6px 2px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.re-select-all input,
+.re-group-select-all input,
+.re-item-checkbox {
+  width: 15px;
+  height: 15px;
+  accent-color: #1E3A5F;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.re-select-all span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ── Acordeón ───────────────────────────────────────────────────── */
+.re-accordion {
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+  background: #FFFFFF;
+}
+
+.re-group {
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.re-group:last-child {
+  border-bottom: none;
+}
+
+.re-group-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 10px 14px;
+  background: #F8FAFC;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease-in-out;
+}
+
+.re-group-header:hover {
+  background: #EDF4FB;
+}
+
+.re-group-chevron {
+  font-size: 0.85rem;
+  color: #64748B;
+  flex-shrink: 0;
+}
+
+.re-group-name {
+  flex: 1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1E3A5F;
+}
+
+.re-group-count {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #F1F5F9;
+  color: #94A3B8;
+  white-space: nowrap;
+}
+
+.re-group-count--active {
+  background: #EDF4FB;
+  color: #1E3A5F;
+}
+
+.re-group-body {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+
+.re-group-select-all {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 6px 14px 6px 34px;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px dashed #F1F5F9;
+}
+
+.re-group-select-all span {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #94A3B8;
+  font-style: italic;
+}
+
+/* ── Ítem individual ────────────────────────────────────────────── */
+.re-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 7px 14px 7px 34px;
+  cursor: pointer;
+  transition: background 0.15s ease-in-out;
+}
+
+.re-item:hover {
+  background: #F8FAFC;
+}
+
+.re-item-checkbox {
+  margin-top: 2px;
+}
+
+.re-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.re-item-label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #1E293B;
+}
+
+.re-item-key {
+  font-size: 0.68rem;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  color: #94A3B8;
+  word-break: break-all;
+}
+
+.re-empty {
+  text-align: center;
+  color: #94A3B8;
+  font-size: 0.85rem;
+  padding: 2rem 1rem;
+}
+
+/* ── Skeleton loading (DESIGN-VICTOR.md §7) ────────────────────── */
+.re-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+@keyframes re-shimmer {
+  0% { background-position: -400% 0; }
+  100% { background-position: 400% 0; }
+}
+
+.re-skeleton-line {
+  background: linear-gradient(90deg, #dde5ef 25%, #eaeff6 50%, #dde5ef 75%);
+  background-size: 400% 100%;
+  animation: re-shimmer 1.5s infinite linear;
+  border-radius: 4px;
+  height: 34px;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────── */
+.re-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1.25rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid #F1F5F9;
+}
+
+.btn-primary-udp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 36px;
+  padding: 0 1.25rem;
+  background: #1E3A5F;
+  color: #FFFFFF;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary-udp:hover {
+  background: #162C48;
+}
+
+.btn-secondary-udp {
+  height: 36px;
+  padding: 0 1.25rem;
+  background: #F1F5F9;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #CBD5E1;
+  cursor: pointer;
+}
+
+.btn-secondary-udp:hover {
+  background: #E2E8F0;
+}

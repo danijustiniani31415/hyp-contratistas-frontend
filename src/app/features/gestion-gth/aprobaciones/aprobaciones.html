@@ -1,0 +1,386 @@
+<app-abril-page-header
+  [badge]="'GESTIÓN DE TALENTO · ' + anioActual"
+  titulo="Aprobaciones"
+  [subtitulo]="subtitulo"
+  [botonSecundario]="botonConfiguracion"
+  (secondaryClick)="abrirConfiguracion()"
+  [hasExtra]="true">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas.
+       Sin alcance no hay nada que filtrar, así que ni se muestra. -->
+  <app-filter-trigger *ngIf="!sinAlcance" tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[16px] bg-white flex-1 min-h-0 overflow-auto pb-[64px]">
+
+  <!-- ── Aviso de alcance ───────────────────────────────────────────────── -->
+  <!-- De dónde sale lo que se ve, en una línea. Sin esto, un gerente que ve 2 de 20
+       solicitudes no puede distinguir un filtro de alcance de un error de la pantalla.
+       Lo que explicaba el flujo de aprobación se sacó de acá (ver `textoAlcance`). -->
+  <div class="ap-scope" [class.ap-scope--empty]="sinAlcance">
+    <i class="ti" [ngClass]="sinAlcance ? 'ti-alert-triangle' : 'ti-eye-check'"></i>
+    <span>{{ textoAlcance }}</span>
+  </div>
+
+  <ng-container *ngIf="!sinAlcance">
+
+    <!-- ── Tarjetas resumen ───────────────────────────────────────────────── -->
+    <!-- Siempre contra la casilla del usuario: "por aprobar" es lo que espera SU
+         firma, no la del otro nivel. Los contadores los calcula el backend. -->
+    <div class="ap-kpis grid grid-cols-2 xl:grid-cols-4 gap-[16px]">
+
+      <!-- Pendientes de mi decisión -->
+      <div class="ap-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+           style="border-color:var(--color-abril-border)">
+        <div class="ap-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#FEF3C7">
+          <svg class="ap-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.pendientes }}</span>
+          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiPendientes }}</span>
+        </div>
+      </div>
+
+      <!-- Vacantes que suman esas solicitudes -->
+      <div class="ap-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+           style="border-color:var(--color-abril-border)">
+        <div class="ap-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DBEAFE">
+          <svg class="ap-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.vacantesPendientes }}</span>
+          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Vacantes en cola</span>
+        </div>
+      </div>
+
+      <!-- Aprobadas por mí (incluye las parciales) -->
+      <div class="ap-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+           style="border-color:var(--color-abril-border)">
+        <div class="ap-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DCFCE7">
+          <svg class="ap-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.aprobadas }}</span>
+          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiAprobadas }}</span>
+        </div>
+      </div>
+
+      <!-- Rechazadas por mí por completo -->
+      <div class="ap-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+           style="border-color:var(--color-abril-border)">
+        <div class="ap-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#FEE2E2">
+          <svg class="ap-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 14l4-4m0 4l-4-4m11 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.rechazadas }}</span>
+          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiRechazadas }}</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Tabla ──────────────────────────────────────────────────────────── -->
+    <div class="flex items-center justify-between gap-[10px]">
+      <h2 class="text-[15px] font-semibold text-gray-700">Solicitudes de personal</h2>
+      <span class="text-[12px] text-gray-400 shrink-0">
+        {{ filteredAprobaciones.length }} registro{{ filteredAprobaciones.length === 1 ? '' : 's' }}
+      </span>
+    </div>
+
+    <!-- ── Acciones sobre la selección ────────────────────────────────────
+         Decidir varias solicitudes de una: cada fila marcada se aprueba (o se rechaza) COMPLETA,
+         con todas sus vacantes. Las tres firmas aprueban de verdad —la del gerente del área le
+         pasa el reemplazo a GTH, la de GTH lo manda a reclutamiento—, así que las etiquetas son
+         las mismas para todos; el backend re-valida quién es quién, y fila por fila.
+         Siempre visibles y deshabilitadas si no aplica, igual que en Gestión de Salidas. -->
+    <div class="flex flex-wrap items-center gap-2">
+      <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">
+        {{ selectedDecidibles.length }} seleccionada{{ selectedDecidibles.length === 1 ? '' : 's' }}
+        <ng-container *ngIf="selectedDecidibles.length > 0">
+          · {{ vacantesSeleccionadas }} vacante{{ vacantesSeleccionadas === 1 ? '' : 's' }}
+        </ng-container>
+        <ng-container *ngIf="seleccionYaDecididas > 0">
+          · {{ seleccionYaDecididas }} ya con tu decisión
+        </ng-container>
+      </span>
+
+      <button
+        type="button"
+        abrilBulkAction="default"
+        (click)="aprobarSeleccion()"
+        [disabled]="!puedeDecidirSeleccion"
+        [title]="motivoSinAccion">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        {{ labelAprobar }}<span *ngIf="puedeDecidirSeleccion"> ({{ selectedDecidibles.length }})</span>
+      </button>
+
+      <button
+        type="button"
+        abrilBulkAction="danger"
+        (click)="rechazarSeleccion()"
+        [disabled]="!puedeDecidirSeleccion"
+        [title]="motivoSinAccion">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+        {{ labelRechazar }}<span *ngIf="puedeDecidirSeleccion"> ({{ selectedDecidibles.length }})</span>
+      </button>
+    </div>
+
+    <div class="abril-table-wrap">
+      <table class="abril-table abril-table--th-center">
+        <!-- Cada nombre de columna ordena la lista COMPLETA (no solo la página visible) y vuelve
+             a la primera página. El ciclo es asc → desc → orden por defecto, que es la fecha de
+             envío de más reciente a más antigua. -->
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>
+              <input
+                type="checkbox"
+                [checked]="allSelected"
+                [disabled]="pagedAprobaciones.length === 0"
+                (change)="toggleSelectAll()"
+                class="cursor-pointer disabled:cursor-not-allowed"
+                style="accent-color:var(--color-abril-accent)"
+                title="Seleccionar / deseleccionar las solicitudes de esta página" />
+            </th>
+            <th class="cursor-pointer select-none" (click)="toggleSort('codigos')" title="Ordenar por solicitud">
+              <span class="inline-flex items-center gap-1">Solicitud
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('codigos')">{{ sortDirOf('codigos') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="cursor-pointer select-none" (click)="toggleSort('area')" title="Ordenar por área">
+              <span class="inline-flex items-center gap-1">Área
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('area')">{{ sortDirOf('area') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="cursor-pointer select-none" (click)="toggleSort('solicitante')" title="Ordenar por solicitante">
+              <span class="inline-flex items-center gap-1">Solicitante
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('solicitante')">{{ sortDirOf('solicitante') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="cursor-pointer select-none" (click)="toggleSort('enviado')" title="Ordenar por fecha de envío">
+              <span class="inline-flex items-center gap-1">Enviado
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('enviado')">{{ sortDirOf('enviado') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="cursor-pointer select-none" (click)="toggleSort('vacantes')" title="Ordenar por cantidad de vacantes">
+              <span class="inline-flex items-center gap-1">Vacantes
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('vacantes')">{{ sortDirOf('vacantes') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <!-- Una sola columna con las firmas que ESTA solicitud necesita: quién aprueba lo
+                 decide el tipo de cada vacante, así que no son siempre las mismas. Cada quien ve
+                 también la postura de los demás para entender en qué quedó la solicitud. -->
+            <th class="cursor-pointer select-none" (click)="toggleSort('aprobaciones')" title="Ordenar por tu decisión">
+              <span class="inline-flex items-center gap-1">Aprobaciones
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('aprobaciones')">{{ sortDirOf('aprobaciones') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr *ngIf="filteredAprobaciones.length === 0">
+            <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
+          </tr>
+
+          <tr *ngFor="let a of pagedAprobaciones; let i = index"
+              class="border-b hover:bg-gray-50"
+              [style.background]="selectedIds.has(a.aprobacionId) ? '#EAF6FF' : null"
+              style="border-color:var(--color-abril-border)">
+
+            <!-- Selección (Shift+clic marca el rango). select-none evita que Shift
+                 resalte el texto de las filas. -->
+            <td class="select-none" (click)="onSelectClick($event, i)">
+              <input
+                type="checkbox"
+                [checked]="selectedIds.has(a.aprobacionId)"
+                class="cursor-pointer pointer-events-none"
+                style="accent-color:var(--color-abril-accent)" />
+            </td>
+
+            <td class="text-gray-700">
+              <div class="font-medium">{{ a.codigos || '—' }}</div>
+              <div *ngIf="a.justificacion" class="text-[11px] text-gray-400 max-w-[240px] truncate" [title]="a.justificacion">
+                {{ a.justificacion }}
+              </div>
+            </td>
+
+            <td class="text-gray-500">{{ (a.area | titleCase) || '—' }}</td>
+
+            <td class="text-gray-500">{{ (a.solicitanteNombre | titleCase) || '—' }}</td>
+
+            <td class="text-gray-500 whitespace-nowrap">{{ a.enviado | date:'dd/MM/yyyy' }}</td>
+
+            <td class="text-center text-gray-500 whitespace-nowrap">
+              <div class="font-medium text-gray-700">{{ a.totalVacantes }}</div>
+              <div class="text-[11px] text-gray-400">{{ detalleVacantes(a) }}</div>
+            </td>
+
+            <td class="text-center">
+              <div class="flex flex-col items-center gap-[7px]">
+                <div *ngFor="let c of casillas(a)">
+                  <div class="text-[10px] uppercase tracking-wide text-gray-400 mb-[2px]">{{ c.etiqueta }}</div>
+                  <app-status-badge
+                    [text]="c.resumen.estadoNombre"
+                    [bgColor]="estadoColors(c.resumen.estadoCodigo).bg"
+                    [textColor]="estadoColors(c.resumen.estadoCodigo).text" />
+                  <div *ngIf="c.resumen.decididoPor" class="text-[10.5px] text-gray-400 mt-[3px]">
+                    {{ c.resumen.decididoPor | titleCase }}
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <td class="text-center whitespace-nowrap">
+              <button type="button" (click)="abrir(a)"
+                class="inline-flex items-center gap-[6px] h-[30px] px-[12px] rounded-[7px] text-[12px] font-medium cursor-pointer transition-colors"
+                [style.background]="a.esperaMiDecision ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-logo-blue-light)'"
+                [style.color]="a.esperaMiDecision ? '#fff' : 'var(--color-abril-logo-blue)'"
+                [style.border]="a.esperaMiDecision ? '0.5px solid var(--color-abril-logo-blue)' : '0.5px solid #a9c9e6'"
+                [title]="a.esperaMiDecision ? 'Revisar las vacantes y decidir' : 'Ver lo que quedó registrado'">
+                <i class="ti text-[15px]" [ngClass]="a.esperaMiDecision ? 'ti-gavel' : 'ti-eye'"></i>
+                {{ textoAccion(a) }}
+              </button>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Las mismas solicitudes, en tarjetas (móvil y tablet) ───────────── -->
+    <div class="ap-cards">
+
+      <div *ngIf="filteredAprobaciones.length === 0" class="text-center py-[32px] text-gray-400 text-sm">
+        {{ mensajeVacio }}
+      </div>
+
+      <div *ngFor="let a of pagedAprobaciones; let i = index"
+           class="rounded-[10px] border px-[12px] py-[11px]"
+           [style.background]="selectedIds.has(a.aprobacionId) ? '#EAF6FF' : '#fff'"
+           style="border-color:var(--color-abril-border)">
+
+        <div class="flex items-start justify-between gap-[8px]">
+          <!-- La misma casilla que en la tabla: las acciones en bloque son las de arriba, así que
+               en móvil también hay que poder marcar la solicitud. -->
+          <!-- Un <label> acá haría que el navegador reenvíe la activación al checkbox y el
+               click llegue dos veces (marcar + desmarcar): va un div, como el <td> de la tabla. -->
+          <div class="flex items-start gap-[8px] min-w-0 cursor-pointer select-none"
+               (click)="onSelectClick($event, i)">
+            <input
+              type="checkbox"
+              [checked]="selectedIds.has(a.aprobacionId)"
+              class="mt-[1px] cursor-pointer pointer-events-none"
+              style="accent-color:var(--color-abril-accent)" />
+            <span class="text-[12px] font-bold text-gray-700 truncate">{{ a.codigos || '—' }}</span>
+          </div>
+          <span class="text-[11px] text-gray-400 shrink-0">{{ a.enviado | date:'dd/MM/yyyy' }}</span>
+        </div>
+
+        <p class="text-[13.5px] font-semibold text-gray-800 mt-[5px] leading-snug">
+          {{ a.totalVacantes }} vacante{{ a.totalVacantes === 1 ? '' : 's' }} · {{ detalleVacantes(a) }}
+        </p>
+        <p *ngIf="a.justificacion" class="text-[11.5px] text-gray-400 mt-[1px] truncate" [title]="a.justificacion">
+          {{ a.justificacion }}
+        </p>
+
+        <div class="grid grid-cols-2 gap-x-[10px] gap-y-[7px] mt-[9px]">
+          <div class="min-w-0">
+            <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Área</div>
+            <div class="text-[12px] text-gray-600 truncate">{{ (a.area | titleCase) || '—' }}</div>
+          </div>
+          <div class="min-w-0">
+            <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Solicitante</div>
+            <div class="text-[12px] text-gray-600 truncate">{{ (a.solicitanteNombre | titleCase) || '—' }}</div>
+          </div>
+        </div>
+
+        <!-- Las firmas que la solicitud necesita, igual que la columna de la tabla.
+             `wrap` porque acá la casilla es media tarjeta: sin él, «Pendiente de decisión»
+             (nowrap por defecto, pensado para una celda de tabla) se sale de la casilla en
+             pantallas angostas y arrastra la página de lado. Cuando entra en una línea, se
+             ve exactamente igual que antes. -->
+        <div class="ap-card-niveles">
+          <div class="ap-card-nivel" *ngFor="let c of casillas(a)">
+            <div class="ap-nivel-label">{{ c.etiqueta }}</div>
+            <app-status-badge
+              [text]="c.resumen.estadoNombre"
+              [wrap]="true"
+              [bgColor]="estadoColors(c.resumen.estadoCodigo).bg"
+              [textColor]="estadoColors(c.resumen.estadoCodigo).text" />
+            <div *ngIf="c.resumen.decididoPor" class="ap-nivel-quien truncate">
+              {{ c.resumen.decididoPor | titleCase }}
+            </div>
+          </div>
+        </div>
+
+        <button type="button" (click)="abrir(a)"
+          class="w-full inline-flex items-center justify-center gap-[6px] h-[36px] mt-[11px] rounded-[7px] text-[12.5px] font-medium cursor-pointer transition-colors"
+          [style.background]="a.esperaMiDecision ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-logo-blue-light)'"
+          [style.color]="a.esperaMiDecision ? '#fff' : 'var(--color-abril-logo-blue)'"
+          [style.border]="a.esperaMiDecision ? '0.5px solid var(--color-abril-logo-blue)' : '0.5px solid #a9c9e6'">
+          <i class="ti text-[15px]" [ngClass]="a.esperaMiDecision ? 'ti-gavel' : 'ti-eye'"></i>
+          {{ textoAccion(a) }}
+        </button>
+
+      </div>
+    </div>
+
+    <div class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="filteredAprobaciones.length"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="changePage($event)">
+      </app-paginator>
+    </div>
+
+  </ng-container>
+
+</div>
+
+<!-- Modal de decisión (o de consulta, si el nivel del usuario ya decidió) -->
+<app-gth-aprobacion-decision
+  *ngIf="detalleId !== null"
+  [aprobacionId]="detalleId"
+  (decided)="load()"
+  (closeModal)="cerrarDetalle()">
+</app-gth-aprobacion-decision>
+
+<!-- ── Modal de filtros estándar ──────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full flex flex-col gap-[12px]">
+    <app-search-input
+      placeholder="Buscar por código, área o solicitante..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+
+    <!-- Filtra por MI casilla, no por la del otro nivel: es mi decisión la que rastreo.
+         Orden semántico (pendiente → cerrada), por eso sortAlpha=false. -->
+    <app-search-select
+      [label]="'Mi decisión'"
+      placeholder="Selecciona estado"
+      [options]="estados"
+      valueField="codigo"
+      displayField="nombre"
+      [sortAlpha]="false"
+      [value]="estadoCodigo"
+      (valueChange)="estadoCodigo = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

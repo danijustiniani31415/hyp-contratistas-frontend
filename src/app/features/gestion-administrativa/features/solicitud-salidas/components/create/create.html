@@ -1,0 +1,278 @@
+<app-base-modal [title]="'Nueva solicitud de salida'" width="w-[820px]" [fullScreen]="fullScreen" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[20px] mt-[16px]">
+
+    <!-- ── Fecha ─────────────────────────────────────────────────────── -->
+    <div class="w-full sm:w-[170px]">
+      <app-date-picker
+        label="Fecha de salida"
+        color="var(--color-abril-standard)"
+        [allowClear]="false"
+        [required]="true"
+        [(value)]="fechaSalida" />
+      <p *ngIf="submitted && !fechaSalida" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
+    </div>
+
+    <!-- ── Trayectos ─────────────────────────────────────────────────── -->
+    <div *ngFor="let t of trayectos; let i = index" class="flex flex-col gap-[12px]"
+         [ngClass]="i > 0 ? 'pt-[10px] border-t border-gray-100' : ''">
+
+      <div class="flex items-center justify-between border-b border-[#F0F0F0] pb-[6px]">
+        <p class="text-[12px] font-bold uppercase tracking-widest text-gray-600">Trayecto {{ i + 1 }}</p>
+        <button
+          *ngIf="i > 0"
+          type="button"
+          (click)="eliminarTrayecto(i)"
+          title="Quitar trayecto"
+          class="text-red-500 hover:bg-red-50 rounded-full w-7 h-7 flex items-center justify-center cursor-pointer text-sm">
+          ✕
+        </button>
+      </div>
+
+      <!-- Motivo (se elige primero: define la etiqueta y habilita las horas).
+           Obligatorio en los dos modos — elegido del desplegable o escrito en
+           "Otro motivo" (la regla única vive en motivoValido del componente). -->
+      <div class="flex flex-col gap-[4px]" [class.campo-error]="submitted && !motivoValido(t)">
+        <ng-container *ngIf="!t.motivoLibreOn">
+          <app-search-select label="Motivo" placeholder="Selecciona el motivo" [options]="formData.motivos"
+            valueField="id" displayField="descripcion" [value]="t.motivoId" [required]="true"
+            (valueChange)="onMotivoChange(t, $event)" />
+        </ng-container>
+        <ng-container *ngIf="t.motivoLibreOn">
+          <div class="relative mt-[9px]">
+            <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Motivo <span class="text-red-500">*</span></label>
+            <input type="text" [(ngModel)]="t.motivoLibre" placeholder="Ingresa el motivo"
+              [maxlength]="MOTIVO_LIBRE_MAX"
+              class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none" />
+          </div>
+          <span class="text-[11px] text-gray-400 self-end">{{ t.motivoLibre?.length || 0 }}/{{ MOTIVO_LIBRE_MAX }}</span>
+        </ng-container>
+        <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
+          <input type="checkbox" [ngModel]="t.motivoLibreOn" (ngModelChange)="onMotivoLibreChange(t, $event)" style="accent-color:var(--color-abril-primary)" />
+          <span class="text-[12px] text-gray-600">Otro motivo</span>
+        </label>
+        <p *ngIf="submitted && !motivoValido(t)" class="text-xs text-red-500">Campo requerido</p>
+      </div>
+
+      <!-- Motivo adicional: lo pide el motivo elegido (Configuración → Motivos). Acompaña
+           al motivo, no lo reemplaza: en el detalle, los correos y la planilla se muestra
+           pegado a él. -->
+      <div *ngIf="motivoRequiereMotivoAdicional(t)" class="flex flex-col gap-[4px]"
+           [class.campo-error]="submitted && !motivoAdicionalValido(t)">
+        <div class="relative mt-[9px]">
+          <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Motivo adicional <span class="text-red-500">*</span></label>
+          <input type="text" [(ngModel)]="t.motivoAdicional" placeholder="Detalla a qué se debe la salida"
+            [maxlength]="MOTIVO_ADICIONAL_MAX"
+            class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none" />
+        </div>
+        <span class="text-[11px] text-gray-400 self-end">{{ t.motivoAdicional?.length || 0 }}/{{ MOTIVO_ADICIONAL_MAX }}</span>
+        <p *ngIf="submitted && !motivoAdicionalValido(t)" class="text-xs text-red-500">Campo requerido</p>
+      </div>
+
+      <!-- Horas (habilitadas recién al elegir el motivo; la etiqueta del retorno depende de él).
+           En móvil cada hora toma el ancho completo: al 50% no cabe el label
+           "Hora de retorno estimada" sin partirse en dos líneas. -->
+      <div class="flex flex-col gap-[4px] horas-row">
+        <div class="flex flex-wrap gap-x-[24px] gap-y-[12px]">
+          <div class="w-full sm:w-[130px]">
+            <app-time-picker
+              label="Hora de salida"
+              color="var(--color-abril-standard)"
+              [allowClear]="false"
+              [required]="true"
+              [disabled]="!motivoElegido(t)"
+              [(value)]="t.horaSalida" />
+            <p *ngIf="submitted && !t.horaSalida" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
+          </div>
+
+          <div class="w-full sm:w-[200px]">
+            <app-time-picker
+              [label]="labelHoraRetorno(t)"
+              color="var(--color-abril-standard)"
+              [allowClear]="false"
+              [required]="!t.sinRetorno"
+              [disabled]="t.sinRetorno || !motivoElegido(t)"
+              [(value)]="t.horaRetorno" />
+            <label class="flex items-center gap-[6px] mt-[4px] cursor-pointer w-fit">
+              <input type="checkbox" [ngModel]="t.sinRetorno" (ngModelChange)="onSinRetornoChange(t, $event)"
+                [disabled]="!motivoElegido(t)" style="accent-color:var(--color-abril-primary)" />
+              <span class="text-[12px] text-gray-600">Sin retorno</span>
+            </label>
+            <p *ngIf="submitted && !t.sinRetorno && !t.horaRetorno" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
+          </div>
+        </div>
+        <p *ngIf="!motivoElegido(t)" class="text-[11px] text-gray-400 italic">
+          Selecciona primero el motivo para definir las horas.
+        </p>
+      </div>
+
+      <!-- Documentos adjuntos (solo motivos que lo requieren) -->
+      <div *ngIf="motivoRequiereAdjunto(t)" class="flex flex-col gap-[6px]">
+        <label class="text-[12px] font-semibold text-gray-600">
+          Documentos adjuntos <span class="text-red-500">*</span>
+          <span class="font-normal text-gray-400">— el motivo seleccionado requiere una prueba (ej. constancia o cita). Puedes adjuntar varios.</span>
+        </label>
+
+        <!-- Lista de archivos ya seleccionados -->
+        <div *ngFor="let a of t.adjuntos; let ai = index"
+             class="flex items-center gap-[10px] rounded-[8px] px-[14px] py-[10px]"
+             style="background:var(--color-abril-standard-light);border:1px solid var(--color-abril-standard-border)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               class="flex-shrink-0" style="color:var(--color-abril-standard)">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6" />
+          </svg>
+          <span class="flex-1 min-w-0 truncate text-[13px] text-gray-700" [title]="a.file.name">
+            {{ a.file.name }}
+          </span>
+          <button type="button" (click)="quitarAdjunto(t, ai)"
+                  class="shrink-0 text-[#D30000] hover:bg-[#FAD5D4] rounded-full w-[26px] h-[26px] flex items-center justify-center cursor-pointer transition-colors"
+                  title="Quitar documento">
+            ✕
+          </button>
+        </div>
+
+        <!-- Selector: siempre visible para agregar más documentos -->
+        <app-file-selector
+          accept=".pdf,.png,.jpg,.jpeg,.webp"
+          [label]="t.adjuntos.length > 0 ? 'Arrastra más archivos aquí o' : 'Arrastra archivos aquí o'"
+          hint="PDF, PNG, JPG, WEBP"
+          color="var(--color-abril-standard)"
+          (fileSelected)="onAdjuntoSelected(t, $event)" />
+
+        <p *ngIf="submitted && t.adjuntos.length === 0" class="text-xs text-red-500">Campo requerido</p>
+      </div>
+
+      <!-- Origen + Destino. Igual que el motivo, ambos son obligatorios tanto si
+           salen del desplegable como si se escriben en "Otro lugar". -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[16px] gap-y-[12px]">
+
+        <!-- Origen: editable solo en el primer trayecto; en los siguientes es display del destino anterior -->
+        <div class="flex flex-col gap-[4px]" [class.campo-error]="submitted && !origenValido(t, i)">
+          <ng-container *ngIf="i === 0">
+            <ng-container *ngIf="!t.origenLibre">
+              <app-search-select label="Lugar de origen" placeholder="Selecciona el origen" [options]="formData.lugares"
+                valueField="id" displayField="nombreDisplay" [required]="true" [(value)]="t.lugarOrigenId" />
+            </ng-container>
+            <ng-container *ngIf="t.origenLibre">
+              <div class="relative mt-[9px]">
+                <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Lugar de origen <span class="text-red-500">*</span></label>
+                <input type="text" [(ngModel)]="t.lugarOrigenLibre" placeholder="Ingresa la dirección o lugar"
+                  class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none" />
+              </div>
+            </ng-container>
+            <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
+              <input type="checkbox" [ngModel]="t.origenLibre" (ngModelChange)="onOrigenLibreChange(t, $event)" style="accent-color:var(--color-abril-primary)" />
+              <span class="text-[12px] text-gray-600">Otro lugar</span>
+            </label>
+          </ng-container>
+
+          <ng-container *ngIf="i > 0">
+            <div class="relative mt-[9px]">
+              <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Lugar de origen</label>
+              <input type="text" disabled
+                [value]="t.origenAutoLabel || '(define el destino del trayecto anterior)'"
+                class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-500 bg-gray-50" />
+            </div>
+            <p class="text-[11px] text-gray-400 italic mt-[4px]">Encadenado al destino del trayecto anterior</p>
+          </ng-container>
+
+          <p *ngIf="submitted && !origenValido(t, i)" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <!-- Destino -->
+        <div class="flex flex-col gap-[4px]" [class.campo-error]="submitted && !destinoValido(t)">
+          <ng-container *ngIf="!t.destinoLibre">
+            <app-search-select label="Lugar de destino" placeholder="Selecciona el destino" [options]="formData.lugares"
+              valueField="id" displayField="nombreDisplay" [value]="t.lugarDestinoId" [required]="true"
+              (valueChange)="t.lugarDestinoId = $event; onDestinoCambio(i)" />
+          </ng-container>
+          <ng-container *ngIf="t.destinoLibre">
+            <div class="relative mt-[9px]">
+              <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Lugar de destino <span class="text-red-500">*</span></label>
+              <input type="text" [ngModel]="t.lugarDestinoLibre"
+                (ngModelChange)="t.lugarDestinoLibre = $event; onDestinoCambio(i)"
+                placeholder="Ingresa la dirección o lugar"
+                class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none" />
+            </div>
+          </ng-container>
+          <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
+            <input type="checkbox" [ngModel]="t.destinoLibre" (ngModelChange)="onDestinoLibreChange(t, $event)" style="accent-color:var(--color-abril-primary)" />
+            <span class="text-[12px] text-gray-600">Otro lugar</span>
+          </label>
+          <p *ngIf="submitted && !destinoValido(t)" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+      </div>
+
+      <!-- Indicador de monto del catálogo (solo trabajadores TI con match origen+destino) -->
+      <div *ngIf="montoCatalogoTrayecto(t) !== null"
+           class="flex items-start sm:items-center gap-2 text-xs bg-[#DBEAFE] border border-[#BFDBFE] rounded-md px-3 py-2" style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0 mt-[2px] sm:mt-0">
+          <circle cx="12" cy="12" r="10"/>
+          <path stroke-linecap="round" d="M12 8v4m0 4h.01"/>
+        </svg>
+        <span>
+          Trayecto registrado en el catálogo —
+          <b>monto S/ {{ montoCatalogoTrayecto(t)! | number:'1.2-2' }}</b>.
+          No requieres subir captura para este trayecto.
+        </span>
+      </div>
+
+    </div>
+
+    <!-- ── Agregar trayecto ─────────────────────────────────────────── -->
+    <div>
+      <button type="button" (click)="agregarTrayecto()"
+        class="h-[34px] sm:h-[30px] w-full sm:w-auto px-[12px] rounded-[7px] text-[12px] font-medium cursor-pointer transition-colors flex items-center justify-center sm:justify-start gap-[6px]"
+        style="color:var(--color-abril-standard);background:var(--color-abril-standard-light);border:1px solid var(--color-abril-standard-border)">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+          <path d="M10 0C4.486 0 0 4.486 0 10s4.486 10 10 10 10-4.486 10-10S15.514 0 10 0Zm0 1.538c4.682 0 8.462 3.78 8.462 8.462S14.682 18.462 10 18.462 1.538 14.682 1.538 10 5.318 1.538 10 1.538ZM9.231 5.385v3.846H5.385v1.538h3.846v3.846h1.538v-3.846h3.846V9.231h-3.846V5.385H9.231Z" fill="currentColor"/>
+        </svg>
+        Agregar trayecto
+      </button>
+    </div>
+
+    <!-- ── Aprobador ─────────────────────────────────────────────────── -->
+    <div *ngIf="formData.aprobadorEmail" class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[10px]" style="background:var(--color-abril-standard-light);border:1px solid var(--color-abril-standard-border)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]" style="color:var(--color-abril-standard)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/>
+      </svg>
+      <p class="text-[13px] text-gray-600 min-w-0">
+        Esta solicitud será notificada a
+        <span class="font-medium break-all" style="color:var(--color-abril-standard)">{{ formData.aprobadorEmail }}</span>
+        para su aprobación.
+      </p>
+    </div>
+
+    <div *ngIf="!formData.aprobadorEmail && formData.motivos.length > 0"
+         class="flex items-start gap-[10px] bg-[#FEF9C3] border border-[#FDE68A] rounded-[8px] px-[14px] py-[10px]">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]">
+        <path d="M12 2L1 21h22L12 2zm0 6l7.5 13h-15L12 8zm-1 4v4h2v-4h-2zm0 5v2h2v-2h-2z" fill="#92400E"/>
+      </svg>
+      <p class="text-sm text-[#92400E]">
+        No se pudo identificar a tu jefatura inmediata. Contacta al administrador antes de registrar la solicitud.
+      </p>
+    </div>
+
+    <!-- Recordatorio de recuperación de horas: se oculta si todos los trayectos tienen motivo de hora estimada -->
+    <div *ngIf="mostrarRecordatorioRecuperacion"
+         class="flex items-start gap-[10px] bg-[#FEF9C3] border border-[#FDE68A] rounded-[8px] px-[14px] py-[10px]">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="#92400E"/>
+      </svg>
+      <p class="text-[13px] text-[#92400E]">
+        No olvidar coordinar su recuperación de horas dentro del mes calendario.
+      </p>
+    </div>
+
+    <!-- Botón guardar -->
+    <div class="flex justify-center pt-[4px]">
+      <button (click)="save()"
+        class="h-[40px] sm:h-[36px] w-full sm:w-auto px-[22px] rounded-[7px] text-white text-[12px] font-medium cursor-pointer transition-colors hover:brightness-95" style="background:var(--color-abril-standard)">
+        Solicitar permiso
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

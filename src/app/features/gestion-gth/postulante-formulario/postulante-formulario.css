@@ -1,0 +1,596 @@
+:host {
+  display: block;
+
+  /* Verdes de la marca Abril (los mismos tokens globales de styles.css), en
+     variables locales para que el acento de todo el formulario se cambie en un
+     solo sitio. El verde oscuro es el único que puede llevar texto blanco
+     encima: el claro (--color-abril-primary) y el lima del logo no dan
+     contraste suficiente. */
+  --pf-green: var(--color-abril-primary-dark, #2e7d32);
+  --pf-green-hover: #1b5e20;
+  --pf-green-soft: var(--color-abril-primary-light, #e8f5e9);
+  --pf-lime: var(--color-abril-lime, #64bc04);
+  --pf-divider: #e4efe4;
+}
+
+.pf-page {
+  min-height: 100vh;
+  /* Degradado muy suave: da el tono verde de la marca al fondo sin competir
+     con las tarjetas blancas. */
+  background: linear-gradient(180deg, #e8f2e6 0%, var(--color-abril-page-bg, #f0f4f1) 340px);
+  padding: 28px 16px 60px;
+}
+
+.pf-shell {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pf-card {
+  background: #ffffff;
+  border: 1px solid var(--color-abril-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 24px 28px;
+}
+
+/* ── Encabezado ───────────────────────────────────────────────────────── */
+.pf-header {
+  position: relative;
+  overflow: hidden;
+  padding-top: 28px;
+}
+
+/* La franja superior va como ::before (y no como border-top) para poder llevar
+   el degradado lima → verde del logo; el `overflow: hidden` de arriba la
+   recorta en las esquinas redondeadas de la tarjeta. */
+.pf-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--pf-lime) 0%, var(--pf-green) 100%);
+}
+
+/* El logo reemplaza al texto "ABRIL GRUPO INMOBILIARIO": la imagen ya lo dice. */
+.pf-logo {
+  display: block;
+  height: 40px;
+  width: auto;
+  margin: 0 0 16px;
+}
+
+.pf-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0;
+}
+
+.pf-intro {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.55;
+  margin: 12px 0 0;
+}
+
+/* ── Indicador de pasos ───────────────────────────────────────────────── */
+.pf-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--pf-divider);
+}
+
+.pf-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.55;
+}
+
+.pf-step--active,
+.pf-step--done {
+  opacity: 1;
+}
+
+.pf-step-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.pf-step--active .pf-step-circle {
+  background: var(--pf-green);
+  color: #fff;
+  /* El paso ya hecho también es verde: el halo es lo que distingue al actual. */
+  box-shadow: 0 0 0 3px var(--pf-green-soft);
+}
+
+.pf-step--done .pf-step-circle {
+  background: var(--pf-green);
+  color: #fff;
+}
+
+.pf-step-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.pf-step--active .pf-step-label {
+  color: var(--pf-green);
+  font-weight: 700;
+}
+
+/* ── Observaciones de GTH (formulario devuelto para corregir) ─────────── */
+.pf-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #b91c1c;
+  background: #fef2f2;
+  border-radius: 0 10px 10px 0;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.pf-alert-icon {
+  font-size: 20px;
+  color: #b91c1c;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+.pf-alert-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #991b1b;
+  margin: 0;
+}
+
+.pf-alert-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #b91c1c;
+  margin: 8px 0 2px;
+}
+
+.pf-alert-text {
+  font-size: 13px;
+  color: #7f1d1d;
+  line-height: 1.55;
+  margin: 4px 0 0;
+  /* El motivo se escribe en un textarea: se respetan los saltos de línea de GTH. */
+  white-space: pre-wrap;
+}
+
+/* ── Cuerpo / secciones ───────────────────────────────────────────────── */
+.pf-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--pf-green);
+  margin: 0 0 4px;
+}
+
+.pf-section-hint {
+  font-size: 12.5px;
+  color: #6b7280;
+  margin: 0 0 14px;
+}
+
+.pf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 20px;
+  margin-top: 8px;
+}
+
+.pf-col-2 {
+  grid-column: 1 / -1;
+}
+
+.pf-req {
+  color: #b91c1c;
+}
+
+/* ── Alineación de los campos de una misma fila ───────────────────────────
+   El formulario mezcla tres primitivas: el campo nativo (.abril-field-input,
+   global en styles.css), app-search-select y app-date-picker. Los dos
+   componentes miden 34px exactos, mientras que el input nativo llega a ~36px
+   por su padding vertical, así que los bordes inferiores de una fila
+   (ej. "Distrito de residencia" / "Correo electrónico") no calzaban.
+   Acá solo se fija el alto —lo único que la clase global no cubre—; nada de
+   position/top/left/padding/background, eso vive una sola vez en styles.css.
+   El <textarea> queda fuera a propósito: su alto lo define `rows`. */
+input.abril-field-input {
+  height: 34px;
+}
+
+/* Detalle de un campo (lo que antes alargaba el label). Va debajo del input
+   porque el label flotante es `nowrap`: un texto largo ahí se sale del campo. */
+.pf-hint {
+  font-size: 11.5px;
+  color: #6b7280;
+  line-height: 1.45;
+  margin: 5px 0 0;
+}
+
+/* ── Toggles Sí/No ────────────────────────────────────────────────────── */
+/* Los campos de la grilla traen el `margin-top: 9px` de .abril-field (el hueco
+   del label flotante); el bloque de toggles no, así que sin esto quedaba 9px
+   más pegado a la fila anterior que el resto. */
+.pf-toggle-group {
+  margin-top: 9px;
+}
+
+.pf-toggle-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+.pf-toggle-row {
+  display: flex;
+  gap: 10px;
+}
+
+.pf-toggle {
+  min-width: 84px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--color-abril-border, #e2e8f0);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  /* Android pinta encima su propio flash gris al tocar; el :active de abajo ya
+     da el feedback y con los dos juntos se ve sucio. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pf-toggle--on {
+  background: var(--pf-green);
+  border-color: var(--pf-green);
+  color: #fff;
+}
+
+/* El hover, solo donde hay un puntero de verdad. Dos motivos, que eran los dos
+   bugs del botón Sí/No:
+   1. En táctil el navegador deja el :hover pegado después del tap (hasta que
+      tocas otra cosa), así que el botón recién marcado se quedaba "blanqueado".
+   2. `.pf-toggle:hover` (clase + pseudo-clase) le ganaba en especificidad al
+      fondo azul de `.pf-toggle--on`, pero no a su `color: #fff` → texto blanco
+      sobre fondo casi blanco, ilegible. Por eso el hover claro va con
+      :not(.pf-toggle--on) y el seleccionado tiene el suyo, en azul oscuro. */
+@media (hover: hover) and (pointer: fine) {
+  .pf-toggle:not(.pf-toggle--on):hover {
+    background: var(--pf-green-soft);
+    border-color: #bcdcbe;
+  }
+
+  .pf-toggle--on:hover {
+    background: var(--pf-green-hover);
+    border-color: var(--pf-green-hover);
+  }
+}
+
+/* Feedback mientras el dedo/clic está encima: a diferencia del hover, :active sí
+   se suelta solo en táctil. */
+.pf-toggle:not(.pf-toggle--on):active {
+  background: #dbeedc;
+  border-color: #bcdcbe;
+}
+
+.pf-toggle--on:active {
+  background: var(--pf-green-hover);
+  border-color: var(--pf-green-hover);
+}
+
+/* Anillo de foco solo por teclado (mismo tratamiento que app-search-select),
+   para que el tap no deje ningún resalte pegado. */
+.pf-toggle:focus-visible {
+  outline: 2px solid var(--pf-green);
+  outline-offset: 2px;
+}
+
+/* ── CV documentado (paso 5) ──────────────────────────────────────────── */
+.pf-cv {
+  padding: 4px 0 16px;
+  border-bottom: 1px solid var(--pf-divider);
+}
+
+/* Tarjeta del archivo: la del CV recién elegido y la del que ya está en el
+   servidor comparten estilo a propósito — para el postulante son la misma cosa
+   ("mi CV"), y lo único que cambia es la acción de la derecha. */
+.pf-cv-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--pf-divider);
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.pf-cv-file-icon {
+  flex-shrink: 0;
+  font-size: 18px;
+  color: var(--pf-green);
+}
+
+.pf-cv-file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: #374151;
+}
+
+.pf-cv-file-tag {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pf-green);
+}
+
+.pf-cv-remove {
+  flex-shrink: 0;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+.pf-cv-remove:hover {
+  text-decoration: underline;
+}
+
+/* ── Consentimientos (paso 5) ───────────────────────────────────────── */
+.pf-consent {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--pf-divider);
+}
+
+.pf-consent:last-of-type {
+  border-bottom: none;
+}
+
+/* ── Navegación ───────────────────────────────────────────────────────── */
+.pf-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--pf-divider);
+}
+
+.pf-btn {
+  height: 42px;
+  padding: 0 22px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  border: 1px solid transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pf-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pf-btn--ghost {
+  background: #fff;
+  border-color: var(--color-abril-border, #e2e8f0);
+  color: #4b5563;
+}
+
+.pf-btn--primary {
+  background: var(--pf-green);
+  color: #fff;
+}
+
+/* Mismo criterio que los toggles: el hover solo con puntero real, porque en el
+   celular se quedaba pegado después de tocar "Siguiente". El feedback táctil lo
+   da :active. */
+@media (hover: hover) and (pointer: fine) {
+  .pf-btn--ghost:not(:disabled):hover {
+    background: var(--pf-green-soft);
+  }
+
+  .pf-btn--primary:not(:disabled):hover {
+    background: var(--pf-green-hover);
+  }
+}
+
+.pf-btn--ghost:not(:disabled):active {
+  background: #dbeedc;
+}
+
+.pf-btn--primary:not(:disabled):active {
+  background: var(--pf-green-hover);
+}
+
+.pf-btn:focus-visible {
+  outline: 2px solid var(--pf-green);
+  outline-offset: 2px;
+}
+
+/* ── Estados (cargando / error / enviado) ─────────────────────────────── */
+.pf-state {
+  text-align: center;
+  padding: 56px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.pf-state-logo {
+  height: 34px;
+  width: auto;
+  margin: 0 0 4px;
+}
+
+.pf-state-icon {
+  font-size: 56px;
+}
+
+.pf-state-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 4px 0 0;
+}
+
+.pf-state-text {
+  font-size: 13.5px;
+  color: #4b5563;
+  line-height: 1.6;
+  max-width: 520px;
+  margin: 0;
+}
+
+.pf-spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 4px solid var(--pf-green-soft);
+  border-top-color: var(--pf-green);
+  animation: pf-spin 0.9s linear infinite;
+}
+
+@keyframes pf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────
+   El postulante llena esto casi siempre desde el celular (le llega por correo),
+   así que el móvil no es un caso borde: es el caso principal. Se recupera ancho
+   bajando el padding de la página y de la tarjeta, y se compacta la cabecera de
+   pasos, que con las 4 etiquetas visibles se comía media pantalla en 360px. */
+@media (max-width: 640px) {
+  .pf-page {
+    padding: 16px 10px 44px;
+  }
+
+  .pf-card {
+    padding: 18px 14px;
+  }
+
+  .pf-header {
+    padding-top: 22px;
+  }
+
+  .pf-logo {
+    height: 34px;
+    margin-bottom: 14px;
+  }
+
+  .pf-title {
+    font-size: 19px;
+  }
+
+  .pf-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Solo los círculos + el nombre del paso actual: el resto se sobreentiende
+     por el número y el título de la sección que ya está debajo. */
+  .pf-steps {
+    gap: 8px 12px;
+    margin-top: 14px;
+    padding-top: 14px;
+  }
+
+  .pf-step-label {
+    display: none;
+  }
+
+  .pf-step--active .pf-step-label {
+    display: inline;
+  }
+
+  /* Botones al mismo ancho: objetivo de toque más grande y sin que
+     "Enviar formulario" desborde la fila en pantallas angostas. */
+  .pf-nav {
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .pf-btn {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 0 12px;
+  }
+
+  .pf-toggle {
+    flex: 1 1 0;
+    height: 42px;
+  }
+
+  .pf-alert {
+    padding: 12px 12px 12px 14px;
+  }
+
+  .pf-state {
+    padding: 40px 18px;
+  }
+
+  .pf-state-logo {
+    height: 30px;
+  }
+
+  .pf-state-icon {
+    font-size: 46px;
+  }
+
+  .pf-state-title {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 380px) {
+  .pf-page {
+    padding: 12px 8px 40px;
+  }
+
+  .pf-card {
+    padding: 16px 12px;
+  }
+}

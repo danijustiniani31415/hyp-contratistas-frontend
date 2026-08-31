@@ -1,0 +1,19 @@
+<div class="select-wrapper">
+  <label *ngIf="label" class="select-label">{{ label }}</label>
+
+  <div class="select-container">
+    <select
+      [value]="value || 'null'"
+      [disabled]="disabled || loading"
+      (change)="onValueChange($event)"
+      class="select-input"
+      [style.background]="bgColor"
+    >
+      <option value="null">{{ placeholder }}</option>
+      <option *ngFor="let opt of options" [value]="opt[valueField]">
+        {{ opt[displayField] }}
+      </option>
+    </select>
+    <span class="select-arrow">▼</span>
+  </div>
+</div>

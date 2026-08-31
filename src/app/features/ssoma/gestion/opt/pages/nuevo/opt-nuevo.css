@@ -1,0 +1,650 @@
+/* :host ya no necesita forzar altura — el que scrollea ahora es .amp-body
+   del shared shell app-abril-modal-panel, no este componente. */
+
+/* ── STEPPER ─────────────────────────────────────────────── */
+.stepper {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  background: #fff;
+  border-bottom: 0.5px solid #e8e5df;
+  flex-shrink: 0;
+  gap: 0;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.step-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #d4d0c8;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #a8a59e;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.step--active .step-circle {
+  background: var(--color-abril-logo-blue);
+  border-color: var(--color-abril-logo-blue);
+  color: #fff;
+}
+
+.step--done .step-circle {
+  background: var(--color-abril-logo-blue-light);
+  border-color: var(--color-abril-logo-blue);
+  color: var(--color-abril-logo-blue);
+}
+
+.step-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a8a59e;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.step--active .step-label { color: var(--color-abril-logo-blue); }
+.step--done   .step-label { color: #5a5850; }
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: #e8e5df;
+  margin: 0 6px;
+  margin-bottom: 14px;
+  transition: background 0.2s;
+}
+
+.step-line--done { background: var(--color-abril-logo-blue); }
+
+/* ── LOADING ─────────────────────────────────────────────── */
+.loading-catalogos {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 40px;
+  justify-content: center;
+  color: #8a8880;
+  font-size: 14px;
+}
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── BLOQUEO: sin worker vinculado ──────────────────────────── */
+.bloqueo-sin-worker {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 16px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.bloqueo-sin-worker i {
+  font-size: 20px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.bloqueo-sin-worker__titulo {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.bloqueo-sin-worker__texto {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ── OBSERVADOR FIJO (no editable) ──────────────────────────── */
+.observador-fijo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-standard);
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.observador-fijo i {
+  font-size: 18px;
+  color: var(--color-abril-logo-blue);
+}
+
+.observador-fijo__nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.observador-fijo__cargo {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ── PASO BODY ───────────────────────────────────────────── */
+.paso-body {
+  flex: 1;
+  min-height: 0; /* sin esto, el flex item crece con su contenido y overflow-y:auto no scrollea */
+  overflow-y: auto;
+  padding: 16px;
+  /* Antes era display:flex; flex-direction:column. Se cambió a block para
+     que los hijos directos (trabajadores-list, verificaciones-list,
+     pasos-header, etc.) no sean flex-items y así descartar cualquier
+     ambigüedad de flex-shrink al desbordar. Probado lado a lado contra la
+     versión flex (ambas overflowean igual, sin diferencia de comportamiento)
+     — se deja así por ser más simple, no porque se haya confirmado como la
+     causa del bug de scroll reportado, que sigue sin reproducirse fuera del
+     navegador real. Ver CONTEXT.md, sesión 2026-06-16. */
+  display: block;
+}
+
+.paso-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a18;
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.paso-title i { color: var(--color-abril-logo-blue); }
+
+/* ── FORM ────────────────────────────────────────────────── */
+/* .abril-field / .abril-field-label / .abril-field-input son globales
+   (src/styles.css) — no reimplementar el label flotante aquí. */
+.abril-field { margin-bottom: 14px; }
+
+/* .toggle-label reutiliza .abril-field-label pero es una fila completa
+   clickeable, no un label flotando sobre un input — se resetea la posición
+   y se deja que .toggle-label controle fondo/padding/tipografía. */
+.abril-field-label.toggle-label {
+  position: static;
+  top: auto;
+  left: auto;
+  z-index: auto;
+  pointer-events: auto;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── TOGGLE ──────────────────────────────────────────────── */
+.toggle {
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: #d4d0c8;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle--on { background: var(--color-abril-logo-blue); }
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+
+.toggle--on .toggle-thumb { transform: translateX(18px); }
+
+.toggle--sm {
+  width: 36px;
+  height: 20px;
+}
+
+.toggle--sm .toggle-thumb { width: 14px; height: 14px; }
+.toggle--sm.toggle--on .toggle-thumb { transform: translateX(16px); }
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: #1a1a18;
+  padding: 10px 14px;
+  background: #fff;
+  border: 0.5px solid #e8e5df;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.toggle-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: #1a1a18;
+  padding: 12px 14px;
+  background: #fff;
+  border: 0.5px solid #e8e5df;
+  border-radius: 9px;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.toggle-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── PET PDF ─────────────────────────────────────────────── */
+.btn-ver-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 0.5px solid #c1dac8;
+  background: var(--color-abril-logo-blue-light);
+  color: var(--color-abril-logo-blue);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.btn-ver-pdf:hover { background: #d4ead9; }
+
+.pdf-viewer {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 0.5px solid #e8e5df;
+  margin-bottom: 14px;
+}
+
+.pdf-frame {
+  width: 100%;
+  height: 320px;
+  border: none;
+  display: block;
+}
+
+/* ── TRABAJADORES LIST ───────────────────────────────────── */
+.trabajadores-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+
+.trab-card {
+  border: 0.5px solid #e8e5df;
+  border-radius: 10px;
+  background: #fff;
+  padding: 12px 14px;
+}
+
+.trab-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.trab-info { display: flex; flex-direction: column; gap: 1px; }
+.trab-name { font-size: 13px; font-weight: 600; color: #1a1a18; }
+.trab-meta { font-size: 11px; color: #8a8880; }
+
+.trab-datos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.trab-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--color-surface-alt, #f0f4f1);
+  color: var(--color-text-secondary, #555);
+  border-radius: 20px; padding: 3px 10px; font-size: 12px;
+}
+.trab-chip i { font-size: 13px; }
+
+.btn-remove {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 0.5px solid #f5bebe;
+  background: #fdecea;
+  color: #b83030;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+
+/* ── VERIFICACIONES ──────────────────────────────────────── */
+.verificaciones-list {
+  border: 0.5px solid #e8e5df;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.verif-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-bottom: 0.5px solid #f0ede8;
+}
+
+.verif-row:last-child { border-bottom: none; }
+
+.verif-pregunta { font-size: 12px; color: #1a1a18; flex: 1; }
+
+/* ── PASOS ───────────────────────────────────────────────── */
+.pasos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.pasos-header .paso-title { margin: 0; }
+
+.btn-add-paso {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 0.5px solid #c1dac8;
+  background: var(--color-abril-logo-blue-light);
+  color: var(--color-abril-logo-blue);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pasos-empty {
+  font-size: 13px;
+  color: #8a8880;
+  text-align: center;
+  padding: 20px;
+  border: 0.5px dashed #d4d0c8;
+  border-radius: 9px;
+  margin-bottom: 10px;
+}
+
+.paso-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px;
+  border: 0.5px solid #e8e5df;
+  border-radius: 9px;
+  background: #fff;
+  margin-bottom: 8px;
+}
+
+.paso-row--inseguro { border-color: #f5bebe; background: #fff8f8; }
+
+.paso-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-abril-logo-blue);
+  min-width: 32px;
+  padding-top: 10px;
+}
+
+.paso-fields { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+
+.paso-top-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.paso-desc  { flex: 1; min-width: 0; }
+.paso-nivel { width: 60px; flex-shrink: 0; }
+
+.resultado-group {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.resultado-btn {
+  min-width: 30px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 7px;
+  border: 0.5px solid #d4d0c8;
+  background: #f5f3ef;
+  color: #8a8880;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+
+.res-full  { display: inline; }
+.res-short { display: none; }
+
+.resultado-btn--seguro   { background: var(--color-abril-logo-blue-light); color: var(--color-abril-logo-blue); border-color: #c1dac8; }
+.resultado-btn--inseguro { background: #fdecea; color: #b83030; border-color: #f5bebe; }
+.resultado-btn--na       { background: #f0ede8; color: #5a5850; border-color: #d4d0c8; }
+
+.btn-remove-paso {
+  width: 30px;
+  height: 32px;
+  border-radius: 7px;
+  border: 0.5px solid #f5bebe;
+  background: #fdecea;
+  color: #b83030;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* ── OBSERVADOR CHIP ─────────────────────────────────────── */
+.observador-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 0.5px solid #c1dac8;
+  border-radius: 9px;
+  background: var(--color-abril-logo-blue-light);
+  color: var(--color-abril-logo-blue);
+  font-size: 13px;
+}
+
+.observador-chip i { font-size: 15px; flex-shrink: 0; }
+.observador-chip__name { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.btn-chip-remove {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 0.5px solid #a3c4aa;
+  background: transparent;
+  color: var(--color-abril-logo-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.btn-chip-remove:hover { background: #d4ead9; }
+
+/* ── FIRMA CANVAS ────────────────────────────────────────── */
+.firma-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.firma-canvas {
+  border: 0.5px solid #d4d0c8;
+  border-radius: 10px;
+  background: #fafaf9;
+  cursor: crosshair;
+  touch-action: none;
+  width: 100%;
+  max-width: 360px;
+  display: block;
+}
+
+.btn-clear-canvas {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 7px;
+  border: 0.5px solid #d4d0c8;
+  background: #f5f3ef;
+  color: #5a5850;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.firma-trab-block {
+  margin-bottom: 14px;
+}
+
+.firma-trab-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1a18;
+  margin-bottom: 6px;
+}
+
+/* ── FOTOS ÁREA ──────────────────────────────────────────── */
+.fotos-counter {
+  font-size: 12px;
+  font-weight: 500;
+  color: #dc2626;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: #fef2f2;
+  border-radius: 99px;
+}
+.fotos-counter.fotos-ok { color: #16a34a; background: #f0fdf4; }
+.fotos-hint { font-size: 12px; color: #78716c; margin: 0 0 12px; }
+
+
+/* ── FOOTER ──────────────────────────────────────────────── */
+/* El chrome del footer (fondo, borde, padding) vive en el shared shell
+   app-abril-modal-panel (.amp-footer) — esto solo reparte Cancelar a la
+   izquierda y Anterior/Siguiente a la derecha dentro de ese footer. */
+.footer-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-ghost {
+  padding: 9px 14px;
+  border-radius: 9px;
+  border: 0.5px solid #d4d0c8;
+  background: transparent;
+  color: #8a8880;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 14px;
+  border-radius: 9px;
+  border: 0.5px solid #d4d0c8;
+  background: #fff;
+  color: #1a1a18;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: none;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) { background: var(--color-abril-logo-blue-hover); }
+.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.btn-guardar { min-width: 120px; justify-content: center; }
+
+/* ── MOBILE <480px: resultado btn abreviado ───────────────── */
+@media (max-width: 479px) {
+  .res-full  { display: none; }
+  .res-short { display: inline; }
+  .resultado-btn { min-width: 30px; padding: 0; }
+}
+
+/* ── RESPONSIVE ≥768px ────────────────────────────────────── */
+@media (min-width: 768px) {
+  .stepper { padding: 16px 32px; max-width: 720px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+
+  .paso-body { padding: 24px 32px; max-width: 720px; margin: 0 auto; width: 100%; }
+
+  .form-row {
+    flex-direction: row;
+    gap: 16px;
+  }
+
+  .form-row .abril-field { flex: 1; margin-bottom: 14px; }
+
+  .toggle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .pdf-frame { height: 480px; }
+}

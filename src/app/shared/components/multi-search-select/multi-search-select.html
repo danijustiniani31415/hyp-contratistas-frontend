@@ -1,0 +1,114 @@
+<div class="flex flex-col gap-[6px]">
+
+  <!-- Label opcional -->
+  <label *ngIf="showLabel && label" class="text-sm text-[#64BC04] font-medium">
+    {{ label }}
+  </label>
+
+  <!-- Contenedor relativo para el dropdown -->
+  <div class="relative">
+
+    <!-- Trigger -->
+    <button
+      type="button"
+      (click)="toggle($event)"
+      class="w-full flex items-center justify-between border cursor-pointer focus:outline-none transition-colors"
+      [ngClass]="[
+        compact
+          ? 'rounded-[6px] bg-[#f8fafc] pl-[8px] pr-[6px] h-[32px] text-[0.78rem] focus:ring-1 focus:ring-[#64BC04]/20'
+          : 'rounded-lg bg-white pl-[12px] pr-[10px] py-[10px] text-sm focus:ring-2 focus:ring-[#64BC04]/30',
+        isOpen
+          ? 'border-[#64BC04] ring-2 ring-[#64BC04]/30'
+          : compact ? 'border-[#e2e8f0]' : 'border-[#D6DEE5]'
+      ]"
+    >
+      <span class="ss-trigger-label" [ngClass]="hasValue ? 'text-gray-800' : 'text-gray-400'">
+        {{ selectedLabel }}
+      </span>
+      <span class="flex items-center gap-[8px]">
+        <span
+          *ngIf="allowClear && hasValue"
+          (click)="clear($event)"
+          (keydown.enter)="clear($any($event))"
+          tabindex="0"
+          role="button"
+          aria-label="Limpiar selección"
+          title="Limpiar"
+          class="flex items-center justify-center w-[18px] h-[18px] rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors"
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </span>
+        <svg
+          class="flex-shrink-0 text-gray-400 transition-transform duration-200"
+          [ngClass]="isOpen ? 'rotate-180' : ''"
+          width="16" height="16" viewBox="0 0 16 9" fill="none"
+        >
+          <path
+            d="M14.692 0L16 1.339L8.873 8.629a1.997 1.997 0 0 1-2.746 0L0 1.339 1.308.001 8 6.844 14.692 0Z"
+            fill="currentColor"
+          />
+        </svg>
+      </span>
+    </button>
+
+    <!-- Dropdown -->
+    <div
+      *ngIf="isOpen"
+      class="absolute top-[calc(100%+4px)] left-0 right-0 bg-white border border-[#D6DEE5] rounded-lg shadow-lg z-5 overflow-hidden"
+    >
+      <!-- Buscador -->
+      <div *ngIf="options.length > 5" class="p-[8px] border-b border-[#F0F0F0]">
+        <div class="flex items-center gap-[8px] bg-[#F8F8F8] border border-[#E2E2E2] rounded-lg px-[10px] py-[6px]">
+          <svg class="flex-shrink-0 text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 15A5.5 5.5 0 1 0 9.5 4a5.5 5.5 0 0 0 0 11Z" fill="currentColor"/>
+          </svg>
+          <input
+            #searchInput
+            type="text"
+            [(ngModel)]="searchText"
+            placeholder="Buscar..."
+            class="w-full bg-transparent text-sm focus:outline-none text-gray-700 placeholder-gray-400"
+            (click)="$event.stopPropagation()"
+          />
+        </div>
+      </div>
+
+      <!-- Lista de opciones -->
+      <div class="overflow-y-auto max-h-[200px] overscroll-contain">
+
+        <!-- Sin resultados -->
+        <div
+          *ngIf="filteredOptions.length === 0"
+          class="px-[12px] py-[10px] text-sm text-gray-400 text-center"
+        >
+          Sin resultados
+        </div>
+
+        <!-- Opciones -->
+        <div
+          *ngFor="let option of filteredOptions; trackBy: trackByOption"
+          (click)="toggleOption(option, $event)"
+          class="ss-option px-[12px] py-[9px] text-sm cursor-pointer transition-colors flex items-center gap-[8px]"
+          [ngClass]="isSelected(option)
+            ? 'bg-[#E5F7D1] text-[#64BC04] font-medium hover:bg-[#d4f0b8]'
+            : 'text-gray-700 hover:bg-[#F0F0F0]'"
+        >
+          <span
+            class="flex items-center justify-center w-[16px] h-[16px] rounded border flex-shrink-0 transition-colors"
+            [ngClass]="isSelected(option) ? 'bg-[#64BC04] border-[#64BC04]' : 'border-gray-300 bg-white'"
+          >
+            <svg *ngIf="isSelected(option)" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          </span>
+          <span class="truncate">{{ option[displayField] }}</span>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>

@@ -1,0 +1,369 @@
+<app-abril-page-header
+  [badge]="'GESTIÓN DE TALENTO · ' + anioActual"
+  titulo="Onboarding"
+  subtitulo="Acompaña el ingreso de los colaboradores desde la carta oferta hasta la base maestra."
+  [hasExtra]="true">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[16px] bg-white flex-1 min-h-0 overflow-auto pb-[64px]">
+
+  <!-- ── Tarjetas resumen ───────────────────────────────────────────────── -->
+  <div class="onb-kpis grid grid-cols-2 xl:grid-cols-4 gap-[16px]">
+
+    <!-- Ingresos del mes -->
+    <div class="onb-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="onb-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DBEAFE">
+        <svg class="onb-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm11 0h-6m3-3v6" />
+        </svg>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="onb-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.ingresosDelMes }}</span>
+        <span class="onb-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Ingresos del mes</span>
+        <span class="onb-kpi-sub text-[11px] text-gray-400">Con fecha de ingreso este mes</span>
+      </div>
+    </div>
+
+    <!-- En proceso -->
+    <div class="onb-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="onb-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#E0F2FE">
+        <svg class="onb-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="onb-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.enProceso }}</span>
+        <span class="onb-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">En onboarding</span>
+        <span class="onb-kpi-sub text-[11px] text-gray-400">Procesos abiertos</span>
+      </div>
+    </div>
+
+    <!-- Completos -->
+    <div class="onb-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="onb-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DCFCE7">
+        <svg class="onb-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="onb-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.completos }}</span>
+        <span class="onb-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Completos</span>
+        <span class="onb-kpi-sub text-[11px] text-gray-400">Onboarding cerrado</span>
+      </div>
+    </div>
+
+    <!-- Colaboradores nuevos -->
+    <div class="onb-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="onb-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#FEF3C7">
+        <svg class="onb-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="onb-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.colaboradoresNuevos }}</span>
+        <span class="onb-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Colaboradores nuevos</span>
+        <span class="onb-kpi-sub text-[11px] text-gray-400">Últimos 7 días</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Aviso: candidatos que ya pueden entrar a onboarding ─────────────── -->
+  <!-- Solo aparece si Reclutamiento dejó a alguien listo. Abre el modal directamente:
+       es la única forma de iniciar un onboarding, así que el aviso es también el atajo. -->
+  @if (resumen.candidatosPorIngresar > 0) {
+    <button type="button" (click)="modalAbierto = true"
+      class="onb-aviso flex items-center gap-[12px] w-full text-left rounded-[10px] border px-[16px] py-[12px] cursor-pointer transition-colors"
+      style="background:var(--color-abril-logo-blue-light); border-color:var(--color-abril-logo-blue)"
+      title="Iniciar el onboarding de un colaborador">
+
+      <span class="onb-aviso-icon flex items-center justify-center w-[34px] h-[34px] rounded-full shrink-0 bg-white">
+        <i class="ti ti-user-plus text-[18px]" style="color:var(--color-abril-logo-blue)"></i>
+      </span>
+
+      <span class="onb-aviso-text text-[13.5px] min-w-0" style="color:var(--color-abril-logo-blue)">
+        <span class="font-semibold">
+          {{ resumen.candidatosPorIngresar }}
+          colaborador{{ resumen.candidatosPorIngresar === 1 ? '' : 'es' }}
+          seleccionado{{ resumen.candidatosPorIngresar === 1 ? '' : 's' }} en reclutamiento
+        </span>
+        <span class="opacity-80">— Haz clic para enviarle la carta oferta e iniciar su onboarding</span>
+      </span>
+
+      <i class="ti ti-chevron-right text-[18px] ml-auto shrink-0" style="color:var(--color-abril-logo-blue)"></i>
+    </button>
+  }
+
+  <!-- ── Embudo: fases del onboarding ───────────────────────────────────── -->
+  <!-- Las fases y su orden las define el catálogo del backend. Un clic en un
+       círculo acota la tabla a esa fase (cuenta como filtro activo). -->
+  <div class="onb-fases-card rounded-[12px] border bg-white px-[20px] py-[16px]"
+       style="border-color:var(--color-abril-border)">
+
+    <div class="flex items-center justify-between gap-[10px] mb-[14px]">
+      <h2 class="onb-fases-title text-[15px] font-semibold text-gray-700">Fases del onboarding</h2>
+      <span class="text-[11.5px] text-gray-400 shrink-0">Haz clic en una fase para filtrar</span>
+    </div>
+
+    <div class="onb-fases flex items-start overflow-x-auto">
+      @for (fase of fases; track fase.faseId; let primero = $first) {
+
+        <!-- Conector entre fases (no antes de la primera). -->
+        @if (!primero) {
+          <div class="onb-fases-link h-[1px] flex-1 min-w-[16px] mt-[21px]"
+               style="background:var(--color-abril-border-strong)"></div>
+        }
+
+        <button type="button" class="flex flex-col items-center gap-[8px] shrink-0 px-[4px] cursor-pointer"
+                (click)="toggleFase(fase.codigo)"
+                [title]="fase.descripcion || fase.nombre">
+          <span class="onb-fases-dot flex items-center justify-center w-[42px] h-[42px] rounded-full text-[15px] font-bold border transition-colors"
+                [style.background]="faseCodigo === fase.codigo ? 'var(--color-abril-logo-blue)'
+                                    : fase.total > 0 ? 'var(--color-abril-logo-blue-light)' : '#F9FAFB'"
+                [style.border-color]="fase.total > 0 || faseCodigo === fase.codigo
+                                    ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-border-strong)'"
+                [style.color]="faseCodigo === fase.codigo ? '#FFFFFF'
+                             : fase.total > 0 ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-placeholder)'">
+            {{ fase.total }}
+          </span>
+          <span class="onb-fases-name text-[11.5px] text-center whitespace-nowrap"
+                [style.color]="fase.total > 0 || faseCodigo === fase.codigo
+                             ? 'var(--color-abril-body)' : 'var(--color-abril-placeholder)'">
+            {{ fase.nombre }}
+          </span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Tabla: colaboradores ingresados ────────────────────────────────── -->
+  <div class="flex items-center justify-between gap-[10px]">
+    <h2 class="text-[15px] font-semibold text-gray-700">Colaboradores ingresados</h2>
+    <span class="text-[12px] text-gray-400 shrink-0">
+      {{ filteredColaboradores.length }} registro{{ filteredColaboradores.length === 1 ? '' : 's' }}
+    </span>
+  </div>
+
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>N° requerimiento</th>
+          <th>Nombre</th>
+          <th>Puesto</th>
+          <th>Área</th>
+          <th>Empresa</th>
+          <th>Fecha de ingreso</th>
+          <th>Jefe directo</th>
+          <th>Estado</th>
+          <th>Avance</th>
+          <th>Carta</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        @if (filteredColaboradores.length === 0) {
+          <tr>
+            <td colspan="10" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
+          </tr>
+        }
+
+        <!-- La fila entera abre el detalle del onboarding (el enlace de la carta
+             se excluye: es una acción propia, no una forma de entrar al detalle). -->
+        @for (c of pagedColaboradores; track c.onboardingId) {
+          <tr class="border-b hover:bg-gray-50 cursor-pointer" style="border-color:var(--color-abril-border)"
+              (click)="abrirDetalle(c)" title="Ver el detalle del onboarding">
+
+            <td class="font-medium text-gray-700 whitespace-nowrap">{{ c.codigo }}</td>
+
+            <td class="text-gray-700 font-medium">
+              {{ c.nombre | titleCase }}
+              @if (c.correo) {
+                <span class="block text-[11px] text-gray-400 font-normal">{{ c.correo }}</span>
+              }
+            </td>
+
+            <td class="text-gray-500">{{ (c.puesto | titleCase) || '—' }}</td>
+            <td class="text-gray-500">{{ (c.area | titleCase) || '—' }}</td>
+            <!-- La razón social es un nombre legal: no pasa por titleCase. -->
+            <td class="text-gray-500">{{ c.empresa || '—' }}</td>
+
+            <td class="text-gray-500 whitespace-nowrap">
+              {{ c.fechaIngreso ? (c.fechaIngreso | date:'dd/MM/yyyy') : '—' }}
+            </td>
+
+            <td class="text-gray-500">{{ (c.jefeDirecto | titleCase) || '—' }}</td>
+
+            <td class="text-center">
+              <app-status-badge
+                [text]="c.estadoNombre"
+                [bgColor]="estadoColors(c.estadoCodigo).bg"
+                [textColor]="estadoColors(c.estadoCodigo).text" />
+            </td>
+
+            <!-- Avance: actividades cumplidas del checklist sobre el total (RF-ONB-27).
+                 El tooltip dice además en qué fase está parado el colaborador. -->
+            <td>
+              <div class="flex items-center gap-[8px] min-w-[120px]"
+                   [title]="c.faseNombre + ' — fase ' + c.faseOrden + ' de ' + fases.length">
+                <div class="flex-1 h-[6px] rounded-full overflow-hidden" style="background:#E5E7EB">
+                  <div class="h-full rounded-full transition-all"
+                       [style.width.%]="c.avancePorcentaje"
+                       [style.background]="avanceColor(c.avancePorcentaje)"></div>
+                </div>
+                <span class="text-[11.5px] font-semibold text-gray-600 shrink-0">{{ c.avancePorcentaje }}%</span>
+              </div>
+            </td>
+
+            <td class="text-center whitespace-nowrap">
+              @if (c.cartaOfertaUrl) {
+                <a [href]="c.cartaOfertaUrl" target="_blank" rel="noopener" (click)="$event.stopPropagation()"
+                   class="abril-action-btn abril-action-btn--primary"
+                   [title]="'Ver ' + (c.cartaOfertaNombre || 'carta oferta')">
+                  <i class="ti ti-file-text"></i>
+                </a>
+              } @else {
+                <span class="text-gray-300">—</span>
+              }
+            </td>
+
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Los mismos colaboradores, en tarjetas (móvil y tablet) ───────────
+       Las 10 columnas no entran por debajo de 1024px. Comparten filtros,
+       paginación y acciones con la tabla: es la misma lista, otro dibujo. -->
+  <div class="onb-cards">
+
+    @if (filteredColaboradores.length === 0) {
+      <div class="text-center py-[32px] text-gray-400 text-sm">{{ mensajeVacio }}</div>
+    }
+
+    @for (c of pagedColaboradores; track c.onboardingId) {
+      <div class="rounded-[10px] border bg-white px-[12px] py-[11px] cursor-pointer"
+           style="border-color:var(--color-abril-border)"
+           (click)="abrirDetalle(c)">
+
+        <div class="flex items-start justify-between gap-[8px]">
+          <span class="text-[12px] font-bold text-gray-700 whitespace-nowrap">{{ c.codigo }}</span>
+          <app-status-badge
+            [text]="c.estadoNombre"
+            [bgColor]="estadoColors(c.estadoCodigo).bg"
+            [textColor]="estadoColors(c.estadoCodigo).text" />
+        </div>
+
+        <p class="text-[13.5px] font-semibold text-gray-800 mt-[5px] leading-snug">{{ c.nombre | titleCase }}</p>
+        <p class="text-[12px] text-gray-500 mt-[1px] leading-snug">
+          {{ (c.puesto | titleCase) || 'Sin puesto' }} · {{ (c.area | titleCase) || 'Sin área' }}
+        </p>
+        @if (c.correo) {
+          <p class="text-[11.5px] text-gray-400 mt-[1px] break-all">{{ c.correo }}</p>
+        }
+
+        <div class="grid grid-cols-2 gap-x-[10px] mt-[9px]">
+          <div>
+            <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Fecha de ingreso</div>
+            <div class="text-[12px] text-gray-600">
+              {{ c.fechaIngreso ? (c.fechaIngreso | date:'dd/MM/yyyy') : '—' }}
+            </div>
+          </div>
+          <div>
+            <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Jefe directo</div>
+            <div class="text-[12px] text-gray-600">{{ (c.jefeDirecto | titleCase) || '—' }}</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-[10px] mt-[10px] pt-[10px] border-t"
+             style="border-color:var(--color-abril-border)">
+          <div class="flex items-center gap-[8px] flex-1 min-w-0">
+            <div class="flex-1 h-[6px] rounded-full overflow-hidden" style="background:#E5E7EB">
+              <div class="h-full rounded-full"
+                   [style.width.%]="c.avancePorcentaje"
+                   [style.background]="avanceColor(c.avancePorcentaje)"></div>
+            </div>
+            <span class="text-[11.5px] font-semibold text-gray-600 shrink-0">{{ c.avancePorcentaje }}%</span>
+          </div>
+
+          @if (c.cartaOfertaUrl) {
+            <a [href]="c.cartaOfertaUrl" target="_blank" rel="noopener" (click)="$event.stopPropagation()"
+               class="abril-action-btn abril-action-btn--primary shrink-0" title="Ver carta oferta">
+              <i class="ti ti-file-text"></i>
+            </a>
+          }
+        </div>
+
+      </div>
+    }
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredColaboradores.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- Acción principal de la página: iniciar un onboarding. Se oculta con el modal
+     abierto para que no se superponga a su propio formulario. -->
+@if (!modalAbierto) {
+  <app-fab label="Nuevo ingreso" (clicked)="modalAbierto = true" />
+}
+
+<!-- ── Modal «Nuevo ingreso» ────────────────────────────────────────────── -->
+@if (modalAbierto) {
+  <app-gth-nuevo-ingreso-modal
+    [candidatos]="candidatosAptos"
+    (creado)="onCreado($event)"
+    (closeModal)="modalAbierto = false" />
+}
+
+<!-- ── Modal de detalle del onboarding (clic en una fila) ───────────────── -->
+@if (detalle) {
+  <app-gth-onboarding-detalle-modal
+    [colaborador]="detalle"
+    [fases]="fases"
+    (actualizado)="onDetalleActualizado($event)"
+    (closeModal)="detalle = null" />
+}
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────────── -->
+@if (filtrosAbiertos) {
+  <app-filter-modal (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+    <div class="flex flex-col gap-[12px] w-full">
+      <app-search-input
+        placeholder="Buscar por requerimiento, nombre, puesto, área o correo..."
+        [(value)]="searchText"
+        (valueChange)="onFilterChange()"
+        width="100%">
+      </app-search-input>
+
+      <app-search-select
+        label="Fase del onboarding"
+        [options]="fases"
+        valueField="codigo"
+        displayField="nombre"
+        [value]="faseCodigo"
+        [sortAlpha]="false"
+        placeholder="Selecciona la fase"
+        (valueChange)="faseCodigo = $event; onFilterChange()">
+      </app-search-select>
+    </div>
+  </app-filter-modal>
+}

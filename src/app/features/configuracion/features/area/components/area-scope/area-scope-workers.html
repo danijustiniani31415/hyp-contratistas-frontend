@@ -1,0 +1,41 @@
+<app-base-modal [title]="'TRABAJADORES DEL ÁREA'" width="w-[720px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-4 mt-4">
+
+    <!-- Encabezado: rama + contador -->
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex flex-col min-w-0">
+        <p class="text-gray-700 font-semibold truncate">{{ areaNombre }}</p>
+        <p *ngIf="rutaRama" class="text-[0.72rem] text-gray-400 truncate" [title]="rutaRama">{{ rutaRama }}</p>
+      </div>
+      <span class="shrink-0 text-[0.7rem] font-bold bg-green-100 text-green-800 border border-green-200 rounded-full px-2 py-0.5">
+        {{ workers.length }} trabajador{{ workers.length === 1 ? '' : 'es' }}
+      </span>
+    </div>
+
+    <!-- Lista de trabajadores -->
+    <div class="w-full rounded-lg overflow-auto border border-[#D6DEE5] bg-white max-h-[420px]">
+      <table class="w-full">
+        <thead class="bg-[#E5F7D1] sticky top-0">
+          <tr class="text-[#64BC04]">
+            <th class="text-left px-[16px] py-[10px] font-semibold">Nombre completo</th>
+            <th class="text-left px-[16px] py-[10px] font-semibold w-[180px]">Categoría</th>
+            <th class="text-left px-[16px] py-[10px] font-semibold w-[260px]">Correo corporativo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let w of workers" class="border-b border-[#D6DEE5] hover:bg-gray-50">
+            <td class="px-[16px] py-[8px] text-gray-700">{{ w.fullName | titleCase }}</td>
+            <td class="px-[16px] py-[8px] text-gray-500 text-sm">{{ (w.categoryName | titleCase) || '—' }}</td>
+            <td class="px-[16px] py-[8px] text-gray-500 text-sm">{{ w.emailCorporativo || '—' }}</td>
+          </tr>
+          <tr *ngIf="loaded && workers.length === 0">
+            <td colspan="3" class="text-center py-8 text-gray-400 text-sm">
+              No hay trabajadores activos asignados a esta área.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</app-base-modal>

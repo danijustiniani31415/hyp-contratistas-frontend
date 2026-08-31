@@ -1,0 +1,37 @@
+<app-abril-modal-panel
+  *ngIf="open"
+  titulo="Firma digital"
+  icono="ti-signature"
+  variant="blue"
+  width="520px"
+  (closeModal)="close()">
+
+  <p class="hint">
+    Dibuja tu firma lo más parecida posible a la de tu DNI. Se imprimirá en el SSO-FO-149
+    junto a un recuadro donde la firmarás también a mano, para poder compararlas.
+  </p>
+
+  <div class="canvas-wrap">
+    <canvas
+      #canvas
+      width="460"
+      height="180"
+      (mousedown)="onStart($event)"
+      (mousemove)="onMove($event)"
+      (mouseup)="onEnd()"
+      (mouseleave)="onEnd()"
+      (touchstart)="onStart($event)"
+      (touchmove)="onMove($event)"
+      (touchend)="onEnd()"
+    ></canvas>
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="btn-ghost" (click)="limpiar()">Limpiar</button>
+    <button type="button" class="btn-primary" [disabled]="!canGuardar" (click)="guardar()">
+      <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
+      {{ saving ? 'Guardando…' : 'Guardar firma' }}
+    </button>
+  </div>
+
+</app-abril-modal-panel>

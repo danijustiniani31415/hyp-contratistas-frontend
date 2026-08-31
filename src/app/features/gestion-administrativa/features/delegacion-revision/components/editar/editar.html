@@ -1,0 +1,85 @@
+<app-base-modal
+  [title]="titulo"
+  width="w-[680px]"
+  [preventCloseWhenDirty]="true"
+  (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[14px] mt-[12px]">
+
+    <p class="text-xs text-gray-500 leading-relaxed">
+      El <b>orden</b> define la prioridad: las solicitudes llegan al primer revisor <b>activo</b>.
+      Para <b>delegar</b> mientras te ausentas, agrega a un compañero de tu área y <b>desactívate</b>;
+      para <b>retomar</b> el puesto, vuelve a activarte. No puedes quitarte de la lista (solo desactivarte).
+    </p>
+
+    <div class="flex flex-col gap-[8px]">
+      <div *ngFor="let row of rows; let i = index"
+           class="flex items-center gap-[10px] border border-[#D6DEE5] rounded-lg px-[12px] py-[8px]">
+
+        <span class="shrink-0 w-[26px] h-[26px] rounded-full bg-[#E5F7D1] text-[#64BC04] text-xs font-bold flex items-center justify-center">
+          {{ i + 1 }}
+        </span>
+
+        <div class="flex-1 min-w-0">
+          <!-- Fila del propio usuario: solo lectura (no se puede quitar ni cambiar) -->
+          <div *ngIf="row.isSelf" class="flex items-center gap-2 py-[6px]">
+            <span class="text-sm text-gray-700">{{ nombreDe(row.revisorWorkerId) | titleCase }}</span>
+            <span class="text-[10px] px-[8px] py-[2px] rounded-full bg-[#E5F7D1] text-[#3f7a04] font-semibold">Tú</span>
+          </div>
+          <!-- Suplentes: seleccionables -->
+          <app-search-select
+            *ngIf="!row.isSelf"
+            [options]="opcionesFila(i)"
+            valueField="workerId"
+            displayField="fullName"
+            [value]="row.revisorWorkerId"
+            (valueChange)="row.revisorWorkerId = $event"
+            placeholder="Buscar por nombre o DNI...">
+          </app-search-select>
+        </div>
+
+        <label class="shrink-0 flex items-center gap-[6px] text-xs text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" class="w-4 h-4 accent-[#64BC04] cursor-pointer"
+                 [checked]="row.active"
+                 (change)="row.active = !row.active" />
+          Activo
+        </label>
+
+        <div class="shrink-0 flex flex-col">
+          <button type="button" (click)="mover(i, -1)" [disabled]="i === 0"
+                  class="text-gray-400 hover:text-gray-700 disabled:opacity-30 cursor-pointer disabled:cursor-default leading-none text-[13px]"
+                  title="Subir prioridad">▲</button>
+          <button type="button" (click)="mover(i, 1)" [disabled]="i === rows.length - 1"
+                  class="text-gray-400 hover:text-gray-700 disabled:opacity-30 cursor-pointer disabled:cursor-default leading-none text-[13px]"
+                  title="Bajar prioridad">▼</button>
+        </div>
+
+        <button type="button" (click)="quitar(i)"
+                [disabled]="row.isSelf"
+                class="shrink-0 text-[#D30000] hover:bg-[#FAD5D4] rounded-full w-[26px] h-[26px] flex items-center justify-center transition-colors"
+                [class.opacity-20]="row.isSelf"
+                [class.cursor-pointer]="!row.isSelf"
+                [class.cursor-default]="row.isSelf"
+                [title]="row.isSelf ? 'No puedes quitarte a ti mismo' : 'Quitar revisor'">
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <button type="button" (click)="agregar()"
+        class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-[#64BC04] text-[#64BC04] hover:bg-[#E5F7D1] transition-colors cursor-pointer">
+        + Agregar suplente
+      </button>
+    </div>
+
+    <div class="flex justify-center mt-[6px]">
+      <button (click)="guardar()"
+        class="w-[180px] py-[9px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-primary)">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+</app-base-modal>

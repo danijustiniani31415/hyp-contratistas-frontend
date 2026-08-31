@@ -1,0 +1,165 @@
+<app-base-modal *ngIf="open && emo" [title]="'Documentos EMO'" width="w-[520px]" (closeModal)="close()">
+
+  <div class="worker-header">
+    <p class="wh-name">{{ emo.nombreCompleto }}</p>
+    <p class="wh-meta">DNI {{ emo.dni }}<ng-container *ngIf="emo.empresa"> · {{ emo.empresa }}</ng-container></p>
+    <p class="wh-meta" *ngIf="emo.fechaEmo">EMO: {{ emo.fechaEmo | date:'dd/MM/yyyy' }} · {{ emo.aptitud }}</p>
+  </div>
+
+  <div class="doc-list">
+
+    <!-- Lectura EMO -->
+    <div class="doc-row">
+      <div class="doc-info">
+        <div class="doc-icon lectura-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="15" y2="17"/>
+          </svg>
+        </div>
+        <div>
+          <p class="doc-title">Lectura EMO</p>
+          <p class="doc-sub" *ngIf="emo.urlResultado">Archivo cargado</p>
+          <p class="doc-sub missing" *ngIf="!emo.urlResultado && !pendienteLecturaAbril">Sin archivo</p>
+          <p class="doc-sub pendiente-abril" *ngIf="pendienteLecturaAbril">
+            Pendiente · la lee el médico de Abril
+          </p>
+        </div>
+      </div>
+      <div class="doc-actions">
+        <button *ngIf="emo.urlResultado" type="button" class="btn-ver"
+          (click)="verDocumento(emo.urlResultado, 'Lectura EMO')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Ver
+        </button>
+        <label class="btn-subir" [class.uploading]="uploading['Lectura']">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          {{ uploading['Lectura'] ? 'Subiendo…' : (emo.urlResultado ? 'Reemplazar' : (pendienteLecturaAbril ? 'Subir y aprobar' : 'Subir')) }}
+          <input type="file" accept=".pdf" hidden [disabled]="uploading['Lectura']"
+            (change)="onFileSelected($event, 'Lectura')" />
+        </label>
+      </div>
+    </div>
+
+    <!-- Fecha de lectura: solo visible mientras el EMO esté pendiente de que el médico de Abril la suba. -->
+    <div class="abril-field" *ngIf="pendienteLecturaAbril">
+      <label class="abril-field-label">Fecha de lectura</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="fechaLecturaAbril" />
+    </div>
+
+    <!-- Certificado de Aptitud -->
+    <div class="doc-row">
+      <div class="doc-info">
+        <div class="doc-icon aptitud-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <polyline points="9 15 11 17 15 13"/>
+          </svg>
+        </div>
+        <div>
+          <p class="doc-title">Certificado de Aptitud</p>
+          <p class="doc-sub" *ngIf="emo.urlAptitud">Archivo cargado</p>
+          <p class="doc-sub missing" *ngIf="!emo.urlAptitud">Sin archivo</p>
+        </div>
+      </div>
+      <div class="doc-actions">
+        <button *ngIf="emo.urlAptitud" type="button" class="btn-ver"
+          (click)="verDocumento(emo.urlAptitud, 'Certificado de Aptitud')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Ver
+        </button>
+        <label class="btn-subir" [class.uploading]="uploading['Aptitud']">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          {{ uploading['Aptitud'] ? 'Subiendo…' : (emo.urlAptitud ? 'Reemplazar' : 'Subir') }}
+          <input type="file" accept=".pdf" hidden [disabled]="uploading['Aptitud']"
+            (change)="onFileSelected($event, 'Aptitud')" />
+        </label>
+      </div>
+    </div>
+
+    <!-- EMO Completo -->
+    <div class="doc-row">
+      <div class="doc-info">
+        <div class="doc-icon emo-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <rect x="8" y="12" width="8" height="6" rx="1"/>
+          </svg>
+        </div>
+        <div>
+          <p class="doc-title">EMO Completo</p>
+          <p class="doc-sub" *ngIf="emo.urlEmoCompleto">Archivo cargado</p>
+          <p class="doc-sub missing" *ngIf="!emo.urlEmoCompleto">Sin archivo</p>
+        </div>
+      </div>
+      <div class="doc-actions">
+        <button *ngIf="emo.urlEmoCompleto" type="button" class="btn-ver"
+          (click)="verDocumento(emo.urlEmoCompleto, 'EMO Completo')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Ver
+        </button>
+        <label class="btn-subir" [class.uploading]="uploading['EMO']">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          {{ uploading['EMO'] ? 'Subiendo…' : (emo.urlEmoCompleto ? 'Reemplazar' : 'Subir') }}
+          <input type="file" accept=".pdf" hidden [disabled]="uploading['EMO']"
+            (change)="onFileSelected($event, 'EMO')" />
+        </label>
+      </div>
+    </div>
+
+    <!-- Informe Interconsulta -->
+    <div class="doc-row" *ngIf="emo.requiereInterconsulta || emo.interconsultaId">
+      <div class="doc-info">
+        <div class="doc-icon inter-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <path d="M9 10h6M9 14h4"/>
+          </svg>
+        </div>
+        <div>
+          <p class="doc-title">Informe Interconsulta</p>
+          <ng-container *ngIf="emo.interconsultaId">
+            <p class="doc-sub" *ngIf="emo.interconsultaUrlInforme">
+              Archivo cargado · {{ emo.interconsultaEspecialidad }}
+              <span class="inter-estado">{{ emo.interconsultaEstado }}</span>
+            </p>
+            <p class="doc-sub missing" *ngIf="!emo.interconsultaUrlInforme">
+              Pendiente · {{ emo.interconsultaEspecialidad }}
+            </p>
+          </ng-container>
+          <p class="doc-sub missing" *ngIf="!emo.interconsultaId">Sin interconsulta registrada</p>
+        </div>
+      </div>
+      <div class="doc-actions">
+        <button *ngIf="emo.interconsultaUrlInforme" type="button" class="btn-ver"
+          (click)="verDocumento(emo.interconsultaUrlInforme, 'Informe Interconsulta')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Ver
+        </button>
+        <label *ngIf="emo.interconsultaId" class="btn-subir" [class.uploading]="uploading['Interconsulta']">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          {{ uploading['Interconsulta'] ? 'Subiendo…' : (emo.interconsultaUrlInforme ? 'Reemplazar' : 'Subir') }}
+          <input type="file" accept=".pdf" hidden [disabled]="uploading['Interconsulta']"
+            (change)="onInformeInterconsultaSelected($event)" />
+        </label>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="modal-footer">
+    <button type="button" class="btn-ghost" (click)="close()">Cerrar</button>
+  </footer>
+
+  <app-document-viewer
+    [archivoUrl]="visorUrl"
+    [nombre]="visorNombre"
+    (closed)="onVisorClosed()">
+  </app-document-viewer>
+
+</app-base-modal>

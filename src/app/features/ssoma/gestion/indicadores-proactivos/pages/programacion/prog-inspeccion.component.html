@@ -1,0 +1,195 @@
+<div class="prog-root">
+
+  <!-- ── HEADER ───────────────────────────────────────────────────────────── -->
+  <app-abril-page-header
+    badge="SSOMA · Indicadores Proactivos"
+    titulo="Programación de Inspecciones"
+    subtitulo="Configure los tipos de inspección aplicables por empresa y mes">
+  </app-abril-page-header>
+
+  <div class="prog-body">
+
+    <!-- ── FILTROS ─────────────────────────────────────────────────────────── -->
+    <div class="filtros-card">
+      <div class="filtros-grid">
+        <div class="filtro-group">
+          <label class="filtro-label">Proyecto</label>
+          <app-search-select
+            [options]="proyectos()"
+            valueField="id"
+            displayField="nombre"
+            placeholder="Buscar proyecto..."
+            [value]="proyectoId()"
+            [compact]="true"
+            [showLabel]="false"
+            color="var(--color-abril-primary)"
+            (valueChange)="proyectoId.set($event ? +$event : null)">
+          </app-search-select>
+        </div>
+
+        <div class="filtro-group">
+          <label class="filtro-label">Mes</label>
+          <app-search-select
+            [options]="meses"
+            valueField="valor"
+            displayField="nombre"
+            placeholder="Todos los meses"
+            [sortAlpha]="false"
+            [value]="mesSeleccionado()"
+            [compact]="true"
+            [showLabel]="false"
+            color="var(--color-abril-primary)"
+            (valueChange)="mesSeleccionado.set(+$event)">
+          </app-search-select>
+        </div>
+
+        <div class="filtro-group">
+          <label class="filtro-label">Año</label>
+          <app-search-select
+            [options]="anios"
+            valueField="valor"
+            displayField="nombre"
+            placeholder="Todos los años"
+            [sortAlpha]="false"
+            [value]="anioSeleccionado()"
+            [compact]="true"
+            [showLabel]="false"
+            color="var(--color-abril-primary)"
+            (valueChange)="anioSeleccionado.set(+$event)">
+          </app-search-select>
+        </div>
+
+        <div class="filtro-action">
+          <button type="button" class="btn-cargar" (click)="cargar()" [disabled]="!proyectoId()">
+            <i class="ti ti-search"></i> Cargar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CONTENIDO PRINCIPAL ─────────────────────────────────────────────── -->
+    <ng-container *ngIf="resumen() as r">
+      <div class="prog-layout">
+
+        <!-- PANEL IZQUIERDO: lista de empresas -->
+        <aside class="empresas-panel">
+          <div class="empresas-header">
+            <i class="ti ti-building"></i>
+            <span>Empresas activas</span>
+            <span class="empresas-count">{{ r.empresas.length }}</span>
+          </div>
+
+          <div class="empresas-list">
+            <button
+              *ngFor="let emp of r.empresas"
+              type="button"
+              class="empresa-item"
+              [class.empresa-item--active]="empresaActiva()?.empresaTipo === emp.empresaTipo && empresaActiva()?.empresaId === emp.empresaId"
+              [class.empresa-item--casa]="emp.empresaTipo === 'Casa'"
+              (click)="seleccionarEmpresa(emp)">
+              <div class="empresa-item__icon">
+                <i class="ti" [class.ti-home]="emp.empresaTipo === 'Casa'" [class.ti-truck]="emp.empresaTipo === 'Contratista'"></i>
+              </div>
+              <div class="empresa-item__info">
+                <span class="empresa-item__nombre">{{ emp.empresaNombre }}</span>
+                <span class="empresa-item__tipo">{{ emp.empresaTipo }}</span>
+              </div>
+              <div class="empresa-item__badge">
+                <span class="badge-count" [class.badge-count--ok]="emp.tiposAplicables.length > 0">
+                  {{ emp.tiposAplicables.length }}
+                </span>
+              </div>
+            </button>
+          </div>
+        </aside>
+
+        <!-- PANEL DERECHO: configuración de tipos -->
+        <section class="tipos-panel" *ngIf="empresaActiva() as emp">
+
+          <!-- Header del panel -->
+          <div class="tipos-header">
+            <div class="tipos-header__info">
+              <div class="tipos-header__empresa">
+                <i class="ti" [class.ti-home]="emp.empresaTipo === 'Casa'" [class.ti-truck]="emp.empresaTipo === 'Contratista'"></i>
+                <h2>{{ emp.empresaNombre }}</h2>
+                <span class="chip-tipo" [class.chip-casa]="emp.empresaTipo === 'Casa'">{{ emp.empresaTipo }}</span>
+              </div>
+              <p class="tipos-header__subtitle">
+                Seleccione los tipos de inspección aplicables para
+                <strong>{{ nombreMes(mesSeleccionado()) }} {{ anioSeleccionado() }}</strong>
+              </p>
+            </div>
+
+            <div class="tipos-header__actions">
+              <span class="seleccionados-label">
+                <strong>{{ totalSeleccionados }}</strong> / {{ tiposInspeccion().length }} seleccionados
+              </span>
+              <button type="button" class="btn-sel" (click)="seleccionarTodos()">
+                <i class="ti ti-checks"></i> Todos
+              </button>
+              <button type="button" class="btn-sel btn-sel--outline" (click)="deseleccionarTodos()">
+                <i class="ti ti-square"></i> Ninguno
+              </button>
+              <button type="button" class="btn-guardar"
+                      (click)="guardar()"
+                      [disabled]="guardando()">
+                <i class="ti" [class.ti-device-floppy]="!guardando()" [class.ti-loader-2]="guardando()"></i>
+                {{ guardando() ? 'Guardando…' : 'Guardar' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Grid de tipos agrupados -->
+          <div class="tipos-grupos">
+            <div *ngFor="let grupo of gruposTipos()" class="tipo-grupo">
+              <h3 class="tipo-grupo__titulo">
+                <i class="ti ti-folder"></i>
+                {{ grupo.grupo }}
+                <span class="tipo-grupo__count">
+                  {{ contarSeleccionadosEnGrupo(grupo.tipos, emp.tiposAplicables) }} / {{ grupo.tipos.length }}
+                </span>
+              </h3>
+              <div class="tipos-grid">
+                <label
+                  *ngFor="let tipo of grupo.tipos"
+                  class="tipo-card"
+                  [class.tipo-card--selected]="tieneSeleccionado(tipo.id)"
+                  (click)="toggleTipo(tipo.id)">
+                  <div class="tipo-card__check">
+                    <i class="ti" [class.ti-check]="tieneSeleccionado(tipo.id)" [class.ti-square]="!tieneSeleccionado(tipo.id)"></i>
+                  </div>
+                  <span class="tipo-card__nombre">{{ tipo.nombre }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botón guardar flotante mobile -->
+          <div class="guardar-sticky">
+            <button type="button" class="btn-guardar btn-guardar--full"
+                    (click)="guardar()"
+                    [disabled]="guardando()">
+              <i class="ti" [class.ti-device-floppy]="!guardando()" [class.ti-loader-2]="guardando()"></i>
+              {{ guardando() ? 'Guardando…' : 'Guardar configuración de ' + emp.empresaNombre }}
+            </button>
+          </div>
+
+        </section>
+
+        <!-- PLACEHOLDER si no hay empresa seleccionada -->
+        <section class="tipos-panel tipos-panel--empty" *ngIf="!empresaActiva()">
+          <i class="ti ti-building-factory-2 empty-icon"></i>
+          <p>Seleccione una empresa para configurar sus inspecciones.</p>
+        </section>
+
+      </div>
+    </ng-container>
+
+    <!-- ESTADO INICIAL -->
+    <div class="empty-state" *ngIf="!resumen()">
+      <i class="ti ti-calendar-search empty-state__icon"></i>
+      <p class="empty-state__text">Seleccione un proyecto, mes y año, luego presione <strong>Cargar</strong>.</p>
+    </div>
+
+  </div>
+</div>

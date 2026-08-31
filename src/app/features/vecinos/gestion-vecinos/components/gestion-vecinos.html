@@ -1,0 +1,181 @@
+<app-abril-page-header
+  badge="ADMINISTRACIÓN DE OBRA"
+  titulo="Gestión de Vecinos"
+  subtitulo="Registro de vecinos colindantes y no colindantes a los proyectos."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="bg-white rounded-lg p-5 flex-1 min-h-0 flex flex-col gap-3">
+
+  <!-- ── FILTROS + ACCIONES + TOGGLE ─────────────────────────────────── -->
+  <!-- El toggle se mantiene fijo en la esquina superior derecha; los
+       filtros y botones hacen wrap a su izquierda sin desplazarlo. -->
+  <div class="flex items-start gap-3 py-1">
+
+    <!-- Filtros + botones (hacen wrap entre ellos) -->
+    <div class="flex flex-wrap items-end gap-3 flex-1 min-w-0">
+
+    <!-- Filtro de la vista croquis -->
+    <ng-container *ngIf="viewMode === 'croquis'">
+      <div class="w-[220px]">
+        <app-search-select
+          label="Proyecto"
+          placeholder="Todos"
+          [options]="croquisProjectOptions"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="croquisProjectId"
+          (valueChange)="croquisProjectId = $event">
+        </app-search-select>
+      </div>
+
+      <!-- Botón buscar -->
+      <button type="button" (click)="searchCroquis()"
+        class="h-[42px] px-5 bg-[#4CAF50] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors flex items-center gap-2 self-end">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
+        </svg>
+        Buscar
+      </button>
+    </ng-container>
+
+    <!-- Filtros de listado: solo en vistas de tabla/tarjetas -->
+    <ng-container *ngIf="viewMode !== 'croquis'">
+      <!-- Proyecto -->
+      <div class="w-[220px]">
+        <app-search-select
+          label="Proyecto"
+          placeholder="Todos"
+          [options]="options.projects"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="searchProjectId"
+          (valueChange)="searchProjectId = $event">
+        </app-search-select>
+      </div>
+
+      <!-- Colindancia -->
+      <div class="w-[180px]">
+        <app-search-select
+          label="Colindancia"
+          placeholder="Todas"
+          [options]="options.colindancias"
+          valueField="id"
+          displayField="descripcion"
+          [value]="searchColindanciaId"
+          (valueChange)="searchColindanciaId = $event">
+        </app-search-select>
+      </div>
+
+      <!-- Búsqueda libre -->
+      <div class="w-[240px] flex flex-col gap-[6px]">
+        <label class="text-sm text-[#4CAF50] font-medium">Buscar</label>
+        <input
+          type="text"
+          [(ngModel)]="searchText"
+          (keyup.enter)="search()"
+          placeholder="Dirección, propietario o DNI…"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30 transition-colors" />
+      </div>
+
+      <!-- Botón buscar -->
+      <button type="button" (click)="search()"
+        class="h-[42px] px-5 bg-[#4CAF50] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors flex items-center gap-2 self-end">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
+        </svg>
+        Buscar
+      </button>
+    </ng-container>
+
+    <!-- Botones de acción: a la derecha de los filtros -->
+    <button type="button" (click)="openCroquisAdd()"
+      class="h-[42px] px-4 bg-[#E8F5E9] rounded-lg text-[#4CAF50] text-sm font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors flex items-center gap-2 self-end">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      Añadir vecinos
+    </button>
+
+    </div>
+
+    <!-- Toggle de vistas: siempre fijo en la esquina superior derecha,
+         alineado con la fila de filtros/botones -->
+    <app-view-toggle class="shrink-0 self-end" [modes]="viewModes" [value]="viewMode" (valueChange)="onViewChange($event)"></app-view-toggle>
+
+  </div>
+
+  <!-- Contador de registros -->
+  <span *ngIf="viewMode !== 'croquis'" class="text-xs text-gray-400 -mt-1">{{ totalRecords }} registros</span>
+
+  <!-- ── CROQUIS ───────────────────────────────────────────────────── -->
+  <app-gestion-croquis-view
+    *ngIf="viewMode === 'croquis'"
+    [croquis]="croquis"
+    [filterProjectId]="croquisAppliedProjectId"
+    (viewVecino)="openDetail($event)"
+    (addVecino)="openCroquisAddFrom($event)"
+    class="flex flex-1 min-h-0 flex-col">
+  </app-gestion-croquis-view>
+
+  <!-- ── TABLA ─────────────────────────────────────────────────────── -->
+  <app-gestion-vecinos-list
+    *ngIf="viewMode === 'table'"
+    [vecinos]="vecinos"
+    (rowClick)="openDetail($event)"
+    class="flex flex-1 min-h-0 flex-col">
+  </app-gestion-vecinos-list>
+
+  <!-- ── CARDS ─────────────────────────────────────────────────────── -->
+  <div *ngIf="viewMode === 'card'" class="flex-1 min-h-0 overflow-y-auto">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pb-1">
+      <app-gestion-vecinos-card
+        *ngFor="let item of vecinos"
+        [item]="item"
+        (cardClick)="openDetail($event)">
+      </app-gestion-vecinos-card>
+
+      <p *ngIf="vecinos.length === 0"
+        class="sm:col-span-2 lg:col-span-3 text-center text-sm text-gray-400 italic py-10">
+        No hay vecinos registrados.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── PAGINADOR ─────────────────────────────────────────────────── -->
+  <app-paginator
+    *ngIf="viewMode !== 'croquis'"
+    [totalRecords]="totalRecords"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    (pageChange)="load($event)">
+  </app-paginator>
+
+</div>
+
+<!-- ── MODAL DETALLE ─────────────────────────────────────────────────── -->
+<app-gestion-vecinos-detail
+  *ngIf="selectedVecino"
+  [item]="selectedVecino"
+  [colindancias]="detailColindancias"
+  [tiposConstruccion]="detailTipos"
+  [usos]="detailUsos"
+  [relacionTipos]="detailRelacionTipos"
+  (updated)="onVecinoUpdated()"
+  (closeModal)="closeDetail()">
+</app-gestion-vecinos-detail>
+
+<!-- ── MODAL AÑADIR (mismo form en las 3 vistas, 2 secciones) ────────── -->
+<app-gestion-croquis-add
+  *ngIf="showCroquisAdd"
+  [projects]="croquisProjects"
+  [croquis]="croquis"
+  [colindancias]="croquisColindancias"
+  [tiposConstruccion]="croquisTipos"
+  [usos]="croquisUsos"
+  [relacionTipos]="croquisRelacionTipos"
+  [initialProjectId]="addInitialProjectId"
+  [initialLoteId]="addInitialLoteId"
+  (closeModal)="closeCroquisAdd()"
+  (created)="onCroquisCreated()">
+</app-gestion-croquis-add>

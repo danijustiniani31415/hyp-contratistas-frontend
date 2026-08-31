@@ -1,0 +1,58 @@
+<app-base-modal
+  [title]="'AGREGAR RECORDATORIO DE LECCIÓN'"
+  width="w-[720px]"
+  (closeModal)="closeModal.emit()"
+>
+  <div class="flex flex-col gap-[15px] mt-[15px]">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Trabajador</p>
+        <app-search-select
+          [options]="workers"
+          valueField="workerId"
+          displayField="fullName"
+          [value]="dto.workerId"
+          (valueChange)="dto.workerId = $event"
+          [showLabel]="false"
+          [allowClear]="false"
+          placeholder="Seleccionar trabajador"
+        ></app-search-select>
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Proyecto</p>
+        <app-search-select
+          [options]="projects"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="dto.projectId"
+          (valueChange)="dto.projectId = $event"
+          [showLabel]="false"
+          [allowClear]="false"
+          placeholder="Seleccionar proyecto"
+        ></app-search-select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Estado</p>
+        <app-search-select
+          [options]="estadoOptions"
+          [value]="dto.active"
+          (valueChange)="dto.active = $event"
+          [allowClear]="false"
+          [showLabel]="false"
+        ></app-search-select>
+      </div>
+    </div>
+
+    <div class="flex justify-center pt-2">
+      <button
+        (click)="save()"
+        class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer"
+      >
+        <p class="text-[#ffffff] text-lg">Guardar</p>
+      </button>
+    </div>
+  </div>
+</app-base-modal>

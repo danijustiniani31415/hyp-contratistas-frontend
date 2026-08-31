@@ -1,0 +1,363 @@
+<app-abril-page-header
+  [badge]="'GESTIÓN DE TALENTO · ' + anioActual"
+  titulo="Solicitud de Personal"
+  subtitulo="Solicita nuevas vacantes y da seguimiento a los requerimientos de tu área."
+  [botonSecundario]="botonConfiguracion"
+  (secondaryClick)="abrirConfiguracion()"
+  [hasExtra]="true">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[16px] bg-white flex-1 min-h-0 overflow-auto pb-[64px]">
+
+  <!-- ── Tarjetas resumen: el embudo del solicitante ────────────────────── -->
+  <!-- Total registradas → pendientes de que GTH las tome → GTH trabajándolas → cerradas.
+       Los contadores vienen calculados del backend (`resumen`) porque saber qué fase le
+       toca a quién es regla del pipeline de reclutamiento, no de esta vista. -->
+  <!-- 2 columnas ya en teléfono (antes 1): apiladas ocupaban casi una pantalla completa
+       antes de llegar a la lista. Las medidas compactas de móvil van en el CSS del
+       componente (.sp-kpi*), no acá, para no tocar el desktop. -->
+  <div class="sp-kpis grid grid-cols-2 xl:grid-cols-4 gap-[16px]">
+
+    <!-- Total de solicitudes -->
+    <div class="sp-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="sp-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DBEAFE">
+        <svg class="sp-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M9 8h6M5 21h14a2 2 0 002-2V7l-5-5H5a2 2 0 00-2 2v15a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="sp-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.totalRegistradas }}</span>
+        <span class="sp-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Solicitudes del área</span>
+        <span class="sp-kpi-sub text-[11px] text-gray-400">Total registradas</span>
+      </div>
+    </div>
+
+    <!-- Pendientes sin respuesta -->
+    <div class="sp-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="sp-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#FEF3C7">
+        <svg class="sp-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="sp-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.pendientes }}</span>
+        <span class="sp-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Pendientes</span>
+        <span class="sp-kpi-sub text-[11px] text-gray-400">Sin respuesta</span>
+      </div>
+    </div>
+
+    <!-- En revisión: el siguiente paso del proceso le toca a GTH -->
+    <div class="sp-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="sp-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#EDE9FE">
+        <svg class="sp-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6D28D9" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2.5m0 3.5h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="sp-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.enRevisionGth }}</span>
+        <span class="sp-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">En revisión</span>
+        <span class="sp-kpi-sub text-[11px] text-gray-400">GTH evaluando</span>
+      </div>
+    </div>
+
+    <!-- Aprobadas: procesos cerrados del año en curso -->
+    <div class="sp-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="sp-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DCFCE7">
+        <svg class="sp-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="sp-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.aprobadas }}</span>
+        <span class="sp-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Cerradas</span>
+        <span class="sp-kpi-sub text-[11px] text-gray-400">Este período</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Gestión de candidatos ─────────────────────────────────────────── -->
+  <!-- Lo que GTH le dejó por revisar al solicitante. Dos tipos de tarjeta según `tipo`:
+       "Long list enviada por GTH" (decide qué CVs pasan) y "Finalistas enviados por GTH"
+       (informe de las entrevistas, solo lectura). -->
+  <div *ngIf="puedeGestionar && gestionCandidatos.length > 0"
+       class="sp-cand-box rounded-[12px] border p-[16px]"
+       style="border-color:#bfdbfe;background:var(--color-abril-logo-blue-light)">
+
+    <div class="flex items-center justify-between gap-[10px] mb-[12px]">
+      <h2 class="text-[15px] font-bold" style="color:var(--color-abril-logo-blue)">Gestión de candidatos</h2>
+      <span class="text-[12px] font-medium shrink-0" style="color:var(--color-abril-logo-blue)">
+        {{ gestionCandidatos.length }} por revisar
+      </span>
+    </div>
+
+    <div class="flex flex-col gap-[10px]">
+      <!-- En móvil la fila pasa a columna y el botón ocupa el ancho completo (.sp-cand-row
+           en el CSS del componente): el texto del botón no se parte y el bloque de la
+           izquierda deja de quedar espachurrado a unos pocos píxeles. -->
+      <div *ngFor="let c of gestionCandidatos"
+           class="sp-cand-row flex items-center justify-between gap-[16px] rounded-[10px] bg-white border px-[16px] py-[13px]"
+           style="border-color:var(--color-abril-border)">
+
+        <div class="flex items-start gap-[12px] min-w-0">
+          <div class="flex items-center justify-center w-[38px] h-[38px] rounded-[9px] shrink-0"
+               style="background:var(--color-abril-logo-blue-light)">
+            <i class="ti text-[19px]" style="color:var(--color-abril-logo-blue)"
+               [ngClass]="c.tipo === 'FINALISTAS' ? 'ti-user-check' : 'ti-users'"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-[8px] flex-wrap">
+              <span class="text-[14px] font-bold text-gray-800">
+                {{ c.tipo === 'FINALISTAS' ? 'Finalistas enviados por GTH' : 'Long list enviada por GTH' }}
+              </span>
+              <span *ngIf="c.tipo === 'FINALISTAS'"
+                    class="text-[10.5px] font-semibold px-[8px] py-[2px] rounded-full"
+                    style="background:#DCFCE7;color:#15803D">Informe listo</span>
+              <span *ngIf="c.tipo !== 'FINALISTAS'"
+                    class="text-[10.5px] font-semibold px-[8px] py-[2px] rounded-full"
+                    style="background:#FEF3C7;color:#B45309">Pendiente</span>
+            </div>
+            <p class="text-[12.5px] text-gray-500 mt-[2px] truncate">
+              {{ c.codigo }} · {{ c.puesto | titleCase }}<span *ngIf="c.proyectoObra"> · {{ c.proyectoObra | titleCase }}</span>
+            </p>
+            <p class="text-[12px] text-gray-500 mt-[3px] leading-snug">
+              <ng-container *ngIf="c.tipo === 'FINALISTAS'; else textoLongList">
+                GTH compartió {{ c.totalCandidatos }} finalista{{ c.totalCandidatos === 1 ? '' : 's' }}
+                con su resultado de entrevista, informe psicotécnico y recomendación de GTH.
+              </ng-container>
+              <ng-template #textoLongList>
+                GTH envió {{ c.totalCandidatos }} candidato{{ c.totalCandidatos === 1 ? '' : 's' }} para que revises los CVs y decidas quiénes pasan a evaluación.
+              </ng-template>
+            </p>
+          </div>
+        </div>
+
+        <button type="button" (click)="abrirGestionCandidatos(c)"
+          class="sp-cand-btn inline-flex items-center justify-center gap-[7px] h-[38px] px-[16px] rounded-[8px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 shrink-0"
+          style="background:var(--color-abril-logo-blue)">
+          <i class="ti ti-eye text-[16px]"></i>
+          {{ c.tipo === 'FINALISTAS' ? 'Revisar finalistas' : 'Revisar long list y CVs' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tabla: solicitudes de vacante del área ────────────────────────── -->
+  <div class="flex items-center justify-between gap-[10px]">
+    <h2 class="text-[15px] font-semibold text-gray-700">Solicitudes de vacante del área</h2>
+    <span class="text-[12px] text-gray-400 shrink-0">{{ filteredSolicitudes.length }} registro{{ filteredSolicitudes.length === 1 ? '' : 's' }}</span>
+  </div>
+
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Código</th>
+          <th>Posición</th>
+          <th>Área</th>
+          <th>Proyecto / Obra</th>
+          <th>Enviado</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="filteredSolicitudes.length === 0">
+          <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
+        </tr>
+
+        <tr *ngFor="let s of pagedSolicitudes"
+            class="border-b hover:bg-gray-50"
+            style="border-color:var(--color-abril-border)">
+
+          <td class="font-medium text-gray-700 whitespace-nowrap">{{ s.codigo }}</td>
+
+          <td class="text-gray-700">
+            <div class="font-medium">{{ s.puesto | titleCase }}</div>
+            <div *ngIf="s.justificacion" class="text-[11px] text-gray-400 max-w-[280px] truncate" [title]="s.justificacion">
+              {{ s.justificacion }}
+            </div>
+          </td>
+
+          <td class="text-gray-500">
+            <div>{{ (s.area | titleCase) || '—' }}</div>
+            <!-- La lista es de toda el área: sin esto no se distingue el pedido de uno del
+                 pedido del vecino. -->
+            <div *ngIf="s.solicitante" class="text-[11px] text-gray-400 truncate max-w-[180px]"
+                 [title]="s.solicitante">
+              {{ s.solicitante | titleCase }}
+            </div>
+          </td>
+
+          <td class="text-gray-500">{{ (s.proyectoObra | titleCase) || '—' }}</td>
+
+          <td class="text-gray-500 whitespace-nowrap">{{ s.enviado | date:'dd/MM/yyyy' }}</td>
+
+          <td class="text-center">
+            <app-status-badge
+              [text]="s.estadoNombre"
+              [bgColor]="estadoColors(s.estadoCodigo).bg"
+              [textColor]="estadoColors(s.estadoCodigo).text" />
+          </td>
+
+          <td class="text-center whitespace-nowrap">
+            <div class="inline-flex items-center gap-[6px]">
+              <button type="button" (click)="abrirSeguimiento(s)"
+                class="inline-flex items-center gap-[6px] h-[30px] px-[12px] rounded-[7px] text-[12px] font-medium cursor-pointer transition-colors"
+                style="background:var(--color-abril-logo-blue-light);color:var(--color-abril-logo-blue);border:0.5px solid #a9c9e6"
+                title="Ver el estado y las fases del requerimiento">
+                <i class="ti ti-eye text-[15px]"></i>
+                Hacer seguimiento
+              </button>
+
+              <!-- Solo mientras espera la decisión del GG: cubre el caso de que el correo
+                   automático no haya podido salir. -->
+              <button *ngIf="puedeGestionar && esperandoGerencia(s)" type="button" (click)="reenviarAGerencia(s)"
+                class="inline-flex items-center justify-center w-[30px] h-[30px] rounded-[7px] cursor-pointer transition-colors hover:opacity-80"
+                style="background:#FEF3C7;color:#B45309;border:0.5px solid #FCD34D"
+                title="Reenviar el correo de aprobación a quien todavía no ha decidido">
+                <i class="ti ti-mail-forward text-[15px]"></i>
+              </button>
+            </div>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Las mismas solicitudes, en tarjetas (móvil y tablet) ─────────────
+       Reemplazan a la tabla por debajo de 1024px (ver el CSS del componente):
+       las 7 columnas no entran en ese ancho y el desborde arrastraba de lado
+       toda la página. Comparten filtro, paginación y acción con la tabla: es
+       la misma lista, solo cambia cómo se dibuja. -->
+  <div class="sp-cards">
+
+    <div *ngIf="filteredSolicitudes.length === 0" class="text-center py-[32px] text-gray-400 text-sm">
+      {{ mensajeVacio }}
+    </div>
+
+    <div *ngFor="let s of pagedSolicitudes"
+         class="rounded-[10px] border bg-white px-[12px] py-[11px]"
+         style="border-color:var(--color-abril-border)">
+
+      <!-- Código + estado -->
+      <div class="flex items-start justify-between gap-[8px]">
+        <span class="text-[12px] font-bold text-gray-700 whitespace-nowrap">{{ s.codigo }}</span>
+        <app-status-badge
+          [text]="s.estadoNombre"
+          [bgColor]="estadoColors(s.estadoCodigo).bg"
+          [textColor]="estadoColors(s.estadoCodigo).text" />
+      </div>
+
+      <!-- Posición + justificación -->
+      <p class="text-[13.5px] font-semibold text-gray-800 mt-[5px] leading-snug">{{ s.puesto | titleCase }}</p>
+      <p *ngIf="s.justificacion" class="text-[11.5px] text-gray-400 mt-[1px] truncate" [title]="s.justificacion">
+        {{ s.justificacion }}
+      </p>
+
+      <!-- Área / proyecto / envío -->
+      <div class="grid grid-cols-2 gap-x-[10px] gap-y-[7px] mt-[9px]">
+        <div class="min-w-0">
+          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Área</div>
+          <div class="text-[12px] text-gray-600 truncate">{{ (s.area | titleCase) || '—' }}</div>
+          <div *ngIf="s.solicitante" class="text-[11px] text-gray-400 truncate">{{ s.solicitante | titleCase }}</div>
+        </div>
+        <div class="min-w-0">
+          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Proyecto / Obra</div>
+          <div class="text-[12px] text-gray-600 truncate">{{ (s.proyectoObra | titleCase) || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Enviado</div>
+          <div class="text-[12px] text-gray-600">{{ s.enviado | date:'dd/MM/yyyy' }}</div>
+        </div>
+      </div>
+
+      <button type="button" (click)="abrirSeguimiento(s)"
+        class="w-full inline-flex items-center justify-center gap-[6px] h-[36px] mt-[11px] rounded-[7px] text-[12.5px] font-medium cursor-pointer transition-colors"
+        style="background:var(--color-abril-logo-blue-light);color:var(--color-abril-logo-blue);border:0.5px solid #a9c9e6"
+        title="Ver el estado y las fases del requerimiento">
+        <i class="ti ti-eye text-[15px]"></i>
+        Hacer seguimiento
+      </button>
+
+      <button *ngIf="puedeGestionar && esperandoGerencia(s)" type="button" (click)="reenviarAGerencia(s)"
+        class="w-full inline-flex items-center justify-center gap-[6px] h-[36px] mt-[7px] rounded-[7px] text-[12.5px] font-medium cursor-pointer transition-colors"
+        style="background:#FEF3C7;color:#B45309;border:0.5px solid #FCD34D"
+        title="Reenviar el correo de aprobación a quien todavía no ha decidido">
+        <i class="ti ti-mail-forward text-[15px]"></i>
+        Reenviar aprobación
+      </button>
+
+    </div>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredSolicitudes.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- FAB: abre el formulario. Solo la jefatura del área registra solicitudes (el backend rechaza
+     el POST del resto); el *ngIf de showModal es para que no se solape con el modal abierto. -->
+<app-fab *ngIf="puedeGestionar && !showModal" label="Nueva solicitud" (clicked)="showModal = true"></app-fab>
+
+<app-gth-nueva-solicitud
+  *ngIf="showModal"
+  (closeModal)="showModal = false"
+  (saved)="onSaved()">
+</app-gth-nueva-solicitud>
+
+<!-- La configuración de correos ya no es un modal: vive en su propia pantalla
+     (/gestion-gth/solicitud-personal/configuracion), a la que lleva el botón «Configuración»
+     del header. Feature: gestion-gth.reclutamiento.configuracion. -->
+
+<!-- Modal de seguimiento del requerimiento ("Hacer seguimiento") -->
+<app-gth-seguimiento
+  *ngIf="seguimientoId !== null"
+  [requerimientoId]="seguimientoId"
+  (closeModal)="cerrarSeguimiento()">
+</app-gth-seguimiento>
+
+<!-- Modal de revisión de la long list ("Revisar long list y CVs") -->
+<app-gth-revision-long-list
+  *ngIf="revisionId !== null"
+  [requerimientoId]="revisionId"
+  [puedeGestionar]="puedeGestionar"
+  (decided)="load()"
+  (closeModal)="cerrarRevision()">
+</app-gth-revision-long-list>
+
+<!-- Modal del informe de finalistas ("Revisar finalistas") -->
+<app-gth-revision-finalistas
+  *ngIf="finalistasId !== null"
+  [requerimientoId]="finalistasId"
+  [puedeGestionar]="puedeGestionar"
+  (decided)="load()"
+  (closeModal)="cerrarFinalistas()">
+</app-gth-revision-finalistas>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por código, puesto, área o proyecto..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+</app-filter-modal>

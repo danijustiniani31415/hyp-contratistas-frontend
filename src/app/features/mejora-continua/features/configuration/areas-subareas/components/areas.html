@@ -1,0 +1,68 @@
+<div class="flex flex-col gap-[20px] bg-white rounded-lg p-[20px]">
+
+  <div class="flex items-center justify-between gap-4">
+    <p class="text-[0.78rem] text-gray-500">
+      Configura la jerarquía de ítems de catálogo para cada rama habilitada en
+      <span class="font-semibold">Lecciones Aprendidas</span>. Para habilitar o deshabilitar ramas,
+      usa <a class="text-[#64BC04] underline" href="/mejora-continua/configuration/areas">Mejora Continua → Áreas</a>.
+    </p>
+
+    <!-- Buscador -->
+    <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-400
+                focus-within:bg-white focus-within:border-[#64bc04] focus-within:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all w-[280px] flex-shrink-0">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="flex-shrink-0">
+        <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" />
+      </svg>
+      <input type="text" placeholder="Buscar rama..." [(ngModel)]="searchText"
+        class="flex-1 border-0 outline-none bg-transparent text-gray-900 text-sm" />
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="w-full rounded-lg overflow-auto border border-[#D6DEE5] bg-white">
+    <table class="w-full">
+      <thead class="bg-[#E5F7D1]">
+        <tr class="text-[#64BC04]">
+          <th class="text-left px-[16px] py-[10px] font-semibold w-[80px]"></th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Rama</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filteredRows" class="border-b border-[#D6DEE5] hover:bg-gray-50">
+          <td class="px-[16px] py-[8px]">
+            <button class="cursor-pointer" title="Configurar relaciones"
+              (click)="openScopeModal(item, $event)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64BC04" stroke-width="1.8" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+            </button>
+          </td>
+          <td class="px-[16px] py-[8px] text-gray-700">
+            <span *ngFor="let seg of item.path; let last = last">
+              <span class="inline-flex items-center gap-1.5">
+                <span>{{ seg.areaItemName }}</span>
+                <span class="text-[0.6rem] bg-gray-100 text-gray-500 border border-gray-200 rounded px-1 py-0.5 whitespace-nowrap">
+                  {{ seg.areaTypeName }}
+                </span>
+              </span>
+              <span *ngIf="!last" class="text-gray-400 mx-2">&rsaquo;</span>
+            </span>
+          </td>
+        </tr>
+        <tr *ngIf="filteredRows.length === 0">
+          <td colspan="2" class="text-center py-8 text-gray-400 text-sm">
+            {{ searchText ? 'Sin resultados.' : 'Aún no hay ramas habilitadas. Habilítalas desde Mejora Continua → Áreas.' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<app-psss-scope-edit
+  *ngIf="showScopeModal && scopeLessonAreaId"
+  [lessonAreaId]="scopeLessonAreaId"
+  [entityName]="scopeEntityName"
+  (closeModal)="showScopeModal = false"
+  (saved)="showScopeModal = false" />

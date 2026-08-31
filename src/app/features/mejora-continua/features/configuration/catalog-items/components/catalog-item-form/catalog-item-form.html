@@ -1,0 +1,33 @@
+<app-base-modal [title]="title" width="w-[480px]" (closeModal)="closeModal.emit()">
+  <div class="cif-body">
+
+    <!-- Descripción -->
+    <div class="cif-field">
+      <label class="cif-field-label" for="cifDescription">Descripción *</label>
+      <input
+        id="cifDescription"
+        type="text"
+        [(ngModel)]="description"
+        placeholder="Ej: CONCRETO ARMADO"
+        class="cif-input"
+      />
+    </div>
+
+    <!-- Activo (solo en edición) -->
+    <label *ngIf="isEdit" class="cif-checkbox-label">
+      <input type="checkbox" [(ngModel)]="active" class="cif-checkbox" />
+      <span>Activo</span>
+    </label>
+
+  </div>
+
+  <div class="cif-footer">
+    <button type="button" class="btn-secondary-udp" (click)="closeModal.emit()">
+      Cancelar
+    </button>
+    <button type="button" class="btn-primary-udp" (click)="save()">
+      <i class="ti ti-device-floppy"></i>
+      <span>Guardar</span>
+    </button>
+  </div>
+</app-base-modal>

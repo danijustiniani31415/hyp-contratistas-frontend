@@ -1,0 +1,110 @@
+/* updated */
+
+.layout-mobile-menu-btn {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1000;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  color: var(--color-abril-standard);
+  font-size: 20px;
+}
+
+/*
+ * El botón flotante es SOLO para móvil (<640px): en escritorio el sidebar fijo
+ * ya provee la navegación. La utilidad `sm:hidden` del template no basta porque
+ * la regla `.layout-mobile-menu-btn { display: flex }` de arriba, al estar
+ * encapsulada por Angular, tiene mayor especificidad que `.sm\:hidden` de
+ * Tailwind y la anula — dejando el hamburguesa visible en escritorio (bug
+ * observado en /inicio y demás páginas sin app-abril-page-header). Este media
+ * query, con la misma especificidad y fuente posterior, lo oculta en escritorio.
+ */
+@media (min-width: 640px) {
+  .layout-mobile-menu-btn {
+    display: none;
+  }
+}
+
+.layout-content {
+  border-left: 1px solid #e5e7eb;
+}
+
+.full-page-wrapper,
+.full-page-wrapper > div {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/*
+ * Hace que el componente ruteado llene el área disponible (para páginas con h-full
+ * que manejan su propio scroll interno) y, si su contenido crece más que el
+ * contenedor, el contenedor scrollea (para páginas de altura natural).
+ *
+ * flex-shrink debe ser 1, no 0: con 0 (como estaba antes) el componente ruteado
+ * nunca podía encogerse por debajo de su alto natural, así que su propio
+ * `:host { flex:1; min-height:0 }` + wrapper interno con scroll (ej.
+ * .abril-table-wrap) nunca llegaba a activarse — en vez de scrollear la tabla
+ * por dentro, terminaba scrolleando .page-content entero (scroll "externo",
+ * bug real observado en Auditoría de ATS y potencialmente cualquier página con
+ * este patrón de scroll interno). Con flex-shrink:1 el componente sí se ajusta
+ * al espacio disponible y su propio scroll interno funciona; las páginas de
+ * altura natural (sin `min-height:0` propio) no se ven afectadas porque no
+ * tienen contenido que encoger más allá de lo que ya ocupan.
+ *
+ * Se excluye <router-outlet> porque Angular lo renderiza como un nodo DOM vacío
+ * que también es hijo directo de .page-content; sin el :not(), el flex-grow lo
+ * haría competir por espacio con el componente real y generaría un hueco gris.
+ */
+.page-content > *:not(router-outlet) {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.full-page-wrapper ::ng-deep app-header {
+  position: fixed;
+  top: 12px;
+  right: 8px;
+  z-index: 999;
+}
+
+.full-page-wrapper ::ng-deep app-header > div {
+  background: transparent !important;
+  padding: 0 !important;
+  height: auto !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.full-page-wrapper ::ng-deep app-header .sm\:flex-8,
+.full-page-wrapper ::ng-deep app-header a,
+.full-page-wrapper ::ng-deep app-header img[alt="Logo"] {
+  display: none !important;
+}
+
+.full-page-wrapper ::ng-deep app-header .shrink-0.relative {
+  width: 40px !important;
+  height: 40px !important;
+  overflow: visible !important;
+}
+
+.full-page-wrapper ::ng-deep app-header .shrink-0.relative img {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  border: 2px solid rgba(255,255,255,.4) !important;
+}
+
+.full-page-wrapper ::ng-deep app-header .sm\:hidden {
+  display: none !important;
+}

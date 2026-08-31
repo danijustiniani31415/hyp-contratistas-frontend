@@ -1,0 +1,17 @@
+<app-abril-page-header
+  badge="HABILITACIÓN"
+  [titulo]="esContratista ? 'Panel Contratista' : 'Gestión de Ingresos'"
+  [subtitulo]="esContratista ? '' : 'Habilitación · Seguridad · Salud Ocupacional'"
+  [tabs]="esContratista ? contratistaTabsConActivo : []">
+</app-abril-page-header>
+
+<div class="gestion-shell">
+  <nav class="gestion-tabs" *ngIf="!esContratista">
+    @for (tab of visibleTabs; track tab.path) {
+      <a class="gestion-tab" [routerLink]="tab.path" queryParamsHandling="preserve" routerLinkActive="gestion-tab--active">{{ tab.label }}</a>
+    }
+  </nav>
+  <div class="gestion-content">
+    <router-outlet />
+  </div>
+</div>

@@ -1,0 +1,34 @@
+<div class="dashboard-page">
+
+  <!-- Saludo -->
+  <app-home-greeting [firstName]="firstName" [subtitle]="jobTitle ? jobTitle + ' · ' + todayCapitalized : todayCapitalized" />
+
+  <!-- Novedades y comunicados (copia exacta de las tarjetas SOMOS ABRIL del boletín).
+       El Centro de aprendizaje ahora es la 4ta tarjeta (antes iba en una columna a la
+       derecha) y lleva a su propia página /centro-aprendizaje.
+       El layout (paddings, columnas y el aire que necesitan el perro y el botón que
+       sobresalen de cada tarjeta) vive en dashboard.css, no en utilidades sueltas:
+       son medidas que dependen unas de otras y se explican mejor juntas. -->
+  <div class="novedades-panel">
+    <div class="novedades-head">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="#16a34a"><path d="M8 5v14l11-7z"/></svg>
+      <span>Novedades y comunicados</span>
+    </div>
+    <div class="novedades-grid">
+      <app-highlight-card
+        *ngFor="let h of novedades"
+        [titulo]="h.titulo"
+        [descripcion]="h.descripcion"
+        [img]="h.img"
+        (cta)="irAlBoletin()"
+      />
+      <app-highlight-card
+        [titulo]="centroAprendizaje.titulo"
+        [descripcion]="centroAprendizaje.descripcion"
+        [img]="centroAprendizaje.img"
+        (cta)="irAlCentroAprendizaje()"
+      />
+    </div>
+  </div>
+
+</div>

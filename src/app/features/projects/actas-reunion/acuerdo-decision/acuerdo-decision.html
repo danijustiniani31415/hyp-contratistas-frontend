@@ -1,0 +1,71 @@
+<div class="flex-1 flex items-start justify-center pt-10 px-4">
+  <div class="bg-white rounded-lg p-6 flex flex-col gap-4 w-full max-w-[560px]">
+
+    <ng-container *ngIf="info">
+      <div>
+        <p class="text-xs text-gray-400">Reunión N° {{ info.reunionNumero }} — {{ info.reunionTema }}</p>
+        <h2 class="text-base font-semibold text-[var(--color-abril-primary)] mt-1">Acuerdo</h2>
+      </div>
+
+      <div class="border border-[#E5EAF0] rounded-lg p-4 bg-[#F5F8FA] flex flex-col gap-2">
+        <p class="text-sm text-gray-700">{{ info.acuerdoDescripcion }}</p>
+        <p *ngIf="info.acuerdoAcciones" class="text-xs text-gray-500">Acciones: {{ info.acuerdoAcciones }}</p>
+        <p *ngIf="info.fechaProgramada" class="text-xs text-gray-500">
+          Fecha programada: {{ info.fechaProgramada | date:'dd/MM/yyyy' }}
+        </p>
+      </div>
+
+      <!-- Ya respondido: solo muestra el estado -->
+      <div *ngIf="info.estadoAceptacion !== 'PENDIENTE'" class="flex flex-col items-center text-center gap-2 py-4">
+        <span class="ti text-4xl"
+          [class.ti-circle-check]="info.estadoAceptacion === 'ACEPTADO'"
+          [class.text-[var(--color-abril-primary)]]="info.estadoAceptacion === 'ACEPTADO'"
+          [class.ti-circle-x]="info.estadoAceptacion === 'RECHAZADO'"
+          [class.text-red-500]="info.estadoAceptacion === 'RECHAZADO'"></span>
+        <p class="text-sm font-medium text-gray-700">
+          {{ info.estadoAceptacion === 'ACEPTADO' ? 'Ya aceptaste este acuerdo.' : 'Ya rechazaste este acuerdo.' }}
+        </p>
+        <p *ngIf="info.motivoRechazo" class="text-xs text-gray-500">Motivo: {{ info.motivoRechazo }}</p>
+      </div>
+
+      <!-- Pendiente: aceptar o rechazar -->
+      <ng-container *ngIf="info.estadoAceptacion === 'PENDIENTE'">
+        <div *ngIf="!mostrarMotivoRechazo" class="flex gap-3">
+          <button type="button" (click)="aceptar()"
+            class="flex-1 h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center justify-center gap-2">
+            <span class="ti ti-check text-base"></span>
+            Aceptar
+          </button>
+          <button type="button" (click)="abrirRechazo()"
+            class="flex-1 h-[42px] px-5 border border-red-200 text-red-500 rounded-lg text-sm font-medium cursor-pointer hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
+            <span class="ti ti-x text-base"></span>
+            Rechazar
+          </button>
+        </div>
+
+        <div *ngIf="mostrarMotivoRechazo" class="flex flex-col gap-2">
+          <label class="text-sm text-gray-600">Motivo del rechazo *</label>
+          <textarea [(ngModel)]="motivoRechazo" rows="3" maxlength="500"
+            class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+            placeholder="Explica por qué no puedes asumir este acuerdo"></textarea>
+          <div class="flex gap-3">
+            <button type="button" (click)="mostrarMotivoRechazo = false"
+              class="h-[38px] px-4 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button type="button" (click)="confirmarRechazo()"
+              class="h-[38px] px-4 bg-red-500 rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-red-600 transition-colors">
+              Confirmar rechazo
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+      <button type="button" (click)="irAReunion()"
+        class="self-start text-sm text-[var(--color-abril-primary)] hover:underline">
+        Ver el acta completa de la reunión
+      </button>
+    </ng-container>
+
+  </div>
+</div>

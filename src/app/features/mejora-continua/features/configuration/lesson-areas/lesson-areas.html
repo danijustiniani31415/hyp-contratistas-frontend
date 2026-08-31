@@ -1,0 +1,128 @@
+<div class="flex flex-col gap-[20px] bg-white rounded-lg p-[20px] mb-[20px]">
+
+  <div class="flex items-center justify-between gap-4">
+    <p class="text-[0.78rem] text-gray-500">
+      Activa las ramas de áreas que estarán disponibles en
+      <span class="font-semibold">Lecciones Aprendidas</span>. Las ramas vienen de
+      <a class="text-[#64BC04] underline" href="/configuracion/area">Configuración → Áreas → Jerarquía</a>.
+    </p>
+
+    <!-- Buscador -->
+    <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-400
+                focus-within:bg-white focus-within:border-[#64bc04] focus-within:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all w-[280px] flex-shrink-0">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="flex-shrink-0">
+        <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" />
+      </svg>
+      <input type="text" placeholder="Buscar rama..." [(ngModel)]="searchText"
+        class="flex-1 border-0 outline-none bg-transparent text-gray-900 text-sm" />
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="w-full rounded-lg overflow-auto border border-[#D6DEE5] bg-white">
+    <table class="w-full">
+      <thead class="bg-[#E5F7D1] text-[#64BC04]">
+        <!-- Fila 1: encabezados de grupo -->
+        <tr>
+          <th rowspan="2" class="text-left px-[16px] py-[10px] font-semibold">Rama</th>
+          <th rowspan="2" class="text-center px-[16px] py-[10px] font-semibold w-[110px]">Estado</th>
+          <th rowspan="2" class="text-center px-[16px] py-[10px] font-semibold w-[110px]">Acciones</th>
+          <th colspan="2" class="text-center px-[16px] py-[8px] font-semibold border-b border-l border-[#D6DEE5]">Formulario</th>
+          <th colspan="1" class="text-center px-[16px] py-[8px] font-semibold border-b border-l border-[#D6DEE5]">Filtros</th>
+        </tr>
+        <!-- Fila 2: columnas -->
+        <tr>
+          <th class="text-center px-[16px] py-[10px] font-semibold w-[120px] border-l border-[#D6DEE5]"
+            title="Aparece en el formulario de creación de lecciones (requiere plantilla)">En formulario</th>
+          <th class="text-center px-[16px] py-[10px] font-semibold w-[130px]"
+            title="Se muestra como opción independiente en el formulario y no despliega a sus áreas hijas (requiere 'En formulario')">Área independiente</th>
+          <th class="text-center px-[16px] py-[10px] font-semibold w-[130px] border-l border-[#D6DEE5]"
+            title="En los filtros del dashboard, agrupa a sus subáreas">Agrupar subáreas</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of filteredRows" class="border-b border-[#D6DEE5] hover:bg-gray-50">
+          <td class="px-[16px] py-[8px] text-gray-700">
+            <span *ngFor="let seg of r.path; let last = last">
+              <span class="inline-flex items-center gap-1.5">
+                <span>{{ seg.areaItemName }}</span>
+                <span class="text-[0.6rem] bg-gray-100 text-gray-500 border border-gray-200 rounded px-1 py-0.5 whitespace-nowrap">
+                  {{ seg.areaTypeName }}
+                </span>
+              </span>
+              <span *ngIf="!last" class="text-gray-400 mx-2">&rsaquo;</span>
+            </span>
+          </td>
+          <td class="px-[16px] py-[8px] text-center">
+            <app-status-badge
+              [text]="r.active ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="r.active ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="r.active ? '#009C87' : '#D30000'" />
+          </td>
+          <td class="px-[16px] py-[8px] text-center">
+            <button
+              (click)="toggle(r)"
+              class="text-xs font-medium px-[10px] py-[4px] rounded-[6px] border transition-colors cursor-pointer"
+              [ngClass]="r.active
+                ? 'border-red-200 text-red-600 hover:bg-red-50'
+                : 'border-green-300 text-green-700 hover:bg-green-50'">
+              {{ r.active ? 'Desactivar' : 'Activar' }}
+            </button>
+          </td>
+
+          <!-- En formulario -->
+          <td class="px-[16px] py-[8px] text-center">
+            <button type="button" (click)="toggleIncludeInForm(r)"
+              [disabled]="!r.active || !r.hasScope"
+              [title]="!r.active ? 'Activa el área primero' : (!r.hasScope ? 'El nodo no tiene plantilla' : '')"
+              class="text-xs font-medium px-[10px] py-[4px] rounded-[6px] border transition-colors"
+              [ngClass]="(!r.active || !r.hasScope)
+                ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                : (r.includeInForm
+                    ? 'border-green-300 text-green-700 bg-green-50 cursor-pointer hover:bg-green-100'
+                    : 'border-gray-300 text-gray-500 cursor-pointer hover:bg-gray-50')">
+              {{ r.includeInForm ? 'Sí' : 'No' }}
+            </button>
+          </td>
+
+          <!-- Área independiente -->
+          <td class="px-[16px] py-[8px] text-center">
+            <button type="button" (click)="toggleIncludeAsIndependent(r)"
+              [disabled]="!r.active || !r.includeInForm"
+              [title]="!r.active ? 'Activa el área primero' : (!r.includeInForm ? 'Marca primero En formulario' : '')"
+              class="text-xs font-medium px-[10px] py-[4px] rounded-[6px] border transition-colors"
+              [ngClass]="(!r.active || !r.includeInForm)
+                ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                : (r.includeAsIndependent
+                    ? 'border-green-300 text-green-700 bg-green-50 cursor-pointer hover:bg-green-100'
+                    : 'border-gray-300 text-gray-500 cursor-pointer hover:bg-gray-50')">
+              {{ r.includeAsIndependent ? 'Sí' : 'No' }}
+            </button>
+          </td>
+
+          <!-- Agrupar subáreas -->
+          <td class="px-[16px] py-[8px] text-center">
+            <button type="button" (click)="toggleIncludeDescendants(r)"
+              [disabled]="!r.active || !r.hasChildren"
+              [title]="!r.active ? 'Activa el área primero' : (!r.hasChildren ? 'El nodo no tiene subáreas' : '')"
+              class="text-xs font-medium px-[10px] py-[4px] rounded-[6px] border transition-colors"
+              [ngClass]="(!r.active || !r.hasChildren)
+                ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                : (r.includeDescendants
+                    ? 'border-green-300 text-green-700 bg-green-50 cursor-pointer hover:bg-green-100'
+                    : 'border-gray-300 text-gray-500 cursor-pointer hover:bg-gray-50')">
+              {{ r.includeDescendants ? 'Sí' : 'No' }}
+            </button>
+          </td>
+        </tr>
+
+        <tr *ngIf="filteredRows.length === 0">
+          <td colspan="6" class="px-[16px] py-[32px] text-center text-gray-400 text-sm">
+            {{ searchText ? 'Sin resultados.' : 'No hay ramas configuradas. Crea relaciones en Configuración → Áreas → Jerarquía.' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

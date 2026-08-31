@@ -1,0 +1,153 @@
+<app-abril-page-header
+  badge="ADMINISTRACIÓN DE OBRA"
+  titulo="Dashboard de Vecinos"
+  subtitulo="Resumen general y métricas por proyecto: vecinos, solicitudes y compromisos."
+  [tabs]="tabs"
+  [botonSecundario]="{ label: 'Exportar PDF', icono: 'ti-file-download' }"
+  (secondaryClick)="downloadPDF()">
+</app-abril-page-header>
+
+<div *ngIf="data" class="flex flex-col gap-4 pb-2">
+
+  <!-- ── RESUMEN GENERAL ───────────────────────────────────────────────── -->
+  <div class="bg-white rounded-lg border border-gray-200 p-5">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="bg-[#64BC04] text-white text-[11px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide">
+        Resumen general
+      </span>
+      <span class="text-sm text-gray-400">Consolidado de todos los proyectos</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+      <!-- Lotes y Vecinos -->
+      <div class="flex items-center justify-center gap-8 py-2">
+        <div class="flex flex-col items-center justify-center gap-1">
+          <span class="text-5xl font-bold text-[#64BC04]">{{ data.resumen.lotesCount }}</span>
+          <span class="text-sm text-gray-500 uppercase tracking-wide">Lotes</span>
+        </div>
+        <div class="flex flex-col items-center justify-center gap-1">
+          <span class="text-5xl font-bold text-[#64BC04]">{{ data.resumen.vecinosCount }}</span>
+          <span class="text-sm text-gray-500 uppercase tracking-wide">Vecinos</span>
+        </div>
+      </div>
+
+      <!-- Solicitudes -->
+      <div class="flex flex-col items-center gap-2">
+        <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Solicitudes</span>
+        <div class="relative h-[150px] w-full"><canvas id="sol-0"></canvas></div>
+        <div class="flex flex-wrap justify-center gap-x-3 gap-y-1">
+          <span *ngFor="let i of sorted(data.resumen.solicitudes)" class="flex items-center gap-1 text-[11px] text-gray-600">
+            <span class="w-2.5 h-2.5 rounded-full" [style.background]="colorFor(i.descripcion)"></span>
+            {{ i.descripcion }} · {{ i.count }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Compromisos -->
+      <div class="flex flex-col items-center gap-2">
+        <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Compromisos</span>
+        <div class="relative h-[150px] w-full"><canvas id="com-0"></canvas></div>
+        <div class="flex flex-wrap justify-center gap-x-3 gap-y-1">
+          <span *ngFor="let i of sorted(data.resumen.compromisos)" class="flex items-center gap-1 text-[11px] text-gray-600">
+            <span class="w-2.5 h-2.5 rounded-full" [style.background]="colorFor(i.descripcion)"></span>
+            {{ i.descripcion }} · {{ i.count }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── POR PROYECTO ──────────────────────────────────────────────────── -->
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div *ngFor="let p of proyectosVisibles"
+      class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-4">
+
+      <div class="flex items-center justify-between gap-2">
+        <h3 class="font-semibold text-gray-800 truncate" [title]="p.projectDescription">
+          {{ p.projectDescription }}
+        </h3>
+        <div class="flex items-baseline gap-2.5 shrink-0">
+          <div class="flex items-baseline gap-1">
+            <span class="text-xl font-bold text-[#64BC04]">{{ p.lotesCount }}</span>
+            <span class="text-[10px] text-gray-400 uppercase">Lotes</span>
+          </div>
+          <div class="flex items-baseline gap-1">
+            <span class="text-xl font-bold text-[#64BC04]">{{ p.vecinosCount }}</span>
+            <span class="text-[10px] text-gray-400 uppercase">Vecinos</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Solicitudes -->
+      <div class="flex flex-col gap-1.5">
+        <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold text-center">Solicitudes</span>
+        <div class="relative h-[120px]"><canvas id="sol-{{ p.projectId }}"></canvas></div>
+        <div class="flex flex-wrap justify-center gap-x-2.5 gap-y-1">
+          <span *ngFor="let i of sorted(p.solicitudes)" class="flex items-center gap-1 text-[10px] text-gray-600">
+            <span class="w-2 h-2 rounded-full" [style.background]="colorFor(i.descripcion)"></span>
+            {{ i.descripcion }} · {{ i.count }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Compromisos -->
+      <div class="flex flex-col gap-1.5 border-t border-gray-100 pt-3">
+        <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold text-center">Compromisos</span>
+        <div class="relative h-[120px]"><canvas id="com-{{ p.projectId }}"></canvas></div>
+        <div class="flex flex-wrap justify-center gap-x-2.5 gap-y-1">
+          <span *ngFor="let i of sorted(p.compromisos)" class="flex items-center gap-1 text-[10px] text-gray-600">
+            <span class="w-2 h-2 rounded-full" [style.background]="colorFor(i.descripcion)"></span>
+            {{ i.descripcion }} · {{ i.count }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Cumplimiento de limpiezas -->
+      <div class="flex flex-col gap-2 border-t border-gray-100 pt-3">
+        <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold text-center">Cumplimiento de limpiezas</span>
+
+        <!-- Total -->
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] text-gray-500">Total</span>
+            <span class="text-[11px] font-semibold text-[#509603]">{{ pct(p.limpiezas.totalHechas, p.limpiezas.totalProgramadas) }}%</span>
+          </div>
+          <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+            <div class="h-full bg-[#64BC04] rounded-full transition-all" [style.width.%]="pct(p.limpiezas.totalHechas, p.limpiezas.totalProgramadas)"></div>
+          </div>
+          <span class="text-[10px] text-gray-400">{{ p.limpiezas.totalHechas }} de {{ p.limpiezas.totalProgramadas }}</span>
+        </div>
+
+        <!-- Departamento -->
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] text-gray-500 inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#64BC04]"></span> Departamento</span>
+            <span class="text-[11px] font-semibold text-[#509603]">{{ pct(p.limpiezas.departamentoHechas, p.limpiezas.departamentoProgramadas) }}%</span>
+          </div>
+          <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+            <div class="h-full bg-[#64BC04] rounded-full transition-all" [style.width.%]="pct(p.limpiezas.departamentoHechas, p.limpiezas.departamentoProgramadas)"></div>
+          </div>
+          <span class="text-[10px] text-gray-400">{{ p.limpiezas.departamentoHechas }} de {{ p.limpiezas.departamentoProgramadas }}</span>
+        </div>
+
+        <!-- Área común -->
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] text-gray-500 inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#0086A5]"></span> Área común</span>
+            <span class="text-[11px] font-semibold text-[#0086A5]">{{ pct(p.limpiezas.comunHechas, p.limpiezas.comunProgramadas) }}%</span>
+          </div>
+          <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+            <div class="h-full bg-[#0086A5] rounded-full transition-all" [style.width.%]="pct(p.limpiezas.comunHechas, p.limpiezas.comunProgramadas)"></div>
+          </div>
+          <span class="text-[10px] text-gray-400">{{ p.limpiezas.comunHechas }} de {{ p.limpiezas.comunProgramadas }}</span>
+        </div>
+      </div>
+    </div>
+
+    <p *ngIf="proyectosVisibles.length === 0"
+      class="md:col-span-2 xl:col-span-4 text-center text-sm text-gray-400 italic py-10">
+      No hay proyectos con datos.
+    </p>
+  </div>
+
+</div>

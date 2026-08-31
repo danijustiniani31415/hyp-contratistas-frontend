@@ -1,0 +1,68 @@
+<!-- Controles alineados a la IZQUIERDA: el FAB flotante (agregar nuevo) vive fijo abajo
+     a la derecha y tapaba los botones de paginación cuando estaban a la derecha. -->
+<div
+  class="flex w-full flex-wrap items-center justify-start gap-3 rounded-[7px] border border-[#e2e8f0] bg-white px-3 py-[3px]">
+  <div class="flex items-center gap-1">
+    <button
+      type="button"
+      (click)="firstPage()"
+      [disabled]="currentPage === 1"
+      title="Primera página"
+      class="flex h-6 w-6 items-center justify-center rounded-[6px] border border-[#e2e8f0] text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M18 19l-7-7 7-7M11 19l-7-7 7-7" />
+      </svg>
+    </button>
+
+    <button
+      type="button"
+      (click)="prevPage()"
+      [disabled]="currentPage === 1"
+      title="Anterior"
+      class="flex h-6 w-6 items-center justify-center rounded-[6px] border border-[#e2e8f0] text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
+
+    <button
+      type="button"
+      *ngFor="let page of pages"
+      (click)="goToPage(page)"
+      [ngClass]="{
+        'text-white': page === currentPage,
+        'text-gray-600 hover:bg-gray-100': page !== currentPage
+      }"
+      [style.background]="page === currentPage ? 'var(--color-abril-standard)' : ''"
+      class="flex h-6 min-w-6 items-center justify-center rounded-[6px] px-1.5 text-[11px] font-medium transition-colors">
+      {{ page }}
+    </button>
+
+    <button
+      type="button"
+      (click)="nextPage()"
+      [disabled]="currentPage === totalPages"
+      title="Siguiente"
+      class="flex h-6 w-6 items-center justify-center rounded-[6px] border border-[#e2e8f0] text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+
+    <button
+      type="button"
+      (click)="lastPage()"
+      [disabled]="currentPage === totalPages"
+      title="Última página"
+      class="flex h-6 w-6 items-center justify-center rounded-[6px] border border-[#e2e8f0] text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 5l7 7-7 7M13 5l7 7-7 7" />
+      </svg>
+    </button>
+  </div>
+
+  <span class="text-[11px] font-medium text-gray-500">
+    <span class="font-semibold text-gray-700">{{ totalRecords }}</span>
+    {{ totalRecords === 1 ? 'registro' : 'registros' }}
+  </span>
+</div>

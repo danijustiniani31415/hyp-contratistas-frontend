@@ -1,0 +1,174 @@
+<div class="dashboard-root">
+
+  <app-abril-page-header
+    [badge]="'SSOMA · ' + anioActual"
+    titulo="Actos &amp; Condiciones Subestándar"
+    subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
+    [tabs]="tabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()">
+  </app-abril-page-header>
+
+  <!-- ERROR -->
+  @if (error) {
+    <div class="alert-error">
+      <i class="ti ti-alert-circle"></i> {{ error }}
+    </div>
+  }
+
+  <!-- SKELETON -->
+  @if (loading) {
+    <div class="skeleton-grid">
+      @for (_ of [1,2,3,4,5,6]; track $index) {
+        <div class="skeleton-card"></div>
+      }
+    </div>
+    <div class="skeleton-body"></div>
+  }
+
+  <!-- CONTENIDO -->
+  @if (!loading && data) {
+
+    <!-- STAT CARDS -->
+    <div class="stats-grid">
+      <div class="stat-card stat-card--abierto" (click)="irALista()">
+        <div class="stat-card__icon"><i class="ti ti-folder-open"></i></div>
+        <div class="stat-card__body">
+          <span class="stat-card__val">{{ data.totalAbiertos }}</span>
+          <span class="stat-card__lbl">Abiertos</span>
+        </div>
+      </div>
+      <div class="stat-card stat-card--cerrado" (click)="irALista()">
+        <div class="stat-card__icon"><i class="ti ti-circle-check"></i></div>
+        <div class="stat-card__body">
+          <span class="stat-card__val">{{ data.totalCerrados }}</span>
+          <span class="stat-card__lbl">Cerrados</span>
+        </div>
+      </div>
+      <div class="stat-card stat-card--penalidad">
+        <div class="stat-card__icon"><i class="ti ti-gavel"></i></div>
+        <div class="stat-card__body">
+          <span class="stat-card__val">{{ data.totalConPenalidad }}</span>
+          <span class="stat-card__lbl">Con Penalidad</span>
+        </div>
+      </div>
+      <div class="stat-card stat-card--critico">
+        <div class="stat-card__icon"><i class="ti ti-alert-triangle"></i></div>
+        <div class="stat-card__body">
+          <span class="stat-card__val">{{ data.criticosAbiertos }}</span>
+          <span class="stat-card__lbl">Críticos Abiertos</span>
+        </div>
+      </div>
+      <div class="stat-card stat-card--alto">
+        <div class="stat-card__icon"><i class="ti ti-exclamation-circle"></i></div>
+        <div class="stat-card__body">
+          <span class="stat-card__val">{{ data.altosAbiertos }}</span>
+          <span class="stat-card__lbl">Altos Abiertos</span>
+        </div>
+      </div>
+      @if (esContratista) {
+        <div class="stat-card stat-card--cerrado">
+          <div class="stat-card__icon"><i class="ti ti-clipboard-check"></i></div>
+          <div class="stat-card__body">
+            <span class="stat-card__val">{{ data.totalReportados }}</span>
+            <span class="stat-card__lbl">RACs Levantados por Ti ({{ data.totalReportadosCerrados }} cerrados)</span>
+          </div>
+        </div>
+      }
+      <div class="stat-card" [class.stat-card--vencido]="data.vencidosAbiertos > 0">
+        <div class="stat-card__icon"><i class="ti ti-clock-exclamation"></i></div>
+        <div class="stat-card__body">
+          <span class="stat-card__val">{{ data.vencidosAbiertos }}</span>
+          <span class="stat-card__lbl">Vencidos</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUERPO: tablas + tendencia -->
+    <div class="dash-body">
+
+      <!-- POR PROYECTO -->
+      @if (data.porProyecto.length) {
+        <div class="dash-card">
+          <h2 class="dash-card__title"><i class="ti ti-building"></i> Por Proyecto</h2>
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th>Proyecto</th>
+                <th class="ta-c">Total</th>
+                <th class="ta-c">Abiertos</th>
+                <th class="ta-c">Cerrados</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of data.porProyecto; track p.proyectoId) {
+                <tr>
+                  <td>{{ p.proyectoNombre }}</td>
+                  <td class="ta-c fw-600">{{ p.total }}</td>
+                  <td class="ta-c">
+                    <span class="badge badge--abierto">{{ p.abiertos }}</span>
+                  </td>
+                  <td class="ta-c">
+                    <span class="badge badge--cerrado">{{ p.cerrados }}</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- POR CATEGORÍA -->
+      @if (data.porCategoria.length) {
+        <div class="dash-card">
+          <h2 class="dash-card__title"><i class="ti ti-tag"></i> Por Categoría</h2>
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th>Categoría</th>
+                <th>Ámbito</th>
+                <th class="ta-c">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of data.porCategoria; track c.categoriaNombre) {
+                <tr>
+                  <td>{{ c.categoriaNombre }}</td>
+                  <td><span class="ambito-pill">{{ c.ambito }}</span></td>
+                  <td class="ta-c fw-600">{{ c.total }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- TENDENCIA -->
+      @if (data.tendencia.length) {
+        <div class="dash-card dash-card--full">
+          <h2 class="dash-card__title"><i class="ti ti-trending-up"></i> Tendencia Mensual</h2>
+          <div class="chart-bar">
+            @for (t of data.tendencia; track (t.anio + '-' + t.mes)) {
+              <div class="chart-bar__col">
+                <span class="chart-bar__val">{{ t.total }}</span>
+                <div class="chart-bar__bar-wrap">
+                  <div class="chart-bar__bar chart-bar__bar--actos"    [style.height.px]="barHeight(t.actos)"></div>
+                  <div class="chart-bar__bar chart-bar__bar--cond"     [style.height.px]="barHeight(t.condiciones)"></div>
+                </div>
+                <span class="chart-bar__lbl">{{ mesLabel(t.mes) }}<br>{{ t.anio }}</span>
+              </div>
+            }
+          </div>
+          <div class="chart-legend">
+            <span class="legend-dot legend-dot--actos"></span> Actos &nbsp;
+            <span class="legend-dot legend-dot--cond"></span> Condiciones
+          </div>
+        </div>
+      }
+
+    </div>
+  }
+
+
+  <app-fab label="Nuevo RAC" (clicked)="irANuevo()"></app-fab>
+</div>

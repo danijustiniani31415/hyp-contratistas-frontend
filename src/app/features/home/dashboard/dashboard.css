@@ -1,0 +1,109 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Página ──────────────────────────────────────────────────────────────
+   El padding superior de móvil (56px) no es estético: el layout monta un
+   botón hamburguesa `position: fixed` en (12px, 12px) de 40x40 para las
+   páginas que no tienen app-abril-page-header — como esta —, así que el
+   contenido tiene que empezar por debajo de él o el botón queda pisando la
+   esquina del saludo. En ≥640px el sidebar fijo ya provee la navegación, el
+   botón desaparece y el padding vuelve a ser parejo. */
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 16px;
+  padding: 56px 16px 20px;
+  background: #fff;
+}
+
+@media (min-width: 640px) {
+  .dashboard-page {
+    gap: 20px;
+    padding: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-page {
+    padding: 32px;
+  }
+}
+
+/* ── Panel de novedades ──────────────────────────────────────────────────
+   container-type: el número de columnas se decide por el ancho real del
+   panel y no por el del viewport. El sidebar de escritorio mide 240px
+   expandido y 64px colapsado, así que a un mismo viewport le caben distinto
+   número de tarjetas según cómo lo tenga el usuario; con media queries de
+   viewport, a 1024px con el sidebar abierto salían tarjetas aplastadas y con
+   el sidebar colapsado sobraba ancho sin usar. */
+.novedades-panel {
+  container-type: inline-size;
+  container-name: novedades;
+  flex: 1;
+  border: 1px solid #ececec;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+@media (min-width: 640px) {
+  .novedades-panel {
+    padding: 20px;
+  }
+}
+
+.novedades-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #16a34a;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Grilla de tarjetas ──────────────────────────────────────────────────
+   Cada tarjeta se sale de su caja por arriba (el perro sobresale ~46px) y
+   por abajo (el botón VER MÁS cuelga ~16px). Ese aire se reserva aquí, en un
+   solo lugar y con nombre, en vez de repartirlo en paddings sueltos del
+   panel que nadie relaciona con la tarjeta:
+
+   - padding-top / padding-bottom → aire para la primera y la última fila.
+   - row-gap = perro + botón → con el gap parejo de 24px que había antes, el
+     botón de una fila quedaba tapado por el perro de la fila siguiente en
+     cuanto había más de una fila, es decir en TODO el rango de 1 y 2
+     columnas (en escritorio no se notaba porque las 4 tarjetas caben en una
+     sola fila). */
+.novedades-grid {
+  --dog-overhang: 52px;
+  --cta-overhang: 26px;
+
+  display: grid;
+  grid-template-columns: 1fr;
+  column-gap: 20px;
+  row-gap: calc(var(--dog-overhang) + var(--cta-overhang));
+  padding-top: var(--dog-overhang);
+  padding-bottom: var(--cta-overhang);
+}
+
+/* 2 columnas: ~205px por tarjeta en el peor caso (tablet con sidebar), que es
+   el ancho al que la tarjeta ya cambia a su versión compacta. */
+@container novedades (min-width: 430px) {
+  .novedades-grid {
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 24px;
+  }
+}
+
+/* 4 columnas (una sola fila) en cuanto el panel da para ~205px por tarjeta. */
+@container novedades (min-width: 900px) {
+  .novedades-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

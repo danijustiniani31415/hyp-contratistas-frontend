@@ -1,0 +1,176 @@
+@if (cargando) {
+  <div class="ent-loading">Cargando entregables...</div>
+} @else {
+  <table class="ent-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Documento</th>
+        <th>Estado</th>
+        <th>Fecha límite</th>
+        <th>Responsables</th>
+        <th>Archivo</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (e of entregables; track e.id) {
+        <tr [class.ent-editing]="editandoId === e.id">
+          <td class="ent-num">{{ e.orden }}</td>
+          <td class="ent-nombre">{{ e.tipoNombre }}</td>
+
+          @if (editandoId === e.id) {
+            <td>
+              <app-search-select
+                [compact]="true"
+                [showLabel]="false"
+                [options]="estadosEntregableOpts"
+                valueField="value"
+                displayField="label"
+                [sortAlpha]="false"
+                [value]="editForm.estado"
+                (valueChange)="editForm.estado = $event"
+              />
+            </td>
+            <td>
+              <input type="date" class="ent-input" [(ngModel)]="editForm.fechaLimite" />
+            </td>
+            <td>
+              <input type="text" class="ent-input" [(ngModel)]="editForm.observacion"
+                placeholder="Observación / responsable" />
+            </td>
+            <td></td>
+            <td class="ent-acciones">
+              <button class="btn-ent btn-ent--save" (click)="guardar(e)" [disabled]="guardando">
+                {{ guardando ? '...' : 'Guardar' }}
+              </button>
+              <button class="btn-ent btn-ent--cancel" (click)="cancelarEdicion()">Cancelar</button>
+            </td>
+          } @else {
+            <td><span [class]="estadoClass(e.estado)">{{ e.estado }}</span></td>
+            <td class="ent-fecha">{{ e.fechaLimite ? (e.fechaLimite | date:'dd/MM/yyyy':'UTC') : '—' }}</td>
+            <td class="ent-resp">
+              @if (e.responsables.length) {
+                @for (r of e.responsables; track r.id) { <span class="ent-tag">{{ r.nombre }}</span> }
+              } @else { <span class="ent-vacio">—</span> }
+            </td>
+            <td class="ent-archivo">
+              @if (e.archivos.length) {
+                <ul class="ent-archivo-list">
+                  @for (a of e.archivos; track a.id) {
+                    <li class="ent-archivo-item">
+                      <a href="javascript:void(0)" (click)="verArchivo(a.urlArchivo, a.nombreArchivo)" class="ent-link">
+                        {{ a.nombreArchivo }}
+                      </a>
+                      <button type="button" class="ent-archivo-del" title="Eliminar archivo" (click)="eliminarArchivo(a.id)">
+                        <i class="ti ti-x"></i>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+              @if (subiendoId === e.id) {
+                <span class="ent-vacio">Subiendo...</span>
+              } @else {
+                <label class="btn-ent btn-ent--upload">
+                  <i class="ti ti-plus"></i> Agregar
+                  <input type="file" style="display:none" (change)="onArchivoSelect($event, e)" />
+                </label>
+              }
+            </td>
+            <td class="ent-acciones">
+              <button class="btn-ent btn-ent--edit" (click)="editar(e)">Editar</button>
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+}
+
+<!-- ══ MEDIDAS DE CONTROL ══════════════════════════════════════════════════ -->
+<div class="medidas-section">
+  <div class="medidas-header">
+    <h4 class="medidas-title"><i class="ti ti-shield-check"></i> Medidas de control</h4>
+    <span class="medidas-hint">Bidireccional con Investigación RM-050</span>
+  </div>
+
+  <table class="ent-table">
+    <thead>
+      <tr>
+        <th>Descripción</th>
+        <th>Tipo</th>
+        <th>Responsable</th>
+        <th>F. Compromiso</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (m of medidas; track m.id) {
+        @if (editandoMedidaId === m.id) {
+          <tr class="ent-editing">
+            <td><input class="ent-input" [(ngModel)]="medidaForm.descripcion" placeholder="Descripción" /></td>
+            <td>
+              <app-search-select
+                [compact]="true"
+                [showLabel]="false"
+                [options]="tipoMedidaOpts"
+                valueField="value"
+                displayField="label"
+                [sortAlpha]="false"
+                [value]="medidaForm.tipo"
+                (valueChange)="medidaForm.tipo = $event"
+              />
+            </td>
+            <td><input class="ent-input" [(ngModel)]="medidaForm.responsableNombre" placeholder="Responsable" /></td>
+            <td><input type="date" class="ent-input" [(ngModel)]="medidaForm.fechaCompromiso" /></td>
+            <td>
+              <app-search-select
+                [compact]="true"
+                [showLabel]="false"
+                [options]="estadoMedidaOpts"
+                valueField="value"
+                displayField="label"
+                [sortAlpha]="false"
+                [value]="medidaForm.estado"
+                (valueChange)="medidaForm.estado = $event"
+              />
+            </td>
+            <td class="ent-acciones">
+              <button class="btn-ent btn-ent--save" (click)="guardarMedida(m)" [disabled]="guardandoMedida">Guardar</button>
+              <button class="btn-ent btn-ent--cancel" (click)="cancelarMedida()">Cancelar</button>
+            </td>
+          </tr>
+        } @else {
+          <tr>
+            <td>{{ m.descripcion }}</td>
+            <td>{{ m.tipo ?? '—' }}</td>
+            <td>{{ m.responsableNombre ?? '—' }}</td>
+            <td>{{ m.fechaCompromiso ? (m.fechaCompromiso | date:'dd/MM/yyyy':'UTC') : '—' }}</td>
+            <td><span [class]="estadoClass(m.estado)">{{ m.estado }}</span></td>
+            <td class="ent-acciones">
+              <button class="btn-ent" (click)="editarMedida(m)" title="Editar"><i class="ti ti-edit"></i></button>
+              <button class="btn-ent btn-ent--danger" (click)="eliminarMedida(m.id)" title="Eliminar"><i class="ti ti-trash"></i></button>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+
+  <!-- Añadir nueva medida -->
+  <div class="medida-add">
+    <input class="ent-input medida-add__input" [(ngModel)]="nuevaMedida"
+      placeholder="Nueva medida de control..." (keydown.enter)="agregarMedida()" />
+    <button class="btn-ent btn-ent--save" (click)="agregarMedida()">
+      <i class="ti ti-plus"></i> Añadir
+    </button>
+  </div>
+</div>
+
+<app-document-viewer
+  [archivoUrl]="visorUrl"
+  [nombre]="visorNombre"
+  (closed)="onVisorClosed()">
+</app-document-viewer>

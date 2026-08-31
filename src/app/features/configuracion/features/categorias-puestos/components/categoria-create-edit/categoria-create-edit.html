@@ -1,0 +1,32 @@
+<app-base-modal [title]="titulo" width="w-[420px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[16px] mt-[10px]">
+
+    <div class="abril-field">
+      <label class="abril-field-label">Nombre</label>
+      <input
+        type="text"
+        class="abril-field-input"
+        [(ngModel)]="nombre"
+        (keydown.enter)="save()"
+        placeholder="Ej. Obrero" />
+    </div>
+    <p *ngIf="submitted && !nombre.trim()" class="text-xs text-red-500 -mt-[10px]">Campo requerido</p>
+
+    <p class="text-xs text-gray-400">
+      Se guarda en mayúsculas. La categoría es la que manda sobre los entregables, permisos y
+      filtros internos de los trabajadores.
+    </p>
+
+    <div class="flex justify-center mt-[4px]">
+      <button
+        (click)="save()"
+        class="w-[160px] py-[8px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-standard)">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

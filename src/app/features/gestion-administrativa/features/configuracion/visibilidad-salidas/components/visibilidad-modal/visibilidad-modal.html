@@ -1,0 +1,109 @@
+<app-base-modal
+  [title]="'VISIBILIDAD · ' + (workerName || 'Trabajador')"
+  width="w-[760px]"
+  [preventCloseWhenDirty]="true"
+  (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[14px] mt-[12px]">
+
+    <p class="text-xs text-gray-500 leading-relaxed">
+      Selecciona las áreas cuyos trabajadores podrá ver este usuario en la gestión de salidas.
+      <b>Solo esta área</b> = ve únicamente a los de ese nodo. <b>Con subáreas</b> = ve también los
+      nodos hijos. Sin ninguna selección, la visibilidad se resuelve automáticamente por la jerarquía.
+    </p>
+
+    <!-- ── Filtros por tipo de área + búsqueda ─────────────────────── -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <button
+        *ngFor="let t of tipos"
+        type="button"
+        (click)="toggleTipo(t.id)"
+        class="text-xs font-medium px-[10px] py-[5px] rounded-full border transition-colors cursor-pointer"
+        [ngClass]="tipoFilter.has(t.id)
+          ? 'bg-[var(--color-abril-primary)] text-white border-[var(--color-abril-primary)]'
+          : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'">
+        {{ t.name }}
+      </button>
+
+      <app-search-input
+        placeholder="Buscar área..."
+        [(value)]="searchText"
+        width="200px"
+        class="ml-auto"
+      ></app-search-input>
+    </div>
+
+    <!-- ── Acciones masivas ────────────────────────────────────────── -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <button type="button" (click)="seleccionarVisibles()"
+        class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-[#64BC04] text-[#64BC04] hover:bg-[#E5F7D1] transition-colors cursor-pointer">
+        Seleccionar todo{{ tipoFilter.size || searchText.trim() ? ' (visible)' : '' }}
+      </button>
+      <button type="button" (click)="seleccionarVisiblesConSubareas()"
+        class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-[#64BC04] text-[#64BC04] hover:bg-[#E5F7D1] transition-colors cursor-pointer">
+        Seleccionar todo + subáreas
+      </button>
+      <button type="button" (click)="limpiar()"
+        class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
+        Limpiar
+      </button>
+      <span class="text-xs text-gray-500 ml-auto">{{ seleccionadas }} área(s) seleccionada(s)</span>
+    </div>
+
+    <!-- ── Árbol de áreas ──────────────────────────────────────────── -->
+    <div class="w-full rounded-lg border border-[#D6DEE5] max-h-[46vh] overflow-y-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-[#E5F7D1] sticky top-0 z-10">
+          <tr class="text-[#64BC04]">
+            <th class="text-center px-[14px] py-[8px] font-semibold">Área / Nodo</th>
+            <th class="text-center px-[8px] py-[8px] font-semibold w-[140px]">Tipo</th>
+            <th class="text-center px-[8px] py-[8px] font-semibold w-[110px]">Solo esta área</th>
+            <th class="text-center px-[8px] py-[8px] font-semibold w-[110px]">Con subáreas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let o of filtered" class="border-b border-[#EDF1F4] hover:bg-gray-50">
+            <td class="px-[14px] py-[7px] text-gray-700">
+              <span [style.padding-left.px]="displayDepth(o) * 18"></span>
+              <span [class.text-gray-400]="displayDepth(o) > 0">{{ displayDepth(o) > 0 ? '└ ' : '' }}</span>
+              {{ o.node.areaItemName }}
+            </td>
+            <td class="px-[8px] py-[7px]">
+              <span class="text-[11px] px-[8px] py-[2px] rounded-full"
+                [ngClass]="{
+                  'bg-[#EDE9FE] text-[#6D28D9]': o.node.areaTypeName === 'Área de Gerencia',
+                  'bg-[#DBEAFE] text-[#1D4ED8]': o.node.areaTypeName === 'Área Estándar'
+                }">
+                {{ o.node.areaTypeName }}
+              </span>
+            </td>
+            <td class="px-[8px] py-[7px] text-center">
+              <input type="checkbox" class="w-4 h-4 accent-[#64BC04] cursor-pointer"
+                [checked]="isSelf(o.node.areaScopeId)"
+                (change)="toggleSelf(o.node.areaScopeId)" />
+            </td>
+            <td class="px-[8px] py-[7px] text-center">
+              <input type="checkbox" class="w-4 h-4 accent-[#64BC04] cursor-pointer"
+                [checked]="isSubtree(o.node.areaScopeId)"
+                (change)="toggleSubtree(o.node.areaScopeId)" />
+            </td>
+          </tr>
+
+          <tr *ngIf="loaded && filtered.length === 0">
+            <td colspan="4" class="px-[14px] py-[24px] text-center text-gray-400 text-sm">Sin áreas.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex justify-center mt-[6px]">
+      <button (click)="save()"
+        class="w-[180px] py-[9px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-primary)">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

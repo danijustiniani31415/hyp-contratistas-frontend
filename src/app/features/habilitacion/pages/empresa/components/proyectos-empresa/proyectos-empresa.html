@@ -1,0 +1,51 @@
+<app-base-modal *ngIf="open" title="Gestionar proyectos" width="w-[560px]" (closeModal)="close()">
+  <div class="pe-body">
+    <div *ngIf="loading" class="pe-loading">Cargando proyectos…</div>
+
+    <ng-container *ngIf="!loading">
+      <div class="pe-section" *ngIf="activos.length > 0">
+        <div class="pe-section-title">Proyectos activos</div>
+        <div class="pe-row" *ngFor="let p of activos">
+          <div class="pe-info">
+            <span class="pe-nombre">{{ p.nombre }}</span>
+            <span class="pe-fecha" *ngIf="p.fechaInicio">
+              Inicio: {{ p.fechaInicio | date: 'dd/MM/yyyy' }}
+            </span>
+          </div>
+          <button
+            type="button"
+            class="btn-ghost btn-desactivar"
+            [disabled]="procesando === p.id"
+            (click)="desactivar(p)"
+          >
+            {{ procesando === p.id ? '…' : 'Desactivar' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="pe-section" *ngIf="inactivos.length > 0">
+        <div class="pe-section-title">Proyectos disponibles</div>
+        <div class="pe-row" *ngFor="let p of inactivos">
+          <div class="pe-info">
+            <span class="pe-nombre">{{ p.nombre }}</span>
+            <span class="pe-fecha" *ngIf="p.fechaInicio">
+              Inicio: {{ p.fechaInicio | date: 'dd/MM/yyyy' }}
+            </span>
+          </div>
+          <button
+            type="button"
+            class="btn-primary btn-activar"
+            [disabled]="procesando === p.id"
+            (click)="activar(p)"
+          >
+            {{ procesando === p.id ? '…' : 'Activar' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="pe-empty" *ngIf="proyectos.length === 0">
+        No hay proyectos disponibles.
+      </div>
+    </ng-container>
+  </div>
+</app-base-modal>

@@ -1,0 +1,5 @@
+.c10-trigger:focus,
+.c10-trigger--open {
+  border-color: var(--color-abril-standard, #0f6e56);
+  box-shadow: 0 0 0 1px rgba(15, 110, 86, 0.2);
+}

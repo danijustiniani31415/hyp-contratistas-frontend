@@ -1,0 +1,79 @@
+<app-abril-page-header
+  badge="ARQ. COMERCIAL · TAREO"
+  titulo="Enrolamiento"
+  subtitulo="Elige tu nombre y toma tu foto de referencia — solo aparecen los trabajadores con el SSO-FO-150 ya subido."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="enr-root">
+
+  <div *ngIf="cargandoTrabajadores" class="enr-loading">
+    <span class="enr-spinner"></span> Cargando…
+  </div>
+
+  <div *ngIf="!cargandoTrabajadores && !trabajadorSeleccionado" class="enr-card">
+    <h3>¿Quién eres?</h3>
+    <p class="enr-sub">Selecciona tu nombre de la lista.</p>
+
+    <app-search-select
+      [options]="trabajadores"
+      valueField="workerId"
+      displayField="nombre"
+      placeholder="Buscar por nombre..."
+      [(value)]="workerIdSeleccionado"
+      (valueChange)="onSeleccionChange()">
+    </app-search-select>
+
+    <p *ngIf="trabajadores.length === 0" class="enr-sub">
+      Todavía no hay trabajadores con el SSO-FO-150 subido. Pide al coordinador que lo suba desde
+      Gestión de permisos.
+    </p>
+  </div>
+
+  <div *ngIf="trabajadorSeleccionado" class="enr-card">
+    <h3>{{ trabajadorSeleccionado.nombre }}</h3>
+    <p class="enr-sub">Mira directo a la cámara, con buena luz y sin lentes de sol.</p>
+
+    <div *ngIf="cargandoModelos" class="enr-modelos-msg">
+      <span class="enr-spinner enr-spinner-sm"></span> Cargando reconocimiento facial…
+    </div>
+    <div *ngIf="!cargandoModelos && !modelosListos" class="enr-modelos-warn">
+      <i class="ti ti-alert-triangle"></i>
+      No se pudo cargar el reconocimiento facial en este dispositivo/conexión. No podrás enrolarte hasta que esto cargue — recarga la página o prueba con otra red.
+    </div>
+
+    <ng-container *ngIf="!fotoCapturada; else previewTpl">
+      <app-camera-capture></app-camera-capture>
+      <button type="button" class="enr-btn-primario" [disabled]="capturando || !modelosListos" (click)="capturar()">
+        <span *ngIf="!capturando"><i class="ti ti-camera"></i> Capturar foto</span>
+        <span *ngIf="capturando"><span class="enr-spinner enr-spinner-sm"></span> Analizando rostro…</span>
+      </button>
+      <button type="button" class="enr-btn-secundario" (click)="cambiarTrabajador()">
+        <i class="ti ti-arrow-left"></i> No soy yo, cambiar
+      </button>
+    </ng-container>
+
+    <ng-template #previewTpl>
+      <div class="enr-preview-wrap">
+        <img [src]="'data:image/jpeg;base64,' + fotoCapturada" class="enr-preview-img" alt="Foto capturada" />
+      </div>
+
+      <label class="enr-consentimiento">
+        <input type="checkbox" [(ngModel)]="aceptaConsentimiento" />
+        <span>Autorizo el tratamiento de mi imagen y datos biométricos (reconocimiento facial) exclusivamente
+          para verificar mi identidad al marcar mi tareo, conforme a la Ley de Protección de Datos Personales.</span>
+      </label>
+
+      <div class="enr-actions">
+        <button type="button" class="enr-btn-secundario" (click)="reintentar()">
+          <i class="ti ti-refresh"></i> Volver a tomar
+        </button>
+        <button type="button" class="enr-btn-primario" [disabled]="!aceptaConsentimiento || guardando" (click)="confirmar()">
+          <span *ngIf="!guardando"><i class="ti ti-check"></i> Confirmar enrolamiento</span>
+          <span *ngIf="guardando"><span class="enr-spinner enr-spinner-sm"></span> Guardando…</span>
+        </button>
+      </div>
+    </ng-template>
+  </div>
+
+</div>

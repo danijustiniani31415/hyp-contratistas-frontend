@@ -1,0 +1,82 @@
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+.modal-loading { padding:2rem; text-align:center; color:#9ca3af; font-size:.85rem; }
+
+/* .abril-field / .abril-field-label / .abril-field-input son globales
+   (src/styles.css) — no reimplementar el label flotante aquí. */
+.form-grid     { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+.form-col-full { grid-column:1/-1; }
+
+/* ── Caso header ─────────────────────────────────────────────────────────── */
+.caso-header       { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; padding:.75rem 0; border-bottom:1px solid #f3f4f6; margin-bottom:.75rem; }
+.caso-header-left  { display:flex; flex-direction:column; gap:.15rem; }
+.caso-worker       { font-size:.9rem; font-weight:700; color:#111827; }
+.caso-worker-meta  { font-size:.75rem; color:#6b7280; }
+.caso-header-right { display:flex; gap:.35rem; align-items:center; flex-shrink:0; }
+
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+.tab-nav        { display:flex; gap:.15rem; border-bottom:1px solid #e5e7eb; margin-bottom:.75rem; }
+.tab-nav button { padding:.4rem .85rem; font-size:.78rem; font-weight:600; color:#6b7280; border-radius:6px 6px 0 0; border:none; background:transparent; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:color .12s; }
+.tab-nav button:hover  { color:#111827; }
+.tab-nav button.active { color:var(--color-abril-logo-blue); border-bottom-color:var(--color-abril-logo-blue); }
+
+/* ── Info grid ───────────────────────────────────────────────────────────── */
+.info-grid  { display:grid; grid-template-columns:1fr 1fr; gap:.5rem .75rem; margin-bottom:.75rem; }
+.info-item  { display:flex; flex-direction:column; gap:.15rem; }
+.info-label { font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:#94a3b8; }
+.info-value { font-size:.82rem; color:#111827; }
+
+/* ── Edit section ────────────────────────────────────────────────────────── */
+.edit-section         { border:1px solid #e5e7eb; border-radius:8px; padding:.6rem .75rem; margin-bottom:.75rem; }
+.edit-section summary { font-size:.78rem; font-weight:600; color:#6b7280; cursor:pointer; }
+.edit-section[open] summary { color:#111827; margin-bottom:.5rem; }
+.mt-3 { margin-top:.75rem; }
+
+/* ── Action row ──────────────────────────────────────────────────────────── */
+.action-row { display:flex; gap:.5rem; padding-top:.75rem; border-top:1px solid #f3f4f6; margin-top:.75rem; }
+
+/* ── Close form ──────────────────────────────────────────────────────────── */
+.close-form   { border:1px solid #fca5a5; border-radius:8px; padding:.75rem; background:#fff7f7; margin-top:.75rem; }
+.close-form h4 { font-size:.8rem; font-weight:700; color:#dc2626; margin-bottom:.5rem; }
+
+/* ── Seguimientos ────────────────────────────────────────────────────────── */
+.seg-list    { display:flex; flex-direction:column; gap:.4rem; max-height:260px; overflow-y:auto; margin-bottom:.5rem; }
+.seg-item    { background:#f9fafb; border:1px solid #e5e7eb; border-radius:7px; padding:.5rem .65rem; }
+.seg-item-head { display:flex; align-items:center; gap:.5rem; margin-bottom:.2rem; }
+.seg-tipo    { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#374151; }
+.seg-fecha   { font-size:.72rem; color:#9ca3af; margin-left:auto; }
+.seg-desc    { font-size:.78rem; color:#374151; margin:.15rem 0 0; }
+.seg-proxima { font-size:.75rem; color:#16a34a; margin:.1rem 0 0; }
+.seg-form    { border:1px solid #e5e7eb; border-radius:8px; padding:.65rem .75rem; background:#f9fafb; margin-top:.5rem; }
+.empty-msg   { text-align:center; color:#9ca3af; font-size:.82rem; padding:1.5rem 0; }
+
+/* ── Badges ──────────────────────────────────────────────────────────────── */
+.badge       { display:inline-flex; align-items:center; padding:.15rem .55rem; border-radius:999px; font-size:.72rem; font-weight:600; white-space:nowrap; }
+.badge-blue  { background:#eff6ff; color:#2563eb; }
+.badge-green { background:#ecfdf5; color:#059669; }
+.badge-red   { background:#fef2f2; color:#dc2626; }
+.badge-amber { background:#fefce8; color:#ca8a04; }
+.badge-gray  { background:#f3f4f6; color:#6b7280; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn-primary   { display:inline-flex; align-items:center; gap:6px; padding:.4rem .9rem; background:var(--color-abril-logo-blue); color:#fff; border-radius:6px; font-size:.8rem; font-weight:600; transition:background .12s; border:none; cursor:pointer; }
+.btn-primary:hover:not(:disabled)   { background:var(--color-abril-logo-blue-hover); }
+.btn-primary:disabled   { opacity:.6; cursor:not-allowed; }
+.btn-ghost     { padding:.4rem .9rem; color:#8a8880; font-size:.8rem; font-weight:600; border:0.5px solid #d4d0c8; border-radius:6px; background:transparent; cursor:pointer; }
+.btn-ghost:hover { color:#111827; background:#f9fafb; }
+.btn-secondary { padding:.4rem .9rem; border:1px solid #d1d5db; color:#374151; border-radius:6px; font-size:.8rem; font-weight:600; background:#fff; cursor:pointer; }
+.btn-secondary:hover:not(:disabled) { background:#f9fafb; }
+.btn-danger    { padding:.4rem .9rem; background:#dc2626; color:#fff; border-radius:6px; font-size:.8rem; font-weight:600; cursor:pointer; border:none; }
+.btn-danger:hover:not(:disabled)    { background:#b91c1c; }
+.btn-danger:disabled { opacity:.6; cursor:not-allowed; }
+.row-action  { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:5px; color:#6b7280; border:none; background:transparent; cursor:pointer; }
+.btn-del:hover { background:#fef2f2; color:#dc2626; }
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Flex helpers ────────────────────────────────────────────────────────── */
+.flex          { display:flex; }
+.flex-end      { justify-content:flex-end; }
+.gap-2         { gap:.5rem; }
+.justify-end   { justify-content:flex-end; }
+.mt-2          { margin-top:.5rem; }

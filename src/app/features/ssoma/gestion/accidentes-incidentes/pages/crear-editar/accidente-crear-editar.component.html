@@ -1,0 +1,536 @@
+<app-abril-modal-panel
+  [titulo]="titulo"
+  icono="ti-alert-triangle"
+  variant="blue"
+  width="820px"
+  (closeModal)="cancelar()">
+
+  @if (cargando || resolviendoObservador) {
+    <div class="skeleton-form">
+      @for (_ of [1,2,3,4,5]; track $index) { <div class="skeleton-row"></div> }
+    </div>
+  }
+
+  @if (!cargando && !resolviendoObservador && sinWorkerVinculado) {
+    <div class="bloqueo-sin-worker">
+      <i class="ti ti-alert-triangle"></i>
+      <div>
+        <div class="bloqueo-sin-worker__titulo">No puedes registrar un Flash Report</div>
+        <div class="bloqueo-sin-worker__texto">
+          Tu usuario no está vinculado a una ficha de trabajador dentro de la plataforma.
+          Comunícate con el área de SSOMA o Administración para que te asocien como trabajador
+          antes de poder reportar.
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (!cargando && !resolviendoObservador && !sinWorkerVinculado) {
+
+  @if (yaEnviado) {
+    <div class="info-hint" style="margin-bottom:16px">
+      <i class="ti ti-alert-circle"></i>
+      Este Flash Report ya fue enviado. Solo estás regularizando datos del registro — no se reenviará el correo ni se regenerará el PDF oficial ya emitido.
+    </div>
+  }
+
+  <form id="accForm" class="flash-form" (ngSubmit)="guardar()" #frm="ngForm">
+
+    <!-- ══════════════════════ DATOS DEL EVENTO ══════════════════════ -->
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-info-circle"></i> Datos del evento</h3>
+      <div class="form-grid">
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Proyecto *"
+            [options]="proyectosOpts()"
+            valueField="projectId"
+            displayField="projectDescription"
+            placeholder="Buscar proyecto..."
+            [value]="form.proyectoId || undefined"
+            (valueChange)="onProyectoChange($event ?? 0)"
+          />
+          @if (errores['proyectoId']) { <span class="campo-error">{{ errores['proyectoId'] }}</span> }
+        </div>
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Tipo de evento *"
+            [options]="tipos"
+            valueField="id"
+            displayField="nombre"
+            placeholder="Selecciona tipo"
+            [value]="form.tipoId"
+            (valueChange)="form.tipoId = $event"
+          />
+          @if (errores['tipoId']) { <span class="campo-error">{{ errores['tipoId'] }}</span> }
+        </div>
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Área de origen *"
+            [options]="areasOrigen"
+            valueField="value"
+            displayField="label"
+            [sortAlpha]="false"
+            placeholder="Selecciona área"
+            [value]="form.areaOrigen"
+            (valueChange)="form.areaOrigen = $event"
+          />
+          @if (errores['areaOrigen']) { <span class="campo-error">{{ errores['areaOrigen'] }}</span> }
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Fecha *</label>
+          <input type="date" class="abril-field-input" [(ngModel)]="form.fecha" name="fecha" />
+          @if (errores['fecha']) { <span class="campo-error">{{ errores['fecha'] }}</span> }
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Hora</label>
+          <input type="time" class="abril-field-input" [(ngModel)]="form.hora" name="hora" />
+        </div>
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Turno"
+            [options]="turnosOpts()"
+            valueField="value"
+            displayField="label"
+            [sortAlpha]="false"
+            placeholder="— Sin especificar —"
+            [allowClear]="true"
+            [value]="form.turno"
+            (valueChange)="form.turno = $event"
+          />
+        </div>
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Tipo de contacto / mecanismo"
+            [options]="tipoContactoOpts"
+            valueField="value"
+            displayField="label"
+            [sortAlpha]="false"
+            placeholder="— Sin especificar —"
+            [allowClear]="true"
+            [value]="form.tipoContacto"
+            (valueChange)="form.tipoContacto = $event"
+          />
+        </div>
+
+        <div class="abril-field abril-field--full">
+          <label class="abril-field-label">Lugar exacto *</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="form.lugarExacto" name="lugarExacto"
+            placeholder="Ej: Sótano 2, eje C-D, zona de excavación" />
+          @if (errores['lugarExacto']) { <span class="campo-error">{{ errores['lugarExacto'] }}</span> }
+        </div>
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Etapa del proyecto"
+            [options]="etapas"
+            valueField="id"
+            displayField="nombre"
+            placeholder="— Sin etapa —"
+            [allowClear]="true"
+            [value]="form.etapaProyectoId"
+            (valueChange)="form.etapaProyectoId = $event"
+          />
+        </div>
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Partida"
+            [options]="partidasOpts()"
+            valueField="id"
+            displayField="nombre"
+            placeholder="— Sin partida —"
+            [allowClear]="true"
+            [value]="form.partidaId"
+            (valueChange)="form.partidaId = $event"
+          />
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════ EMPRESA INVOLUCRADA ══════════════════════ -->
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-building"></i> Empresa involucrada</h3>
+      <div class="form-grid">
+
+        <div class="abril-field abril-field--full">
+          <label class="abril-field-label">Tipo de empresa</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="tipoEmpresa" value="abril" [(ngModel)]="tipoEmpresa" (ngModelChange)="onEmpresaChange()" />
+              Empresa Abril
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="tipoEmpresa" value="contratista" [(ngModel)]="tipoEmpresa" (ngModelChange)="onEmpresaChange()" />
+              Contratista
+            </label>
+          </div>
+        </div>
+
+        @if (tipoEmpresa === 'abril') {
+          <div class="abril-field">
+            <app-search-select
+            color="var(--color-abril-logo-blue)"
+              label="Razón social (Abril)"
+              [options]="empresasAbrilDelProyecto()"
+              valueField="id"
+              displayField="nombre"
+              placeholder="Buscar empresa..."
+              [allowClear]="true"
+              [value]="form.empresaAbrilId"
+              (valueChange)="form.empresaAbrilId = $event; onEmpresaChange()"
+            />
+          </div>
+        }
+
+        @if (tipoEmpresa === 'contratista') {
+          <div class="abril-field">
+            <app-search-select
+            color="var(--color-abril-logo-blue)"
+              label="Contratista"
+              [options]="contratistasDelProyecto()"
+              valueField="id"
+              displayField="razonSocial"
+              placeholder="Buscar contratista..."
+              [allowClear]="true"
+              [value]="form.contributorId"
+              (valueChange)="form.contributorId = $event; onEmpresaChange()"
+            />
+          </div>
+        }
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Jefe inmediato"
+            [options]="jefeInmediatoOpts()"
+            valueField="id"
+            displayField="label"
+            placeholder="Buscar por nombre o DNI..."
+            [allowClear]="true"
+            [value]="jefeInmediatoWorkerId"
+            (valueChange)="onJefeSelect($event)"
+          />
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════ TRABAJADORES AFECTADOS ══════════════════════ -->
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-users"></i> Trabajadores afectados</h3>
+
+      @if (esIncidente) {
+        @if (form.consecuenciaRealPersonal === 2) {
+          <p class="info-hint" style="margin-bottom:8px">
+            <i class="ti ti-alert-circle"></i>
+            Primeros auxilios (N2) requiere registrar al trabajador atendido.
+          </p>
+        } @else {
+          <label class="checkbox-label" style="margin-bottom:10px; display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" [(ngModel)]="sinTrabajadorAfectado" name="sinTrabajadorAfectado" />
+            No aplica — incidente patrimonial / ambiental sin trabajador afectado
+          </label>
+        }
+      }
+
+      @if (!sinTrabajadorAfectado || !esIncidente) {
+
+        <!-- Un único trabajador afectado por Flash Report (SSO-FO-035: un reporte por accidentado) -->
+        <div class="trabajador-form">
+          <h4 class="trabajador-form__title">
+            <i class="ti ti-user"></i>
+            Trabajador afectado
+          </h4>
+          <div class="form-grid">
+
+            <div class="abril-field abril-field--full">
+              <app-search-select
+            color="var(--color-abril-logo-blue)"
+                label="Buscar trabajador"
+                [options]="trabajadoresOpts()"
+                valueField="id"
+                displayField="label"
+                placeholder="Buscar por nombre o DNI..."
+                [allowClear]="true"
+                [value]="trabajadorNuevo.workerId"
+                (valueChange)="onTrabajadorSelect($event)"
+              />
+            </div>
+
+            <div class="abril-field abril-field--full">
+              <label class="abril-field-label">Nombre completo</label>
+              <input type="text" class="abril-field-input" [(ngModel)]="trabajadorNuevo.trabajadorNombre" name="tnNombre"
+                placeholder="Nombre completo" />
+            </div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Puesto de trabajo</label>
+              <input type="text" class="abril-field-input" [(ngModel)]="trabajadorNuevo.puestoTrabajo" name="tnPuesto" />
+            </div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Edad</label>
+              <input type="number" class="abril-field-input" [(ngModel)]="trabajadorNuevo.edad" name="tnEdad" min="18" max="80" />
+            </div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Años experiencia</label>
+              <input type="number" class="abril-field-input" [(ngModel)]="trabajadorNuevo.aniosExperiencia" name="tnAnios" min="0" />
+            </div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Celular</label>
+              <input type="text" class="abril-field-input" [(ngModel)]="trabajadorNuevo.celularTrabajador" name="tnCelular" placeholder="9XXXXXXXX" />
+            </div>
+
+            <div class="abril-field">
+              <app-search-select
+                color="var(--color-abril-logo-blue)"
+                label="Parte del cuerpo afectada"
+                [options]="partes"
+                valueField="id"
+                displayField="nombre"
+                placeholder="— Sin especificar —"
+                [allowClear]="true"
+                [value]="trabajadorNuevo.parteAfectadaId"
+                (valueChange)="trabajadorNuevo.parteAfectadaId = $event"
+              />
+            </div>
+
+          </div>
+        </div>
+
+        @if (errores['trabajadores']) {
+          <span class="campo-error">{{ errores['trabajadores'] }}</span>
+        }
+      }
+    </section>
+
+    <!-- ══════════════════════ DAÑOS Y CONSECUENCIAS ══════════════════════ -->
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-alert-triangle"></i> Daños y consecuencias</h3>
+      <div class="form-grid">
+
+        <div class="abril-field abril-field--full">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="form.danioProcesFlag" name="danioProcesFlag" />
+            ¿Se produjo daño al proceso / equipo / material?
+          </label>
+        </div>
+
+        @if (form.danioProcesFlag) {
+          <div class="abril-field abril-field--full">
+            <label class="abril-field-label">Descripción del daño al proceso / equipo / material</label>
+            <textarea class="abril-field-input campo-textarea" [(ngModel)]="form.danoProceso" name="danoProceso" rows="2"
+              placeholder="Describa el daño a proceso, equipo o material"></textarea>
+          </div>
+        }
+
+        <div class="abril-field">
+          <label class="abril-field-label">Consecuencia real — Personal</label>
+          @if (esIncidente) {
+            <p class="info-hint"><i class="ti ti-info-circle"></i> Incidente: máximo N2 — Primeros auxilios. N3 en adelante es Accidente.</p>
+          }
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            [showLabel]="false"
+            [options]="nivelesRealOpts()"
+            valueField="value"
+            displayField="label"
+            [sortAlpha]="false"
+            placeholder="— No aplica —"
+            [allowClear]="true"
+            [value]="form.consecuenciaRealPersonal"
+            (valueChange)="form.consecuenciaRealPersonal = $event"
+          />
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Consecuencia potencial — Personal</label>
+          <p class="info-hint"><i class="ti ti-info-circle"></i> ¿Qué podría haber pasado en otras circunstancias?</p>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            [showLabel]="false"
+            [options]="nivelesPotencialOpts()"
+            valueField="value"
+            displayField="label"
+            [sortAlpha]="false"
+            placeholder="— No aplica —"
+            [allowClear]="true"
+            [value]="form.consecuenciaPotencialPersonal"
+            (valueChange)="form.consecuenciaPotencialPersonal = $event"
+          />
+        </div>
+
+        @if ((form.consecuenciaRealPersonal ?? 0) >= 5) {
+          <div class="abril-field abril-field--full alerta-sunafil">
+            <i class="ti ti-alert-triangle"></i>
+            Consecuencia N{{ form.consecuenciaRealPersonal }} — Este evento requiere notificación a SUNAFIL en menos de 24 horas (D.S. 023-2017-EM).
+          </div>
+        }
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════ DESCRIPCIÓN ══════════════════════ -->
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-file-text"></i> Descripción del evento</h3>
+      <div class="form-grid">
+        <div class="abril-field abril-field--full">
+          <textarea class="abril-field-input campo-textarea" [(ngModel)]="form.descripcion" name="descripcion" rows="5"
+            placeholder="Describa con detalle cómo ocurrió el evento, secuencia de hechos, condiciones del entorno..."></textarea>
+          @if (errores['descripcion']) { <span class="campo-error">{{ errores['descripcion'] }}</span> }
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════ ACCIONES INMEDIATAS ══════════════════════ -->
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-bolt"></i> Acciones inmediatas</h3>
+      <div class="form-grid">
+        <div class="abril-field abril-field--full">
+          <textarea class="abril-field-input campo-textarea" [(ngModel)]="form.accionesInmediatas" name="acciones" rows="4"
+            placeholder="Liste las acciones tomadas inmediatamente después del evento..."></textarea>
+          @if (errores['accionesInmediatas']) { <span class="campo-error">{{ errores['accionesInmediatas'] }}</span> }
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════ ATENCIÓN MÉDICA ══════════════════════ -->
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-medical-cross"></i> Atención médica</h3>
+      <div class="form-grid">
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Tipo de atención"
+            [options]="atencionMedicaOpts"
+            valueField="value"
+            displayField="label"
+            [sortAlpha]="false"
+            placeholder="— No aplica —"
+            [allowClear]="true"
+            [value]="form.atencionMedica"
+            (valueChange)="form.atencionMedica = $event"
+          />
+        </div>
+
+        @if (form.atencionMedica && form.atencionMedica !== 'Ninguna') {
+          <div class="abril-field">
+            <label class="abril-field-label">Centro de atención</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="form.centroAtencion" name="centroAtencion"
+              placeholder="Nombre del centro de atención" />
+          </div>
+        }
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════ FOTOGRAFÍAS ══════════════════════ -->
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-camera"></i> Fotografías</h3>
+      <div class="fotos-grid">
+
+        <div class="foto-slot">
+          <label class="foto-label">Foto 1</label>
+          @if (foto1Preview) {
+            <div class="foto-preview-wrap">
+              <img [src]="foto1Preview" class="foto-preview" alt="Foto 1" />
+              <button type="button" class="btn-quitar-foto" (click)="quitarFoto(1)"><i class="ti ti-x"></i></button>
+            </div>
+          } @else {
+            <label class="foto-upload-btn">
+              <i class="ti ti-photo-up"></i> Seleccionar foto
+              <input type="file" accept="image/*" (change)="onFotoSelect($event, 1)" style="display:none" />
+            </label>
+          }
+        </div>
+
+        <div class="foto-slot">
+          <label class="foto-label">Foto 2</label>
+          @if (foto2Preview) {
+            <div class="foto-preview-wrap">
+              <img [src]="foto2Preview" class="foto-preview" alt="Foto 2" />
+              <button type="button" class="btn-quitar-foto" (click)="quitarFoto(2)"><i class="ti ti-x"></i></button>
+            </div>
+          } @else {
+            <label class="foto-upload-btn">
+              <i class="ti ti-photo-up"></i> Seleccionar foto
+              <input type="file" accept="image/*" (change)="onFotoSelect($event, 2)" style="display:none" />
+            </label>
+          }
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════ ELABORADO POR ══════════════════════ -->
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-pen"></i> Elaborado por</h3>
+      <div class="form-grid">
+
+        <div class="abril-field abril-field--full">
+          <div class="observador-fijo">
+            <i class="ti ti-user-check"></i>
+            <div>
+              <div class="observador-fijo__nombre">{{ form.elaboradoPorNombre }}</div>
+              <div class="observador-fijo__cargo">{{ form.elaboradoPorCargo || '—' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Email</label>
+          @if (!usarOtroCorreo && emailTrabajadorLogueado) {
+            <input type="email" class="abril-field-input" [value]="emailTrabajadorLogueado" disabled />
+          } @else {
+            <input type="email" class="abril-field-input" [(ngModel)]="form.elaboradoPorEmail"
+                   name="elaboradoEmail" placeholder="usuario@abril.pe" />
+          }
+          @if (errores['elaboradoPorEmail']) { <span class="campo-error">{{ errores['elaboradoPorEmail'] }}</span> }
+          @if (emailTrabajadorLogueado) {
+            <label class="checkbox-label otro-correo">
+              <input type="checkbox" [(ngModel)]="usarOtroCorreo" name="usarOtroCorreo" (change)="onToggleOtroCorreo()" />
+              Usar otro correo
+            </label>
+          }
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Teléfono</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="form.elaboradoPorTelefono" name="elaboradoTel" />
+        </div>
+
+      </div>
+    </section>
+
+  </form>
+  }
+
+  <div modalFooter>
+    <button type="button" class="btn-cancelar" (click)="cancelar()">Cancelar</button>
+    <button *ngIf="!sinWorkerVinculado" type="submit" form="accForm" class="btn-guardar" [disabled]="guardando || cargando || resolviendoObservador">
+      @if (guardando) { <i class="ti ti-loader-2 spin"></i> }
+      @else { <i class="ti ti-device-floppy"></i> }
+      {{ guardando ? 'Guardando...' : 'Guardar borrador' }}
+    </button>
+  </div>
+
+</app-abril-modal-panel>

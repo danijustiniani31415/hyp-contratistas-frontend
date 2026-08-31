@@ -1,0 +1,57 @@
+<div class="tareo-root">
+
+  <!-- Fecha -->
+  <div class="tareo-top">
+    <div class="tareo-fecha-row">
+      <label class="tareo-fecha-lbl">Fecha del tareo</label>
+      <input type="date" class="tareo-fecha-input" [(ngModel)]="fecha" (change)="onFechaChange()" />
+    </div>
+  </div>
+
+  <!-- Lista unificada con scroll -->
+  <div *ngIf="!loading" class="tareo-lista">
+
+    <!-- ── Personal Casa ──────────────────────────────────── -->
+    <div class="tareo-seccion-header">
+      <span>Personal Casa</span>
+      <span>{{ totalCasa }} pers.</span>
+    </div>
+    <div *ngIf="detallesCasa.length === 0" class="tareo-empty">No hay partidas configuradas.</div>
+    <div *ngFor="let d of detallesCasa" class="tareo-row">
+      <span class="tareo-row-label">{{ d.partida.nombre }}</span>
+      <input type="number" class="tareo-num-input"
+        [class.tareo-num-input--active]="d.cantidad > 0"
+        [(ngModel)]="d.cantidad" min="0" placeholder="0" />
+    </div>
+
+    <!-- ── Personal Contratistas ──────────────────────────── -->
+    <div class="tareo-seccion-header tareo-seccion-header--verde">
+      <span>Personal Contratistas</span>
+      <span>{{ totalContratistas }} pers.</span>
+    </div>
+    <div *ngIf="detallesContratista.length === 0" class="tareo-empty">No hay empresas en este proyecto.</div>
+    <div *ngFor="let d of detallesContratista" class="tareo-row">
+      <span class="tareo-row-label">{{ d.empresa.empresaNombre }}</span>
+      <input type="number" class="tareo-num-input"
+        [class.tareo-num-input--active]="d.cantidad > 0"
+        [(ngModel)]="d.cantidad" min="0" placeholder="0" />
+    </div>
+
+    <!-- ── Total ──────────────────────────────────────────── -->
+    <div *ngIf="totalGeneral > 0" class="tareo-total-row">
+      <span class="tareo-total-lbl">TOTAL GENERAL</span>
+      <span class="tareo-total-num">{{ totalGeneral }} <span class="tareo-total-sub">pers.</span></span>
+    </div>
+
+  </div>
+
+  <div *ngIf="loading" class="tareo-loading">Cargando tareo…</div>
+
+  <!-- Botón fijo abajo -->
+  <div class="tareo-footer">
+    <button class="tareo-btn-guardar" [disabled]="saving || !puedeGuardar" (click)="guardar()">
+      {{ saving ? 'Guardando…' : (tareoId ? 'Actualizar tareo' : 'Guardar tareo') }}
+    </button>
+  </div>
+
+</div>

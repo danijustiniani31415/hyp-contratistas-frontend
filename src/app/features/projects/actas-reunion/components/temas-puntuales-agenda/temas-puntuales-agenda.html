@@ -1,0 +1,31 @@
+<div class="border-t border-[#E5EAF0] pt-3 flex flex-col gap-2">
+  <label class="text-sm font-medium text-gray-700">Temas puntuales de esta sesión</label>
+  <p class="text-xs text-gray-400 -mt-1">
+    Además de los puntos fijos de arriba, cualquier convocado puede sumar un tema extra solo para esta reunión.
+  </p>
+
+  <ul *ngIf="agenda.items.length > 0" class="flex flex-col gap-1.5">
+    <li *ngFor="let item of agenda.items"
+      class="flex items-center gap-2 px-3 py-1.5 border border-[#E5EAF0] rounded-lg text-sm text-gray-700 bg-[#F5F8FA]">
+      <div class="flex-1 min-w-0">
+        <span>{{ item.descripcion }}</span>
+        <span class="text-xs text-gray-400"> — {{ item.workerNombre }}</span>
+      </div>
+      <button *ngIf="item.workerId === agenda.workerIdActual" type="button" (click)="eliminarTema(item.reunionAgendaItemId)"
+        class="text-red-400 hover:text-red-600 cursor-pointer shrink-0">
+        <span class="ti ti-x text-sm"></span>
+      </button>
+    </li>
+  </ul>
+
+  <div *ngIf="agenda.workerIdActual != null" class="flex gap-2">
+    <input type="text" [(ngModel)]="nuevoTema" maxlength="300" [disabled]="agregando"
+      (keydown.enter)="agregarTema()"
+      class="flex-1 min-w-0 h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+      placeholder="Ej. Cambio de proveedor de acabados" />
+    <button type="button" (click)="agregarTema()" [disabled]="!nuevoTema.trim() || agregando"
+      class="h-[42px] px-4 border border-[#E5EAF0] rounded-lg text-sm text-[var(--color-abril-primary)] hover:bg-[var(--color-abril-primary-light)] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
+      <span class="ti ti-plus"></span> Agregar
+    </button>
+  </div>
+</div>

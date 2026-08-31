@@ -1,0 +1,316 @@
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Programa Anual SSOMA"
+  subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
+  [pills]="[
+    { icono: 'ti-layout-grid', texto: (data?.programasActivos ?? 0) + ' activos' },
+    { icono: 'ti-alert-triangle', texto: alertas.length + ' alertas', warn: alertas.length > 0 }
+  ]"
+  [tabs]="headerTabs"
+  [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+  (secondaryClick)="load()">
+</app-abril-page-header>
+
+<!-- ═══════════════════  CONTENT  ═══════════════════ -->
+<div class="dashboard-content">
+
+  <!-- SKELETON -->
+  <div *ngIf="loading" class="kpi-grid">
+    <div *ngFor="let _ of [1,2,3,4]" class="kpi-card" style="display:flex;align-items:flex-start;gap:10px;">
+      <div style="flex:1;">
+        <div class="skeleton" style="height:10px;width:55%;margin-bottom:8px;"></div>
+        <div class="skeleton" style="height:26px;width:45%;margin-bottom:6px;"></div>
+        <div class="skeleton" style="height:8px;width:70%;"></div>
+      </div>
+      <div class="skeleton" style="width:36px;height:36px;border-radius:8px;flex-shrink:0;"></div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <ng-container *ngIf="!loading && !data">
+    <div class="empty-state" style="margin-top:48px;">
+      <div class="empty-state__icon">
+        <i class="ti ti-chart-bar" aria-hidden="true"></i>
+      </div>
+      <p class="empty-state__title">Sin datos disponibles</p>
+      <p class="empty-state__sub">No hay programas PASO registrados para el año actual.</p>
+      <button type="button" class="empty-state__btn" (click)="irALista()">
+        <i class="ti ti-plus" aria-hidden="true"></i> Ir a programas
+      </button>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!loading && data">
+
+    <!-- ── FILA 1: KPIs ── -->
+    <div class="kpi-grid fade-in">
+
+      <!-- SPI Consolidado — color dinámico -->
+      <article class="kpi-card"
+        [class.kpi-card--green]="data.spiColor === 'verde'"
+        [class.kpi-card--amber]="data.spiColor === 'amarillo'"
+        [class.kpi-card--red]="data.spiColor === 'rojo'">
+        <div class="kpi-top">
+          <div>
+            <div class="kpi-label">SPI Consolidado</div>
+            <div class="kpi-value">{{ (dispSpi / 100) | number:'1.2-2' }}</div>
+            <app-spi-badge [spi]="data.spiConsolidado" size="sm"></app-spi-badge>
+          </div>
+          <div class="kpi-icon"
+            [class.kpi-icon--green]="data.spiColor === 'verde'"
+            [class.kpi-icon--amber]="data.spiColor === 'amarillo'"
+            [class.kpi-icon--red]="data.spiColor === 'rojo'">
+            <i class="ti ti-chart-line" aria-hidden="true"></i>
+          </div>
+        </div>
+      </article>
+
+      <!-- Avance Global -->
+      <article class="kpi-card kpi-card--blue">
+        <div class="kpi-top">
+          <div style="flex:1;">
+            <div class="kpi-label">Avance Global</div>
+            <div class="kpi-value">{{ dispAvance }}%</div>
+            <div class="kpi-sub">
+              {{ data.programasActivos }} programa{{ data.programasActivos !== 1 ? 's' : '' }} activo{{ data.programasActivos !== 1 ? 's' : '' }}
+            </div>
+          </div>
+          <div class="kpi-icon kpi-icon--blue">
+            <i class="ti ti-progress" aria-hidden="true"></i>
+          </div>
+        </div>
+        <div class="kpi-bar">
+          <div class="kpi-bar__fill kpi-bar__fill--blue" [style.width.%]="data.porcentajeAvanceConsolidado"></div>
+        </div>
+      </article>
+
+      <!-- Vencidas -->
+      <article class="kpi-card"
+        [class.kpi-card--red]="data.totalVencidas > 0"
+        [class.kpi-card--green]="data.totalVencidas === 0">
+        <div class="kpi-top">
+          <div>
+            <div class="kpi-label">Vencidas</div>
+            <div class="kpi-value"
+              [class.kpi-value--red]="data.totalVencidas > 0"
+              [class.kpi-value--green]="data.totalVencidas === 0">
+              {{ dispVencidas }}
+            </div>
+            <div class="kpi-sub">
+              {{ data.totalVencidas > 0 ? 'Requieren acción' : 'Sin vencimientos' }}
+            </div>
+          </div>
+          <div class="kpi-icon"
+            [class.kpi-icon--red]="data.totalVencidas > 0"
+            [class.kpi-icon--green]="data.totalVencidas === 0">
+            <i class="ti" aria-hidden="true"
+              [class.ti-clock-x]="data.totalVencidas > 0"
+              [class.ti-circle-check]="data.totalVencidas === 0"></i>
+          </div>
+        </div>
+      </article>
+
+      <!-- Próximas a Vencer -->
+      <article class="kpi-card"
+        [class.kpi-card--amber]="data.totalProximasVencer > 0"
+        [class.kpi-card--green]="data.totalProximasVencer === 0">
+        <div class="kpi-top">
+          <div>
+            <div class="kpi-label">Próximas a Vencer</div>
+            <div class="kpi-value"
+              [class.kpi-value--amber]="data.totalProximasVencer > 0"
+              [class.kpi-value--green]="data.totalProximasVencer === 0">
+              {{ dispProximas }}
+            </div>
+            <div class="kpi-sub">Próximos 7 días</div>
+          </div>
+          <div class="kpi-icon"
+            [class.kpi-icon--amber]="data.totalProximasVencer > 0"
+            [class.kpi-icon--green]="data.totalProximasVencer === 0">
+            <i class="ti ti-clock-hour-4" aria-hidden="true"></i>
+          </div>
+        </div>
+      </article>
+
+    </div><!-- /kpi-grid -->
+
+    <!-- ── SPI POR ÁMBITO ── -->
+    <div class="ambito-grid fade-in" *ngIf="data.seguridad || data.salud || data.ambiente">
+
+      <div class="ambito-card"
+        [class.ambito-card--green]="data.seguridad?.color === 'verde'"
+        [class.ambito-card--amber]="data.seguridad?.color === 'amarillo'"
+        [class.ambito-card--red]="data.seguridad?.color === 'rojo'">
+        <div class="ambito-icon" style="background:#eff6ff;color:#1d4ed8">
+          <i class="ti ti-shield-check" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="ambito-label">Seguridad</div>
+          <div class="ambito-spi">{{ data.seguridad?.spi | number:'1.2-2' }}</div>
+          <app-spi-badge [spi]="data.seguridad?.spi ?? 0" size="sm"></app-spi-badge>
+        </div>
+        <div class="ambito-stats">
+          <span>{{ data.seguridad?.ejecutadas ?? 0 }}/{{ data.seguridad?.planificadas ?? 0 }}</span>
+          <span *ngIf="(data.seguridad?.vencidas ?? 0) > 0" class="ambito-vencidas">{{ data.seguridad?.vencidas }} venc.</span>
+        </div>
+      </div>
+
+      <div class="ambito-card"
+        [class.ambito-card--green]="data.salud?.color === 'verde'"
+        [class.ambito-card--amber]="data.salud?.color === 'amarillo'"
+        [class.ambito-card--red]="data.salud?.color === 'rojo'">
+        <div class="ambito-icon" style="background:#ecfdf5;color:#0a7c52">
+          <i class="ti ti-heart-rate-monitor" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="ambito-label">Salud Ocupacional</div>
+          <div class="ambito-spi">{{ data.salud?.spi | number:'1.2-2' }}</div>
+          <app-spi-badge [spi]="data.salud?.spi ?? 0" size="sm"></app-spi-badge>
+        </div>
+        <div class="ambito-stats">
+          <span>{{ data.salud?.ejecutadas ?? 0 }}/{{ data.salud?.planificadas ?? 0 }}</span>
+          <span *ngIf="(data.salud?.vencidas ?? 0) > 0" class="ambito-vencidas">{{ data.salud?.vencidas }} venc.</span>
+        </div>
+      </div>
+
+      <div class="ambito-card"
+        [class.ambito-card--green]="data.ambiente?.color === 'verde'"
+        [class.ambito-card--amber]="data.ambiente?.color === 'amarillo'"
+        [class.ambito-card--red]="data.ambiente?.color === 'rojo'">
+        <div class="ambito-icon" style="background:#e0f7f4;color:#0a8c80">
+          <i class="ti ti-leaf" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="ambito-label">Medio Ambiente</div>
+          <div class="ambito-spi">{{ data.ambiente?.spi | number:'1.2-2' }}</div>
+          <app-spi-badge [spi]="data.ambiente?.spi ?? 0" size="sm"></app-spi-badge>
+        </div>
+        <div class="ambito-stats">
+          <span>{{ data.ambiente?.ejecutadas ?? 0 }}/{{ data.ambiente?.planificadas ?? 0 }}</span>
+          <span *ngIf="(data.ambiente?.vencidas ?? 0) > 0" class="ambito-vencidas">{{ data.ambiente?.vencidas }} venc.</span>
+        </div>
+      </div>
+
+    </div><!-- /ambito-grid -->
+
+    <!-- ── FILA 2: Proyectos + Alertas ── -->
+    <div class="bottom-grid fade-in">
+
+      <!-- SPI por Proyecto -->
+      <div class="panel-card">
+        <div class="panel-card__header">
+          <span class="panel-title">
+            <i class="ti ti-building-skyscraper" aria-hidden="true"></i>
+            SPI por Proyecto
+          </span>
+          <button type="button" class="link-btn" (click)="irALista()">
+            Ver todos <i class="ti ti-arrow-right" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div *ngIf="!data.porProyecto.length" class="empty-state" style="padding:24px;">
+          <div class="empty-state__icon">
+            <i class="ti ti-files" aria-hidden="true"></i>
+          </div>
+          <p class="empty-state__title">Sin programas aún</p>
+          <p class="empty-state__sub">Crea o instancia un programa para ver el SPI por proyecto.</p>
+        </div>
+
+        <table *ngIf="data.porProyecto.length" class="paso-table">
+          <thead>
+            <tr>
+              <th>Proyecto</th>
+              <th class="col-center">SPI</th>
+              <th class="col-center">Avance</th>
+              <th class="col-center">Vencidas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of data.porProyecto"
+              style="cursor:pointer"
+              (click)="irADetalle(p.pasoId)">
+              <td>
+                <div class="cell-project">
+                  <span class="project-dot"
+                    [style.background]="spiDotColor(p.spiColor)"
+                    [style.box-shadow]="'0 0 0 3px ' + spiDotColor(p.spiColor) + '22'">
+                  </span>
+                  {{ p.proyectoNombre }}
+                </div>
+              </td>
+              <td class="col-center">
+                <app-spi-badge [spi]="p.spi" size="sm"></app-spi-badge>
+              </td>
+              <td class="col-center">
+                <div class="table-progress">
+                  <div class="table-progress__bar">
+                    <div class="table-progress__fill" [style.width.%]="p.porcentajeAvance"></div>
+                  </div>
+                  <span class="table-progress__pct">{{ p.porcentajeAvance | number:'1.0-0' }}%</span>
+                </div>
+              </td>
+              <td class="col-center">
+                <span class="badge-num"
+                  [class.badge-num--red]="p.vencidas > 0"
+                  [class.badge-num--green]="p.vencidas === 0">
+                  {{ p.vencidas }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Alertas -->
+      <div class="panel-card panel-card--alerts">
+        <div class="panel-card__header">
+          <span class="panel-title">
+            <i class="ti ti-bell" aria-hidden="true"></i>
+            Alertas
+            <span *ngIf="alertas.length" class="panel-badge">{{ alertas.length }}</span>
+          </span>
+          <button type="button" class="link-btn" (click)="irAAlertas()">
+            Ver todas <i class="ti ti-arrow-right" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div *ngIf="!alertasRecientes.length" class="empty-state" style="padding:24px;">
+          <div class="empty-state__icon empty-state__icon--green">
+            <i class="ti ti-mood-happy" aria-hidden="true"></i>
+          </div>
+          <p class="empty-state__title">Sin alertas activas</p>
+          <p class="empty-state__sub">Todos los programas están al día.</p>
+        </div>
+
+        <div *ngIf="alertasRecientes.length" class="alerts-list">
+          <div *ngFor="let a of alertasRecientes" class="alert-row">
+            <div class="alert-dot"
+              [class.alert-dot--red]="a.tipoAlerta === 'Vencido'"
+              [class.alert-dot--amber]="a.tipoAlerta !== 'Vencido'">
+            </div>
+            <div class="alert-body">
+              <div class="alert-nombre">{{ a.actividadNombre }}</div>
+              <div class="alert-meta">
+                <span *ngIf="a.proyectoNombre">{{ a.proyectoNombre }} ·</span>
+                <span>{{ formatFecha(a.fechaProgramada) }}</span>
+              </div>
+            </div>
+            <div class="alert-right">
+              <span class="alert-chip"
+                [class.alert-chip--red]="a.tipoAlerta === 'Vencido'"
+                [class.alert-chip--amber]="a.tipoAlerta !== 'Vencido'">
+                {{ a.tipoAlerta === 'Vencido' ? 'Vencida' : 'Pronto' }}
+              </span>
+              <span *ngIf="a.responsableNombre" class="alert-tipo">{{ a.responsableNombre }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /bottom-grid -->
+
+  </ng-container>
+
+
+<app-fab label="Nuevo programa" (clicked)="irANuevoPrograma()"></app-fab>
+</div><!-- /dashboard-content -->

@@ -1,0 +1,388 @@
+<app-base-modal [title]="'Nueva solicitud de personal'" width="w-[880px]"
+  [preventCloseWhenDirty]="true" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[20px] mt-[16px]">
+
+    <!-- ── Tu ficha: área, categoría y puesto (solo lectura) ───────────────────────
+         Los tres salen de la ficha de trabajador del usuario y no se eligen: se muestran
+         para que sepa desde dónde está pidiendo. La categoría no vive en la ficha — se llega
+         por el puesto (workers.puesto_id → puesto.categoria_id). El puesto y la categoría pasan
+         por titleCase porque el catálogo los guarda en MAYÚSCULAS y el desplegable «Puesto» de
+         abajo ya los suaviza igual: sin esto la misma palabra se vería de dos formas en el mismo
+         modal. -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-[12px]">
+      <div class="relative mt-[9px]">
+        <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Tu área</label>
+        <input type="text" disabled
+          [value]="formData.areaNombre || '(No se pudo identificar tu área)'"
+          [title]="formData.areaNombre || '(No se pudo identificar tu área)'"
+          class="w-full border border-[#e2e8f0] rounded-[7px] h-[36px] px-[10px] text-[13px] text-gray-500 bg-gray-50" />
+      </div>
+
+      <div class="relative mt-[9px]">
+        <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Tu categoría</label>
+        <input type="text" disabled
+          [value]="(formData.categoriaNombre | titleCase) || '(No se pudo identificar tu categoría)'"
+          [title]="(formData.categoriaNombre | titleCase) || '(No se pudo identificar tu categoría)'"
+          class="w-full border border-[#e2e8f0] rounded-[7px] h-[36px] px-[10px] text-[13px] text-gray-500 bg-gray-50" />
+      </div>
+
+      <div class="relative mt-[9px]">
+        <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Tu puesto</label>
+        <input type="text" disabled
+          [value]="(formData.puestoNombre | titleCase) || '(No se pudo identificar tu puesto)'"
+          [title]="(formData.puestoNombre | titleCase) || '(No se pudo identificar tu puesto)'"
+          class="w-full border border-[#e2e8f0] rounded-[7px] h-[36px] px-[10px] text-[13px] text-gray-500 bg-gray-50" />
+      </div>
+    </div>
+
+    <!-- ── Cantidad total de vacantes ──────────────────────────────────── -->
+    <div class="flex flex-col gap-[4px] w-[220px]">
+      <app-search-select
+        label="Cantidad total de vacantes"
+        placeholder="Selecciona la cantidad"
+        [options]="cantidadOptions"
+        valueField="id" displayField="nombre"
+        [fullText]="true"
+        [value]="cantidad"
+        (valueChange)="onCantidadChange($event)" />
+    </div>
+
+    <!-- Info: una vacante = un requerimiento -->
+    <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[10px]"
+         style="background:var(--color-abril-standard-light);border:1px solid var(--color-abril-standard-border)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]" style="color:var(--color-abril-standard)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/>
+      </svg>
+      <p class="text-[13px] text-gray-600">
+        Cada vacante genera un <b>requerimiento independiente</b> con su propio seguimiento, long list y aprobación.
+      </p>
+    </div>
+
+    <!-- ── Bloques por vacante ─────────────────────────────────────────── -->
+    <div *ngFor="let v of vacantes; let i = index"
+         class="flex flex-col gap-[12px] rounded-[8px] border border-[#F0F0F0] p-[14px]">
+
+      <div class="flex items-center justify-between border-b border-[#F0F0F0] pb-[6px]">
+        <div class="flex items-center gap-[8px]">
+          <span class="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[12px] font-bold text-white"
+                style="background:var(--color-abril-standard)">{{ i + 1 }}</span>
+          <p class="text-[13px] font-bold text-gray-700">Puesto solicitado {{ i + 1 }}</p>
+        </div>
+        <span class="text-[11px] text-gray-400">Vacante {{ i + 1 }} de {{ vacantes.length }}</span>
+      </div>
+
+      <!-- Tres columnas: puesto, tipo y proyecto. Al elegir Reemplazo aparece un cuarto campo
+           (el trabajador reemplazado) y la fila pasa a completarse en la siguiente línea. -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[12px]">
+        <!-- ── Puesto: siempre del catálogo ────────────────────────────────────────────
+             Solo los puestos que GTH asoció al área del solicitante o a un área hija. El alta
+             de puestos nuevos y su asignación a un área son tarea de GTH desde el catálogo de
+             puestos, no del solicitante: acá solo se elige entre los que ya existen. -->
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Puesto" placeholder="Selecciona puesto"
+            [options]="formData.puestos" valueField="id" displayField="nombre"
+            [fullText]="true"
+            [(value)]="v.puestoId" />
+          <p *ngIf="submitted && !v.puestoId" class="text-xs text-red-500">Campo requerido</p>
+          <!-- El área ya no se elige: la decide el puesto. Solo se informa cuando NO es la del
+               propio solicitante, que es el caso raro y el que hay que hacer visible. Sin
+               titleCase: los nombres del catálogo ya vienen capitalizados. -->
+          <p *ngIf="areaDestino(v) && areaDestino(v) !== formData.areaNombre"
+             class="text-[11px] text-gray-500">
+            Ingresa al área de <b class="text-gray-700">{{ areaDestino(v) }}</b>
+          </p>
+          <!-- Sin puestos no se puede registrar nada: se dice por qué en vez de dejar el
+               desplegable vacío sin explicación. -->
+          <p *ngIf="destinatariosCargados && formData.puestos.length === 0"
+             class="text-xs text-amber-600">
+            Tu área todavía no tiene puestos asignados. Avísale a GTH.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Tipo de requerimiento" placeholder="Selecciona tipo"
+            [options]="formData.tiposRequerimiento" valueField="id" displayField="nombre"
+            [fullText]="true"
+            [value]="v.tipoRequerimientoId"
+            (valueChange)="onTipoRequerimientoChange(v, $event)" />
+          <p *ngIf="submitted && !v.tipoRequerimientoId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <!-- ── A quién reemplaza (solo si el tipo es Reemplazo) ──────────────────────
+             La lista son los trabajadores que hoy están en el área del solicitante o en
+             cualquier área hija (incluido él mismo: pedir el reemplazo propio por renuncia
+             o promoción es un caso real). Va pegado al tipo porque solo existe por él. -->
+        <div *ngIf="esReemplazo(v)" class="flex flex-col gap-[4px]">
+          <app-search-select label="Trabajador reemplazado" placeholder="Buscar por nombre o DNI..."
+            [options]="formData.trabajadoresArea" valueField="id" displayField="nombre"
+            [fullText]="true"
+            [disabled]="sinTrabajadoresArea"
+            [(value)]="v.reemplazaWorkerId" />
+          <p *ngIf="sinTrabajadoresArea" class="text-[11px] text-gray-400">
+            No hay trabajadores registrados en tu área, así que la vacante se enviará sin este dato.
+          </p>
+          <p *ngIf="submitted && !sinTrabajadoresArea && !v.reemplazaWorkerId" class="text-xs text-red-500">
+            Campo requerido
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Proyecto / Obra" placeholder="Buscar proyecto..."
+            [options]="formData.proyectos" valueField="id" displayField="nombre"
+            [fullText]="true"
+            [(value)]="v.projectId" />
+          <p *ngIf="submitted && !v.projectId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <!-- ── Salario bruto mensual (solo en las vacantes nuevas) ──────────────────
+             Va por vacante y no por solicitud: dos vacantes de la misma solicitud pueden
+             ser de puestos distintos y cobrar distinto. Es parte de lo que aprueba Gerencia
+             General, así que viaja en su correo.
+             En un REEMPLAZO no se pide: el puesto que se cubre ya existe con su banda. -->
+        <div *ngIf="pideSalario(v)" class="flex flex-col gap-[4px]">
+          <div class="abril-field">
+            <!-- La moneda va en el label, como en el resto de los campos de dinero del sistema
+                 (ver «Monto cubierto (S/)» en el caso social de SSOMA): el label flotante nunca
+                 se tapa, y así no hay que pelear el padding de .abril-field-input, que va sin
+                 capa y le gana a cualquier utilidad de Tailwind. -->
+            <label class="abril-field-label" [attr.for]="'gth-salario-' + i">Salario bruto mensual (S/)</label>
+            <input [id]="'gth-salario-' + i" class="abril-field-input" type="number"
+              inputmode="decimal" min="0" [max]="maxSalario" step="0.01" placeholder="0.00"
+              [(ngModel)]="v.salarioBrutoMensual" />
+          </div>
+          <p *ngIf="submitted && salarioInvalido(v)" class="text-xs text-red-500">
+            {{ v.salarioBrutoMensual && v.salarioBrutoMensual > maxSalario
+              ? 'No puede superar S/ ' + (maxSalario | number:'1.2-2')
+              : 'Campo requerido' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- ── FFT: ingreso directo con candidato ya elegido ──────────────────────────
+           Va por vacante y no por solicitud: una misma solicitud puede pedir un ingreso
+           directo y una vacante normal. Al marcarlo, la vacante deja de publicarse y de
+           armar long list, así que hay que decir a QUIÉN se quiere: nombre y correo
+           personal son el único destinatario posible del formulario del postulante. -->
+      <div class="flex flex-col gap-[10px] rounded-[8px] px-[13px] py-[11px]"
+           [style.background]="v.esFft ? 'var(--color-abril-standard-light)' : '#FAFAFA'"
+           [style.border]="'1px solid ' + (v.esFft ? 'var(--color-abril-standard-border)' : '#F0F0F0')">
+
+        <label class="flex items-start gap-[9px] cursor-pointer">
+          <input type="checkbox" class="w-[15px] h-[15px] shrink-0 mt-[2px] cursor-pointer"
+            style="accent-color:var(--color-abril-standard)"
+            [checked]="v.esFft"
+            (change)="onFftChange(v, $any($event.target).checked)" />
+          <span class="min-w-0">
+            <span class="text-[13px] font-bold text-gray-700">FFT</span>
+            <span class="block text-[11.5px] text-gray-500 leading-snug">Ingreso directo</span>
+          </span>
+        </label>
+
+        <!-- El documento va junto al nombre y al correo porque es parte del mismo dato: con él el
+             candidato entra a la base maestra de personas apenas se registra la solicitud. El tipo
+             va primero porque es el que decide cuántos dígitos admite el número (DNI 8 exactos,
+             CE de 8 a 12) y el campo no deja teclear más. -->
+        <div *ngIf="v.esFft" class="grid grid-cols-1 sm:grid-cols-12 gap-[12px]">
+          <div class="flex flex-col gap-[4px] sm:col-span-4">
+            <div class="abril-field">
+              <label class="abril-field-label" [attr.for]="'gth-fft-nombre-' + i">Nombre completo del candidato</label>
+              <input [id]="'gth-fft-nombre-' + i" class="abril-field-input" type="text"
+                [maxlength]="maxFftNombre" placeholder="Nombres y apellidos"
+                [(ngModel)]="v.fftCandidatoNombre" />
+            </div>
+            <p *ngIf="submitted && fftNombreInvalido(v)" class="text-xs text-red-500">Campo requerido</p>
+          </div>
+
+          <!-- uppercase: DNI y CE son siglas y el search-select, por defecto, suaviza el TODO
+               MAYÚSCULAS del catálogo a nombre propio ("Dni" / "Ce"). sortAlpha en false para que
+               DNI quede primero, que es el orden del catálogo y el caso normal. -->
+          <div class="flex flex-col gap-[4px] sm:col-span-2">
+            <app-search-select label="Tipo de documento" placeholder="Tipo"
+              [options]="formData.tiposDocumento" valueField="id" displayField="nombre"
+              [fullText]="true" [uppercase]="true" [sortAlpha]="false"
+              [value]="v.fftTipoDocumentoId"
+              (valueChange)="onFftTipoDocumentoChange(v, $event)" />
+            <p *ngIf="submitted && fftTipoDocumentoInvalido(v)" class="text-xs text-red-500">Campo requerido</p>
+          </div>
+
+          <div class="flex flex-col gap-[4px] sm:col-span-3">
+            <div class="abril-field">
+              <label class="abril-field-label" [attr.for]="'gth-fft-doc-' + i">N.° de documento</label>
+              <input [id]="'gth-fft-doc-' + i" class="abril-field-input" type="text"
+                inputmode="numeric" autocomplete="off" [maxlength]="largoDocumento(v).max"
+                [placeholder]="placeholderDocumento(v)"
+                [ngModel]="v.fftCandidatoDocumento"
+                (input)="onFftDocumentoInput(v, $event)" />
+            </div>
+            <p *ngIf="submitted && fftDocumentoInvalido(v)" class="text-xs text-red-500">
+              {{ v.fftCandidatoDocumento.trim() ? reglaDocumento(v) : 'Campo requerido' }}
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-[4px] sm:col-span-3">
+            <div class="abril-field">
+              <label class="abril-field-label" [attr.for]="'gth-fft-correo-' + i">Correo personal del candidato</label>
+              <input [id]="'gth-fft-correo-' + i" class="abril-field-input" type="email"
+                inputmode="email" autocomplete="off" placeholder="nombre@correo.com"
+                [(ngModel)]="v.fftCandidatoCorreo" />
+            </div>
+            <p *ngIf="submitted && fftCorreoInvalido(v)" class="text-xs text-red-500">
+              {{ v.fftCandidatoCorreo.trim() ? 'Correo no válido' : 'Campo requerido' }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Justificación general (obligatoria) ─────────────────────────────
+         Es el sustento que leen el gerente del área y Gerencia General para aprobar, y va en el
+         cuerpo de sus correos: sin ella la solicitud no se registra. -->
+    <div class="flex flex-col gap-[4px]">
+      <div class="relative mt-[9px]">
+        <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Justificación general de la solicitud</label>
+        <textarea [(ngModel)]="justificacion" rows="3" [maxlength]="maxJustificacion"
+          placeholder="Explique el motivo de la solicitud, el impacto del personal requerido y cualquier información relevante..."
+          class="w-full border border-[#e2e8f0] rounded-[7px] px-[10px] py-[8px] text-[13px] text-gray-700 focus:outline-none resize-y"></textarea>
+      </div>
+      <p *ngIf="submitted && !justificacion.trim()" class="text-xs text-red-500">Campo requerido</p>
+    </div>
+
+    <!-- ── Adjuntar sustento (opcional) ────────────────────────────────── -->
+    <div class="flex flex-col gap-[6px]">
+      <label class="text-[12px] font-semibold text-gray-600">
+        Adjuntar sustento (opcional)
+        <span class="font-normal text-gray-400">— Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX. Máx. 10 MB.</span>
+      </label>
+
+      <div *ngIf="sustento"
+           class="flex items-center gap-[10px] rounded-[8px] px-[14px] py-[10px]"
+           style="background:var(--color-abril-standard-light);border:1px solid var(--color-abril-standard-border)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             class="flex-shrink-0" style="color:var(--color-abril-standard)">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6" />
+        </svg>
+        <span class="flex-1 min-w-0 truncate text-[13px] text-gray-700" [title]="sustento.file.name">
+          {{ sustento.file.name }}
+        </span>
+        <button type="button" (click)="quitarSustento()"
+                class="shrink-0 text-[#D30000] hover:bg-[#FAD5D4] rounded-full w-[26px] h-[26px] flex items-center justify-center cursor-pointer transition-colors"
+                title="Quitar sustento">
+          ✕
+        </button>
+      </div>
+
+      <app-file-selector *ngIf="!sustento"
+        accept=".pdf,.doc,.docx,.xls,.xlsx"
+        label="Arrastra el archivo aquí o"
+        hint="PDF, DOC, DOCX, XLS, XLSX"
+        color="var(--color-abril-standard)"
+        (fileSelected)="onSustentoSelected($event)" />
+    </div>
+
+    <!-- ── A quién le llega la solicitud ───────────────────────────────
+         Los correos los resuelve el backend con la misma lógica del envío real: lo que esté
+         activo en la sección «Aprobación de Gerencia General» de la Configuración (Gerente
+         General, gerente del área de quien solicita y correos adicionales), así que el aviso
+         no puede prometer algo distinto de lo que sale. -->
+    <ng-container *ngIf="destinatariosCargados">
+      <!-- Un aviso por correo que va a salir, y salen hasta dos: el de aprobación con las vacantes
+           que sí esperan una firma y el del ingreso directo, que no espera a nadie y va derecho a
+           GTH. Una solicitud que mezcle las dos clases muestra los dos. -->
+      <ng-container *ngIf="hayVacantesPorAprobar">
+        <div *ngIf="destinatariosPara.length; else sinDestinatariosAprobacion"
+             class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[10px]"
+             style="background:var(--color-abril-standard-light);border:1px solid var(--color-abril-standard-border)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]" style="color:var(--color-abril-standard)">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/>
+          </svg>
+          <p class="text-[13px] text-gray-600">
+            {{ hayIngresoDirecto ? 'Las vacantes por aprobar se notificarán a' : 'Esta solicitud será notificada a' }}
+            <ng-container *ngFor="let d of destinatariosPara; let i = index; let last = last"
+              ><span *ngIf="i > 0">{{ last ? ' y ' : ', ' }}</span
+              ><span class="font-medium" style="color:var(--color-abril-standard)"
+                [title]="etiquetaDestinatario(d)">{{ d.email }}</span></ng-container
+            > para su aprobación.
+            <ng-container *ngIf="destinatariosCopias.length">
+              Con copia a
+              <ng-container *ngFor="let c of destinatariosCopias; let i = index; let last = last"
+                ><span *ngIf="i > 0">{{ last ? ' y ' : ', ' }}</span
+                ><span class="font-medium" style="color:var(--color-abril-standard)"
+                  [title]="etiquetaDestinatario(c)">{{ c.email }}</span></ng-container
+              >.
+            </ng-container>
+          </p>
+        </div>
+
+        <ng-template #sinDestinatariosAprobacion>
+          <div class="flex items-start gap-[10px] bg-[#FEF9C3] border border-[#FDE68A] rounded-[8px] px-[14px] py-[10px]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]">
+              <path d="M12 2L1 21h22L12 2zm0 6l7.5 13h-15L12 8zm-1 4v4h2v-4h-2zm0 5v2h2v-2h-2z" fill="#92400E"/>
+            </svg>
+            <p class="text-[13px] text-[#92400E]">
+              No hay ningún destinatario para el correo de aprobación, así que
+              {{ hayIngresoDirecto ? 'esas vacantes quedarán registradas' : 'la solicitud quedará registrada' }}
+              <b>pero no se enviarán por correo</b>. Podrás reenviarlas desde «Mis solicitudes de
+              vacante» cuando se configuren.
+            </p>
+          </div>
+        </ng-template>
+      </ng-container>
+
+      <ng-container *ngIf="hayIngresoDirecto">
+        <div *ngIf="destinatariosFftPara.length; else sinDestinatariosFft"
+             class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[10px]"
+             style="background:var(--color-abril-standard-light);border:1px solid var(--color-abril-standard-border)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]" style="color:var(--color-abril-standard)">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/>
+          </svg>
+          <p class="text-[13px] text-gray-600">
+            Esta solicitud será notificada a
+            <ng-container *ngFor="let d of destinatariosFftPara; let i = index; let last = last"
+              ><span *ngIf="i > 0">{{ last ? ' y ' : ', ' }}</span
+              ><span class="font-medium" style="color:var(--color-abril-standard)"
+                [title]="etiquetaDestinatario(d)">{{ d.email }}</span></ng-container
+            > para su EMO.
+            <ng-container *ngIf="destinatariosFftCopias.length">
+              Con copia a
+              <ng-container *ngFor="let c of destinatariosFftCopias; let i = index; let last = last"
+                ><span *ngIf="i > 0">{{ last ? ' y ' : ', ' }}</span
+                ><span class="font-medium" style="color:var(--color-abril-standard)"
+                  [title]="etiquetaDestinatario(c)">{{ c.email }}</span></ng-container
+              >.
+            </ng-container>
+          </p>
+        </div>
+
+        <ng-template #sinDestinatariosFft>
+          <div class="flex items-start gap-[10px] bg-[#FEF9C3] border border-[#FDE68A] rounded-[8px] px-[14px] py-[10px]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]">
+              <path d="M12 2L1 21h22L12 2zm0 6l7.5 13h-15L12 8zm-1 4v4h2v-4h-2zm0 5v2h2v-2h-2z" fill="#92400E"/>
+            </svg>
+            <p class="text-[13px] text-[#92400E]">
+              No hay ningún destinatario para el aviso de ingreso directo a Gestión de Talento Humano, así
+              que el requerimiento <b>quedará registrado pero no se enviará por correo</b>. Igual aparecerá
+              en la bandeja de Reclutamiento.
+            </p>
+          </div>
+        </ng-template>
+      </ng-container>
+    </ng-container>
+
+    <!-- ── Botón enviar ────────────────────────────────────────────────── -->
+    <div class="flex justify-end gap-[10px] pt-[4px]">
+      <button type="button" (click)="closeModal.emit()"
+        class="h-[36px] px-[20px] rounded-[7px] text-[13px] font-medium text-gray-600 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+        Cancelar
+      </button>
+      <button type="button" (click)="save()"
+        class="h-[36px] px-[22px] rounded-[7px] text-white text-[13px] font-medium cursor-pointer transition-colors hover:brightness-95"
+        style="background:var(--color-abril-standard)">
+        Enviar solicitud
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

@@ -1,0 +1,56 @@
+<app-abril-page-header
+  badge="ARQ. COMERCIAL · TAREO"
+  titulo="Reporte semanal"
+  subtitulo="Horas por día a partir de las marcaciones de tareo."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="rpt-root">
+
+  <div class="rpt-nav">
+    <button type="button" class="rpt-nav-btn" (click)="cambiarSemana(-1)"><i class="ti ti-chevron-left"></i></button>
+    <span class="rpt-nav-label">{{ semanaLunes | date: 'dd/MM' }} – {{ semanaFin | date: 'dd/MM/yyyy' }}</span>
+    <button type="button" class="rpt-nav-btn" (click)="cambiarSemana(1)"><i class="ti ti-chevron-right"></i></button>
+  </div>
+
+  <div *ngIf="cargando" class="rpt-loading"><span class="rpt-spinner"></span> Cargando…</div>
+
+  <div class="rpt-table-wrap" *ngIf="!cargando">
+    <table class="rpt-table">
+      <thead>
+        <tr>
+          <th rowspan="2" class="rpt-th-worker">Trabajador</th>
+          <th rowspan="2">Horario</th>
+          <th *ngFor="let d of diasSemana" class="rpt-th-dia">
+            {{ diasLabel[d.getDay() === 0 ? 6 : d.getDay() - 1] }}<br />
+            <span class="rpt-th-fecha">{{ d | date: 'dd/MM' }}</span>
+          </th>
+          <th rowspan="2">Total semana</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let fila of filas">
+          <tr>
+            <td [attr.rowspan]="4" class="rpt-worker">{{ fila.workerNombre }}</td>
+            <td class="rpt-label">Inicio jornada</td>
+            <td *ngFor="let d of diasSemana">{{ fmtHora(diaDe(fila, d)?.inicioJornada ?? null) }}</td>
+            <td [attr.rowspan]="4" class="rpt-total">{{ fmtHoras(fila.totalHorasSemana) }}</td>
+          </tr>
+          <tr>
+            <td class="rpt-label">Inicio almuerzo</td>
+            <td *ngFor="let d of diasSemana">{{ fmtHora(diaDe(fila, d)?.inicioAlmuerzo ?? null) }}</td>
+          </tr>
+          <tr>
+            <td class="rpt-label">Retorno</td>
+            <td *ngFor="let d of diasSemana">{{ fmtHora(diaDe(fila, d)?.retorno ?? null) }}</td>
+          </tr>
+          <tr class="rpt-row-ultima">
+            <td class="rpt-label">Fin jornada</td>
+            <td *ngFor="let d of diasSemana">{{ fmtHora(diaDe(fila, d)?.finJornada ?? null) }}</td>
+          </tr>
+        </ng-container>
+        <tr *ngIf="filas.length === 0"><td colspan="10" class="rpt-empty">Sin registros esta semana</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>

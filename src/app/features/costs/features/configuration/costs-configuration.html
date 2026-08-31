@@ -1,0 +1,38 @@
+<app-abril-page-header
+  badge="COSTOS · CONFIGURACIÓN"
+  titulo="Configuración"
+  subtitulo="Correos, partidas, especialidades, planos y carpetas de adjudicaciones."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: createLabel, icono: 'ti-plus' }"
+  (primaryClick)="onCreate()">
+</app-abril-page-header>
+
+<div class="bg-white flex-1 overflow-y-auto p-5 flex flex-col gap-3">
+  <app-section-tabs
+    [tabs]="sectionTabs"
+    [value]="activeSection"
+    color="var(--color-abril-primary)"
+    (valueChange)="onSectionChange($event)">
+  </app-section-tabs>
+
+  <!-- SECCIÓN: Correos por Proyecto -->
+  <app-staff-project-email *ngIf="activeSection === 'staff-project-email'"></app-staff-project-email>
+
+  <!-- SECCIÓN: Partidas de control -->
+  <app-work-item-category *ngIf="activeSection === 'work-item-category'"></app-work-item-category>
+
+  <!-- SECCIÓN: Partidas -->
+  <app-work-item *ngIf="activeSection === 'work-item'"></app-work-item>
+
+  <!-- SECCIÓN: Especialidades -->
+  <app-work-specialty *ngIf="activeSection === 'work-specialty'"></app-work-specialty>
+
+  <!-- SECCIÓN: Planos por proyecto -->
+  <app-project-link *ngIf="activeSection === 'project-link'"></app-project-link>
+
+  <!-- SECCIÓN: Carpetas de adjudicaciones -->
+  <app-adjudicacion-folder *ngIf="activeSection === 'adjudicacion-folder'"></app-adjudicacion-folder>
+
+  <!-- SECCIÓN: Correos C. y Presupuestos -->
+  <app-costos-presupuestos-email *ngIf="activeSection === 'costos-presupuestos-email'"></app-costos-presupuestos-email>
+</div>

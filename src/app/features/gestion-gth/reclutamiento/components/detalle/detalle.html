@@ -1,0 +1,1412 @@
+<app-abril-modal-panel
+  variant="blue"
+  icono="ti-arrow-left"
+  titulo="Volver a la lista"
+  width="940px"
+  [preventCloseWhenDirty]="true"
+  (closeModal)="cerrar()">
+
+  @if (detalle) {
+    <div class="flex flex-col gap-[16px]">
+
+      <!-- ── Cabecera del requerimiento ─────────────────────────────────── -->
+      <div>
+        <div class="flex items-center gap-[10px] flex-wrap">
+          <span class="text-[13px] font-bold tracking-wide" style="color:var(--color-abril-logo-blue)">
+            {{ detalle.codigo }}
+          </span>
+          <app-status-badge
+            [text]="detalle.estadoNombre"
+            [bgColor]="estadoColors(detalle.estadoCodigo).bg"
+            [textColor]="estadoColors(detalle.estadoCodigo).text" />
+          <!-- El flujo es distinto (sin publicación, long list ni entrevistas), así que se ve
+               desde la cabecera y no recién al bajar a las secciones. -->
+          @if (esFft) {
+            <app-status-badge text="FFT · Ingreso directo" bgColor="#DCFCE7" textColor="#166534" />
+          }
+        </div>
+
+        <h2 class="text-[20px] font-bold text-gray-800 mt-[4px] leading-tight">
+          {{ detalle.puesto | titleCase }}
+        </h2>
+
+        <p class="text-[13px] text-gray-500 mt-[2px]">
+          {{ (detalle.area | titleCase) || 'Sin área' }}
+          · {{ (detalle.proyectoObra | titleCase) || 'Sin proyecto' }}
+          · {{ detalle.vacantes }} vacante(s)
+        </p>
+        <!-- El área a la que entra el contratado la decide el puesto, y solo se dice cuando NO es
+             la de quien lo pidió: repetirla siempre sería ruido en la enorme mayoría de casos.
+             Sin titleCase: los nombres del catálogo ya vienen capitalizados. -->
+        @if (detalle.areaDestino && detalle.areaDestino !== detalle.area) {
+          <p class="text-[12px] text-gray-500 mt-[2px]">
+            <i class="ti ti-arrow-right text-[13px] align-[-1px]"></i>
+            Ingresa al área de <b class="text-gray-700">{{ detalle.areaDestino }}</b>
+          </p>
+        }
+        @if (detalle.trabajadorReemplazado) {
+          <p class="text-[12px] text-gray-500 mt-[2px]">
+            <i class="ti ti-arrows-exchange text-[13px] align-[-1px]"></i>
+            Reemplaza a <b class="text-gray-700">{{ detalle.trabajadorReemplazado | titleCase }}</b>
+          </p>
+        }
+        <!-- Salario bruto mensual que el área declaró y se aprobó: es el punto de partida de la
+             oferta, así que GTH lo ve en la cabecera del requerimiento. La línea entera desaparece
+             cuando la vacante no lo declara —los reemplazos ya no lo piden—: un "no registrado"
+             fijo en todos ellos no dice nada. -->
+        @if (detalle.salarioBrutoMensual !== null) {
+          <p class="text-[12px] text-gray-500 mt-[2px]">
+            <i class="ti ti-cash text-[13px] align-[-1px]"></i>
+            Salario bruto mensual:
+            <b class="text-gray-700">S/ {{ detalle.salarioBrutoMensual | number:'1.2-2' }}</b>
+          </p>
+        }
+        @if (tipoProcesoSeleccionado) {
+          <p class="text-[13px] font-semibold mt-[6px]" style="color:var(--color-abril-logo-blue)">
+            Plazo estimado del proceso: {{ tipoProcesoSeleccionado.slaDias }} días
+          </p>
+        }
+      </div>
+
+      <!-- El ingreso directo no pasa por «Confirmar publicación», que es donde el flujo normal
+           exige la razón social. Su ficha de pre-ingreso se abre en cuanto se aprueba la vacante,
+           así que sin este aviso nace sin razón social y nadie se entera. Va arriba de todo porque
+           es lo único que le falta al proceso; al asignarla se le baja a la ficha. -->
+      @if (faltaRazonSocialFft) {
+        <div class="flex items-start gap-[9px] rounded-[10px] border px-[14px] py-[11px]"
+             style="border-color:#FDE68A;background:#FEF9C3">
+          <i class="ti ti-alert-triangle text-[18px] shrink-0 mt-[1px]" style="color:#92400E"></i>
+          <p class="text-[12.5px]" style="color:#92400E">
+            Sin razón social asignada: la ficha del ingreso está sin ella. Asígnala en
+            «Asignación interna de GTH».
+          </p>
+        </div>
+      }
+
+      <!-- ── Puesto cubierto: quién obtuvo el puesto ──────────────────────
+           Va arriba de todo porque es el resultado del proceso: al abrir un
+           requerimiento cerrado, lo primero es saber con quién se cerró. -->
+      @if (detalle.seleccionado; as sel) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             style="border-color:#a7f3d0;background:#F0FDF4">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-user-check text-[20px] shrink-0 mt-[1px]" style="color:#15803D"></i>
+            <div class="min-w-0 flex-1">
+              <button type="button"
+                class="flex items-start gap-[8px] cursor-pointer w-full text-left"
+                (click)="seccionPuestoCubierto = !seccionPuestoCubierto">
+                <i class="ti text-[15px] shrink-0 mt-[3px] transition-transform" style="color:#15803D"
+                   [ngClass]="seccionPuestoCubierto ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+                <div class="min-w-0">
+                  <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#15803D">
+                    Puesto cubierto
+                  </p>
+                  <h3 class="text-[17px] font-bold text-emerald-900 mt-[2px] leading-tight">
+                    {{ sel.nombre | titleCase }}
+                  </h3>
+                  <p class="text-[12.5px] text-emerald-800 mt-[1px]">
+                    {{ (sel.puesto | titleCase) || (detalle.puesto | titleCase) }}
+                  </p>
+                  <!-- En un ingreso directo no hubo proceso de selección: quien pidió la vacante
+                       nombró a esta persona. Se dice acá, que es donde se la está mostrando como
+                       la elegida, con el documento con el que quedó registrada. -->
+                  @if (esFft) {
+                    <p class="text-[11.5px] text-emerald-700 mt-[3px]">
+                      Ingreso directo (FFT): lo pidió por nombre el área solicitante@if (detalle.fftCandidatoDocumento) {<span>, {{ detalle.fftCandidatoDocumento }}</span>}.
+                    </p>
+                  }
+                </div>
+              </button>
+
+              @if (seccionPuestoCubierto) {
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-[16px] gap-y-[8px] mt-[12px]">
+                  <div>
+                    <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Seleccionado el</p>
+                    <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                      {{ (sel.seleccionadoEn | date:'dd/MM/yyyy HH:mm') || '—' }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Decidido por</p>
+                    <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                      {{ (sel.seleccionadoPor | titleCase) || 'Área solicitante' }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Responsable GTH</p>
+                    <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                      {{ (sel.responsableGth | titleCase) || 'Sin asignar' }}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                  @if (sel.cvUrl) {
+                    <a [href]="sel.cvUrl" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                       style="background:#15803D">
+                      <i class="ti ti-external-link text-[15px]"></i>
+                      Ver CV del seleccionado
+                    </a>
+                  }
+
+                  <!-- El CV que el propio postulante adjuntó en su formulario. Es otro documento, no
+                       el mismo de arriba: el de arriba lo consiguió el reclutador. -->
+                  @if (sel.cvPostulanteUrl) {
+                    <a [href]="sel.cvPostulanteUrl" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold border cursor-pointer transition-colors hover:bg-emerald-50"
+                       style="border-color:#a7f3d0;color:#15803D;background:#F0FDF4"
+                       [title]="sel.cvPostulanteNombre || ''">
+                      <i class="ti ti-file-check text-[15px]"></i>
+                      Ver CV documentado
+                    </a>
+                  }
+
+                  <!-- Último paso de GTH antes del cierre: programarle el EMO de Ingreso desde
+                       SSOMA. No se programa acá para no duplicar la funcionalidad — se salta a la
+                       pantalla de EMOs con su ficha ya enfocada y el modal abierto. Programar la
+                       cita no cierra nada: el proceso sigue abierto hasta que la clínica califique
+                       el examen y GTH confirme el cierre. -->
+                  @if (sel.emoIngresoPendiente && sel.workerId) {
+                    <button type="button" (click)="programarEmoIngreso(sel)"
+                            class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                            style="background:#005D9D">
+                      <i class="ti ti-calendar-plus text-[15px]"></i>
+                      Programar EMO de ingreso
+                    </button>
+                  }
+                </div>
+
+                <!-- Con la cita ya creada el proceso sigue abierto hasta que la clínica califique
+                     el examen: sin esta línea la fase «EMO de ingreso» se queda sin botón y sin nada
+                     que diga qué falta. -->
+                @if (sel.emoProgramacionEstado && detalle.estadoCodigo === 'EMO_INGRESO') {
+                  <div class="flex flex-wrap items-center gap-x-[16px] gap-y-[4px] mt-[12px] text-[12px] text-gray-600">
+                    <span class="inline-flex items-center gap-[6px]">
+                      <i class="ti ti-stethoscope text-[14px]" style="color:#A16207"></i>
+                      EMO de ingreso: <b class="text-gray-800">{{ sel.emoProgramacionEstado }}</b>
+                    </span>
+                    @if (sel.emoFechaProgramada) {
+                      <span>Cita: <b class="text-gray-800">{{ sel.emoFechaProgramada | date:'dd/MM/yyyy' }}</b></span>
+                    }
+                    <span>Aptitud: <b class="text-gray-800">{{ sel.emoAptitud || 'Pendiente' }}</b></span>
+                  </div>
+                }
+
+                <!-- El aviso queda solo para el caso en que no hay ficha que abrir: con el botón
+                     «Programar EMO de ingreso» a la vista, explicar de nuevo para qué sirve era una
+                     línea que nadie accionaba. -->
+                @if (sel.emoIngresoPendiente && !sel.workerId) {
+                  <p class="text-[11.5px] text-amber-800 mt-[10px] flex items-start gap-[6px]">
+                    <i class="ti ti-alert-circle text-[14px] shrink-0 mt-[1px]"></i>
+                    <span>
+                      No se pudo abrir su ficha para el EMO: el candidato no está en la base maestra
+                      de personas.
+                    </span>
+                  </p>
+                }
+
+                <!-- Escenario que no debería darse: la ficha que le tocó al seleccionado es de
+                     alguien que ya trabaja en Abril, así que no es un pre-ingreso y el backend
+                     rechaza la cita. Se dice acá para no dejar la fase sin botón ni explicación. -->
+                @if (sel.emoIngresoBloqueado) {
+                  <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[9px] mt-[10px]"
+                       style="border-color:#fecaca;background:#FEF2F2">
+                    <i class="ti ti-alert-triangle text-[17px] shrink-0 mt-[1px]" style="color:#B91C1C"></i>
+                    <div>
+                      <p class="text-[12.5px] font-bold" style="color:#B91C1C">
+                        Escenario no contemplado por el sistema.
+                      </p>
+                      <p class="text-[12px] mt-[1px]" style="color:#B91C1C">
+                        La ficha de este seleccionado es de alguien que ya trabaja en Abril
+                        ({{ sel.fichaEstadoNombre || 'Activo' }}), así que no se le puede programar el
+                        EMO de Ingreso. Reporta el caso al administrador antes de continuar.
+                      </p>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── EMO de ingreso Apto / Apto con Restricciones ──────────────────
+           Va junto a «Puesto cubierto» (el candidato sigue siendo el seleccionado) porque el
+           examen ya no cierra el proceso solo: lo deja acá y el cierre lo confirma GTH, que es
+           lo que hace aparecer al seleccionado en Onboarding. -->
+      @if (emoApto) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             style="border-color:#a7f3d0;background:#F0FDF4">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-stethoscope text-[20px] shrink-0 mt-[1px]" style="color:#15803D"></i>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#15803D">
+                EMO de ingreso
+              </p>
+              <h3 class="text-[16px] font-bold mt-[2px] leading-tight" style="color:#14532D">
+                Resultado: {{ emoAptitudNombre }}
+              </h3>
+              <p class="text-[12.5px] mt-[3px]" style="color:#166534">
+                El proceso de reclutamiento está listo para cerrarse. Al cerrarlo,
+                {{ (detalle.seleccionado?.nombre | titleCase) || 'el seleccionado' }} pasa a
+                Onboarding como candidato por ingresar.
+              </p>
+
+              <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                <button type="button" (click)="cerrarProceso()" [disabled]="cerrandoProceso"
+                        class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style="background:#15803D">
+                  <i class="ti ti-circle-check text-[15px]"></i>
+                  {{ cerrandoProceso ? 'Cerrando…' : 'Cerrar proceso y continuar a Onboarding' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── EMO de ingreso Observado ──────────────────────────────────────
+           La única fase del EMO sin salida: no se puede cerrar (todavía no hay aptitud) ni
+           continuar con otro candidato (este todavía puede resultar apto). Solo se espera el
+           resultado de la interconsulta, que al cargarse como EMO vuelve a mover el proceso. -->
+      @if (emoObservado) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             style="border-color:#fed7aa;background:#FFF7ED">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-stethoscope text-[20px] shrink-0 mt-[1px]" style="color:#C2410C"></i>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#C2410C">
+                EMO de ingreso
+              </p>
+              <h3 class="text-[16px] font-bold mt-[2px] leading-tight" style="color:#7C2D12">
+                Resultado: Observado
+              </h3>
+              <p class="text-[12.5px] mt-[3px]" style="color:#9A3412">
+                {{ (detalle.seleccionado?.nombre | titleCase) || 'El seleccionado' }} fue derivado a
+                interconsulta: su aptitud real se define con ese resultado. Hasta entonces el proceso
+                no se cierra ni continúa con otro candidato.
+              </p>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── EMO de ingreso No Apto ────────────────────────────────────────
+           Reemplaza a la tarjeta «Puesto cubierto»: al quedar No Apto el candidato pierde
+           el resultado SELECCIONADO, así que no hay puesto cubierto que mostrar. Las dos
+           salidas son excluyentes y las dos las decide GTH acá. -->
+      @if (emoNoApto) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             style="border-color:#fecaca;background:#FEF2F2">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-stethoscope text-[20px] shrink-0 mt-[1px]" style="color:#B91C1C"></i>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#B91C1C">
+                EMO de ingreso
+              </p>
+              <h3 class="text-[16px] font-bold mt-[2px] leading-tight" style="color:#7F1D1D">
+                {{ (candidatoNoApto?.nombre | titleCase) || 'El candidato seleccionado' }} salió No Apto
+              </h3>
+
+              <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                @if (rechazadosRetomables.length > 0) {
+                  <button type="button" (click)="verHistorialRechazados()"
+                          class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                          style="background:#005D9D">
+                    <i class="ti ti-user-search text-[15px]"></i>
+                    Continuar con un rechazado ({{ rechazadosRetomables.length }})
+                  </button>
+                }
+                <!-- Un ingreso directo FFT no tiene long list: nace con el candidato que nombró
+                     el solicitante, así que no hay a dónde volver. -->
+                @if (!esFft) {
+                  <button type="button" (click)="volverALongList()" [disabled]="volviendoALongList"
+                          class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold border cursor-pointer transition-colors hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          style="border-color:#fecaca;color:#B91C1C;background:#fff">
+                    <i class="ti ti-list-search text-[15px]"></i>
+                    {{ volviendoALongList ? 'Volviendo…' : 'Preparar nueva long list' }}
+                  </button>
+                }
+              </div>
+
+              @if (rechazadosRetomables.length === 0) {
+                <p class="text-[11.5px] mt-[10px] flex items-start gap-[6px]" style="color:#991B1B">
+                  <i class="ti ti-alert-circle text-[14px] shrink-0 mt-[1px]"></i>
+                  <span>
+                    @if (esFft) {
+                      Este es un ingreso directo (FFT): no hay otro candidato ni long list a la que volver.
+                    } @else {
+                      No quedan candidatos rechazados con los que continuar.
+                    }
+                  </span>
+                </p>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── Proceso cerrado sin cubrir la vacante ─────────────────────────
+           Un ingreso directo (FFT) que salió No Apto en el EMO: no tiene rechazados que retomar
+           ni long list a la que volver, así que no hay ninguna acción que ofrecer. Se dice para
+           que el modal no quede sin explicación de por qué el proceso terminó así. -->
+      @if (cerradoSinCubrir) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             style="border-color:#e5e7eb;background:#F9FAFB">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-circle-off text-[20px] shrink-0 mt-[1px]" style="color:#4B5563"></i>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#4B5563">
+                Proceso terminado
+              </p>
+              <h3 class="text-[16px] font-bold mt-[2px] leading-tight" style="color:#1F2937">
+                La vacante no se cubrió
+              </h3>
+              <p class="text-[12.5px] mt-[3px]" style="color:#4B5563">
+                {{ (candidatoNoApto?.nombre | titleCase) || 'El candidato' }} salió No Apto en el EMO
+                de ingreso y este pedido era un ingreso directo (FFT): no hay otros candidatos ni
+                long list a la que volver. Para volver a pedir la vacante hay que registrar una nueva
+                solicitud.
+              </p>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── Asignación interna de GTH ──────────────────────────────────── -->
+      <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+
+        <button type="button"
+          class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+          (click)="seccionAsignacion = !seccionAsignacion">
+          <i class="ti text-[15px] text-gray-500 transition-transform"
+             [ngClass]="seccionAsignacion ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+          <h3 class="text-[14px] font-bold text-gray-800">Asignación interna de GTH</h3>
+        </button>
+
+        @if (seccionAsignacion) {
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-x-[16px] gap-y-[14px] mt-[10px]">
+
+            <!-- Responsable del proceso -->
+            <div>
+              <app-search-select
+                label="Responsable del proceso *"
+                [options]="detalle.responsables"
+                valueField="id"
+                displayField="nombre"
+                [value]="detalle.asignacion.responsableId"
+                (valueChange)="onAsignacionChange('responsableId', $event)"
+                placeholder="Sin asignar"
+                color="var(--color-abril-logo-blue)">
+              </app-search-select>
+            </div>
+
+            <!-- Tipo de proceso y SLA -->
+            <div>
+              <app-search-select
+                label="Tipo de proceso y SLA *"
+                [options]="tiposProcesoOpts"
+                valueField="id"
+                displayField="nombre"
+                [value]="detalle.asignacion.tipoProcesoId"
+                (valueChange)="onAsignacionChange('tipoProcesoId', $event)"
+                placeholder="Selecciona tipo de proceso"
+                [sortAlpha]="false"
+                color="var(--color-abril-logo-blue)">
+              </app-search-select>
+              <!-- El SLA no se repite acá: ya sale como "Plazo estimado del proceso" en la cabecera. -->
+            </div>
+
+            <!-- Prioridad interna -->
+            <div>
+              <app-search-select
+                label="Prioridad interna *"
+                [options]="detalle.prioridades"
+                valueField="id"
+                displayField="nombre"
+                [value]="detalle.asignacion.prioridadId"
+                (valueChange)="onAsignacionChange('prioridadId', $event)"
+                placeholder="Selecciona prioridad"
+                [sortAlpha]="false"
+                color="var(--color-abril-logo-blue)">
+              </app-search-select>
+            </div>
+
+            <!-- Razón social activa -->
+            <div>
+              <app-search-select
+                label="Razón social activa *"
+                [options]="detalle.razonesSociales"
+                valueField="id"
+                displayField="nombre"
+                [value]="detalle.asignacion.contributorId"
+                (valueChange)="onAsignacionChange('contributorId', $event)"
+                placeholder="Selecciona razón social"
+                color="var(--color-abril-logo-blue)">
+              </app-search-select>
+              @if (razonSocialSeleccionada) {
+                <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
+                  Cupos disponibles: <b>{{ razonSocialSeleccionada.cuposDisponibles }}</b> de 20.
+                </p>
+              }
+              @if (sinCupos) {
+                <p class="text-[11.5px] font-semibold text-red-600 mt-[6px] leading-snug">
+                  La razón social seleccionada no cuenta con cupos suficientes para las
+                  {{ detalle.vacantes }} vacantes.
+                </p>
+              }
+            </div>
+
+          </div>
+        }
+      </div>
+
+      <!-- ── Canales de publicación (antes de publicar) ─────────────── -->
+      @if (!vacantePublicada) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionPublicacion = !seccionPublicacion">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionPublicacion ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Canales de publicación</h3>
+          </button>
+
+          @if (seccionPublicacion) {
+            <div class="flex justify-end mt-[10px]">
+              <button type="button"
+                class="h-[30px] px-[12px] rounded-[7px] border text-[12.5px] font-semibold cursor-pointer transition-colors hover:bg-gray-50"
+                style="border-color:var(--color-abril-border); color:var(--color-abril-logo-blue)"
+                (click)="toggleTodosLosCanales()">
+                {{ todosLosCanalesSeleccionados ? 'Quitar selección' : 'Seleccionar todos' }}
+              </button>
+            </div>
+
+            <div class="flex flex-col gap-[10px] mt-[8px]">
+              @for (canal of detalle.canales; track canal.id) {
+                <label
+                  class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[10px] cursor-pointer hover:bg-gray-50 transition-colors"
+                  style="border-color:var(--color-abril-border)">
+                  <p class="text-[13.5px] font-semibold text-gray-800">{{ canal.nombre }}</p>
+                  <input type="checkbox"
+                    class="w-[16px] h-[16px] shrink-0 cursor-pointer"
+                    style="accent-color:var(--color-abril-logo-blue)"
+                    [checked]="canalesSeleccionados.has(canal.id)"
+                    (change)="toggleCanal(canal.id)" />
+                </label>
+              }
+            </div>
+
+            <button type="button"
+              class="w-full h-[40px] mt-[14px] rounded-[7px] text-[13.5px] font-semibold text-white transition-opacity"
+              [ngClass]="puedePublicar ? 'cursor-pointer hover:opacity-90' : 'opacity-50 cursor-not-allowed'"
+              style="background:var(--color-abril-logo-blue)"
+              [disabled]="!puedePublicar"
+              (click)="publicar()">
+              Confirmar publicación de vacante
+            </button>
+          }
+        </div>
+      }
+
+      <!-- ── Revisión de CV (publicado, aún sin long list) ──────────────── -->
+      @if (vacantePublicada && !enLongList) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionRevisionCv = !seccionRevisionCv">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionRevisionCv ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Revisión de CV</h3>
+          </button>
+
+          @if (seccionRevisionCv) {
+            <button type="button"
+              class="w-full h-[44px] mt-[12px] rounded-[7px] bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[13.5px] font-semibold cursor-pointer transition-colors"
+              style="color:var(--color-abril-logo-blue)"
+              (click)="iniciarRevisionCv()">
+              Iniciar revisión de CV
+            </button>
+          }
+        </div>
+      }
+
+      <!-- ── Long list: CVs seleccionados (solo mientras no se haya enviado) ─ -->
+      @if (enLongList && !longListEnviada) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionLongList = !seccionLongList">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionLongList ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Long list: CVs seleccionados</h3>
+          </button>
+
+          @if (seccionLongList) {
+            <div class="rounded-[8px] bg-[#EFF6FF] px-[14px] py-[11px] mt-[12px]">
+              <p class="text-[13px] font-semibold" style="color:var(--color-abril-logo-blue)">
+                Carga de candidatos para long list
+              </p>
+            </div>
+
+            <p class="text-[13px] font-semibold text-gray-700 mt-[14px]">CVs seleccionados</p>
+
+            <input #cvInput type="file" class="hidden" multiple accept=".pdf,.doc,.docx"
+              (change)="onCvsSeleccionados($event)" />
+            <button type="button"
+              class="w-full h-[44px] mt-[8px] rounded-[7px] border border-dashed bg-[#F8FBFF] hover:bg-[#EFF6FF] flex items-center justify-center gap-[8px] text-[13px] font-semibold cursor-pointer transition-colors"
+              style="border-color:#93C5FD;color:var(--color-abril-logo-blue)"
+              (click)="cvInput.click()">
+              <i class="ti ti-file-text text-[16px]"></i>
+              Subir CVs que quedaron para la long list
+            </button>
+
+            @for (c of candidatos; track c; let i = $index) {
+              <div class="rounded-[10px] border px-[16px] py-[14px] mt-[12px]"
+                   style="border-color:var(--color-abril-border)">
+
+                <div class="flex items-start justify-between gap-[12px]">
+                  <div class="min-w-0">
+                    <p class="text-[14px] font-bold text-gray-800">Candidato {{ i + 1 }}</p>
+                    <p class="text-[12.5px] text-gray-500 mt-[2px] break-all">CV: {{ c.cv.name }}</p>
+                  </div>
+                  <button type="button"
+                    class="text-[12.5px] font-bold text-red-600 cursor-pointer hover:underline shrink-0"
+                    (click)="quitarCandidato(i)">
+                    Quitar
+                  </button>
+                </div>
+
+                <!-- Nombre y apellido -->
+                <div class="abril-field mt-[14px]">
+                  <label class="abril-field-label" [for]="'candidato-nombre-' + i">
+                    Nombre y apellido del candidato
+                  </label>
+                  <input [id]="'candidato-nombre-' + i" type="text" class="abril-field-input"
+                    [(ngModel)]="c.nombre"
+                    placeholder="Escribe el nombre y apellido si no se detecta automáticamente" />
+                </div>
+                <p class="text-[11.5px] text-gray-500 mt-[6px] leading-snug">
+                  El sistema toma el nombre del CV. Si no lo identifica correctamente, puedes
+                  escribirlo o corregirlo manualmente.
+                </p>
+
+                <!-- Comentario de GTH -->
+                <div class="abril-field mt-[10px]">
+                  <label class="abril-field-label" [for]="'candidato-comentario-' + i">
+                    Comentario de GTH
+                  </label>
+                  <textarea [id]="'candidato-comentario-' + i" class="abril-field-input" rows="3"
+                    [(ngModel)]="c.comentario"
+                    placeholder="Registrar observaciones internas de GTH sobre el candidato..."></textarea>
+                </div>
+
+                <!-- ── Portafolio/Anexos del candidato ─────────────────────
+                     Opcional y de cantidad libre: van adjuntos en el correo de la
+                     long list y el solicitante los abre desde su revisión. -->
+                <div class="rounded-[8px] border px-[13px] py-[11px] mt-[12px]"
+                     style="border-color:var(--color-abril-border);background:#FAFCFA">
+                  <div class="flex items-center justify-between gap-[10px] flex-wrap">
+                    <p class="text-[12.5px] font-bold text-gray-700">Portafolio/Anexos</p>
+                    <span class="text-[11.5px] text-gray-500">
+                      {{ c.anexos.length }} archivo(s) · opcional
+                    </span>
+                  </div>
+
+                  <input #anexoInput type="file" class="hidden" multiple [accept]="anexosAccept"
+                    (change)="onAnexosSeleccionados($event, i)" />
+                  <button type="button"
+                    class="w-full h-[38px] mt-[9px] rounded-[7px] border border-dashed bg-white hover:bg-[#F1F7F1] flex items-center justify-center gap-[8px] text-[12.5px] font-semibold cursor-pointer transition-colors"
+                    style="border-color:#B7D6A6;color:var(--color-abril-standard)"
+                    (click)="anexoInput.click()">
+                    <i class="ti ti-paperclip text-[15px]"></i>
+                    Adjuntar archivos del portafolio
+                  </button>
+
+                  @for (a of c.anexos; track a; let j = $index) {
+                    <div class="flex items-center justify-between gap-[10px] rounded-[7px] border px-[11px] py-[8px] mt-[8px] bg-white"
+                         style="border-color:var(--color-abril-border)">
+                      <div class="flex items-center gap-[8px] min-w-0">
+                        <i class="ti ti-file text-[16px] shrink-0" style="color:var(--color-abril-standard)"></i>
+                        <span class="text-[12.5px] text-gray-700 truncate">{{ a.name }}</span>
+                        <span class="text-[11px] text-gray-400 shrink-0">{{ pesoArchivo(a) }}</span>
+                      </div>
+                      <button type="button"
+                        class="text-[12px] font-bold text-red-600 cursor-pointer hover:underline shrink-0"
+                        (click)="quitarAnexo(i, j)">
+                        Quitar
+                      </button>
+                    </div>
+                  }
+
+                  <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
+                    PDF, Word, Excel, PPT o imágenes. Se envían adjuntos al solicitante junto con el CV.
+                  </p>
+                </div>
+              </div>
+            }
+
+            <!-- Envío de la long list: sube los CVs, dispara el correo al solicitante
+                 y avanza el requerimiento a "Long list enviada". -->
+            <button type="button"
+              class="w-full h-[42px] mt-[14px] rounded-[7px] text-[13.5px] font-semibold text-white transition-opacity"
+              [ngClass]="puedeEnviarLongList ? 'cursor-pointer hover:opacity-90' : 'opacity-50 cursor-not-allowed'"
+              style="background:var(--color-abril-logo-blue)"
+              [disabled]="!puedeEnviarLongList"
+              (click)="enviarLongList()">
+              {{ enviando ? 'Enviando…' : 'Enviar long list y notificar por correo al solicitante' }}
+            </button>
+            @if (candidatos.length === 0) {
+              <p class="text-[11.5px] text-gray-500 mt-[6px] text-center">
+                Sube al menos un CV para habilitar el envío de la long list.
+              </p>
+            }
+          }
+        </div>
+      }
+
+      <!-- ── Long list aprobada por el solicitante (imágenes 4/5) ───────────
+           Vista de solo presentación: los botones aún NO tienen funcionalidad
+           (envío de plantilla, ver formulario, continuar y el check del Multitest
+           se implementarán después). Los nombres de candidatos son reales; el
+           formulario del postulante es una feature futura (placeholders). -->
+      @if (longListAprobada) {
+
+        <!-- Banner: long list aprobada + acción requerida (unificado). En un ingreso directo FFT no
+             hubo long list que aprobar: el candidato lo nombró quien pidió la vacante, así que el
+             banner dice de dónde viene y qué queda por hacer. -->
+        <div class="rounded-[10px] border px-[16px] py-[13px]" style="border-color:#a7f3d0;background:#F0FDF4">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti text-[20px] shrink-0" style="color:#15803D"
+               [ngClass]="esFft ? 'ti-user-plus' : 'ti-circle-check'"></i>
+            <div class="min-w-0 flex-1">
+
+              <button type="button"
+                class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+                (click)="seccionLongListAprobada = !seccionLongListAprobada">
+                <i class="ti text-[15px] shrink-0 transition-transform" style="color:#15803D"
+                   [ngClass]="seccionLongListAprobada ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+                <h3 class="text-[14px] font-bold text-emerald-800">
+                  {{ esFft ? 'Ingreso directo (FFT)' : 'Long list aprobada por el solicitante' }}
+                </h3>
+              </button>
+
+              @if (seccionLongListAprobada) {
+                <p class="text-[12.5px] text-emerald-700 mt-[4px] leading-snug">
+                  @if (esFft) {
+                    Candidato pedido por nombre: {{ (detalle.fftCandidatoNombre | titleCase) || 'sin nombre registrado' }}@if (detalle.fftCandidatoDocumento) {<span>, {{ detalle.fftCandidatoDocumento }}</span>}.
+                    Este ingreso quedó del flujo anterior, en el que el candidato sí llenaba el formulario:
+                    envíaselo y, al aprobarlo, pasa a la programación de su EMO de ingreso.
+                  } @else {
+                    El solicitante aprobó {{ detalle.candidatosAprobados.length }} candidato(s). Envía a cada uno el
+                    formulario de información del postulante; cuando lo completen, revísalo y apruébalo o recházalo.
+                  }
+                </p>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulario de información del postulante (funcional) -->
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionFormularioPostulante = !seccionFormularioPostulante">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionFormularioPostulante ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Formulario de información del postulante</h3>
+          </button>
+
+          @if (seccionFormularioPostulante) {
+            <!-- Selección para el envío masivo. El botón repite el estilo del "Enviar formulario" de cada
+                 candidato (azul, 38px) en vez del directive abrilBulkAction: ese es teal y está pensado
+                 para la selección de filas de una tabla; acá desentonaría al lado de los botones de la
+                 propia ficha, que son los que este reemplaza cuando hay varios candidatos. -->
+            @if (detalle.candidatosAprobados.length > 0) {
+              <div class="flex flex-wrap items-center justify-between gap-[10px] rounded-[8px] border px-[13px] py-[10px] mt-[12px]"
+                   style="border-color:var(--color-abril-border);background:#F8FAFC">
+                <label class="flex items-center gap-[9px] cursor-pointer">
+                  <input type="checkbox" [checked]="todosSeleccionados" [indeterminate]="seleccionParcial"
+                    (change)="toggleSeleccionTodos($any($event.target).checked)"
+                    class="w-[15px] h-[15px] shrink-0 cursor-pointer"
+                    style="accent-color:var(--color-abril-logo-blue)" />
+                  <span class="text-[13px] font-semibold text-gray-700">Seleccionar todos</span>
+                  <span class="text-[12px] text-gray-500">
+                    ({{ seleccionadosCount }} de {{ detalle.candidatosAprobados.length }} seleccionado(s))
+                  </span>
+                </label>
+
+                <button type="button"
+                  [disabled]="!puedeEnviarSeleccionados"
+                  (click)="enviarFormulariosSeleccionados()"
+                  class="inline-flex items-center gap-[6px] h-[38px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white shrink-0 cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style="background:var(--color-abril-logo-blue)">
+                  <i class="ti ti-mail-forward text-[15px]"></i>
+                  {{ enviandoMasivo ? 'Enviando…' : 'Enviar a los seleccionados (' + seleccionadosCount + ')' }}
+                </button>
+              </div>
+            }
+
+            @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
+              <!-- El borde rojo del candidato bloqueado es lo que lo hace visible sin abrir nada
+                   cuando la lista tiene varios: la selección para el envío masivo no lo tapa. -->
+              <div class="rounded-[10px] border px-[14px] py-[12px] mt-[12px]"
+                   [style.border-color]="c.coincidencia?.bloqueaAprobacion ? '#f87171'
+                     : (seleccionFormulario.has(c.candidatoId) ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-border)')">
+                <div class="flex items-start justify-between gap-[10px]">
+                  <label class="flex items-center gap-[9px] cursor-pointer">
+                    <input type="checkbox" [checked]="seleccionFormulario.has(c.candidatoId)"
+                      (change)="toggleSeleccionFormulario(c.candidatoId)"
+                      class="w-[15px] h-[15px] shrink-0 cursor-pointer"
+                      style="accent-color:var(--color-abril-logo-blue)" />
+                    <span class="text-[14px] font-bold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</span>
+                  </label>
+                  <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                        [style.background]="estadoFormularioBadge(c).bg" [style.color]="estadoFormularioBadge(c).color">
+                    {{ estadoFormularioBadge(c).text }}
+                  </span>
+                </div>
+
+                <!-- Los dos CVs del candidato: el que cargó el reclutador en la long list y el que
+                     el postulante adjuntó en su formulario. Juntos y en la misma ficha porque el
+                     sentido de pedirle el segundo es poder compararlos. -->
+                <div class="flex flex-wrap items-center gap-x-[16px] gap-y-[4px] mt-[8px]">
+                  @if (c.cvUrl) {
+                    <a [href]="c.cvUrl" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-[5px] text-[12.5px] font-semibold hover:underline"
+                       style="color:var(--color-abril-logo-blue)">
+                      <i class="ti ti-file-text text-[15px]"></i>
+                      CV de GTH
+                    </a>
+                  }
+                  @if (c.cvPostulanteUrl) {
+                    <a [href]="c.cvPostulanteUrl" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-[5px] text-[12.5px] font-semibold hover:underline"
+                       style="color:#15803D" [title]="c.cvPostulanteNombre || ''">
+                      <i class="ti ti-file-check text-[15px]"></i>
+                      CV documentado del postulante
+                    </a>
+                  } @else {
+                    <span class="text-[12px] text-gray-400">Sin CV documentado del postulante</span>
+                  }
+                </div>
+
+                <!-- Correo del postulante + enviar/reenviar -->
+                <div class="flex items-center gap-[10px] mt-[10px]">
+                  <input type="email" [(ngModel)]="correoFormulario[c.candidatoId]"
+                    class="flex-1 h-[38px] rounded-[7px] border px-[12px] text-[13px] disabled:bg-gray-50 disabled:text-gray-400"
+                    style="border-color:var(--color-abril-border)"
+                    placeholder="Correo del postulante" />
+                  <button type="button"
+                    [disabled]="enviandoFormulario[c.candidatoId]"
+                    (click)="enviarFormulario(c)"
+                    class="inline-flex items-center gap-[6px] h-[38px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white shrink-0 cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="background:var(--color-abril-logo-blue)">
+                    <i class="ti ti-send text-[15px]"></i>
+                    {{ enviandoFormulario[c.candidatoId] ? 'Enviando…' : (c.formulario ? 'Reenviar' : 'Enviar formulario') }}
+                  </button>
+                </div>
+                @if (c.formulario?.correoEnvio && c.formulario?.enviadoEn) {
+                  <p class="text-[11.5px] text-gray-400 mt-[6px]">
+                    Último envío a {{ c.formulario?.correoEnvio }} · {{ c.formulario?.enviadoEn | date:'dd/MM/yyyy HH:mm' }}
+                  </p>
+                }
+
+                <!-- El documento que declaró el postulante ya existe en la base: aprobar actualizaría
+                     esa ficha en vez de crear una nueva. Va acá y no solo en el modal porque los
+                     botones Aprobar/Rechazar de abajo deciden sin abrirlo. El postulante nunca lo ve. -->
+                @if (avisoCoincidencia(c); as coinc) {
+                  <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[9px] mt-[10px]"
+                       [style.border-color]="coinc.borde" [style.background]="coinc.fondo">
+                    <i class="ti text-[17px] shrink-0 mt-[1px]" [ngClass]="coinc.icono" [style.color]="coinc.color"></i>
+                    <div>
+                      <p class="text-[12.5px] font-bold" [style.color]="coinc.color">{{ coinc.titulo }}</p>
+                      <p class="text-[12px] mt-[1px]" [style.color]="coinc.color">{{ coinc.detalle }}</p>
+                    </div>
+                  </div>
+                }
+
+                <!-- Ver formulario (abre el modal de revisión) + decidir sin abrirlo cuando ya está
+                     completado: son los mismos botones del modal, a la mano en la ficha. -->
+                <div class="flex flex-wrap items-center gap-[10px] mt-[10px]">
+                  <button type="button" (click)="abrirFormulario(c)"
+                    class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold border cursor-pointer transition-colors hover:bg-gray-50"
+                    [style.border-color]="c.formulario?.estadoCodigo === 'APROBADO' ? '#a7f3d0' : (c.formulario?.estadoCodigo === 'RECHAZADO' ? '#fecaca' : 'var(--color-abril-border)')"
+                    [style.color]="c.formulario?.estadoCodigo === 'APROBADO' ? '#15803D' : (c.formulario?.estadoCodigo === 'RECHAZADO' ? '#B91C1C' : 'var(--color-abril-logo-blue)')">
+                    <i class="ti ti-eye text-[15px]"></i>
+                    {{ botonFormularioLabel(c) }}
+                  </button>
+
+                  <!-- Rechazar también se ofrece sobre un formulario enviado y nunca completado:
+                       es lo que destraba el paso a entrevistas si el postulante no responde. -->
+                  @if (formularioRechazable(c)) {
+                    <button type="button"
+                      [disabled]="decidiendoFormulario[c.candidatoId]"
+                      (click)="rechazarFormulario(c)"
+                      class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold border cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      style="border-color:#fecaca;color:#B91C1C;background:#FEF2F2">
+                      <i class="ti ti-x text-[15px]"></i>
+                      {{ formularioPorRevisar(c) ? 'Rechazar formulario' : 'Rechazar sin completar' }}
+                    </button>
+                  }
+
+                  <!-- Aprobar desaparece cuando el documento declarado es de un trabajador que está
+                       adentro: el aviso de arriba dice de quién es y por qué no se puede. -->
+                  @if (formularioAprobable(c)) {
+                    <button type="button"
+                      [disabled]="decidiendoFormulario[c.candidatoId]"
+                      (click)="aprobarFormulario(c)"
+                      class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style="background:#15803D">
+                      <i class="ti ti-check text-[15px]"></i>
+                      Aprobar formulario
+                    </button>
+                  } @else if (formularioPorRevisar(c)) {
+                    <span class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold"
+                          style="border:1px solid #fecaca;background:#FEF2F2;color:#B91C1C">
+                      <i class="ti ti-lock text-[15px]"></i>
+                      Aprobación bloqueada
+                    </span>
+                  }
+
+                  <!-- Cerrar el proceso del postulante es una decisión aparte de rechazar su
+                       formulario: rechazarlo solo le pide corregir, esto lo saca del proceso y le
+                       manda el correo de fin de proceso. Por eso aparece recién cuando el
+                       formulario ya quedó rechazado. -->
+                  @if (puedeRechazarPostulante(c)) {
+                    <button type="button"
+                      [disabled]="rechazandoPostulante[c.candidatoId]"
+                      (click)="rechazarPostulante(c)"
+                      class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style="background:#B91C1C">
+                      <i class="ti ti-user-x text-[15px]"></i>
+                      {{ rechazandoPostulante[c.candidatoId] ? 'Enviando…' : 'Rechazar postulante' }}
+                    </button>
+                  }
+                </div>
+
+                <!-- Solo para el rechazo en esta etapa: al descartado tras la entrevista ya se lo
+                     dice su propia ficha en «Programación de entrevistas», y este bloque se sigue
+                     pintando cuando el requerimiento ya avanzó a esa fase. -->
+                @if (formularioRechazado(c) && noContinua(c) && c.evaluacion?.agradecimientoEnviadoEn) {
+                  <p class="text-[11.5px] mt-[8px]" style="color:#B91C1C">
+                    Fuera del proceso. Correo de fin de proceso enviado a
+                    {{ c.evaluacion?.agradecimientoCorreo }} ·
+                    {{ c.evaluacion?.agradecimientoEnviadoEn | date:'dd/MM/yyyy HH:mm' }}.
+                  </p>
+                }
+              </div>
+            } @empty {
+              <p class="text-[12.5px] text-gray-400 italic mt-[10px]">No hay candidatos aprobados registrados.</p>
+            }
+          }
+        </div>
+
+        <!-- ── Plantilla de comunicación — OCULTA A PROPÓSITO ─────────────────
+             Era una maqueta (select y botón deshabilitados, texto quemado) y además
+             duplicaba el envío: según RF-REC-16 del requerimiento funcional, la
+             "plantilla del proceso" ES el correo que lleva el enlace del formulario,
+             que ya se manda desde "Enviar formulario" de cada candidato (hoy con el
+             cuerpo quemado en PostulanteFormularioService.ConstruirCuerpoEnvio).
+             Al implementarlo de verdad no vuelve como bloque aparte: el desplegable
+             de plantillas debe alimentar el cuerpo de ESE envío (RF-GEN-12 / RNF-10:
+             las plantillas se parametrizan, no se codifican).
+
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+          <div class="flex items-center justify-between">
+            <h3 class="text-[14px] font-bold text-gray-800">Plantilla de comunicación</h3>
+            <button type="button" (click)="mostrarPlantilla = !mostrarPlantilla"
+              class="text-[12.5px] font-semibold cursor-pointer hover:underline"
+              style="color:var(--color-abril-logo-blue)">
+              {{ mostrarPlantilla ? 'Ocultar plantilla' : 'Ver plantilla' }}
+            </button>
+          </div>
+
+          <select disabled title="Disponible próximamente"
+            class="w-full h-[40px] mt-[10px] rounded-[7px] border px-[12px] text-[13px] bg-gray-50 text-gray-600 cursor-not-allowed"
+            style="border-color:var(--color-abril-border)">
+            <option>Plantilla proceso de reclutamiento - estándar</option>
+          </select>
+
+          <button type="button" disabled title="Disponible próximamente"
+            class="w-full h-[42px] mt-[12px] rounded-[7px] text-[13.5px] font-semibold text-white opacity-50 cursor-not-allowed"
+            style="background:var(--color-abril-logo-blue)">
+            Enviar plantilla del proceso
+          </button>
+        </div>
+        ───────────────────────────────────────────────────────────────────── -->
+
+        <!-- Control informativo del Multitest.
+             Al candidato con el formulario rechazado no se le pide: ya no se le va a entrevistar,
+             así que su fila queda como "No aplica" y no traba el paso a entrevistas. Se sigue
+             mostrando (no se oculta) para que la lista siga siendo la de la long list aprobada.
+
+             El ingreso directo FFT no lo lleva: su flujo no tiene entrevista, así que un check
+             informativo que solo existe para habilitarlas no aplica. -->
+        @if (!esFft) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionMultitest = !seccionMultitest">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionMultitest ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Control informativo del Multitest</h3>
+          </button>
+
+          @if (seccionMultitest) {
+            @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
+              @if (formularioRechazado(c)) {
+                <div class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[11px] mt-[10px] bg-gray-50"
+                     style="border-color:var(--color-abril-border)">
+                  <div>
+                    <p class="text-[13.5px] font-semibold text-gray-400">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
+                    <p class="text-[12px] text-gray-400">No aplica · formulario rechazado</p>
+                  </div>
+                  <i class="ti ti-minus text-[16px] text-gray-300 shrink-0"></i>
+                </div>
+              } @else {
+                <label class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[11px] mt-[10px] cursor-pointer transition-colors hover:bg-gray-50"
+                       style="border-color:var(--color-abril-border)">
+                  <div>
+                    <p class="text-[13.5px] font-semibold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
+                    <p class="text-[12px]" [style.color]="c.multitestRealizado ? '#15803D' : '#6B7280'">
+                      {{ c.multitestRealizado ? 'Realizado' : 'Pendiente de realizar' }}
+                    </p>
+                  </div>
+                  <input type="checkbox" [checked]="c.multitestRealizado"
+                    (change)="toggleMultitest(c, $any($event.target).checked)"
+                    class="w-[16px] h-[16px] shrink-0 cursor-pointer"
+                    style="accent-color:var(--color-abril-logo-blue)" />
+                </label>
+              }
+            }
+          }
+        </div>
+        }
+
+        <!-- Continuar a programación de entrevistas: solo mientras el requerimiento no haya
+             pasado ya a esa fase (después el bloque de abajo toma el relevo). El ingreso directo
+             FFT no pasa por ahí: al aprobarle el formulario el proceso salta al EMO de ingreso. -->
+        @if (!enEntrevistas && !esFft) {
+          <div>
+            <button type="button"
+              [disabled]="!puedeContinuarAEntrevistas"
+              (click)="continuarAEntrevistas()"
+              class="w-full h-[44px] rounded-[7px] text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              [class.cursor-pointer]="puedeContinuarAEntrevistas"
+              style="background:var(--color-abril-logo-blue)">
+              {{ continuando ? 'Continuando…' : 'Continuar a programación de entrevistas' }}
+            </button>
+            @if (requisitosContinuarTexto) {
+              <p class="text-[11.5px] text-gray-500 mt-[6px] text-center">{{ requisitosContinuarTexto }}</p>
+            }
+          </div>
+        }
+      }
+
+      <!-- ── Programación de entrevistas ──────────────────────────────────
+           Por candidato con formulario aprobado: fecha, hora y lugar de la cita +
+           envío de la invitación por correo (reprogramar actualiza y reenvía).
+
+           Fuera del ingreso directo FFT: ese flujo se salta las entrevistas y al aprobar el
+           formulario ya está en EMO de ingreso, que es una fase POSTERIOR a ENTREVISTAS — sin este
+           filtro la sección aparecería igual, ofreciendo citar a alguien que ya está seleccionado. -->
+      @if (enEntrevistas && !esFft) {
+
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionEntrevistas = !seccionEntrevistas">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionEntrevistas ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Programación de entrevistas</h3>
+          </button>
+
+          @if (seccionEntrevistas) {
+            @for (c of candidatosParaEntrevista; track c.candidatoId; let i = $index) {
+              <div class="rounded-[10px] border px-[14px] py-[12px] mt-[12px]" style="border-color:var(--color-abril-border)">
+
+                <div class="flex items-start justify-between gap-[10px]">
+                  <div>
+                    <p class="text-[14px] font-bold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
+                    @if (c.correoContacto) {
+                      <p class="text-[11.5px] text-gray-500 mt-[1px]">{{ c.correoContacto }}</p>
+                    }
+                  </div>
+                  <div class="flex items-center gap-[6px] shrink-0">
+                    <!-- Respuesta del candidato a su citación: la que dio desde los botones del
+                         correo de invitación. Va junto al estado de la cita y no en su lugar
+                         porque son dos cosas distintas — GTH programó, el candidato responde. -->
+                    @if (!noContinua(c) && respuestaEntrevista(c); as respuesta) {
+                      <span class="inline-flex items-center gap-[4px] text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                            [style.background]="respuesta.fondo"
+                            [style.color]="respuesta.color"
+                            [title]="respuesta.detalle">
+                        <i class="ti text-[13px]" [ngClass]="respuesta.icono"></i>
+                        {{ respuesta.texto }}
+                      </span>
+                    }
+
+                    @if (noContinua(c)) {
+                      <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                            style="background:#FEE2E2;color:#B91C1C">
+                        No continúa
+                      </span>
+                    } @else {
+                      <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                            [style.background]="c.entrevista ? '#DCFCE7' : '#F3F4F6'"
+                            [style.color]="c.entrevista ? '#15803D' : '#6B7280'">
+                        {{ c.entrevista ? 'Programada' : 'Sin programar' }}
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <!-- dense + floatingLabel en fecha y hora: mismas medidas y mismo label flotante que
+                     app-search-select, para que los tres campos de la fila queden alineados. -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-x-[14px] gap-y-[12px] mt-[10px]">
+                  <app-date-picker
+                    label="Fecha de la entrevista"
+                    [dense]="true"
+                    [floatingLabel]="true"
+                    [value]="entrevistaForm[c.candidatoId].fecha"
+                    (valueChange)="entrevistaForm[c.candidatoId].fecha = $event"
+                    [min]="hoyIso"
+                    color="var(--color-abril-logo-blue)">
+                  </app-date-picker>
+
+                  <app-time-picker
+                    label="Hora"
+                    [dense]="true"
+                    [floatingLabel]="true"
+                    [value]="entrevistaForm[c.candidatoId].hora"
+                    (valueChange)="entrevistaForm[c.candidatoId].hora = $event"
+                    [minuteStep]="5"
+                    color="var(--color-abril-logo-blue)">
+                  </app-time-picker>
+
+                  <app-search-select
+                    label="Lugar"
+                    [options]="detalle.lugaresEntrevista"
+                    valueField="id"
+                    displayField="nombre"
+                    [value]="entrevistaForm[c.candidatoId].lugarId"
+                    (valueChange)="entrevistaForm[c.candidatoId].lugarId = $event"
+                    placeholder="Selecciona lugar"
+                    [sortAlpha]="false"
+                    color="var(--color-abril-logo-blue)">
+                  </app-search-select>
+                </div>
+
+                <button type="button"
+                  [disabled]="!puedeEnviarEntrevista(c)"
+                  (click)="guardarEntrevista(c)"
+                  class="inline-flex items-center gap-[6px] h-[38px] px-[16px] mt-[12px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style="background:var(--color-abril-logo-blue)">
+                  <i class="ti ti-send text-[15px]"></i>
+                  {{ botonEntrevistaLabel(c) }}
+                </button>
+
+                @if (c.entrevista?.enviadoEn) {
+                  <p class="text-[11.5px] text-gray-400 mt-[6px]">
+                    Invitación enviada a {{ c.entrevista?.correoEnvio }} ·
+                    {{ c.entrevista?.enviadoEn | date:'dd/MM/yyyy HH:mm' }} ·
+                    cita el {{ c.entrevista?.fecha | date:'dd/MM/yyyy' }} a las {{ c.entrevista?.hora }}
+                    en {{ c.entrevista?.lugarNombre }}
+                  </p>
+
+                  @if (c.entrevista?.respondidoEn) {
+                    <p class="text-[11.5px] mt-[3px]"
+                       [style.color]="c.entrevista?.respuestaCodigo === 'CONFIRMADA' ? '#15803D' : '#B91C1C'">
+                      {{ c.entrevista?.respuestaNombre }} ·
+                      {{ c.entrevista?.respondidoEn | date:'dd/MM/yyyy HH:mm' }}
+                    </p>
+                  }
+
+                  <!-- ── Resultado de la entrevista ─────────────────────────────
+                       Solo aparece cuando ya se le envió la invitación: son los comentarios
+                       que arman el informe de finalista que ve el solicitante. -->
+                  <div class="mt-[12px] pt-[12px] border-t" style="border-color:var(--color-abril-border)">
+                    <h4 class="text-[13px] font-bold text-gray-700">Resultado de la entrevista</h4>
+
+                    <div class="abril-field mt-[12px]">
+                      <label class="abril-field-label" [for]="'ev-com-entrevista-' + c.candidatoId">
+                        Resultado de entrevista <span style="color:#B91C1C">*</span>
+                      </label>
+                      <textarea [id]="'ev-com-entrevista-' + c.candidatoId" class="abril-field-input" rows="2"
+                        [disabled]="!puedeEvaluar(c)"
+                        [(ngModel)]="evaluacionForm[c.candidatoId].comentarioEntrevista"
+                        placeholder="Qué se observó en la entrevista del candidato..."></textarea>
+                    </div>
+
+                    <div class="abril-field mt-[10px]">
+                      <label class="abril-field-label" [for]="'ev-com-psico-' + c.candidatoId">
+                        Informe psicotécnico <span style="color:#B91C1C">*</span>
+                      </label>
+                      <textarea [id]="'ev-com-psico-' + c.candidatoId" class="abril-field-input" rows="2"
+                        [disabled]="!puedeEvaluar(c)"
+                        [(ngModel)]="evaluacionForm[c.candidatoId].comentarioPsicotecnico"
+                        placeholder="Conclusiones del informe psicotécnico..."></textarea>
+                    </div>
+
+                    <div class="abril-field mt-[10px]">
+                      <label class="abril-field-label" [for]="'ev-com-recom-' + c.candidatoId">
+                        Recomendación GTH <span style="color:#B91C1C">*</span>
+                      </label>
+                      <textarea [id]="'ev-com-recom-' + c.candidatoId" class="abril-field-input" rows="2"
+                        [disabled]="!puedeEvaluar(c)"
+                        [(ngModel)]="evaluacionForm[c.candidatoId].comentarioRecomendacion"
+                        placeholder="Recomendación de GTH al área solicitante..."></textarea>
+                    </div>
+
+                    <!-- ── Archivos del informe ────────────────────────────────
+                         Los dos son opcionales: van adjuntos en el correo al solicitante y
+                         quedan enlazados en su pantalla. -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-[10px] mt-[12px]">
+                      @for (slot of slotsArchivoEvaluacion; track slot.codigo) {
+                        <div class="rounded-[8px] border px-[13px] py-[11px]"
+                             style="border-color:var(--color-abril-border);background:#FAFCFA">
+                          <p class="text-[12.5px] font-bold text-gray-700">
+                            {{ slot.label }}
+                            <span class="font-medium text-gray-400">· opcional</span>
+                          </p>
+
+                          @if (archivoNuevo(c, slot.codigo); as nuevo) {
+                            <div class="flex items-center justify-between gap-[10px] rounded-[7px] border px-[11px] py-[8px] mt-[8px] bg-white"
+                                 style="border-color:var(--color-abril-border)">
+                              <div class="flex items-center gap-[8px] min-w-0">
+                                <i class="ti ti-file text-[16px] shrink-0" style="color:var(--color-abril-standard)"></i>
+                                <span class="text-[12.5px] text-gray-700 truncate">{{ nuevo.name }}</span>
+                                <span class="text-[11px] text-gray-400 shrink-0">{{ pesoArchivo(nuevo) }}</span>
+                              </div>
+                              <button type="button"
+                                [disabled]="!puedeEvaluar(c)"
+                                class="text-[12px] font-bold text-red-600 cursor-pointer hover:underline shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                (click)="quitarArchivoEvaluacion(c, slot.codigo)">
+                                Quitar
+                              </button>
+                            </div>
+                          } @else if (archivoGuardado(c, slot.codigo); as guardado) {
+                            <div class="flex items-center justify-between gap-[10px] rounded-[7px] border px-[11px] py-[8px] mt-[8px] bg-white"
+                                 style="border-color:var(--color-abril-border)">
+                              <a [href]="guardado.url" target="_blank" rel="noopener"
+                                 class="flex items-center gap-[8px] min-w-0 hover:underline"
+                                 style="color:var(--color-abril-logo-blue)">
+                                <i class="ti ti-file-check text-[16px] shrink-0"></i>
+                                <span class="text-[12.5px] truncate">{{ guardado.nombre }}</span>
+                              </a>
+                              <button type="button"
+                                [disabled]="!puedeEvaluar(c)"
+                                class="text-[12px] font-bold text-red-600 cursor-pointer hover:underline shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                (click)="quitarArchivoEvaluacion(c, slot.codigo)">
+                                Quitar
+                              </button>
+                            </div>
+                          } @else {
+                            <input #archivoInput type="file" class="hidden" [accept]="evaluacionAccept"
+                              (change)="onArchivoEvaluacion($event, c, slot.codigo)" />
+                            <button type="button"
+                              [disabled]="!puedeEvaluar(c)"
+                              class="w-full h-[38px] mt-[8px] rounded-[7px] border border-dashed bg-white hover:bg-[#F1F7F1] flex items-center justify-center gap-[8px] text-[12.5px] font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              style="border-color:#B7D6A6;color:var(--color-abril-standard)"
+                              (click)="archivoInput.click()">
+                              <i class="ti ti-paperclip text-[15px]"></i>
+                              Adjuntar
+                            </button>
+                          }
+                        </div>
+                      }
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-[10px] mt-[12px]">
+                      <button type="button"
+                        [disabled]="!puedeGuardarEvaluacion(c)"
+                        (click)="guardarEvaluacion(c)"
+                        class="inline-flex items-center gap-[6px] h-[36px] px-[16px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style="background:var(--color-abril-logo-blue)">
+                        <i class="ti ti-send text-[15px]"></i>
+                        {{ guardandoEvaluacion[c.candidatoId] ? 'Enviando…' : 'Continuar y enviar como finalista' }}
+                      </button>
+
+                      <!-- Correo de fin de proceso: cierra al candidato como "No continúa" (RG-12). -->
+                      <button type="button"
+                        [disabled]="enviandoAgradecimiento[c.candidatoId]"
+                        (click)="enviarAgradecimiento(c)"
+                        class="inline-flex items-center gap-[6px] h-[36px] px-[16px] rounded-[7px] border text-[13px] font-semibold cursor-pointer transition-colors hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style="border-color:#fecaca;color:#DC2626">
+                        <i class="ti ti-mail-x text-[15px]"></i>
+                        {{ enviandoAgradecimiento[c.candidatoId]
+                            ? 'Enviando…'
+                            : (noContinua(c) ? 'Reenviar correo de fin de proceso' : 'No continúa · enviar fin de proceso') }}
+                      </button>
+                    </div>
+
+                    @if (c.evaluacion?.agradecimientoEnviadoEn) {
+                      <p class="text-[11.5px] mt-[8px]" style="color:#B91C1C">
+                        Correo de fin de proceso enviado a {{ c.evaluacion?.agradecimientoCorreo }} ·
+                        {{ c.evaluacion?.agradecimientoEnviadoEn | date:'dd/MM/yyyy HH:mm' }}.
+                        El candidato ya no continúa en el proceso.
+                      </p>
+                    }
+                  </div>
+                }
+              </div>
+            } @empty {
+              <p class="text-[12.5px] text-gray-400 italic mt-[10px]">
+                No hay candidatos con el formulario del postulante aprobado.
+              </p>
+            }
+          }
+        </div>
+      }
+
+      <!-- ── Historial de candidatos rechazados ───────────────────────────
+           Arrastra las vueltas anteriores del proceso: cuando el solicitante rechaza
+           a todos, el requerimiento vuelve a Long list y esta es la lista que GTH
+           mira para no volver a presentar a los mismos candidatos. -->
+      @if (detalle.candidatosRechazados.length > 0) {
+        <div #historialRechazados
+             class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionRechazados = !seccionRechazados">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionRechazados ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Historial de candidatos rechazados</h3>
+            <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                  style="background:#FEE2E2;color:#B91C1C">
+              {{ detalle.candidatosRechazados.length }}
+            </span>
+          </button>
+
+          @if (seccionRechazados) {
+            <p class="text-[12.5px] text-gray-500 mt-[8px] leading-snug">
+              Candidatos que quedaron fuera del proceso, con la etapa en la que se los rechazó.
+              Incluye las long lists anteriores de este mismo requerimiento.
+            </p>
+
+            <!-- Búsqueda inline (no app-filter-modal): es un solo campo dentro de un modal,
+                 abrir otro modal de filtros encima sería peor de usar. -->
+            <div class="w-full mt-[10px]">
+              <app-search-input
+                placeholder="Buscar por nombre o etapa..."
+                [(value)]="busquedaRechazados"
+                (valueChange)="onBuscarRechazados()"
+                width="100%">
+              </app-search-input>
+            </div>
+
+            <div class="abril-table-wrap mt-[10px] max-h-[46vh]">
+              <table class="abril-table">
+                <thead class="sticky top-0 z-10">
+                  <tr>
+                    <th>Candidato</th>
+                    <th>Etapa del rechazo</th>
+                    <th>Rechazado por</th>
+                    <th>Fecha</th>
+                    <th>CV</th>
+                    <!-- La columna solo existe mientras haya algo que decidir: en el resto del
+                         proceso el historial es de consulta y una columna vacía sobra. -->
+                    @if (emoNoApto) {
+                      <th>Acción</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of rechazadosPagina; track c.candidatoId) {
+                    <tr>
+                      <td>
+                        <p class="font-semibold text-gray-800">{{ c.nombre | titleCase }}</p>
+                        @if (c.comentario) {
+                          <p class="text-[11.5px] text-gray-500 mt-[2px] leading-snug">{{ c.comentario }}</p>
+                        }
+                      </td>
+                      <td>
+                        <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full whitespace-nowrap"
+                              [style.background]="etapaColors(c.etapaCodigo).bg"
+                              [style.color]="etapaColors(c.etapaCodigo).text">
+                          {{ c.etapaNombre }}
+                        </span>
+                        <p class="text-[11px] text-gray-400 mt-[3px] whitespace-nowrap">
+                          {{ c.numeroLongList }}ª long list
+                        </p>
+                      </td>
+                      <td class="whitespace-nowrap">{{ c.rechazadoPorNombre }}</td>
+                      <td class="whitespace-nowrap">{{ c.rechazadoEn | date:'dd/MM/yyyy HH:mm' }}</td>
+                      <td>
+                        @if (c.cvUrl) {
+                          <a [href]="c.cvUrl" target="_blank" rel="noopener"
+                             class="inline-flex items-center gap-[5px] font-semibold hover:underline"
+                             style="color:var(--color-abril-logo-blue)">
+                            <i class="ti ti-file-text text-[15px]"></i>
+                            Ver CV
+                          </a>
+                        } @else {
+                          <span class="text-gray-400">—</span>
+                        }
+                      </td>
+                      @if (emoNoApto) {
+                        <td class="whitespace-nowrap">
+                          @if (c.puedeRetomar) {
+                            <button type="button" (click)="retomarCandidato(c)"
+                                    [disabled]="retomando[c.candidatoId]"
+                                    class="inline-flex items-center gap-[6px] h-[30px] px-[12px] rounded-[7px] text-[12px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style="background:#005D9D">
+                              <i class="ti ti-arrow-back-up text-[14px]"></i>
+                              {{ retomando[c.candidatoId] ? 'Retomando…' : 'Continuar con este' }}
+                            </button>
+                          } @else {
+                            <span class="text-[11.5px] text-gray-400">No apto en el EMO</span>
+                          }
+                        </td>
+                      }
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td [attr.colspan]="emoNoApto ? 6 : 5" class="text-center py-[28px] text-gray-400">Sin resultados.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            @if (rechazadosTotalPaginas > 1) {
+              <div class="max-w-[440px] mt-[10px]">
+                <app-paginator
+                  [totalRecords]="rechazadosFiltrados.length"
+                  [currentPage]="rechazadosPaginaActual"
+                  [totalPages]="rechazadosTotalPaginas"
+                  (pageChange)="cambiarPaginaRechazados($event)">
+                </app-paginator>
+              </div>
+            }
+          }
+        </div>
+      }
+
+    </div>
+  }
+
+  <!-- Footer: un solo botón "Cerrar" a la derecha. -->
+  <div modalFooter class="w-full flex justify-end">
+    <button type="button" (click)="cerrar()"
+      class="h-[36px] px-[22px] rounded-[7px] text-[13px] font-medium text-gray-600 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+      Cerrar
+    </button>
+  </div>
+
+</app-abril-modal-panel>
+
+<!-- Modal "Ver formulario" del postulante (se abre sobre el detalle). -->
+@if (formularioCandidatoId) {
+  <app-gth-formulario-postulante-modal
+    [candidatoId]="formularioCandidatoId"
+    (cambios)="onFormularioCambios($event)"
+    (closeModal)="cerrarFormulario()">
+  </app-gth-formulario-postulante-modal>
+}

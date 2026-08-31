@@ -1,0 +1,141 @@
+<!-- Sección embebida en GaConfiguracion: el header, el botón de crear y el
+     disparador de filtros viven en el contenedor (`ga-configuracion`). -->
+<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Descripción</th>
+          <th class="text-center">Doc. adjunto</th>
+          <th class="text-center">
+            <span class="inline-flex items-center gap-[5px]">
+              Hora estimada
+              <span
+                class="inline-flex items-center justify-center w-[15px] h-[15px] rounded-full border border-current text-[10px] font-bold leading-none cursor-help select-none"
+                title="Los motivos con hora estimada indican a recepción que NO registre la hora real de salida/retorno de esas salidas. Además, si todos los trayectos de una solicitud usan motivos de hora estimada, no se muestra el recordatorio de recuperación de horas (ni en el formulario ni en los correos).">?</span>
+            </span>
+          </th>
+          <th class="text-center">
+            <span class="inline-flex items-center gap-[5px]">
+              Motivo adicional
+              <span
+                class="inline-flex items-center justify-center w-[15px] h-[15px] rounded-full border border-current text-[10px] font-bold leading-none cursor-help select-none"
+                title="Al elegir estos motivos en Solicitud de Salidas, el trabajador debe escribir además un detalle obligatorio que explique la salida.">?</span>
+            </span>
+          </th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="filteredMotivos.length === 0">
+          <td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ searchText.trim() || estadoFilter !== null ? 'Sin resultados.' : 'No hay motivos registrados.' }}
+          </td>
+        </tr>
+
+        <tr *ngFor="let m of pagedMotivos" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+
+          <td class="text-gray-700">{{ m.descripcion | titleCase }}</td>
+
+          <td class="text-center">
+            <span *ngIf="m.requiereAdjunto"
+                  class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#DBEAFE] text-[#1D4ED8] font-medium whitespace-nowrap">
+              Requerido
+            </span>
+            <span *ngIf="!m.requiereAdjunto" class="text-gray-300">—</span>
+          </td>
+
+          <td class="text-center">
+            <span *ngIf="m.esHoraEstimada"
+                  class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#FEF3C7] text-[#B45309] font-medium whitespace-nowrap"
+                  title="Las horas declaradas son estimadas: recepción no registra la hora real de salida/retorno">
+              Estimada
+            </span>
+            <span *ngIf="!m.esHoraEstimada" class="text-gray-300">—</span>
+          </td>
+
+          <td class="text-center">
+            <span *ngIf="m.requiereMotivoAdicional"
+                  class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#EDE9FE] text-[#6D28D9] font-medium whitespace-nowrap"
+                  title="Al elegir este motivo se exige escribir un detalle obligatorio">
+              Requerido
+            </span>
+            <span *ngIf="!m.requiereMotivoAdicional" class="text-gray-300">—</span>
+          </td>
+
+          <td class="text-center">
+            <app-status-badge
+              [text]="m.activo ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="m.activo ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="m.activo ? '#009C87' : '#D30000'" />
+          </td>
+
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[8px]">
+              <button
+                (click)="toggle(m)"
+                [abrilBulkAction]="m.activo ? 'danger' : 'default'">
+                {{ m.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+              <button
+                (click)="openEdit(m)"
+                abrilBulkAction="default">
+                Editar
+              </button>
+            </div>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredMotivos.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modales (fuera del card) ──────────────────────────────────────── -->
+<app-ga-motivo-create
+  *ngIf="showCreateModal"
+  (closeModal)="showCreateModal = false"
+  (saved)="load()" />
+
+<app-ga-motivo-edit
+  *ngIf="showEditModal && motivoToEdit"
+  [motivo]="motivoToEdit!"
+  (closeModal)="showEditModal = false; motivoToEdit = null"
+  (saved)="load()" />
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por descripción..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="estadoFilter"
+      (valueChange)="estadoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

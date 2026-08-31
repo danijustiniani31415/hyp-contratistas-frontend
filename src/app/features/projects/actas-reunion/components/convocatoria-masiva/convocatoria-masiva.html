@@ -1,0 +1,124 @@
+<app-base-modal [title]="'Agregar por área/puesto'" width="w-[680px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-4 p-1">
+
+    <!-- ── Filtros (el resultado se recalcula solo, no hay botón "Buscar") ────── -->
+    <p class="text-xs text-gray-500">
+        Cada regla filtra por área/gerencia, puesto y/o staff de un proyecto (todos opcionales, se
+        combinan). Agrega varias reglas para mezclar grupos distintos, por ejemplo "todo el staff
+        del proyecto X" + "todas las jefaturas de Proyectos".
+      </p>
+
+      <div *ngFor="let regla of reglas; let ri = index"
+        class="border border-[#E5EAF0] rounded-lg p-3 flex flex-col gap-2 relative">
+        <button *ngIf="reglas.length > 1" type="button" (click)="removerRegla(ri)"
+          class="absolute top-2 right-2 text-red-400 hover:text-red-600 cursor-pointer">
+          <span class="ti ti-x text-base"></span>
+        </button>
+
+        <label class="text-xs font-medium text-gray-500">Área/gerencia (opcional)</label>
+        <div class="flex flex-col gap-2">
+          <select *ngFor="let opciones of nivelesRegla(regla); let i = index"
+            [ngModel]="regla.areaScopePath[i]?.areaScopeId ?? null"
+            (ngModelChange)="onNivelReglaChange(regla, i, $event)"
+            class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]">
+            <option [ngValue]="null">{{ i === 0 ? 'Todas las gerencias' : 'Todas (opcional)' }}</option>
+            <option *ngFor="let n of opciones" [ngValue]="n.areaScopeId">{{ n.areaItemName }}</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-between mt-1">
+          <label class="text-xs font-medium text-gray-500">Puestos (opcional, marca uno o varios)</label>
+          <label *ngIf="regla.puestos.length > 0" class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+            <input type="checkbox" [ngModel]="todosPuestosMarcados(regla)" (ngModelChange)="toggleTodosPuestos(regla, $event)"
+              class="accent-[var(--color-abril-primary)] cursor-pointer" />
+            Marcar todos
+          </label>
+        </div>
+        <p *ngIf="regla.puestos.length === 0" class="text-[11px] text-gray-400">
+          No hay puestos registrados en esta área todavía.
+        </p>
+        <ng-container *ngIf="regla.puestos.length > 0">
+          <input type="text" [(ngModel)]="regla.filtroPuesto" maxlength="100"
+            class="w-full h-[36px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+            placeholder="Filtrar, ej. jefe" />
+          <div class="border border-[#E5EAF0] rounded-lg max-h-40 overflow-y-auto flex flex-col">
+            <label *ngFor="let p of puestosFiltrados(regla)"
+              class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 cursor-pointer select-none hover:bg-gray-50 border-b border-[#E5EAF0] last:border-b-0">
+              <input type="checkbox" [(ngModel)]="p.marcado" (ngModelChange)="dispararBusqueda()" class="accent-[var(--color-abril-primary)] cursor-pointer" />
+              {{ p.descripcion }}
+            </label>
+            <p *ngIf="puestosFiltrados(regla).length === 0" class="px-3 py-2 text-xs text-gray-400">
+              Ningún puesto coincide con "{{ regla.filtroPuesto }}".
+            </p>
+          </div>
+        </ng-container>
+
+        <div class="mt-1">
+          <app-search-select
+            label="Staff de un proyecto (opcional)"
+            [options]="proyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="regla.projectId"
+            (valueChange)="onProjectIdReglaChange(regla, $event)"
+            placeholder="Buscar proyecto...">
+          </app-search-select>
+          <p class="text-[11px] text-gray-400 mt-1">
+            Trae a todo el staff asignado a ese proyecto (residente, ingenieros, jefaturas de obra, etc.).
+          </p>
+        </div>
+      </div>
+
+      <button type="button" (click)="agregarRegla()"
+        class="self-start text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
+        <span class="ti ti-plus"></span> Agregar otra regla
+      </button>
+
+    <!-- ── Resultado en vivo: se recalcula solo al cambiar cualquier filtro de arriba ─── -->
+    <div class="border-t border-[#E5EAF0] pt-3 flex flex-col gap-2">
+      <div class="flex items-center justify-between">
+        <p class="text-sm text-gray-600">
+          <ng-container *ngIf="tieneFiltro; else sinFiltro">
+            <span class="font-semibold">{{ resultados.length }}</span> trabajador{{ resultados.length === 1 ? '' : 'es' }} encontrado{{ resultados.length === 1 ? '' : 's' }}.
+            Desmarca los que no quieras agregar.
+          </ng-container>
+          <ng-template #sinFiltro>Define un filtro arriba para ver trabajadores.</ng-template>
+        </p>
+        <label *ngIf="resultados.length > 0" class="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" [ngModel]="todosSeleccionados" (ngModelChange)="toggleTodos($event)"
+            class="accent-[var(--color-abril-primary)] cursor-pointer" />
+          Seleccionar todos
+        </label>
+      </div>
+
+      <div *ngIf="resultados.length > 0" class="border border-[#E5EAF0] rounded-lg overflow-hidden max-h-56 overflow-y-auto">
+        <table class="w-full text-sm">
+          <tbody>
+            <tr *ngFor="let r of resultados" class="border-t border-[#E5EAF0] first:border-t-0">
+              <td class="px-3 py-2 w-10">
+                <input type="checkbox" [(ngModel)]="r.seleccionado" class="accent-[var(--color-abril-primary)] cursor-pointer" />
+              </td>
+              <td class="px-2 py-2 text-gray-700">{{ r.trabajador.fullName }}</td>
+              <td class="px-2 py-2 text-gray-400 text-xs">{{ r.trabajador.cargo || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p *ngIf="tieneFiltro && !buscando && resultados.length === 0" class="text-xs text-gray-400">
+        Ningún trabajador coincide con estos filtros.
+      </p>
+    </div>
+
+    <div class="flex justify-end gap-3 pt-2">
+      <button type="button" (click)="closeModal.emit()"
+        class="h-[42px] px-5 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors">
+        Cancelar
+      </button>
+      <button type="button" (click)="confirmar()" [disabled]="totalSeleccionados === 0"
+        class="h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+        <span class="ti ti-users text-base"></span>
+        Agregar {{ totalSeleccionados }} participante{{ totalSeleccionados === 1 ? '' : 's' }}
+      </button>
+    </div>
+  </div>
+</app-base-modal>

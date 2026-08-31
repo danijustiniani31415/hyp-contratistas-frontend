@@ -1,0 +1,73 @@
+<div class="card">
+  <div class="section-bar">
+    <div>
+      <h2 class="section-title">REGLAS DE ENTREGABLES</h2>
+      <p class="section-sub">Configuración de qué entregables aplican a cada categoría</p>
+    </div>
+    <div class="actions">
+      <input
+        type="text"
+        class="field-input search-input"
+        placeholder="Buscar entregable, rol…"
+        [(ngModel)]="search"
+      />
+      <button type="button" class="btn-primary" (click)="abrirNueva()">+ Nueva regla</button>
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Entregable</th>
+          <th>Categoría</th>
+          <th>Tipo trabajador</th>
+          <th>Requerido</th>
+          <th>Evaluador</th>
+          <th>Nota</th>
+          <th>Activo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of reglasFiltradas">
+          <td>{{ r.nombreItem ?? ('#' + r.itemId) }}</td>
+          <td>{{ r.categoriaId ?? 'Todas' }}</td>
+          <td>{{ r.tipoTrabajador ?? 'Todos' }}</td>
+          <td>
+            <span class="btn-chip" [class]="r.requerido ? 'chip-green' : 'chip-gray'">
+              {{ r.requerido ? 'Sí' : 'No' }}
+            </span>
+          </td>
+          <td>{{ r.evaluadorRol ?? '—' }}</td>
+          <td>{{ r.nota ?? '—' }}</td>
+          <td>
+            <span class="btn-chip" [class]="r.activo ? 'chip-green' : 'chip-gray'">
+              {{ r.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td>
+            <div class="acciones-cell">
+              <button type="button" class="btn-chip chip-blue btn-pill" (click)="abrirEditar(r)">
+                ✎ Editar
+              </button>
+              <button type="button" class="btn-chip chip-red btn-pill" (click)="eliminar(r)">
+                ✕ Eliminar
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && reglasFiltradas.length === 0">
+          <td colspan="8" class="empty-row">No hay reglas configuradas.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<app-regla-form
+  [open]="modalOpen"
+  [regla]="reglaEnEdicion"
+  (closed)="closeModal()"
+  (saved)="onSaved()"
+/>

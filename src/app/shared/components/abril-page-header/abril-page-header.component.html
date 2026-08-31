@@ -1,0 +1,99 @@
+<div class="ssoma-hero">
+  <div class="ssoma-hero__left">
+    <button type="button" class="hamburger-btn" (click)="onHamburgerClick()" aria-label="Abrir menú">
+      <i class="ti ti-menu-2" aria-hidden="true"></i>
+    </button>
+    <div class="ssoma-hero__vline"></div>
+    <div class="ssoma-hero__title-wrap">
+      <h1 class="ssoma-hero__title">{{ titulo }}</h1>
+      <p class="ssoma-hero__sub" *ngIf="subtitulo">{{ subtitulo }}</p>
+    </div>
+  </div>
+
+  <div class="ssoma-hero__center" *ngIf="pills.length">
+    <span *ngFor="let p of pills"
+          class="ssoma-hero__pill"
+          [class.ssoma-hero__pill--warn]="p.warn">
+      <i class="ti {{ p.icono }}" aria-hidden="true"></i>
+      {{ p.texto }}
+    </span>
+  </div>
+
+  <div class="ssoma-hero__right">
+    <button *ngIf="botonSecundario"
+            type="button"
+            class="ssoma-hero__btn ssoma-hero__btn--ghost"
+            [disabled]="botonSecundarioDeshabilitado"
+            [title]="botonSecundarioTooltip || botonSecundario.label"
+            (click)="secondaryClick.emit()">
+      <i class="ti {{ botonSecundario.icono }}" aria-hidden="true"></i>
+      <span>{{ botonSecundario.label }}</span>
+    </button>
+    <button *ngIf="botonTerciario"
+            type="button"
+            class="ssoma-hero__btn ssoma-hero__btn--ghost"
+            [disabled]="botonTerciarioDeshabilitado"
+            [title]="botonTerciarioTooltip || botonTerciario.label"
+            (click)="tertiaryClick.emit()">
+      <i class="ti {{ botonTerciario.icono }}" aria-hidden="true"></i>
+      <span>{{ botonTerciario.label }}</span>
+    </button>
+    <!-- Campanita de notificaciones (global: aparece en todas las páginas con este header) -->
+    <app-notificaciones-bell />
+    <div class="ssoma-hero__avatar-gap"></div>
+  </div>
+</div>
+
+<!-- El botón primario ("Nuevo X") es siempre flotante — estándar único para toda la app,
+     igual que app-fab. Así ninguna página puede volver a ponerlo en el encabezado. -->
+<button *ngIf="botonPrimario"
+        type="button"
+        class="ssoma-fab"
+        [disabled]="botonPrimarioDeshabilitado"
+        [title]="botonPrimarioTooltip || botonPrimario.label"
+        (click)="primaryClick.emit()">
+  <i class="ti {{ botonPrimario.icono }}" aria-hidden="true"></i>
+  <span>{{ botonPrimario.label }}</span>
+</button>
+
+<!-- Group selector — solo aparece cuando hay múltiples grupos -->
+<div class="abril-tab-groups" *ngIf="hasGroups">
+  <button
+    *ngFor="let g of visibleGroups; let i = index; trackBy: trackByGroup"
+    class="atg-btn"
+    [class.atg-btn--active]="i === activeGroupIndex"
+    (click)="navigateToGroup(g)">
+    <i *ngIf="g.icono" class="ti {{ g.icono }}"></i>
+    {{ g.label }}
+  </button>
+</div>
+
+<!-- *ngIf ahora también contempla hasExtra: si la página no tiene pestañas
+     pero sí proyecta algo en tabsExtra (ej. el botón de Filtros), esta barra
+     debe mostrarse igual — antes, sin pestañas, tabsExtra quedaba anidado
+     dentro de un bloque que nunca se renderizaba y el botón desaparecía en
+     silencio (bug real: Accidentes, Auditoría ATS, Proyectos Habilitados). -->
+<div class="abril-tabs" *ngIf="visibleTabs.length || hasExtra">
+  <div class="abril-tabs__row">
+    <nav class="abril-tabs__nav" *ngIf="visibleTabs.length">
+      <ng-container *ngFor="let tab of visibleTabs; trackBy: trackByTab">
+        <a *ngIf="tab.route"
+           class="abril-tabs__tab"
+           [routerLink]="tab.route"
+           routerLinkActive="abril-tabs__tab--active"
+           [routerLinkActiveOptions]="{exact: !!tab.exact}">
+          <i class="ti {{ tab.icono }}"></i> {{ tab.label }}
+        </a>
+        <a *ngIf="!tab.route"
+           class="abril-tabs__tab"
+           [class.abril-tabs__tab--active]="tab.active"
+           (click)="tabClick.emit(tab); $event.stopPropagation()">
+          <i class="ti {{ tab.icono }}"></i> {{ tab.label }}
+        </a>
+      </ng-container>
+    </nav>
+    <div class="abril-tabs__extra">
+      <ng-content select="[tabsExtra]"></ng-content>
+    </div>
+  </div>
+</div>

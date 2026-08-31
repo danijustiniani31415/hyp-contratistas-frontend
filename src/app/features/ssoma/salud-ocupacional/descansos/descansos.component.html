@@ -1,0 +1,150 @@
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Descansos Médicos"
+  subtitulo="Registro y seguimiento de descansos médicos ocupacionales."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<section class="page-container px-3 py-4 flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- Tabla -->
+  <div class="abril-table-wrap">
+      <table class="abril-table">
+        <colgroup>
+          <col style="width:50px"/>
+          <col/>
+          <col style="width:160px"/>
+          <col style="width:100px"/>
+          <col style="width:100px"/>
+          <col style="width:44px"/>
+          <col style="width:110px"/>
+          <col style="width:80px"/>
+          <col style="width:36px"/>
+        </colgroup>
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>#</th>
+            <th>Trabajador</th>
+            <th>Tipo</th>
+            <th>Inicio</th>
+            <th>Fin</th>
+            <th class="text-center">Días</th>
+            <th class="text-center">Estado</th>
+            <th>Acceso</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of descansos" class="row-clickable border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)" (click)="abrirModal(d.id)">
+            <td class="col-mono">{{ d.id }}</td>
+            <td class="col-worker">
+              <div class="worker-cell">
+                <span class="worker-name">{{ (d.workerNombre | titleCase) ?? '—' }}</span>
+                <span class="worker-dni">{{ d.workerDni }}</span>
+              </div>
+            </td>
+            <td><span class="badge badge-gray">{{ d.tipo }}</span></td>
+            <td class="text-gray-500">{{ d.fechaInicio | date:'dd/MM/yyyy' }}</td>
+            <td class="text-gray-500">{{ d.fechaFin | date:'dd/MM/yyyy' }}</td>
+            <td class="col-mono text-center">{{ d.dias }}</td>
+            <td class="text-center">
+              <span class="badge" [ngClass]="estadoBadgeClass(d.estado)">{{ d.estado }}</span>
+            </td>
+            <td>
+              <span *ngIf="d.trabajadorBloqueado" class="blocked-chip" title="Bloqueado en Control de Acceso">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                </svg>
+                Bloqueado
+              </span>
+              <span *ngIf="!d.trabajadorBloqueado" class="free-chip">Activo</span>
+            </td>
+            <td class="text-right" (click)="$event.stopPropagation()">
+              <button class="row-action" (click)="eliminar(d, $event)" title="Eliminar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && descansos.length === 0">
+            <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
+              {{ hasFilters ? 'Sin resultados.' : 'Sin descansos médicos registrados.' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+  </div>
+
+  <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+    <app-paginator [totalRecords]="totalRecords" [currentPage]="currentPage"
+      [totalPages]="totalPages" (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
+
+</section>
+
+<app-fab label="Nuevo Descanso" (clicked)="abrirModal()"></app-fab>
+
+<app-descanso-modal
+  *ngIf="modalVisible"
+  [descansoId]="descansoSeleccionadoId"
+  [tipos]="tipos"
+  (closed)="cerrarModal()"
+  (saved)="onGuardado()">
+</app-descanso-modal>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="flex gap-3">
+    <app-date-picker
+      class="flex-1"
+      label="Desde"
+      [floatingLabel]="true"
+      [value]="filtros.fechaDesde"
+      (valueChange)="filtros.fechaDesde = $event ?? undefined; onFilterChange()">
+    </app-date-picker>
+    <app-date-picker
+      class="flex-1"
+      label="Hasta"
+      [floatingLabel]="true"
+      [min]="filtros.fechaDesde ?? null"
+      [value]="filtros.fechaHasta"
+      (valueChange)="filtros.fechaHasta = $event ?? undefined; onFilterChange()">
+    </app-date-picker>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOpts"
+      valueField="id"
+      displayField="nombre"
+      [sortAlpha]="false"
+      [value]="filtros.estado"
+      (valueChange)="filtros.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Tipo"
+      [options]="tipoOpts"
+      valueField="id"
+      displayField="nombre"
+      [sortAlpha]="false"
+      [value]="filtros.tipoId"
+      (valueChange)="filtros.tipoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-worker-search-input
+      [selected]="workerFiltroSelected"
+      (selectedChange)="onWorkerFiltroChange($event)">
+    </app-worker-search-input>
+  </div>
+</app-filter-modal>

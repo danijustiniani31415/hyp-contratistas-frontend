@@ -1,0 +1,220 @@
+<div class="flex flex-col" [ngClass]="floatingLabel ? 'gap-0' : 'gap-[6px]'" [style.--dp-accent]="color">
+  <!-- Label encima del campo (por defecto) -->
+  <label
+    *ngIf="showLabel && label && !floatingLabel"
+    class="text-sm text-[var(--dp-accent)] font-medium"
+  >
+    {{ label }}<span *ngIf="required" class="text-red-500"> *</span>
+  </label>
+
+  <!-- Contenedor relativo para el label flotante y el calendario. El `mt-[9px]` es el mismo que
+       usa app-search-select: sin él, un combo y una fecha en la misma fila no quedan alineados. -->
+  <div class="relative overflow-visible" [ngClass]="floatingLabel ? 'mt-[9px]' : ''">
+    <!-- Label que corta el borde superior, igual que app-search-select (opt-in) -->
+    <label
+      *ngIf="showLabel && label && floatingLabel"
+      class="absolute -top-[8px] left-[9px] z-[1] px-[4px] text-[11px] font-semibold text-gray-600 pointer-events-none leading-none bg-white"
+    >
+      {{ label }}<span *ngIf="required" class="text-red-500"> *</span>
+    </label>
+
+    <!-- Trigger: input editable (dd/mm/aaaa) + limpiar + botón de calendario -->
+    <div
+      class="w-full flex items-center gap-[8px] border transition-colors"
+      [ngClass]="[
+        triggerSizeClasses,
+        isOpen ? 'border-[var(--dp-accent)] ring-2 ring-[var(--dp-accent)]/30' : triggerBorderClass,
+        disabled ? 'bg-gray-50' : 'bg-white'
+      ]"
+    >
+      <input
+        type="text"
+        class="w-full min-w-0 bg-transparent focus:outline-none text-gray-800 placeholder-gray-400 disabled:text-gray-400 disabled:cursor-not-allowed"
+        [placeholder]="placeholder"
+        [ngModel]="texto"
+        (ngModelChange)="onTextoChange($event)"
+        (focus)="abrir()"
+        (blur)="confirmarTexto()"
+        (keydown.enter)="onEnter()"
+        [disabled]="disabled"
+        inputmode="numeric"
+        autocomplete="off"
+      />
+      <span
+        *ngIf="allowClear && hasValue && !disabled"
+        (click)="clear($event)"
+        (keydown.enter)="clear($any($event))"
+        tabindex="0"
+        role="button"
+        aria-label="Limpiar fecha"
+        title="Limpiar"
+        class="flex-shrink-0 flex items-center justify-center w-[18px] h-[18px] rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors"
+      >
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </span>
+      <button
+        type="button"
+        (click)="toggleCalendario($event)"
+        title="Abrir calendario"
+        aria-label="Abrir calendario"
+        [disabled]="disabled"
+        class="flex-shrink-0 flex items-center justify-center text-gray-400 hover:text-gray-600 cursor-pointer transition-colors disabled:cursor-not-allowed disabled:hover:text-gray-400"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+        >
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M3 10h18M8 3v4M16 3v4" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Calendario desplegable: `fixed` respecto al viewport (no `absolute`) para que un campo
+         angosto dentro de un contenedor con scroll (ej. tabla del cronograma) no se estire ni
+         genere scroll horizontal al mostrar el panel, que es más ancho que el campo.
+         La posición se recalcula en cada scroll para que acompañe al campo (ver date-picker.ts). -->
+    <div
+      #panel
+      *ngIf="isOpen"
+      class="fixed z-50 w-[272px] max-w-[calc(100vw-24px)] bg-white border border-[#D6DEE5] rounded-lg shadow-lg p-3 select-none"
+      [style.top.px]="panelTop"
+      [style.bottom.px]="panelBottom"
+      [style.left.px]="panelLeft"
+    >
+      <!-- Cabecera: navegación (según vista) + mes/año clickeables -->
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center">
+          <button *ngIf="vista === 'dias'" type="button" (click)="anioAnterior()" title="Año anterior" class="dp-nav">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
+            </svg>
+          </button>
+          <button type="button" (click)="navPrev()" title="Anterior" class="dp-nav">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Vista días: mes y año clickeables por separado -->
+        <div *ngIf="vista === 'dias'" class="flex items-center gap-1">
+          <button type="button" (click)="toggleVistaMeses()" title="Elegir mes" class="dp-header-btn">
+            {{ nombreMesVista }}
+          </button>
+          <button type="button" (click)="toggleVistaAnios()" title="Elegir año" class="dp-header-btn">
+            {{ vistaAnio }}
+          </button>
+        </div>
+        <!-- Vista meses: el año sigue siendo clickeable -->
+        <button *ngIf="vista === 'meses'" type="button" (click)="toggleVistaAnios()" title="Elegir año" class="dp-header-btn">
+          {{ vistaAnio }}
+        </button>
+        <!-- Vista años: rango del bloque visible -->
+        <span *ngIf="vista === 'anios'" class="text-sm font-semibold text-gray-700">
+          {{ etiquetaRangoAnios }}
+        </span>
+
+        <div class="flex items-center">
+          <button type="button" (click)="navNext()" title="Siguiente" class="dp-nav">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
+            </svg>
+          </button>
+          <button *ngIf="vista === 'dias'" type="button" (click)="anioSiguiente()" title="Año siguiente" class="dp-nav">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5-5 5M6 7l5 5-5 5" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <ng-container *ngIf="vista === 'dias'">
+        <!-- Días de la semana -->
+        <div class="grid grid-cols-7 mb-1">
+          <span
+            *ngFor="let d of diasSemana"
+            class="text-center text-[11px] font-semibold text-gray-400"
+            >{{ d }}</span
+          >
+        </div>
+
+        <!-- Grilla de días -->
+        <div *ngFor="let semana of semanas" class="grid grid-cols-7">
+          <button
+            *ngFor="let celda of semana"
+            type="button"
+            (click)="seleccionar(celda)"
+            [disabled]="esDeshabilitado(celda)"
+            class="dp-day"
+            [class.dp-out]="!celda.delMes"
+            [class.dp-selected]="esSeleccionado(celda)"
+            [class.dp-today]="esHoy(celda)"
+          >
+            {{ celda.dia }}
+          </button>
+        </div>
+      </ng-container>
+
+      <!-- Selector de mes -->
+      <div *ngIf="vista === 'meses'" class="grid grid-cols-3 gap-1">
+        <button
+          *ngFor="let m of mesesCortos; let i = index"
+          type="button"
+          (click)="seleccionarMes(i)"
+          [disabled]="mesDeshabilitado(i)"
+          class="dp-cell"
+          [class.dp-selected]="i === vistaMes"
+          [class.dp-today]="esMesActual(i)"
+        >
+          {{ m }}
+        </button>
+      </div>
+
+      <!-- Selector de año -->
+      <div *ngIf="vista === 'anios'" class="grid grid-cols-3 gap-1">
+        <button
+          *ngFor="let a of aniosGrid"
+          type="button"
+          (click)="seleccionarAnio(a)"
+          [disabled]="anioDeshabilitado(a)"
+          class="dp-cell"
+          [class.dp-selected]="a === vistaAnio"
+          [class.dp-today]="esAnioActual(a)"
+        >
+          {{ a }}
+        </button>
+      </div>
+
+      <!-- Pie: hoy / limpiar -->
+      <div
+        class="flex items-center justify-between mt-2 pt-2 border-t"
+        style="border-color: var(--color-abril-border)"
+      >
+        <button
+          type="button"
+          (click)="hoy()"
+          [disabled]="hoyDeshabilitado"
+          class="dp-footer-btn text-[var(--dp-accent)]"
+        >
+          Hoy
+        </button>
+        <button
+          *ngIf="allowClear && hasValue"
+          type="button"
+          (click)="clear($event)"
+          class="dp-footer-btn text-gray-500"
+        >
+          Limpiar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,118 @@
+<app-abril-modal-panel
+  titulo="Cerrar RAC"
+  icono="ti-lock"
+  variant="blue"
+  (closeModal)="cancelar()">
+
+  <!-- SKELETON -->
+  @if (loading) {
+    <div class="skeleton-wrap">
+      <div class="skeleton-row" style="width:50%;height:20px;border-radius:6px"></div>
+      <div class="skeleton-row" style="width:100%;height:80px;border-radius:8px;margin-top:12px"></div>
+      <div class="skeleton-row" style="width:100%;height:120px;border-radius:8px;margin-top:12px"></div>
+    </div>
+  }
+
+  <!-- CONTENIDO -->
+  @if (rac && !loading) {
+
+    <!-- RESUMEN DEL RAC -->
+    <div class="abril-section-title">
+      <span class="rac-badge">{{ rac.codigo }}</span>
+    </div>
+    <div class="resumen-card">
+      <div class="resumen-fila">
+        <span class="resumen-label">Proyecto</span>
+        <span class="resumen-valor">{{ rac.proyectoNombre ?? '—' }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span class="resumen-label">Tipo</span>
+        <span class="resumen-valor">{{ rac.tipo }} · {{ rac.categoriaNombre }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span class="resumen-label">Severidad</span>
+        <span class="resumen-valor">
+          <span class="badge-sev" [ngClass]="severidadClass(rac.severidad)">
+            {{ rac.severidad }}
+          </span>
+        </span>
+      </div>
+      <div class="resumen-fila">
+        <span class="resumen-label">Descripción</span>
+        <span class="resumen-valor resumen-desc">
+          {{ rac.descripcion.length > 150
+             ? (rac.descripcion | slice:0:150) + '...'
+             : rac.descripcion }}
+        </span>
+      </div>
+    </div>
+
+    <!-- FOTOS DEL HALLAZGO: qué se debe levantar -->
+    <div class="abril-section-title">Foto(s) del hallazgo</div>
+    <div class="fotos-hallazgo-grid" *ngIf="rac.fotos.length > 0; else sinFotoHallazgo">
+      <div class="foto-hallazgo-item" *ngFor="let foto of rac.fotos">
+        <app-draggable-image *ngIf="fotoHallazgoUrls.get(foto.id) as url; else fotoHallazgoCargando" [src]="url" />
+        <ng-template #fotoHallazgoCargando>
+          <div class="foto-hallazgo-cargando"><i class="ti ti-loader-2 spin"></i></div>
+        </ng-template>
+      </div>
+    </div>
+    <ng-template #sinFotoHallazgo>
+      <p class="form-hint">Este RAC no tiene fotos del hallazgo registradas.</p>
+    </ng-template>
+
+    <!-- DESCRIPCIÓN DEL CIERRE -->
+    <div class="abril-field">
+      <label class="abril-field-label">
+        Descripción del cierre * <span class="char-count">{{ cierreDescripcion.length }}/500</span>
+      </label>
+      <textarea
+        class="abril-field-input"
+        [(ngModel)]="cierreDescripcion"
+        rows="5"
+        maxlength="500"
+        placeholder="Describe las acciones tomadas para levantar el hallazgo observado...">
+      </textarea>
+      @if (cierreDescripcion.length > 0 && cierreDescripcion.trim().length < 10) {
+        <span class="form-hint">Mínimo 10 caracteres</span>
+      }
+    </div>
+
+    <!-- FOTO DE CIERRE -->
+    <div class="abril-section-title">Foto del levantamiento *</div>
+    <app-photo-grid-picker
+      color="var(--color-abril-logo-blue)"
+      [previews]="fotoCierrePreviews"
+      [max]="1"
+      [multiple]="false"
+      addLabel="Agregar foto"
+      (filesSelected)="onFotoSeleccionada($event)"
+      (remove)="quitarFotoCierre()"
+    ></app-photo-grid-picker>
+
+    @if (subiendoFoto) {
+      <span class="foto-subiendo"><i class="ti ti-loader-2 spin"></i> Subiendo foto...</span>
+    }
+    @if (fotoCierreUrl) {
+      <span class="foto-ok"><i class="ti ti-circle-check"></i> Foto subida correctamente</span>
+    }
+    @if (!fotoCierreUrl && !fotoCierre) {
+      <span class="form-hint-error">Debes adjuntar y subir una foto del levantamiento para cerrar el RAC</span>
+    }
+
+    <div modalFooter class="modal-footer-row">
+      <button type="button" class="btn btn-secondary" (click)="cancelar()">
+        Cancelar
+      </button>
+      <button type="button"
+              class="btn-danger"
+              [disabled]="!puedeGuardar"
+              (click)="confirmarCierre()">
+        <i class="ti ti-lock"></i>
+        {{ guardando ? 'Cerrando...' : 'Cerrar RAC' }}
+      </button>
+    </div>
+
+  }
+
+</app-abril-modal-panel>

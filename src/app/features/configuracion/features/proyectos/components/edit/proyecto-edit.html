@@ -1,0 +1,282 @@
+<app-base-modal
+  [title]="'EDITAR PROYECTO'"
+  width="w-full sm:w-[820px]"
+  (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[16px] mt-4">
+
+    <!-- =============== Datos básicos =============== -->
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Datos básicos</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Descripción <span class="text-red-400">*</span></p>
+        <input type="text" [(ngModel)]="form.projectDescription" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Activo</p>
+        <select [(ngModel)]="form.active"
+          class="pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-lg cursor-pointer">
+          <option [ngValue]="true">ACTIVO</option>
+          <option [ngValue]="false">INACTIVO</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Código <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="text" [(ngModel)]="form.codigo" placeholder="Ej: PROY-2025-001"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Estado del proyecto <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="text" [(ngModel)]="form.estado" placeholder="Ej: ACTIVO, FINALIZADO, PAUSADO"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Ciclo de vida <span class="text-gray-400 text-sm">(para ratios SSOMA)</span></p>
+        <select [(ngModel)]="form.cicloVida"
+          class="pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-lg cursor-pointer">
+          <option value="Activo">ACTIVO</option>
+          <option value="Finalizado">FINALIZADO</option>
+          <option value="Inactivo">INACTIVO</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Abreviación <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="text" [(ngModel)]="form.abbreviation" placeholder="Ej: CDR33, KAU"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Desc. de pisos <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="text" [(ngModel)]="form.levelDescription" placeholder="Ej: Sótano + 10 pisos"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+    </div>
+
+    <!-- =============== Razón social =============== -->
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-2">Razón social</p>
+
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">RUC <span class="text-gray-400 text-sm">(opcional)</span></p>
+      <div class="flex gap-[10px]">
+        <input type="text" [(ngModel)]="form.rucInput" maxlength="11" placeholder="Ej: 20123456789"
+          class="border border-[#E2E2E2] rounded-lg p-[10px] flex-1"
+          [disabled]="form.contributor !== null" />
+        <button *ngIf="form.contributor === null" type="button" (click)="lookupRuc()"
+          [disabled]="rucLookupLoading"
+          class="bg-[#64BC04] text-white px-[20px] rounded-lg cursor-pointer disabled:opacity-50">
+          {{ rucLookupLoading ? 'Buscando...' : 'Buscar' }}
+        </button>
+        <button *ngIf="form.contributor !== null" type="button" (click)="clearContributor()"
+          class="bg-[#D30000] text-white px-[20px] rounded-lg cursor-pointer">
+          Limpiar
+        </button>
+      </div>
+      <div *ngIf="form.contributor"
+        class="mt-[8px] bg-[#F4F8FB] border border-[#D6DEE5] rounded-lg p-[10px] text-sm flex flex-col gap-0.5">
+        <p><strong>Razón social:</strong> {{ form.contributor.contributorName }}</p>
+        <p><strong>Domicilio fiscal:</strong> {{ form.contributor.contributorAddress }}</p>
+        <p *ngIf="form.contributor.contributorDistrict"><strong>Distrito fiscal:</strong> {{ form.contributor.contributorDistrict }}</p>
+        <p *ngIf="form.contributor.contributorProvince"><strong>Provincia fiscal:</strong> {{ form.contributor.contributorProvince }}</p>
+        <p *ngIf="form.contributor.contributorDepartment"><strong>Departamento fiscal:</strong> {{ form.contributor.contributorDepartment }}</p>
+      </div>
+      <div *ngIf="form.contributor" class="flex flex-col mt-[8px]">
+        <p class="text-[#64BC04]">N° Registro Persona Jurídica / Partida registral <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="text" [(ngModel)]="form.legalEntityRegistryNumber" placeholder="Ej: 11234567"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+    </div>
+
+    <!-- =============== Ubicación del proyecto =============== -->
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-2">Ubicación del proyecto</p>
+
+    <div class="grid grid-cols-3 gap-[12px]">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Distrito <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="text" [(ngModel)]="form.projectDistrict" placeholder="Ej: Miraflores"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Provincia <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="text" [(ngModel)]="form.projectProvince" placeholder="Ej: Lima"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Departamento <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="text" [(ngModel)]="form.projectDepartment" placeholder="Ej: Lima"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+    </div>
+
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">Ubicación <span class="text-gray-400 text-sm">(opcional)</span></p>
+      <input type="text" [(ngModel)]="form.projectLocation" placeholder="Ej: Av. Principal 123, Lima"
+        class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+    </div>
+
+    <!-- =============== Responsables =============== -->
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-2">Responsable</p>
+
+    <ng-container *ngIf="!loadingResponsables; else responsablesSkeleton">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
+        <app-search-select
+          label="Responsable Arq. Comercial"
+          placeholder="Buscar por nombre o DNI..."
+          [options]="responsablesArqCom"
+          valueField="id"
+          displayField="apellidoNombre"
+          [value]="form.responsableArqComId"
+          [allowClear]="true"
+          [sortAlpha]="false"
+          (valueChange)="onResponsableArqComChange($event)">
+        </app-search-select>
+
+        <app-search-select
+          label="Responsable UDP"
+          placeholder="Buscar por nombre o DNI..."
+          [options]="responsablesUdp"
+          valueField="id"
+          displayField="apellidoNombre"
+          [value]="form.responsableUdpId"
+          [allowClear]="true"
+          [sortAlpha]="false"
+          (valueChange)="onResponsableUdpChange($event)">
+        </app-search-select>
+      </div>
+    </ng-container>
+
+    <ng-template #responsablesSkeleton>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
+        <div class="skeleton-line mt-[9px]" style="height:34px"></div>
+        <div class="skeleton-line mt-[9px]" style="height:34px"></div>
+      </div>
+    </ng-template>
+
+    <p *ngIf="responsablesError" class="text-xs text-red-500 -mt-1">
+      No se pudo cargar la lista de responsables.
+      <button type="button" (click)="loadResponsables()" class="underline cursor-pointer">Reintentar</button>
+    </p>
+
+    <div class="flex items-center">
+      <label class="flex items-center gap-[8px] cursor-pointer">
+        <input type="checkbox" [(ngModel)]="form.tieneArquitecturaComercial"
+          class="w-4 h-4 accent-[#64BC04]" />
+        <span class="text-sm text-gray-700">Tiene Arquitectura Comercial</span>
+      </label>
+    </div>
+
+    <!-- =============== Geolocalización (geofencing de Tareo) =============== -->
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-2">
+      Geolocalización <span class="normal-case text-gray-400">(para el geofencing de Marcar Tareo)</span>
+    </p>
+
+    <div class="grid grid-cols-3 gap-[12px]">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Latitud <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="number" step="0.0000001" [(ngModel)]="form.lat" placeholder="Ej: -12.0621965"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Longitud <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="number" step="0.0000001" [(ngModel)]="form.lng" placeholder="Ej: -77.0365256"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Radio geofence (m) <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="number" step="1" [(ngModel)]="form.radioGeofenceMetros" placeholder="300"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+    </div>
+
+    <!-- =============== Fechas =============== -->
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-2">Fechas</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
+      <app-date-picker
+        label="Fecha inicio (opcional)"
+        [(value)]="form.fechaInicio">
+      </app-date-picker>
+      <app-date-picker
+        label="Fecha fin (opcional)"
+        [(value)]="form.fechaFin">
+      </app-date-picker>
+      <app-date-picker
+        label="Inicio de obra (opcional)"
+        [(value)]="form.inicioObra">
+      </app-date-picker>
+      <app-date-picker
+        label="Fin de obra (opcional)"
+        [(value)]="form.finObra">
+      </app-date-picker>
+    </div>
+
+    <!-- =============== Métricas físicas =============== -->
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-2">Métricas físicas</p>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-[12px]">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">N° niveles <span class="text-gray-400 text-sm">(opc.)</span></p>
+        <input type="text" [(ngModel)]="form.numNiveles"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">N° sótanos <span class="text-gray-400 text-sm">(opc.)</span></p>
+        <input type="text" [(ngModel)]="form.numSotanos"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Pisos <span class="text-gray-400 text-sm">(opc.)</span></p>
+        <input type="text" [(ngModel)]="form.pisos"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Tiempo construc. <span class="text-gray-400 text-sm">(días, opc.)</span></p>
+        <input type="number" [(ngModel)]="form.tiempoConstruccion" min="0"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-[12px]">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Área m² <span class="text-gray-400 text-sm">(opc.)</span></p>
+        <input type="number" [(ngModel)]="form.areaM2" min="0" step="0.01"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Área techada m² <span class="text-gray-400 text-sm">(opc.)</span></p>
+        <input type="number" [(ngModel)]="form.areaTechadaM2" min="0" step="0.01"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">HH total casa <span class="text-gray-400 text-sm">(opc.)</span></p>
+        <input type="number" [(ngModel)]="form.hhTotalCasa" min="0" step="0.01"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Cant. trabajadores <span class="text-gray-400 text-sm">(opc.)</span></p>
+        <input type="text" [(ngModel)]="form.cantTrabajadoresCasa"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+    </div>
+
+    <!-- =============== Botón guardar =============== -->
+    <div class="flex justify-center mt-2">
+      <button (click)="save()" [disabled]="saving"
+        class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer disabled:opacity-60">
+        <p class="text-white text-lg">{{ saving ? 'Guardando...' : 'Guardar' }}</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

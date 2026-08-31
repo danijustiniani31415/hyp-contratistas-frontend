@@ -1,0 +1,68 @@
+<div class="w-full rounded-lg overflow-x-auto border" style="border-color:var(--color-abril-border)">
+  <table class="table-auto min-w-[500px] w-full">
+    <thead class="sticky top-0" style="background:var(--color-abril-primary-light)">
+      <tr class="text-sm" style="color:var(--color-abril-primary-dark)">
+        <th class="py-2 px-2 w-[64px]"></th>
+        <th class="py-2 px-3 text-left font-semibold">Descripción</th>
+        <th class="py-2 px-3 text-center font-semibold whitespace-nowrap">Estado</th>
+        <th class="py-2 px-3 text-center font-semibold whitespace-nowrap">Fecha creación</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let item of items" class="border-b hover:bg-gray-50 transition-colors" style="border-color:var(--color-abril-border)">
+
+        <td class="px-2 py-2 text-center">
+          <div class="flex items-center justify-center gap-1">
+            <button class="cursor-pointer p-1 rounded transition-colors"
+              title="Editar" (click)="openEdit(item, $event)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M14.06 9L15 9.94L5.92 19H5V18.08L14.06 9ZM17.66 3C17.41 3 17.15 3.1 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04C21.1 6.65 21.1 6 20.71 5.63L18.37 3.29C18.17 3.09 17.92 3 17.66 3ZM14.06 6.19L3 17.25V21H6.75L17.81 9.94L14.06 6.19Z" style="fill:var(--color-abril-primary)"/>
+              </svg>
+            </button>
+            <button class="cursor-pointer p-1 rounded hover:bg-red-50 transition-colors"
+              title="Eliminar" (click)="delete(item.workSpecialtyId, $event)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z" fill="#ef4444"/>
+              </svg>
+            </button>
+          </div>
+        </td>
+
+        <td class="px-3 py-2">
+          <span [title]="item.workSpecialtyDescription" class="block line-clamp-1 text-sm text-gray-700">
+            {{ item.workSpecialtyDescription }}
+          </span>
+        </td>
+
+        <td class="px-3 py-2 text-center">
+          <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+            [ngClass]="{
+              'bg-[#D7FAF4] text-[#009C87]': item.active,
+              'bg-[#FAD5D4] text-[#D30000]': !item.active
+            }">
+            {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
+          </span>
+        </td>
+
+        <td class="px-3 py-2 text-center text-sm text-gray-500 whitespace-nowrap">
+          {{ item.createdDateTime | date:'dd-MM-yyyy' }}
+        </td>
+
+      </tr>
+
+      <tr *ngIf="items.length === 0">
+        <td colspan="4" class="text-center text-sm text-gray-400 italic py-8">
+          No hay registros.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-work-specialty-edit
+  *ngIf="showEditModal"
+  [dto]="editDto"
+  (closeModal)="showEditModal = false"
+  (saved)="load(1)">
+</app-work-specialty-edit>

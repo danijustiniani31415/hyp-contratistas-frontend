@@ -1,0 +1,47 @@
+<app-abril-modal-panel
+  [titulo]="'Recordatorios — ' + item.tipoDescripcion"
+  icono="ti-bell"
+  variant="teal"
+  width="440px"
+  (closeModal)="close()">
+
+  <p class="text-xs text-gray-400 mb-2">
+    Cada recordatorio avisa por su cuenta el día que corresponde (ej. 30, 15, 7 y 2 días antes del vencimiento).
+  </p>
+
+  <div class="flex flex-col gap-2">
+    <div *ngFor="let r of item.recordatorios"
+      class="flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-3 py-2">
+      <div class="flex flex-col">
+        <span class="text-sm font-medium text-gray-700">{{ r.diasAntes }} día{{ r.diasAntes === 1 ? '' : 's' }} antes</span>
+        <span class="text-[11px] text-gray-400">{{ r.fechaRecordatorio | date: 'dd/MM/yyyy' }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span *ngIf="r.enviado" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Enviado</span>
+        <button type="button" (click)="eliminar(r)" class="text-red-600 hover:text-red-800" title="Eliminar">
+          <i class="ti ti-trash"></i>
+        </button>
+      </div>
+    </div>
+
+    <p *ngIf="item.recordatorios.length === 0" class="text-center text-sm text-gray-400 italic py-4">
+      Sin recordatorios configurados.
+    </p>
+  </div>
+
+  <div class="flex items-end gap-2 pt-3">
+    <div class="abril-field flex-1">
+      <label class="abril-field-label">Agregar (días antes)</label>
+      <input class="abril-field-input" type="number" min="0" [(ngModel)]="nuevoDiasAntes"
+        (keydown.enter)="agregar()" placeholder="Ej. 7" />
+    </div>
+    <button type="button" (click)="agregar()"
+      class="h-[38px] px-4 rounded-[var(--radius-standard)] bg-[var(--color-abril-standard)] text-white text-sm font-medium hover:bg-[var(--color-abril-standard-hover)] transition-colors">
+      Agregar
+    </button>
+  </div>
+
+  <div modalFooter class="flex justify-end w-full">
+    <button type="button" (click)="close()" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Cerrar</button>
+  </div>
+</app-abril-modal-panel>

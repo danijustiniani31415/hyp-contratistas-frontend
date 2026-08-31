@@ -1,0 +1,255 @@
+<div class="db-root" *ngIf="esContratista">
+
+  <app-abril-page-header
+    badge="HABILITACIÓN"
+    titulo="Panel Contratista"
+    [subtitulo]="empresaNombre"
+    [tabs]="headerTabs"
+    (tabClick)="onTabClick($event)">
+  </app-abril-page-header>
+
+  <!-- ALERT BAR -->
+  <div class="alert-bar" *ngIf="alertasCount > 0">
+    <i class="ti ti-alert-triangle alert-icon"></i>
+    <span class="alert-msg">Atención requerida · Documentos críticos pendientes</span>
+    <div class="alert-chips">
+      <span class="achip ac-r" *ngIf="trabNoHabilitados > 0">{{ trabNoHabilitados }} no habilitados</span>
+      <span class="achip ac-y" *ngIf="vencenEstaSemana > 0">{{ vencenEstaSemana }} por vencer</span>
+      <span class="achip ac-b" *ngIf="entregablesFalta > 0">{{ entregablesFalta }} en falta</span>
+    </div>
+  </div>
+
+  <!-- USUARIOS SECTION -->
+  <div class="usuarios-section" *ngIf="activeSection === 'usuarios'">
+    <app-contratista-usuarios [contractorId]="empresaId!" [currentUserId]="currentUserId" />
+  </div>
+
+  <!-- DASHBOARD BODY -->
+  <div class="db-body" *ngIf="activeSection === 'resumen'">
+
+    <!-- KPI STRIP -->
+    <div class="kpi-strip">
+      <div class="kpi kpi-g">
+        <div class="kpi-icon ki-g"><i class="ti ti-users"></i></div>
+        <div class="kpi-data">
+          <div class="kpi-label">Trabajadores</div>
+          <div class="kpi-num">{{ totalTrabajadores }}</div>
+          <div class="kpi-chips">
+            <span class="chip chip-g">{{ trabHabilitados }} habilitados</span>
+            <span class="chip chip-r">{{ trabNoHabilitados }} no hab.</span>
+          </div>
+        </div>
+      </div>
+      <div class="kpi kpi-b">
+        <div class="kpi-icon ki-b"><i class="ti ti-building"></i></div>
+        <div class="kpi-data">
+          <div class="kpi-label">Entregables empresa</div>
+          <div class="kpi-num">{{ totalEntregables }}</div>
+          <div class="kpi-chips">
+            <span class="chip chip-g">{{ entregablesAprobados }} aprob.</span>
+            <span class="chip chip-y" *ngIf="entregablesFalta > 0">{{ entregablesFalta }} falta</span>
+            <span class="chip chip-a" *ngIf="entregablesEnviados > 0">{{ entregablesEnviados }} env.</span>
+          </div>
+        </div>
+      </div>
+      <div class="kpi kpi-a">
+        <div class="kpi-icon ki-a"><i class="ti ti-clock-exclamation"></i></div>
+        <div class="kpi-data">
+          <div class="kpi-label">Por vencer</div>
+          <div class="kpi-num">{{ proximosVencer.length }}</div>
+          <div class="kpi-chips">
+            <span class="chip chip-r" *ngIf="vencenEstaSemana > 0">{{ vencenEstaSemana }} esta semana</span>
+            <span class="chip chip-y" *ngIf="vencenEsteMes > 0">{{ vencenEsteMes }} este mes</span>
+            <span class="chip chip-g" *ngIf="proximosVencer.length === 0">Sin alertas</span>
+          </div>
+        </div>
+      </div>
+      <div class="kpi kpi-p">
+        <div class="kpi-icon ki-p"><i class="ti ti-building-community"></i></div>
+        <div class="kpi-data">
+          <div class="kpi-label">Proyectos activos</div>
+          <div class="kpi-num">{{ totalProyectosActivos }}</div>
+          <div class="kpi-chips">
+            <span class="chip" *ngFor="let p of proyectos; let i = index"
+              [style.background]="colorProyecto(i) + '22'"
+              [style.color]="colorProyecto(i)">
+              {{ p.proyectoNombre }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MID ROW -->
+    <div class="mid-row">
+
+      <!-- Col 1: Proyectos -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><i class="ti ti-building-community"></i> Habilitación por proyecto</div>
+        </div>
+        <div class="proj-list" *ngIf="!loadingProyectos; else skelProj">
+          <div class="proj-item" *ngFor="let p of proyectos; let i = index">
+            <div class="proj-meta">
+              <span class="proj-name">{{ p.proyectoNombre }}</span>
+              <div class="proj-right">
+                <span class="proj-status ps-proceso">En proceso</span>
+                <span class="proj-pct" [style.color]="colorProyecto(i)">
+                  {{ progresoPorProyecto.get(p.proyectoId)?.porcentaje ?? 0 }}%
+                </span>
+              </div>
+            </div>
+            <div class="proj-track">
+              <div class="proj-fill" [style.width.%]="progresoPorProyecto.get(p.proyectoId)?.porcentaje ?? 0" [style.background]="colorProyecto(i)"></div>
+            </div>
+          </div>
+          <div class="proj-divider"></div>
+          <div class="stat-row-sm">
+            <div class="sl">Habilitados</div>
+            <div class="st"><div class="sf" [style.width.%]="pctHabilitados" style="background:#22c55e"></div></div>
+            <div class="sv">{{ trabHabilitados }}</div>
+          </div>
+          <div class="stat-row-sm">
+            <div class="sl">No hab.</div>
+            <div class="st"><div class="sf" [style.width.%]="100 - pctHabilitados" style="background:#ef4444"></div></div>
+            <div class="sv">{{ trabNoHabilitados }}</div>
+          </div>
+        </div>
+        <ng-template #skelProj>
+          <div class="skel-row" *ngFor="let x of [1,2,3]"></div>
+        </ng-template>
+      </div>
+
+      <!-- Col 2: Entregables empresa -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><i class="ti ti-building"></i> Entregables empresa</div>
+        </div>
+        <div class="proj-tabs">
+          <span class="pt" *ngFor="let p of proyectos; let i = index"
+            [class.active]="proyectoTabSeleccionado === i"
+            (click)="selectTab(i)">
+            {{ p.proyectoNombre }}
+          </span>
+        </div>
+        <div class="ring-area">
+          <div class="ring-wrap">
+            <svg width="52" height="52" viewBox="0 0 52 52">
+              <circle cx="26" cy="26" r="20" fill="none" stroke="#f1f5f9" stroke-width="6"/>
+              <circle cx="26" cy="26" r="20" fill="none" stroke="#22c55e" stroke-width="6"
+                stroke-dasharray="125.7" [attr.stroke-dashoffset]="ringOffset" stroke-linecap="round"/>
+            </svg>
+            <div class="ring-center">{{ pctEntregables }}%</div>
+          </div>
+          <div class="ring-info">
+            <div class="ring-big">{{ entregablesAprobados }} / {{ totalEntregables }}</div>
+            <div class="ring-sm">aprobados · {{ proyectoTabActual?.proyectoNombre }}</div>
+          </div>
+        </div>
+        <div class="ent-list">
+          <div class="ent-row" *ngFor="let e of entregablesTabActual | slice:0:5">
+            <div class="ent-name">{{ e.nombreItem }}</div>
+            <span class="ent-b" [ngClass]="{'ef': e.estado==='Falta'||e.estado==='Rechazado', 'ee': e.estado==='Enviado', 'ea': e.estado==='Aprobado'}">
+              {{ e.estado }}
+            </span>
+          </div>
+        </div>
+        <div class="card-link" (click)="navegarA('/habilitacion/gestion/empresa')">
+          <i class="ti ti-arrow-right"></i> Ver todos los entregables
+        </div>
+      </div>
+
+      <!-- Col 3: Próximos a vencer -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><i class="ti ti-clock-exclamation"></i> Próximos a vencer</div>
+          <span class="cbadge badge-a" *ngIf="proximosVencer.length > 0">{{ proximosVencer.length }} alertas</span>
+          <span class="cbadge badge-g" *ngIf="proximosVencer.length === 0">Sin alertas</span>
+        </div>
+        <div class="vencer-col" *ngIf="proximosVencer.length > 0">
+          <div class="vi" *ngFor="let v of proximosVencer">
+            <div class="vi-av" [ngClass]="diasClass(v.dias)">
+              <span *ngIf="v.tipo==='trabajador'">{{ iniciales(v.nombre) }}</span>
+              <i class="ti ti-file" *ngIf="v.tipo==='empresa'"></i>
+            </div>
+            <div class="vi-info">
+              <div class="vi-name">{{ v.nombre }}</div>
+              <div class="vi-doc">{{ v.documento }} · {{ v.proyecto }}</div>
+            </div>
+            <span class="vi-days" [ngClass]="diasClass(v.dias)">{{ v.dias }} días</span>
+          </div>
+        </div>
+        <div class="empty-state" *ngIf="proximosVencer.length === 0">
+          <i class="ti ti-circle-check" style="font-size:28px;color:#22c55e"></i>
+          <div class="empty-text">Todos los documentos<br>están vigentes</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM ROW -->
+    <div class="bottom-row">
+
+      <!-- No habilitados -->
+      <div class="mini-card span-2">
+        <div class="mc-label"><i class="ti ti-users"></i> Trabajadores no habilitados</div>
+        <div class="wm-list" *ngIf="topNoHabilitados.length > 0">
+          <div class="wm-row wm-n" *ngFor="let w of topNoHabilitados">
+            <div class="wm-dot wm-dot-r"></div>
+            <div class="wm-name">{{ w.nombre }}</div>
+            <span class="wm-s wm-ns">{{ w.motivo }}</span>
+          </div>
+        </div>
+        <div class="empty-sm" *ngIf="topNoHabilitados.length === 0 && !loadingTrabajadores">
+          <i class="ti ti-circle-check" style="color:#22c55e"></i> Todos habilitados
+        </div>
+        <div class="card-link" (click)="navegarA('/habilitacion/gestion/trabajadores')">
+          <i class="ti ti-arrow-right"></i> Ver {{ totalTrabajadores }} trabajadores
+        </div>
+      </div>
+
+      <!-- Tasa habilitación -->
+      <div class="mini-card">
+        <div class="mc-label"><i class="ti ti-chart-bar"></i> Tasa habilitación</div>
+        <div class="tasa-area">
+          <div class="ring-wrap-sm">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+              <circle cx="22" cy="22" r="17" fill="none" stroke="#f1f5f9" stroke-width="5"/>
+              <circle cx="22" cy="22" r="17" fill="none" stroke="#22c55e" stroke-width="5"
+                stroke-dasharray="106.8" [attr.stroke-dashoffset]="ringOffsetTasa"
+                stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:50% 50%"/>
+            </svg>
+            <div class="ring-center-sm">{{ pctHabilitados }}%</div>
+          </div>
+          <div>
+            <div class="tasa-big">{{ trabHabilitados }} / {{ totalTrabajadores }}</div>
+            <div class="tasa-sm">habilitados</div>
+          </div>
+        </div>
+        <div class="stat-row-sm" style="margin-top:6px">
+          <div class="sl">Habilitado</div>
+          <div class="st"><div class="sf" [style.width.%]="pctHabilitados" style="background:#22c55e"></div></div>
+          <div class="sv">{{ trabHabilitados }}</div>
+        </div>
+        <div class="stat-row-sm">
+          <div class="sl">No hab.</div>
+          <div class="st"><div class="sf" [style.width.%]="100 - pctHabilitados" style="background:#ef4444"></div></div>
+          <div class="sv">{{ trabNoHabilitados }}</div>
+        </div>
+      </div>
+
+      <!-- WhatsApp -->
+      <div class="mini-card wsp-card">
+        <div class="mc-label"><i class="ti ti-brand-whatsapp"></i> Grupo WhatsApp</div>
+        <div class="wsp-body">
+          <div class="wsp-icon"><i class="ti ti-brand-whatsapp"></i></div>
+          <div>
+            <div class="wsp-title">Únete al grupo</div>
+            <div class="wsp-sub">Gestión de Ingresos · Abril</div>
+          </div>
+        </div>
+        <a [href]="getWhatsappUrl()" target="_blank" class="wsp-btn">Unirme al grupo</a>
+      </div>
+    </div>
+
+  </div>
+</div>

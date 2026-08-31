@@ -1,0 +1,59 @@
+<ng-container></ng-container>
+<div class="sm:hidden">
+    <div class="p-[20px] flex items-center gap-[20px] border border-gray-200">
+        <button (click)="menuOpen = !menuOpen">
+            <svg *ngIf="!menuOpen" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 18V16H21V18H3ZM3 13V11H21V13H3ZM3 8V6H21V8H3Z" fill="#64BC04" />
+            </svg>
+            <svg *ngIf="menuOpen" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 20L4 4M20 4L4 20" stroke="#64BC04" stroke-width="2" stroke-linecap="round" />
+            </svg>
+        </button>
+
+        <div class="flex-1 min-w-0"></div>
+
+        <!-- Avatar + dropdown (móvil) -->
+        <div class="shrink-0 relative ml-auto">
+            <button (click)="toggleUserMenu($event)"
+                class="cursor-pointer rounded-full focus:outline-none hover:ring-2 hover:ring-[#64BC04]/40 transition-all">
+                <img *ngIf="userPhotoSrc; else defaultIconMobile"
+                    [src]="userPhotoSrc"
+                    alt="Foto de perfil"
+                    class="w-[36px] h-[36px] rounded-full object-cover" />
+                <ng-template #defaultIconMobile>
+                    <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_1309_9960_m)">
+                            <path d="M27.5 17.5C27.5 21.65 24.15 25 20 25C15.85 25 12.5 21.65 12.5 17.5C12.5 13.35 15.85 10 20 10C24.15 10 27.5 13.35 27.5 17.5Z" fill="black" />
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M40 20C40 31.05 31.05 40 20 40C8.95 40 0 31.05 0 20C0 8.95 8.95 0 20 0C31.05 0 40 8.95 40 20ZM10 34.375C10.4 33.71 14.275 27.5 19.975 27.5C25.65 27.5 29.55 33.725 29.95 34.375C32.2747 32.7675 34.1741 30.6193 35.4849 28.1153C36.7957 25.6113 37.4786 22.8264 37.475 20C37.475 10.325 29.65 2.5 19.975 2.5C10.3 2.5 2.475 10.325 2.475 20C2.475 25.95 5.45 31.225 10 34.375Z" fill="black" />
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_1309_9960_m"><rect width="40" height="40" fill="white" /></clipPath>
+                        </defs>
+                    </svg>
+                </ng-template>
+            </button>
+
+            <!-- Dropdown -->
+            <div *ngIf="showUserMenu"
+                class="absolute right-0 top-[44px] w-[220px] bg-white rounded-lg shadow-lg border border-gray-100 z-50 overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-100">
+                    <p class="text-sm font-semibold text-gray-800 truncate">{{ userName ?? 'Usuario' }}</p>
+                    <p *ngIf="userJobTitle" class="text-xs text-[#64BC04] font-medium truncate">{{ userJobTitle }}</p>
+                    <p class="text-xs text-gray-400 truncate">{{ userEmail ?? '' }}</p>
+                </div>
+                <button (click)="logout()"
+                    class="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors cursor-pointer">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    Cerrar sesión
+                </button>
+            </div>
+        </div>
+    </div>
+    <app-sidebar-mobile [(menuOpen)]="menuOpen">
+    </app-sidebar-mobile>
+</div>

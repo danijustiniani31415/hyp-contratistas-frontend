@@ -1,0 +1,44 @@
+<app-abril-page-header
+  badge="GESTIÓN GTH · CONFIGURACIÓN"
+  titulo="Configuración"
+  [subtitulo]="subtitulo"
+  [botonPrimario]="botonPrimario"
+  (primaryClick)="onCreate()"
+  [hasExtra]="true">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas y
+       delega en el modal de filtros de la sección activa. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="onOpenFilters()" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
+
+  <app-section-tabs
+    class="shrink-0"
+    [tabs]="sectionTabs"
+    [value]="activeSection"
+    color="var(--color-abril-standard)"
+    (valueChange)="onSectionChange($event)">
+  </app-section-tabs>
+
+  <!-- SECCIÓN: Categorías -->
+  <app-config-categorias
+    *ngIf="activeSection === 'categorias'"
+    [categorias]="categorias"
+    [puestos]="puestos"
+    (changed)="load()">
+  </app-config-categorias>
+
+  <!-- SECCIÓN: Puestos -->
+  <app-config-puestos
+    *ngIf="activeSection === 'puestos'"
+    [puestos]="puestos"
+    [categorias]="categorias"
+    [areaTree]="areaTree"
+    (changed)="load()">
+  </app-config-puestos>
+
+  <!-- SECCIÓN: Reclutadores -->
+  <app-gth-reclutadores *ngIf="activeSection === 'reclutadores'"></app-gth-reclutadores>
+
+</div>

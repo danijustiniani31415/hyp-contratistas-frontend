@@ -1,0 +1,97 @@
+<div class="card">
+
+  <div class="section-bar">
+    <div>
+      <h2 class="section-title">INDUCCIONES</h2>
+      <p class="section-sub">Seguimiento de inducciones programadas para tu empresa</p>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <app-search-input
+        placeholder="Buscar por nombre o DNI..."
+        [value]="busqueda"
+        (valueChange)="busqueda = $event; onBusquedaChange()"
+        width="240px"
+      />
+      <app-filter-trigger [count]="filtrosActivos" (open)="abrirFiltros()" />
+    </div>
+  </div>
+
+  <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+    <div>
+      <label class="field-label">Proyecto</label>
+      <select class="field-input" [(ngModel)]="filtroProyectoId" (change)="onProyectoFiltroChange()">
+        <option [ngValue]="null">Todos los proyectos</option>
+        <option *ngFor="let p of catalogoProyectos" [ngValue]="p.id">{{ p.nombre }}</option>
+      </select>
+    </div>
+    <div>
+      <label class="field-label">Estado</label>
+      <select class="field-input" [(ngModel)]="filtroEstado" (change)="onFilterChange()">
+        <option value="">Todos los estados</option>
+        <option value="PROGRAMADA">Programada</option>
+        <option value="REALIZADA">Realizada</option>
+        <option value="FALTA">No asistió</option>
+        <option value="RECHAZADA">Rechazada</option>
+        <option value="INGRESO">Ingresó</option>
+      </select>
+    </div>
+    <div>
+      <label class="field-label">Fecha desde</label>
+      <input
+        type="date"
+        class="field-input"
+        [(ngModel)]="filtroFechaDesde"
+        (change)="onFilterChange()"
+      />
+    </div>
+    <div>
+      <label class="field-label">Fecha hasta</label>
+      <input
+        type="date"
+        class="field-input"
+        [(ngModel)]="filtroFechaHasta"
+        (change)="onFilterChange()"
+      />
+    </div>
+  </app-filter-modal>
+
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Trabajador</th>
+          <th>DNI</th>
+          <th>Proyecto</th>
+          <th>Fecha programada</th>
+          <th>Trabajo en altura</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="loading">
+          <td colspan="6" class="empty-row">Cargando…</td>
+        </tr>
+        <tr *ngIf="!loading && inducciones.length === 0">
+          <td colspan="6" class="empty-row">No hay inducciones registradas con los filtros aplicados.</td>
+        </tr>
+        <tr *ngFor="let item of inducciones">
+          <td class="td-name">{{ item.apellidoNombre }}</td>
+          <td>{{ item.dni }}</td>
+          <td>{{ item.proyectoNombre }}</td>
+          <td>{{ item.fechaProgramada | date: 'dd/MM/yyyy' }}</td>
+          <td>
+            <span class="badge" [ngClass]="item.trabajoAltura ? 'badge-orange' : 'badge-gray'">
+              {{ item.trabajoAltura ? 'Sí' : 'No' }}
+            </span>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="getBadge(item).clase">
+              {{ getBadge(item).label }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

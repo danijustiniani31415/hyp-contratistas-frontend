@@ -1,0 +1,76 @@
+<app-base-modal *ngIf="open" [title]="title" width="w-[760px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <div class="grid-2">
+      <div class="col-span-2">
+        <label class="field-label">Tipo *</label>
+        <app-search-select
+          [showLabel]="false"
+          [options]="tiposEquipo"
+          valueField="id"
+          displayField="nombre"
+          placeholder="Selecciona el tipo de equipo"
+          [allowClear]="false"
+          [value]="model.tipoEquipoId"
+          (valueChange)="model.tipoEquipoId = $event"
+        ></app-search-select>
+        <p class="field-hint" *ngIf="puedeAdministrarCatalogo">
+          ¿Falta un tipo? Agrégalo desde <a routerLink="/habilitacion/gestion/equipos/catalogo">Catálogo de Equipos</a>.
+        </p>
+      </div>
+
+      <div>
+        <label class="field-label">Marca</label>
+        <input type="text" class="field-input" [(ngModel)]="model.marca" />
+      </div>
+      <div>
+        <label class="field-label">Modelo</label>
+        <input type="text" class="field-input" [(ngModel)]="model.modelo" />
+      </div>
+
+      <div>
+        <label class="field-label">N° Serie</label>
+        <input type="text" class="field-input" [(ngModel)]="model.nSerie" />
+      </div>
+      <div>
+        <label class="field-label">N° VIN</label>
+        <input type="text" class="field-input" [(ngModel)]="model.nVin" />
+      </div>
+
+      <div>
+        <label class="field-label">Capacidad</label>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="model.capacidad"
+          placeholder="Ej: 25 ton, 1.2 m³"
+        />
+      </div>
+      <div *ngIf="!isContratista()">
+        <label class="field-label">Empresa propietaria</label>
+        <select class="field-input" [(ngModel)]="model.propietarioEmpresaId">
+          <option [ngValue]="null">— Seleccionar —</option>
+          <option *ngFor="let e of empresas" [ngValue]="e.id">
+            {{ e.razonSocial }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Proyecto *</label>
+        <select class="field-input" [(ngModel)]="model.proyectoId">
+          <option [ngValue]="0">— Seleccionar proyecto —</option>
+          <option *ngFor="let p of proyectos" [ngValue]="p.projectId">
+            {{ p.projectDescription }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

@@ -1,0 +1,132 @@
+<app-abril-page-header
+  badge="CONFIGURACIÓN"
+  titulo="Trabajadores"
+  subtitulo="Todas las fichas de trabajadores, con su último EMO, estado de vigencia y aptitud."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<section class="p-6 space-y-4 flex-1 min-h-0">
+
+  <div class="filters-card">
+    <div class="filters-grid">
+      <div class="filter-search">
+        <label class="filter-label">Buscar</label>
+        <app-search-input
+          placeholder="Buscar por nombre o DNI..."
+          width="100%"
+          [value]="filters.search"
+          (valueChange)="onSearchChange($event)"
+        />
+      </div>
+
+      <div>
+        <label class="filter-label">Aptitud</label>
+        <app-search-select
+          [options]="aptitudOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.aptitud || null"
+          [showLabel]="false"
+          [sortAlpha]="false"
+          placeholder="Todas las aptitudes"
+          (valueChange)="onAptitudChange($event)"
+        />
+      </div>
+
+      <div>
+        <label class="filter-label">Estado EMO</label>
+        <app-search-select
+          [options]="estadoOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.estado || null"
+          [showLabel]="false"
+          [sortAlpha]="false"
+          placeholder="Todos los estados"
+          (valueChange)="onEstadoChange($event)"
+        />
+      </div>
+    </div>
+
+    <div *ngIf="hasActiveFilters" class="pt-2">
+      <button type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>DNI</th>
+            <th>Empresa</th>
+            <th>Proyecto</th>
+            <th>Tipo</th>
+            <th>Estado EMO</th>
+            <th>Aptitud</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items">
+            <td class="font-semibold text-gray-800">{{ item.nombreCompleto }}</td>
+            <td class="text-gray-600">{{ item.dni }}</td>
+            <td class="text-gray-600">{{ item.empresa || '—' }}</td>
+            <td class="text-gray-600">{{ item.proyecto || '—' }}</td>
+            <td>
+              <span
+                class="badge border"
+                [ngClass]="item.tipoContrata === 'Casa' ? 'chip-blue' : 'chip-orange'"
+              >
+                {{ item.tipoContrata || '—' }}
+              </span>
+            </td>
+            <td>
+              <span class="badge border" [ngClass]="estadoEmoClass(item.estado)">
+                {{ item.tieneEmo ? (item.estado || '—') : 'Sin EMO' }}
+              </span>
+            </td>
+            <td>
+              <span class="badge border inline-flex items-center gap-[6px]" [ngClass]="aptitudBadge(item)">
+                <span class="dot" [style.background]="aptitudColor(item)"></span>
+                {{ aptitudLabel(item) }}
+              </span>
+            </td>
+            <td class="text-right">
+              <button type="button" class="btn-edit" (click)="openEdit(item)" title="Editar trabajador">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
+                </svg>
+                Editar
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && items.length === 0">
+            <td colspan="8" class="empty-row">Sin trabajadores.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="totalRecords > 0" class="paginator-wrapper">
+      <app-paginator
+        [totalRecords]="totalRecords"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="onPageChange($event)"
+      ></app-paginator>
+    </div>
+  </div>
+</section>
+
+<app-worker-edit-form
+  [open]="editOpen"
+  [worker]="editWorker"
+  [documentTypes]="documentTypes"
+  (closed)="closeEdit()"
+  (saved)="onEditSaved()"
+></app-worker-edit-form>
+

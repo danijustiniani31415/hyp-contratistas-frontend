@@ -1,0 +1,279 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: #ffffff;
+}
+
+.paso-salud-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem 1.5rem 1.5rem;
+  background: #ffffff;
+  gap: 0.75rem;
+}
+
+/* ── Filtros ─────────────────────────────────────────────────── */
+.filtros-bar {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background: #ffffff;
+  border: 1px solid #f0f4f8;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+}
+
+.filtro-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.filtro-field label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+}
+
+.filtro-field select {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.82rem;
+  color: #111827;
+  background: #fff;
+  min-width: 140px;
+}
+
+.estado-tabs {
+  display: flex;
+  gap: 0.25rem;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 0.2rem;
+}
+
+.estado-tabs button {
+  border: none;
+  background: transparent;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.estado-tabs button.active {
+  background: #ffffff;
+  color: var(--color-abril-primary, #198754);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.btn-limpiar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #6b7280;
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.btn-limpiar:hover {
+  background: #f9fafb;
+}
+
+.resultados-info {
+  font-size: 0.78rem;
+  color: #6b7280;
+  padding: 0 0.25rem;
+}
+
+/* ── Tabla ───────────────────────────────────────────────────── */
+.tabla-wrapper {
+  background: #ffffff;
+  border: 1px solid #f0f4f8;
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.tabla-paso-salud {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.tabla-paso-salud thead th {
+  text-align: left;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid #f0f4f8;
+  white-space: nowrap;
+}
+
+.tabla-paso-salud tbody td {
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid #f8fafc;
+  color: #111827;
+  vertical-align: middle;
+}
+
+.tabla-paso-salud tbody tr:hover {
+  background: #f8fafc;
+}
+
+.categoria-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #198754;
+  font-weight: 600;
+}
+
+.sin-datos {
+  text-align: center;
+  color: #9ca3af;
+  padding: 2rem 0 !important;
+}
+
+/* ── Badges de estado ────────────────────────────────────────── */
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.estado-badge--ok         { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+.estado-badge--vencido    { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+.estado-badge--programado { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
+
+.btn-evidencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #374151;
+  border-radius: 6px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-accion {
+  border: none;
+  background: var(--color-abril-primary, #198754);
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-accion:hover {
+  filter: brightness(0.95);
+}
+
+/* ── Modal de acción rápida ──────────────────────────────────── */
+.accion-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0.25rem;
+}
+
+.accion-modal__actividad {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.accion-modal__proyecto {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin: 0 0 0.5rem;
+}
+
+.accion-modal label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  margin-top: 0.25rem;
+}
+
+.accion-modal input[type='date'],
+.accion-modal textarea,
+.accion-modal input[type='file'] {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.accion-modal__file {
+  font-size: 0.72rem;
+  color: #6b7280;
+}
+
+.accion-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.btn-secundario {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #374151;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primario {
+  border: none;
+  background: var(--color-abril-primary, #198754);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-primario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

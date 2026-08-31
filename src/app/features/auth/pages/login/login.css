@@ -1,0 +1,194 @@
+/* ── Identidad compartida con el boletín (mismos keyframes, paleta y ritmo) ── */
+:host {
+  display: block;
+  font-family: 'Kumbh Sans', sans-serif;
+}
+
+.login-anim-left {
+  opacity: 0;
+  animation: login-entrar-izquierda 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--d, 0ms);
+}
+
+.login-anim-right {
+  opacity: 0;
+  animation: login-entrar-derecha 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.login-anim-up {
+  opacity: 0;
+  animation: login-entrar-abajo 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes login-entrar-izquierda {
+  from { opacity: 0; transform: translateX(-32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes login-entrar-derecha {
+  from { opacity: 0; transform: translateX(60px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes login-entrar-abajo {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Línea azul decorativa: mismo timing que en el boletín. */
+.login-linea {
+  clip-path: inset(0 100% 0 0);
+  animation: login-dibujar-linea 1.8s ease-out 0.2s forwards;
+}
+
+@keyframes login-dibujar-linea {
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-anim-left, .login-anim-right, .login-anim-up, .login-linea {
+    animation: none;
+    opacity: 1;
+    clip-path: none;
+  }
+}
+
+/* ── Tabs ── */
+.login-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 1.75rem;
+  background: #f1f9ff;
+  border-radius: 9999px;
+  padding: 5px;
+}
+
+.login-tab {
+  flex: 1;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #6b8299;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  transition: background 0.2s, color 0.2s;
+  font-weight: 600;
+}
+
+.login-tab:hover {
+  color: #00529b;
+}
+
+.login-tab.active {
+  color: #00529b;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 70, 140, 0.12);
+}
+
+.password-wrapper {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 0;
+  color: #64bc04;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.35rem 0.5rem;
+}
+
+.password-toggle:hover {
+  text-decoration: underline;
+}
+
+/* ── Tutoriales: enlace compacto que abre un modal (no empuja el layout) ── */
+.tutoriales-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #00529b;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.tutoriales-toggle:hover {
+  text-decoration: underline;
+}
+
+.tutorial-scroll {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.6rem;
+}
+
+.tutorial-card {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: #f6fafd;
+  border: 1px solid #e3edf5;
+  border-radius: 12px;
+  padding: 0.65rem 0.85rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.tutorial-card:hover {
+  background: #eaf4fb;
+  border-color: #bcdcf2;
+  transform: translateY(-1px);
+}
+
+.tutorial-play {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  background: #e4f3cd;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a8c00;
+}
+
+.tutorial-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.tutorial-title {
+  color: #1f3c56;
+  font-size: 0.79rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.tutorial-link {
+  color: #64bc04;
+  font-size: 0.71rem;
+  font-weight: 700;
+}

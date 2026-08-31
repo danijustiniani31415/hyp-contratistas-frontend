@@ -1,0 +1,58 @@
+<app-base-modal [title]="'NUEVO LUGAR FIJO'" width="w-[480px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[16px] mt-[20px]">
+
+    <p class="text-xs text-gray-400">
+      Añade uno o varios lugares fijos. Cada fila es un lugar independiente.
+    </p>
+
+    <!-- Lista dinámica de inputs -->
+    <div class="flex flex-col gap-[10px]">
+      <div
+        *ngFor="let nombre of nombres; let i = index; trackBy: trackByIndex"
+        class="flex items-center gap-[8px]">
+        <input
+          type="text"
+          [(ngModel)]="nombres[i]"
+          placeholder="Ej. Oficina Central"
+          class="flex-1 border border-[#E2E2E2] rounded-[8px] px-[12px] py-[9px] text-sm text-gray-700 focus:outline-none" />
+        <button
+          *ngIf="nombres.length > 1"
+          (click)="removeNombre(i)"
+          class="text-red-400 hover:text-red-600 transition-colors cursor-pointer px-[4px]"
+          title="Quitar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <p *ngIf="submitted && !hasValidNombre" class="text-xs text-red-500">
+      Ingresa al menos un nombre de lugar.
+    </p>
+
+    <!-- Agregar fila -->
+    <button
+      (click)="addNombre()"
+      class="flex items-center gap-[6px] text-sm transition-colors cursor-pointer w-fit"
+      style="color:var(--color-abril-primary)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Agregar otro
+    </button>
+
+    <!-- Guardar -->
+    <div class="flex justify-center mt-[8px]">
+      <button
+        (click)="save()"
+        class="w-[180px] py-[8px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-primary)">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

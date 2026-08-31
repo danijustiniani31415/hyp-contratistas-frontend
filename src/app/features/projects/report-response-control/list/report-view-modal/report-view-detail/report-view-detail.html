@@ -1,0 +1,59 @@
+<div class="flex flex-col gap-[20px] mt-[16px]">
+
+  <!-- ── Datos de cabecera: texto plano con jerarquía, ya no cajas tipo input ── -->
+  <div class="grid grid-cols-2 gap-[20px]">
+    <div class="campo">
+      <span class="campo__label">Proyecto</span>
+      <span class="campo__valor">{{ selectedIncidence.projectDescription | titleCase }}</span>
+    </div>
+
+    <div class="campo">
+      <span class="campo__label">Estado</span>
+      <span class="campo__valor" [style.color]="tiempo.levantado ? '#1B6B3A' : '#C0392B'">
+        {{ selectedIncidence.stateDescription | titleCase }}
+      </span>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-[20px]">
+    <div class="campo">
+      <span class="campo__label">Fecha de registro</span>
+      <span class="campo__valor">{{ selectedIncidence.createdDateTime | date:'dd/MM/yyyy' }}</span>
+    </div>
+
+    <div class="campo">
+      <span class="campo__label">Tiempo transcurrido</span>
+      <span class="campo__valor" [style.color]="tiempo.color">{{ tiempo.texto }}</span>
+    </div>
+  </div>
+
+  <div class="separador"></div>
+
+  <!-- ── Descripción ───────────────────────────────────────────────────────── -->
+  <div class="campo">
+    <span class="campo__label">Descripción de la incidencia</span>
+    <p class="campo__texto">{{ selectedIncidence.residentReportIncidenceDescription }}</p>
+  </div>
+
+  <!-- ── Imágenes adjuntas: entre la descripción y la respuesta ─────────────── -->
+  <app-report-view-images [selectedIncidence]="selectedIncidence"></app-report-view-images>
+
+  <!-- ── Respuesta ─────────────────────────────────────────────────────────── -->
+  <div class="campo">
+    <span class="campo__label">Respuesta</span>
+    @if (selectedIncidence.residentReportResponseDescriptions.length > 0) {
+      <p class="campo__texto" style="color:#1B6B3A">
+        {{ selectedIncidence.residentReportResponseDescriptions[0].residentReportResponseDescription }}
+      </p>
+    } @else {
+      <p class="campo__texto" style="color:#94A3B8">Sin respuesta</p>
+    }
+  </div>
+
+  <button (click)="updateIncidence()"
+    *ngIf="authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES) && selectedIncidence.stateDescription == 'NO LEVANTADO' && selectedIncidence.residentReportResponseDescriptions.length > 0"
+    class="w-full py-3 rounded-[7px] text-white font-medium text-sm cursor-pointer transition-colors"
+    style="background:var(--color-abril-standard)">
+    Levantar incidencia
+  </button>
+</div>

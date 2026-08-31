@@ -1,0 +1,292 @@
+<app-abril-modal-panel
+  titulo="Nuevo RAC"
+  icono="ti-alert-triangle"
+  variant="blue"
+  width="820px"
+  (closeModal)="cancelar()">
+
+  <!-- ── LOADING ───────────────────────────────────────────────────── -->
+  <div *ngIf="loadingCatalogos || (!loadingCatalogos && resolviendoObservador)" class="loading-catalogos">
+    <i class="ti ti-loader spin"></i> Cargando catálogos…
+  </div>
+
+  <!-- ── BLOQUEO: usuario sin trabajador vinculado ────────────────────── -->
+  <div *ngIf="!loadingCatalogos && !resolviendoObservador && sinWorkerVinculado" class="bloqueo-sin-worker">
+    <i class="ti ti-alert-triangle"></i>
+    <div>
+      <div class="bloqueo-sin-worker__titulo">No puedes registrar un RAC</div>
+      <div class="bloqueo-sin-worker__texto">
+        Tu usuario no está vinculado a una ficha de trabajador dentro de la plataforma.
+        Comunícate con el área de SSOMA o Administración para que te asocien como trabajador
+        antes de poder reportar.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BODY ──────────────────────────────────────────────────────── -->
+  <div *ngIf="!loadingCatalogos && !resolviendoObservador && !sinWorkerVinculado" class="paso-body">
+
+    <!-- ■ 1. DATOS DEL EVENTO ──────────────────────────────────────── -->
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
+        <i class="ti ti-clipboard-list"></i> Datos del Evento
+      </h2>
+
+      <div class="form-grid">
+
+        <!-- Proyecto -->
+        <div class="col-2">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Proyecto *"
+            [options]="proyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="proyectoId"
+            placeholder="Buscar proyecto..."
+            (valueChange)="proyectoId = $event"
+          ></app-search-select>
+        </div>
+
+        <!-- Fecha -->
+        <div class="abril-field">
+          <label class="abril-field-label">Fecha del Reporte *</label>
+          <input type="date" class="abril-field-input" [(ngModel)]="fechaReporte" />
+        </div>
+
+        <!-- Tipo -->
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Tipo *"
+            [options]="TIPO_OPCIONES"
+            valueField="value"
+            displayField="label"
+            [value]="tipo"
+            placeholder="Selecciona tipo"
+            (valueChange)="tipo = $event"
+          ></app-search-select>
+        </div>
+
+        <!-- Categoría RAC -->
+        <div>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Categoría RAC *"
+            [options]="categorias"
+            valueField="id"
+            displayField="nombre"
+            [value]="categoriaId"
+            placeholder="Selecciona categoría"
+            (valueChange)="categoriaId = $event"
+          ></app-search-select>
+        </div>
+
+        <!-- Severidad -->
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Severidad *"
+            [options]="SEVERIDAD_OPCIONES"
+            valueField="value"
+            displayField="label"
+            [value]="severidad"
+            placeholder="Selecciona severidad"
+            [sortAlpha]="false"
+            (valueChange)="severidad = $event"
+          ></app-search-select>
+        </div>
+
+        <!-- Piso/Nivel -->
+        <div class="abril-field">
+          <label class="abril-field-label">Piso / Nivel</label>
+          <input type="text" class="abril-field-input" placeholder="Ej: Piso 3, Sótano…" [(ngModel)]="proyectoPiso" />
+        </div>
+
+        <!-- Lugar -->
+        <div class="col-2 abril-field">
+          <label class="abril-field-label">Descripción del Lugar</label>
+          <input type="text" class="abril-field-input" placeholder="Ej: Área de excavación, frente 2…" [(ngModel)]="lugarDescripcion" />
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ■ 2. OBSERVADOR ──────────────────────────────────────────────── -->
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
+        <i class="ti ti-user-circle"></i> Observador (Reportante)
+      </h2>
+
+      <ng-container>
+
+        <div class="observador-fijo">
+          <i class="ti ti-user-check"></i>
+          <div>
+            <div class="observador-fijo__nombre">{{ observadorActual?.apellidoNombre }}</div>
+            <div class="observador-fijo__cargo">
+              {{ reportanteCargo || '—' }}
+              <span *ngIf="empresaReportanteNombre"> · {{ empresaReportanteNombre }}</span>
+            </div>
+          </div>
+        </div>
+
+      </ng-container>
+    </section>
+
+    <!-- ■ 3. TRABAJADOR(ES) OBSERVADO(S) ─────────────────────────── -->
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
+        <i class="ti ti-users"></i> Trabajador(es) Observado(s)
+      </h2>
+
+      <label class="check-label">
+        <input type="checkbox" [(ngModel)]="esAnonimoObservado" />
+        <span>No identificar al trabajador observado</span>
+      </label>
+
+      <ng-container *ngIf="!esAnonimoObservado">
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Agregar trabajador observado"
+            [options]="workers"
+            valueField="workerId"
+            displayField="apellidoNombre"
+            [value]="trabajadorObservadoId"
+            [allowClear]="true"
+            placeholder="Buscar por nombre o DNI..."
+            (valueChange)="onTrabajadorObservadoChange($event)"
+          ></app-search-select>
+        </div>
+
+        <!-- Trabajadores seleccionados -->
+        <div *ngIf="observadosSeleccionados.length > 0" class="trabajadores-seleccionados">
+          <div *ngFor="let w of observadosSeleccionados" class="trab-chip">
+            <div class="trab-chip__info">
+              <div class="trab-chip__name">{{ w.apellidoNombre }}</div>
+              <div class="trab-chip__meta">DNI {{ w.dni }}<span *ngIf="w.puesto"> · {{ w.puesto }}</span></div>
+            </div>
+            <button type="button" class="btn-chip-remove" (click)="removeObservado(w.workerId)" title="Quitar">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+        </div>
+
+      </ng-container>
+
+      <!-- Empresa reportada — obligatoria, siempre visible -->
+      <div class="form-grid">
+        <div class="col-2">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Empresa Reportada *"
+            [options]="empresas"
+            valueField="id"
+            displayField="nombre"
+            [value]="empresaReportadaId"
+            placeholder="Buscar empresa..."
+            (valueChange)="empresaReportadaId = $event"
+          ></app-search-select>
+        </div>
+      </div>
+    </section>
+
+    <!-- ■ 4. DESCRIPCIÓN ─────────────────────────────────────────────── -->
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
+        <i class="ti ti-file-description"></i> Descripción del Acto / Condición
+      </h2>
+      <div class="form-grid">
+        <div class="col-2 abril-field">
+          <label class="abril-field-label">Descripción *</label>
+          <textarea class="abril-field-input" rows="4" placeholder="Describe el acto o condición subestándar observado…" [(ngModel)]="descripcion"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ■ 5. FOTOS DE EVIDENCIA ─────────────────────────────────────── -->
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
+        <i class="ti ti-camera"></i> Fotos de evidencia *
+      </h2>
+      <app-photo-grid-picker
+        color="var(--color-abril-logo-blue)"
+        [previews]="fotoPreviews"
+        [max]="10"
+        (filesSelected)="onFotosSeleccionadas($event)"
+        (remove)="removeFoto($event)"
+      ></app-photo-grid-picker>
+      <div *ngIf="fotosSubiendo" class="search-hint">
+        <i class="ti ti-loader spin"></i> Subiendo fotos...
+      </div>
+      <span class="form-hint" *ngIf="fotosSeleccionadas.length === 0">
+        Debes adjuntar al menos una foto de evidencia
+      </span>
+    </section>
+
+    <!-- ■ 6. PLAN DE ACCIÓN ──────────────────────────────────────────── -->
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
+        <i class="ti ti-checklist"></i> Plan de Acción
+      </h2>
+      <div class="form-grid">
+
+        <div class="abril-field">
+          <label class="abril-field-label">Plazo de Levantamiento *</label>
+          <input type="date" class="abril-field-input" [(ngModel)]="plazoLevantamiento" />
+        </div>
+
+        <div class="col-2 abril-field">
+          <label class="abril-field-label">Plan de Acción *</label>
+          <textarea class="abril-field-input" rows="3" placeholder="Describe las acciones correctivas a implementar…" [(ngModel)]="planAccion"></textarea>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ■ 6. PENALIDAD ───────────────────────────────────────────────── -->
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
+        <i class="ti ti-receipt-tax"></i> Penalidad
+      </h2>
+
+      <label class="check-label">
+        <input type="checkbox" [(ngModel)]="aplicaPenalidad" />
+        <span>Aplica penalidad económica</span>
+      </label>
+
+      <div *ngIf="aplicaPenalidad" class="form-grid">
+        <div class="col-2">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Infracción"
+            [options]="infracciones"
+            valueField="id"
+            displayField="nombre"
+            [value]="infraccionId"
+            placeholder="Selecciona infracción"
+            (valueChange)="infraccionId = $event"
+          ></app-search-select>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /paso-body -->
+
+  <div modalFooter *ngIf="!loadingCatalogos && !resolviendoObservador">
+    <button type="button" class="btn-ghost" (click)="cancelar()">Cancelar</button>
+    <button
+      *ngIf="!sinWorkerVinculado"
+      type="button"
+      class="btn-primary"
+      [disabled]="!canSubmit || saving"
+      (click)="submit()"
+    >
+      <i class="ti ti-device-floppy"></i>
+      {{ saving ? 'Guardando…' : 'Guardar RAC' }}
+    </button>
+  </div>
+
+</app-abril-modal-panel>

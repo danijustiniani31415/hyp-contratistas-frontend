@@ -1,0 +1,353 @@
+<app-abril-page-header
+  badge="SSOMA · Gestión"
+  titulo="Checklists SSOMA"
+  subtitulo="Control de checklists de inicio, demolición, Torre Grúa y más"
+  [tabs]="headerTabs"
+  (tabClick)="onTabClick($event)">
+</app-abril-page-header>
+
+<div class="cl-wrap">
+
+  <!-- ── TAB: POR PROYECTO ──────────────────────────────────────────────── -->
+  @if (tab === 'resumen') {
+
+    <!-- Selector de proyecto -->
+    <div class="cl-toolbar">
+      <div class="cl-toolbar-left">
+        <app-search-select
+          label="Proyecto"
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="proyectoId"
+          placeholder="Buscar proyecto..."
+          (valueChange)="proyectoId = $event; onProyectoChange()">
+        </app-search-select>
+      </div>
+      @if (proyectoId && checklistCards.length > 0) {
+        <button class="cl-btn-refresh" (click)="loadResumen()" title="Refrescar">
+          <i class="ti ti-refresh"></i>
+        </button>
+      }
+    </div>
+
+    @if (!proyectoId) {
+      <div class="empty-state">
+        <i class="ti ti-clipboard-list" style="font-size:48px;color:#d1d5db"></i>
+        <p>Selecciona un proyecto para ver sus checklists.</p>
+      </div>
+    } @else if (loadingResumen) {
+      <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando checklists...</div>
+    } @else if (!detalleVisible) {
+
+      <!-- Grid de tarjetas de checklist -->
+      @if (checklistCards.length === 0) {
+        <div class="empty-state">
+          <i class="ti ti-clipboard-x" style="font-size:48px;color:#d1d5db"></i>
+          <p>No hay checklists para este proyecto.</p>
+        </div>
+      } @else {
+        <div class="cl-cards-grid">
+          @for (card of checklistCards; track card.checklistProyectoId) {
+            <div class="cl-card" [class.cl-card--completado]="card.estado === 'completado'" (click)="abrirDetalle(card)">
+              <div class="cl-card-header">
+                <div class="cl-card-title">{{ card.nombrePlantilla }}</div>
+                <span class="cl-badge" [ngClass]="estadoClass(card.estado)">
+                  {{ estadoLabel(card.estado) }}
+                </span>
+              </div>
+              <div class="cl-card-progress">
+                <div class="cl-progress-bar">
+                  <div class="cl-progress-fill"
+                    [style.width.%]="card.porcentajeCompletado"
+                    [style.background]="porcentajeColor(card.porcentajeCompletado)">
+                  </div>
+                </div>
+                <span class="cl-progress-pct" [style.color]="porcentajeColor(card.porcentajeCompletado)">
+                  {{ card.porcentajeCompletado | number:'1.0-0' }}%
+                </span>
+              </div>
+              <div class="cl-card-footer">
+                <span class="cl-card-items">
+                  <i class="ti ti-check"></i>
+                  {{ card.itemsCompletados }} / {{ card.totalItems }} ítems
+                </span>
+                @if (card.esObligatorio) {
+                  <span class="cl-tag-obligatorio">Obligatorio</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Botón para activar checklist opcional -->
+      @if (proyectoId) {
+        <div class="cl-activar-section">
+          <h3 class="cl-section-title">
+            <i class="ti ti-plus-circle"></i> Activar checklist opcional
+          </h3>
+          <p class="cl-section-sub">Activa checklists como Torre Grúa, SUNAFIL, ITSE, etc. cuando corresponda.</p>
+          @if (plantillas.length === 0) {
+            <button class="cl-btn-secondary" (click)="loadPlantillas()">
+              <i class="ti ti-list"></i> Ver plantillas disponibles
+            </button>
+          } @else {
+            <div class="cl-plantillas-list">
+              @for (p of plantillas; track p.id) {
+                @if (!p.esObligatorio) {
+                  <div class="cl-plantilla-row">
+                    <div class="cl-plantilla-info">
+                      <span class="cl-plantilla-nombre">{{ p.nombre }}</span>
+                      <span class="cl-plantilla-items">{{ p.totalItems }} ítems</span>
+                    </div>
+                    @if (plantillaYaActiva(p.id)) {
+                      <span class="cl-tag-activa"><i class="ti ti-check"></i> Activa</span>
+                    } @else {
+                      <button class="cl-btn-activar"
+                        [disabled]="activandoId === p.id"
+                        (click)="activarChecklist(p.id); $event.stopPropagation()">
+                        @if (activandoId === p.id) {
+                          <i class="ti ti-loader-2 spin"></i>
+                        } @else {
+                          <i class="ti ti-plus"></i>
+                        }
+                        Activar
+                      </button>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          }
+        </div>
+      }
+
+    } @else {
+
+      <!-- ── Detalle del checklist ──────────────────────────────────────── -->
+      <div class="cl-detalle">
+        <div class="cl-detalle-header">
+          <button class="cl-btn-back" (click)="cerrarDetalle()">
+            <i class="ti ti-arrow-left"></i> Volver
+          </button>
+          @if (detalle) {
+            <div class="cl-detalle-title-row">
+              <h2 class="cl-detalle-title">{{ detalle.nombrePlantilla }}</h2>
+              <div class="cl-detalle-pct-big" [style.color]="porcentajeColor(detalle.porcentajeCompletado)">
+                {{ detalle.porcentajeCompletado | number:'1.0-0' }}%
+              </div>
+            </div>
+            <div class="cl-detalle-progress">
+              <div class="cl-progress-bar cl-progress-bar--lg">
+                <div class="cl-progress-fill"
+                  [style.width.%]="detalle.porcentajeCompletado"
+                  [style.background]="porcentajeColor(detalle.porcentajeCompletado)">
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (loadingDetalle) {
+          <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando ítems...</div>
+        } @else if (detalle) {
+          <div class="cl-items-list">
+            @for (item of detalle.items; track item.id) {
+              <div class="cl-item" [class.cl-item--completado]="item.completado">
+                <div class="cl-item-check-col">
+                  <button class="cl-checkbox"
+                    [class.cl-checkbox--checked]="item.completado"
+                    [disabled]="guardandoItemId === item.id"
+                    (click)="toggleItem(item)">
+                    @if (guardandoItemId === item.id) {
+                      <i class="ti ti-loader-2 spin"></i>
+                    } @else if (item.completado) {
+                      <i class="ti ti-check"></i>
+                    }
+                  </button>
+                </div>
+                <div class="cl-item-content">
+                  <p class="cl-item-desc" [class.cl-item-desc--done]="item.completado">
+                    {{ item.descripcion }}
+                  </p>
+                  @if (item.tieneAdjuntoRef) {
+                    <span class="cl-item-adjunto"><i class="ti ti-paperclip"></i> Requiere adjunto</span>
+                  }
+                  @if (item.completado && item.completadoPor) {
+                    <span class="cl-item-meta">
+                      <i class="ti ti-user-check"></i> {{ item.completadoPor }}
+                      @if (item.fechaCompletado) {
+                        · {{ item.fechaCompletado | date:'dd/MM/yyyy HH:mm' }}
+                      }
+                    </span>
+                  }
+                  @if (!item.completado) {
+                    <input
+                      class="cl-item-obs"
+                      type="text"
+                      placeholder="Observación (opcional)"
+                      [(ngModel)]="observacionTemp[item.id]" />
+                  }
+                </div>
+                <div class="cl-item-num">{{ item.orden }}</div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- ── TAB: CATÁLOGO DE PLANTILLAS ──────────────────────────────────────── -->
+  @if (tab === 'plantillas') {
+    @if (loadingPlantillas) {
+      <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando plantillas...</div>
+    } @else if (!plantillaDetalleVisible) {
+      <div class="cl-plantillas-filter" style="margin-bottom:12px;">
+        <app-search-input
+          placeholder="Buscar plantilla por nombre..."
+          [(value)]="plantillasSearchText"
+          (valueChange)="onPlantillasFilterChange()"
+          width="280px">
+        </app-search-input>
+      </div>
+      <div class="cl-plantillas-tabla abril-table-wrap">
+        <table class="abril-table cl-table">
+          <thead class="sticky top-0 z-10">
+            <tr>
+              <th>#</th>
+              <th>Nombre</th>
+              <th>Activación</th>
+              <th>Evento</th>
+              <th>Obligatorio</th>
+              <th>Ítems</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (plantillasFiltradas.length === 0) {
+              <tr><td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">Sin resultados.</td></tr>
+            }
+            @for (p of plantillasPaged; track p.id) {
+              <tr class="cl-row-clickable" (click)="verPlantilla(p)" title="Ver modelo">
+                <td class="cl-td-num">{{ p.orden }}</td>
+                <td class="cl-td-nombre">{{ p.nombre }}</td>
+                <td>
+                  <span class="cl-tag-tipo" [class.cl-tag-tipo--auto]="p.tipoActivacion === 'automatico'">
+                    {{ p.tipoActivacion === 'automatico' ? 'Automático' : 'Manual' }}
+                  </span>
+                </td>
+                <td class="cl-td-evento">{{ p.eventoActivacion ?? '—' }}</td>
+                <td class="cl-td-center">
+                  @if (p.esObligatorio) {
+                    <i class="ti ti-check" style="color:#16a34a;font-weight:700"></i>
+                  } @else {
+                    <span style="color:#9ca3af">—</span>
+                  }
+                </td>
+                <td class="cl-td-center">{{ p.totalItems }}</td>
+                <td>
+                  @if (p.activo) {
+                    <span class="cl-badge estado-completado">Activo</span>
+                  } @else {
+                    <span class="cl-badge estado-pendiente">Inactivo</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="shrink-0 max-w-[440px]" style="margin-top:12px;">
+        <app-paginator
+          [totalRecords]="plantillasFiltradas.length"
+          [currentPage]="plantillasCurrentPage"
+          [totalPages]="plantillasTotalPages"
+          (pageChange)="changePlantillasPage($event)">
+        </app-paginator>
+      </div>
+    } @else {
+
+      <!-- ── Modelo de plantilla: ver + editar/agregar items ─────────────── -->
+      <div class="cl-detalle">
+        <div class="cl-detalle-header">
+          <button class="cl-btn-back" (click)="cerrarPlantillaDetalle()">
+            <i class="ti ti-arrow-left"></i> Volver
+          </button>
+          @if (plantillaDetalle) {
+            <div class="cl-detalle-title-row">
+              <h2 class="cl-detalle-title">{{ plantillaDetalle.nombre }}</h2>
+              @if (plantillaDetalle.esObligatorio) {
+                <span class="cl-tag-obligatorio">Obligatorio</span>
+              }
+            </div>
+            @if (plantillaDetalle.descripcion) {
+              <p class="cl-section-sub">{{ plantillaDetalle.descripcion }}</p>
+            }
+          }
+        </div>
+
+        @if (loadingPlantillaDetalle) {
+          <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando ítems...</div>
+        } @else if (plantillaDetalle) {
+          <div class="cl-items-list">
+            @for (item of plantillaDetalle.items; track item.id) {
+              <div class="cl-item">
+                @if (editandoItemId === item.id) {
+                  <div class="cl-item-content" style="width:100%">
+                    <input class="cl-item-obs" type="text" [(ngModel)]="itemEditTexto" placeholder="Descripción del ítem" />
+                    <label class="cl-checkbox-inline">
+                      <input type="checkbox" [(ngModel)]="itemEditAdjunto" /> Requiere adjunto
+                    </label>
+                    <label class="cl-checkbox-inline">
+                      <input type="checkbox" [(ngModel)]="itemEditActivo" /> Activo
+                    </label>
+                    <div class="cl-item-edit-actions">
+                      <button class="cl-btn-activar" [disabled]="guardandoPlantillaItem" (click)="guardarItemPlantilla(item)">
+                        @if (guardandoPlantillaItem) { <i class="ti ti-loader-2 spin"></i> } Guardar
+                      </button>
+                      <button class="cl-btn-secondary" (click)="cancelarEdicionItem()">Cancelar</button>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="cl-item-content">
+                    <p class="cl-item-desc" [class.cl-item-desc--done]="!item.activo">{{ item.descripcion }}</p>
+                    @if (item.tieneAdjuntoRef) {
+                      <span class="cl-item-adjunto"><i class="ti ti-paperclip"></i> Requiere adjunto</span>
+                    }
+                    @if (!item.activo) {
+                      <span class="cl-item-meta">Inactivo</span>
+                    }
+                  </div>
+                  <button class="cl-btn-secondary" (click)="editarItemPlantilla(item)" title="Editar ítem">
+                    <i class="ti ti-pencil"></i>
+                  </button>
+                  <div class="cl-item-num">{{ item.orden }}</div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Agregar nuevo item (cooperativo) -->
+          <div class="cl-activar-section">
+            <h3 class="cl-section-title"><i class="ti ti-plus-circle"></i> Agregar ítem</h3>
+            <div class="cl-item-content" style="gap:8px;display:flex;flex-direction:column">
+              <input class="cl-item-obs" type="text" [(ngModel)]="nuevoItemTexto"
+                placeholder="Descripción del nuevo ítem..." />
+              <label class="cl-checkbox-inline">
+                <input type="checkbox" [(ngModel)]="nuevoItemAdjunto" /> Requiere adjunto
+              </label>
+              <button class="cl-btn-activar" style="align-self:flex-start"
+                [disabled]="!nuevoItemTexto.trim() || agregandoItem"
+                (click)="agregarItemPlantilla()">
+                @if (agregandoItem) { <i class="ti ti-loader-2 spin"></i> } <i class="ti ti-plus"></i> Agregar
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+</div>

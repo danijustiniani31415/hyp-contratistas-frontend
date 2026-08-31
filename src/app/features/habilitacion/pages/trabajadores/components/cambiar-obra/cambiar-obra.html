@@ -1,0 +1,170 @@
+<app-base-modal *ngIf="open" [title]="title" width="w-[640px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <p class="section-hint">Marca solo lo que realmente cambia. Lo que no marques queda tal cual está.</p>
+
+    <div class="grid-2">
+      <!-- ── Obra ─────────────────────────────────────────── -->
+      <div class="col-span-2 check-row">
+        <label class="check-label">
+          <input type="checkbox" [(ngModel)]="model.cambiaObra" />
+          Cambia de obra
+        </label>
+      </div>
+      <div class="col-span-2">
+        <label class="field-label">Obra actual</label>
+        <input
+          type="text"
+          class="field-input field-readonly"
+          [value]="worker?.proyectoActual ?? '—'"
+          readonly
+        />
+      </div>
+      <div class="col-span-2" *ngIf="model.cambiaObra">
+        <label class="field-label">Nueva obra *</label>
+        <app-search-select
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="model.proyectoId"
+          [showLabel]="false"
+          placeholder="Seleccionar proyecto"
+          (valueChange)="model.proyectoId = $event"
+        />
+      </div>
+      <div class="col-span-2" *ngIf="destinoEsOficinaCentral">
+        <p class="field-info">
+          ℹ Este proyecto es Oficina Central — la clasificación se actualizará automáticamente
+          a "Oficina Central" al guardar.
+        </p>
+      </div>
+      <div class="col-span-2" *ngIf="saleDeOficinaCentralSinClasificacion">
+        <p class="field-warning">
+          ⚠ Este trabajador sale de Oficina Central. Marca también "Cambia de clasificación"
+          más abajo y elige Staff u Obra — si no, el EMO seguirá calculando la vigencia de
+          Oficina Central (24 meses) aunque ya no le corresponda.
+        </p>
+      </div>
+
+      <!-- ── Razón social ─────────────────────────────────── -->
+      <ng-container *ngIf="puedeEditarEmpresa">
+        <div class="col-span-2 check-row">
+          <label class="check-label">
+            <input type="checkbox" [(ngModel)]="model.cambiaEmpresa" />
+            Cambia de razón social / empresa
+          </label>
+        </div>
+        <div class="col-span-2" *ngIf="model.cambiaEmpresa">
+          <label class="field-label">Nueva razón social *</label>
+          <app-search-select
+            [options]="empresas"
+            valueField="id"
+            displayField="nombre"
+            [value]="model.empresaId"
+            [showLabel]="false"
+            placeholder="Seleccionar empresa"
+            (valueChange)="model.empresaId = $event"
+          />
+        </div>
+      </ng-container>
+
+      <!-- ── Puesto de trabajo (categoría + ocupación) ────── -->
+      <div class="col-span-2 check-row">
+        <label class="check-label">
+          <input type="checkbox" [(ngModel)]="model.cambiaPuesto" />
+          Cambia de puesto de trabajo
+        </label>
+        <p class="check-hint">
+          La ocupación es lo que cambia. Su categoría va incluida: la define el catálogo de puestos.
+        </p>
+      </div>
+      <div class="col-span-2" *ngIf="model.cambiaPuesto">
+        <label class="field-label">Categoría actual</label>
+        <input type="text" class="field-input field-readonly" [value]="worker?.categoria ?? '—'" readonly />
+      </div>
+      <div class="col-span-2" *ngIf="model.cambiaPuesto">
+        <label class="field-label">Categoría</label>
+        <app-search-select
+          [options]="categorias"
+          valueField="id"
+          displayField="nombre"
+          [value]="model.categoriaId"
+          [showLabel]="false"
+          placeholder="Todas las categorías"
+          [allowClear]="true"
+          (valueChange)="onCategoriaFiltroChange($event)"
+        />
+        <span class="field-hint">Solo filtra las ocupaciones. La categoría real la define la ocupación.</span>
+      </div>
+      <div class="col-span-2" *ngIf="model.cambiaPuesto">
+        <label class="field-label">Ocupación actual</label>
+        <input type="text" class="field-input field-readonly" [value]="worker?.puesto ?? '—'" readonly />
+      </div>
+      <div class="col-span-2" *ngIf="model.cambiaPuesto">
+        <label class="field-label">Ocupación nueva</label>
+        <app-search-select
+          [options]="puestosFiltrados"
+          valueField="id"
+          displayField="nombre"
+          [value]="model.puestoId"
+          [showLabel]="false"
+          placeholder="Selecciona ocupación"
+          [allowClear]="true"
+          (valueChange)="onPuestoChange($event)"
+        />
+      </div>
+      <div class="col-span-2" *ngIf="categoriaDestinoNombre">
+        <p class="field-hint">Pasa a la categoría {{ categoriaDestinoNombre }}.</p>
+      </div>
+      <div class="col-span-2" *ngIf="huboCambioDeOcupacion">
+        <p class="field-warning">
+          ⚠ Este cambio exige revisar el Certificado de Aptitud (EMO) — se generará
+          convalidación si hay un EMO activo, o se pedirá uno nuevo si no lo hay.
+        </p>
+      </div>
+
+      <!-- ── Clasificación Staff / Oficina ────────────────── -->
+      <ng-container *ngIf="puedeEditarStaffOficina">
+        <div class="col-span-2 check-row">
+          <label class="check-label">
+            <input type="checkbox" [(ngModel)]="model.cambiaStaffOficina" />
+            Cambia de clasificación (Obra / Staff / Oficina Central)
+          </label>
+        </div>
+        <div class="col-span-2" *ngIf="model.cambiaStaffOficina">
+          <label class="field-label">Clasificación actual</label>
+          <input
+            type="text"
+            class="field-input field-readonly"
+            [value]="worker?.obraOficina ?? '—'"
+            readonly
+          />
+        </div>
+        <div class="col-span-2" *ngIf="model.cambiaStaffOficina">
+          <label class="field-label">Clasificación nueva *</label>
+          <select class="field-input" [(ngModel)]="model.staffOficina">
+            <option *ngFor="let o of staffOficinaOptions" [ngValue]="o.id">{{ o.nombre }}</option>
+          </select>
+        </div>
+      </ng-container>
+
+      <div class="col-span-2" *ngIf="esCambioRiesgoCritico">
+        <p class="field-warning">
+          ⚠ Sube de riesgo (Oficina Central → Staff/Obra): el certificado de aptitud vigente
+          quedará marcado como "Falta" y se exigirá un EMO nuevo — no será convalidable.
+        </p>
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Fecha de cambio *</label>
+        <input type="date" class="field-input" [(ngModel)]="model.fechaCambio" />
+      </div>
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

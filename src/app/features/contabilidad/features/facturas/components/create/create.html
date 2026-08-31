@@ -1,0 +1,276 @@
+<app-base-modal [title]="'Nueva factura'" width="w-[760px]" [preventCloseWhenDirty]="true" (closeModal)="closeModal.emit()">
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <!-- Fecha de emisión -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Fecha de emisión *</label>
+      <input
+        type="date"
+        [(ngModel)]="form.issueDate"
+        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+    </div>
+
+    <!-- Serie + correlativo -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">N° de factura *</label>
+      <div class="flex items-center gap-2">
+        <input
+          type="text"
+          [(ngModel)]="form.serie"
+          maxlength="4"
+          placeholder="Serie (F001)"
+          class="w-[110px] rounded-lg border border-gray-300 px-3 py-2 text-sm uppercase focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        <span class="text-gray-400">-</span>
+        <input
+          type="text"
+          [(ngModel)]="form.correlativo"
+          maxlength="8"
+          placeholder="Correlativo (1234)"
+          class="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+      </div>
+    </div>
+
+    <!-- Proveedor + nuevo -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Proveedor *</label>
+      <div class="flex items-center gap-2">
+        <div class="flex-1">
+          <app-search-select
+            [options]="suppliers"
+            valueField="contributorId"
+            displayField="contributorName"
+            [value]="form.contributorId"
+            (valueChange)="onSupplierChange($event)"
+            [showLabel]="false"
+            placeholder="— Selecciona proveedor —"
+            [allowClear]="true">
+          </app-search-select>
+        </div>
+        <button
+          type="button"
+          (click)="openSupplierModal()"
+          [title]="'Registrar nuevo proveedor'"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-abril-primary)] text-lg font-bold text-white hover:opacity-90">
+          +
+        </button>
+      </div>
+    </div>
+
+    <!-- RUC del proveedor (bidireccional) -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">RUC del proveedor</label>
+      <input
+        type="text"
+        maxlength="11"
+        [ngModel]="supplierRuc"
+        (ngModelChange)="onRucChange($event)"
+        placeholder="Escribe un RUC o elige un proveedor"
+        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+    </div>
+
+    <!-- Razón social de Abril -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Razón social Abril *</label>
+      <app-search-select
+        [options]="abrilCompanies"
+        valueField="contributorId"
+        displayField="contributorName"
+        [value]="form.abrilContributorId"
+        (valueChange)="form.abrilContributorId = $event"
+        [showLabel]="false"
+        placeholder="— Selecciona razón social —"
+        [allowClear]="true">
+      </app-search-select>
+    </div>
+
+    <!-- Descripción -->
+    <div class="md:col-span-2">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Descripción del bien o servicio *</label>
+      <textarea
+        [(ngModel)]="form.description"
+        rows="2"
+        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none"></textarea>
+    </div>
+
+    <!-- Forma de pago -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Forma de pago *</label>
+      <app-search-select
+        [options]="paymentForms"
+        valueField="invoicePaymentFormId"
+        displayField="invoicePaymentFormDescription"
+        [value]="form.invoicePaymentFormId"
+        (valueChange)="form.invoicePaymentFormId = $event"
+        [showLabel]="false"
+        placeholder="— Selecciona —"
+        [allowClear]="false">
+      </app-search-select>
+    </div>
+
+    <!-- Moneda -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Moneda *</label>
+      <app-search-select
+        [options]="currencies"
+        valueField="currencyId"
+        displayField="currencyCode"
+        [value]="form.currencyId"
+        (valueChange)="form.currencyId = $event"
+        [showLabel]="false"
+        placeholder="— Selecciona moneda —"
+        [allowClear]="true">
+      </app-search-select>
+    </div>
+
+    <!-- Total -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Total de la factura *</label>
+      <input
+        type="number"
+        min="0"
+        step="0.01"
+        [(ngModel)]="form.total"
+        placeholder="0.00"
+        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+    </div>
+
+    <!-- Documento / factura -->
+    <div class="md:col-span-2">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Documento / factura</label>
+      @if (!documentName) {
+        <app-file-selector
+          accept=".pdf,.png,.jpg,.jpeg,.webp"
+          hint="PDF, PNG, JPG o WEBP"
+          color="var(--color-abril-primary)"
+          (fileSelected)="onFileSelected($event)">
+        </app-file-selector>
+      } @else {
+        <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+          <span class="truncate text-gray-700">{{ documentName }}</span>
+          <button type="button" (click)="removeFile()" class="ml-3 text-red-500 hover:underline">Quitar</button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Acciones -->
+  <div class="mt-6 flex justify-end gap-3">
+    <button
+      type="button"
+      (click)="closeModal.emit()"
+      class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">
+      Cancelar
+    </button>
+    <button
+      type="button"
+      (click)="save()"
+      class="rounded-lg bg-[var(--color-abril-primary)] px-5 py-2 text-sm font-medium text-white hover:opacity-90">
+      Guardar
+    </button>
+  </div>
+</app-base-modal>
+
+<!-- ── Modal de nuevo proveedor (consulta RUC) ─────────────────────── -->
+@if (showSupplierModal) {
+  <app-base-modal [title]="'Nuevo proveedor'" width="w-[620px]" [preventCloseWhenDirty]="true" (closeModal)="closeSupplierModal()">
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-500 mb-1">RUC *</label>
+      <div class="flex items-center gap-2">
+        <input
+          type="text"
+          [(ngModel)]="rucInput"
+          maxlength="11"
+          (keydown.enter)="searchRuc()"
+          placeholder="Ingrese los 11 dígitos del RUC"
+          class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        <button
+          type="button"
+          (click)="searchRuc()"
+          [disabled]="rucInput.length !== 11"
+          class="rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40">
+          Consultar
+        </button>
+      </div>
+      @if (!manualEntry) {
+        <button
+          type="button"
+          (click)="enableManualEntry()"
+          class="mt-2 text-xs font-medium text-[var(--color-abril-primary)] hover:underline">
+          ¿La consulta no funciona? Registrar manualmente
+        </button>
+      }
+    </div>
+
+    @if (supplierLookupDone || manualEntry) {
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        @if (manualEntry) {
+          <div class="md:col-span-2">
+            <label class="block text-xs font-medium text-gray-500 mb-1">RUC *</label>
+            <input
+              type="text"
+              maxlength="11"
+              [(ngModel)]="newSupplier.contributorRuc"
+              placeholder="Ingrese los 11 dígitos del RUC"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+          </div>
+        }
+        <div class="md:col-span-2">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Razón social *</label>
+          <input
+            type="text"
+            [(ngModel)]="newSupplier.contributorName"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Actividad económica</label>
+          <input
+            type="text"
+            [(ngModel)]="newSupplier.contributorEconomicActivityDescription"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Dirección</label>
+          <input
+            type="text"
+            [(ngModel)]="newSupplier.contributorAddress"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Departamento</label>
+          <input
+            type="text"
+            [(ngModel)]="newSupplier.contributorDepartment"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Provincia</label>
+          <input
+            type="text"
+            [(ngModel)]="newSupplier.contributorProvince"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Distrito</label>
+          <input
+            type="text"
+            [(ngModel)]="newSupplier.contributorDistrict"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end gap-3">
+        <button
+          type="button"
+          (click)="closeSupplierModal()"
+          class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="saveSupplier()"
+          class="rounded-lg bg-[var(--color-abril-primary)] px-5 py-2 text-sm font-medium text-white hover:opacity-90">
+          Registrar proveedor
+        </button>
+      </div>
+    }
+  </app-base-modal>
+}

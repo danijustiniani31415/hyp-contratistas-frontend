@@ -1,0 +1,155 @@
+<div class="p-6">
+
+  <app-abril-page-header
+    badge="HABILITACIÓN"
+    titulo="Clínicas"
+    subtitulo="Gestión de clínicas habilitadas"
+    [botonPrimario]="{ label: 'Nueva Clínica', icono: 'ti-plus' }"
+    (primaryClick)="openCreate()">
+  </app-abril-page-header>
+
+  <!-- Search -->
+  <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-400
+              focus-within:bg-white focus-within:border-[#64bc04] focus-within:shadow-[0_0_0_3px_rgba(100,188,4,0.15)]
+              transition-all mb-4 w-full max-w-sm">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="flex-shrink-0">
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4.3-4.3" />
+    </svg>
+    <input
+      type="text"
+      placeholder="Buscar clínica..."
+      [(ngModel)]="search"
+      (ngModelChange)="onSearchChange()"
+      class="flex-1 border-0 outline-none bg-transparent text-gray-900 text-sm"
+    />
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-200">
+        <tr>
+          <th class="text-left px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Nombre</th>
+          <th class="text-left px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">RUC</th>
+          <th class="text-left px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Email</th>
+          <th class="text-left px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Teléfono</th>
+          <th class="text-center px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngIf="!loading; else loadingTpl">
+          <tr
+            *ngFor="let c of clinicas"
+            (click)="goToDetalle(c.id)"
+            class="border-b border-gray-100 last:border-b-0 hover:bg-green-50 cursor-pointer transition-colors"
+          >
+            <td class="px-4 py-3 font-semibold text-gray-800">{{ c.nombre }}</td>
+            <td class="px-4 py-3 text-gray-600 font-mono text-xs">{{ c.ruc || '—' }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ c.email || '—' }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ c.telefono || '—' }}</td>
+            <td class="px-4 py-3 text-center">
+              <span
+                class="text-[0.7rem] font-bold border rounded-full px-2 py-0.5"
+                [ngClass]="c.activo
+                  ? 'bg-green-100 text-green-800 border-green-200'
+                  : 'bg-red-100 text-red-700 border-red-200'"
+              >
+                {{ c.activo ? 'ACTIVO' : 'INACTIVO' }}
+              </span>
+            </td>
+          </tr>
+          <tr *ngIf="clinicas.length === 0">
+            <td colspan="5" class="text-center text-gray-400 py-10">No se encontraron clínicas.</td>
+          </tr>
+        </ng-container>
+        <ng-template #loadingTpl>
+          <tr>
+            <td colspan="5" class="text-center text-gray-400 py-10">Cargando...</td>
+          </tr>
+        </ng-template>
+      </tbody>
+    </table>
+  </div>
+
+
+</div>
+
+<!-- Modal: Nueva Clínica -->
+<app-base-modal
+  *ngIf="showCreate"
+  [title]="'NUEVA CLÍNICA'"
+  width="w-[520px]"
+  (closeModal)="closeCreate()"
+>
+  <div class="flex flex-col gap-4 mt-4">
+    <div class="flex flex-col gap-1">
+      <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Nombre *</label>
+      <input
+        type="text"
+        [(ngModel)]="createDto.nombre"
+        placeholder="Nombre de la clínica"
+        class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04]
+               focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm"
+      />
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="flex flex-col gap-1">
+        <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">RUC</label>
+        <input
+          type="text"
+          [(ngModel)]="createDto.ruc"
+          placeholder="20XXXXXXXXX"
+          class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04]
+                 focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Teléfono</label>
+        <input
+          type="text"
+          [(ngModel)]="createDto.telefono"
+          placeholder="01 234 5678"
+          class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04]
+                 focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm"
+        />
+      </div>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Email</label>
+      <input
+        type="email"
+        [(ngModel)]="createDto.email"
+        placeholder="correo@clinica.com"
+        class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04]
+               focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Dirección</label>
+      <input
+        type="text"
+        [(ngModel)]="createDto.direccion"
+        placeholder="Av. ..."
+        class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04]
+               focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm"
+      />
+    </div>
+  </div>
+
+  <footer class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+    <button
+      type="button"
+      (click)="closeCreate()"
+      class="px-5 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm font-semibold
+             hover:bg-gray-50 transition-colors cursor-pointer"
+    >Cancelar</button>
+    <button
+      type="button"
+      (click)="guardarClinica()"
+      [disabled]="saving"
+      class="px-5 py-2 rounded-lg bg-[#64BC04] text-white text-sm font-semibold
+             hover:bg-[#58a804] transition-colors cursor-pointer disabled:opacity-50"
+    >{{ saving ? 'Guardando…' : 'Guardar' }}</button>
+  </footer>
+</app-base-modal>

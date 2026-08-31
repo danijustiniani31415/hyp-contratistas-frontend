@@ -1,0 +1,22 @@
+<div class="flex w-full h-screen">
+    <div class="flex flex-1 justify-center items-center bg-gradient-to-t from-[#182233] to-[#2a3675]">
+        <img src="/images/abril-logo-blanco.png" />
+    </div>
+    <div class="flex-1 bg-[#f6f6f9] w-full h-full">
+        <form class="flex flex-col gap-[50px] justify-center items-center w-full h-full" [formGroup]="form" (ngSubmit)="submit()">
+            <h2 class="text-[#1f2937] text-2xl font-bold">Completar registro</h2>
+            <div class="flex flex-col gap-[5px]">
+                <label>Nueva contraseña</label>
+                <input placeholder="Escribe tu contraseña" class="border border-[#E2E2E2] rounded-lg p-[10px] w-[400px]" type="password" formControlName="password">
+            </div>
+            <div class="flex flex-col gap-[5px]">
+                <label>Confirmar contraseña</label>
+                <input placeholder="Confirma tu contraseña" class="border border-[#E2E2E2] rounded-lg p-[10px] w-[400px]" type="password" formControlName="confirmPassword">
+            </div>
+            <button class="text-[#ffffff] w-[400px] bg-[#64BC04] py-[10px] rounded-[10px] cursor-pointer" type="submit"
+                [disabled]="form.invalid">
+                GUARDAR CONTRASEÑA
+            </button>
+        </form>
+    </div>
+</div>

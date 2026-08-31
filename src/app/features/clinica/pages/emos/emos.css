@@ -1,0 +1,193 @@
+.emos-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── Table shell ───────────────────────────────── */
+.table-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  overflow: hidden;
+}
+
+.table-scroll {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+.emos-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.emos-table thead tr {
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.emos-table thead th {
+  padding: 9px 14px;
+  text-align: left;
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.emos-table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.1s;
+}
+
+.emos-table tbody tr:last-child {
+  border-bottom: 0;
+}
+
+.emos-table tbody tr.clickable {
+  cursor: pointer;
+}
+
+.emos-table tbody tr.clickable:hover {
+  background: #f9fafb;
+}
+
+.emos-table tbody td {
+  padding: 11px 14px;
+  vertical-align: middle;
+  color: #374151;
+}
+
+/* Column widths */
+.col-worker  { min-width: 220px; }
+.col-tipo    { width: 130px; white-space: nowrap; }
+.col-fecha   { width: 100px; white-space: nowrap; }
+.col-aptitud { width: 140px; white-space: nowrap; }
+.col-estado  { width: 110px; white-space: nowrap; }
+.col-dias    { width: 130px; white-space: nowrap; }
+.col-actions { width: 120px; }
+
+.text-right { text-align: right; }
+.text-muted { color: #9ca3af; font-size: 0.78rem; }
+
+/* Worker cell */
+.worker-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.w-name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.w-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.71rem;
+  color: #9ca3af;
+}
+
+.sep { color: #d1d5db; }
+
+.w-empresa {
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+  display: inline-block;
+}
+
+/* Tipo EMO */
+.tipo-emo {
+  font-size: 0.78rem;
+  color: #374151;
+}
+
+.no-emo {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #d1d5db;
+  font-style: italic;
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+/* Actions */
+.actions-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  color: #9ca3af;
+  transition: background 0.12s, color 0.12s;
+  flex-shrink: 0;
+}
+
+.action-btn:hover {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+/* Empty state */
+.empty-row {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: #9ca3af;
+}
+
+.empty-row p {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* Footer */
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-top: 1px solid #f3f4f6;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.record-count {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 500;
+}

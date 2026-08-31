@@ -1,0 +1,102 @@
+<app-base-modal
+  [title]="esEdicion ? 'EDITAR GRUPO' : 'NUEVO GRUPO'"
+  width="w-[480px]"
+  (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[16px] mt-[20px]">
+
+    <!-- Nombre -->
+    <div class="flex flex-col gap-[4px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Nombre del grupo</label>
+      <input
+        type="text"
+        [(ngModel)]="nombre"
+        placeholder="Ej. Gestión de Salidas"
+        class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
+      <p *ngIf="submitted && !nombre.trim()" class="text-xs text-red-500">Campo requerido</p>
+    </div>
+
+    <!-- Superficie (dónde se muestra) -->
+    <div class="flex flex-col gap-[4px]">
+      <app-search-select
+        label="¿Dónde se muestra?"
+        placeholder="Selecciona superficie"
+        [options]="superficies"
+        valueField="id"
+        displayField="nombre"
+        [value]="surfaceId"
+        [sortAlpha]="false"
+        (valueChange)="surfaceId = $event">
+      </app-search-select>
+      <p *ngIf="submitted && surfaceId == null" class="text-xs text-red-500">Campo requerido</p>
+      <p class="text-xs text-gray-400">
+        Login = modal público de /auth/login (solo contratistas). Inicio = Centro de aprendizaje de /inicio.
+      </p>
+    </div>
+
+    <!-- Orden + color -->
+    <div class="flex gap-[12px]">
+      <div class="flex flex-col gap-[4px] w-[110px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Orden</label>
+        <input
+          type="number"
+          [(ngModel)]="orden"
+          min="0"
+          class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
+      </div>
+      <div class="flex flex-col gap-[4px] flex-1">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Color de acento (opcional)</label>
+        <input
+          type="text"
+          [(ngModel)]="accentColor"
+          placeholder="#0F6E56"
+          class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
+      </div>
+    </div>
+
+    <!-- Visibilidad (solo aplica en INICIO) -->
+    <div *ngIf="isInicio" class="flex flex-col gap-[10px] border-t border-[#eee] pt-[14px]">
+      <label class="flex items-start gap-[8px] cursor-pointer select-none w-fit">
+        <input
+          type="checkbox"
+          class="w-4 h-4 mt-[2px] cursor-pointer"
+          style="accent-color:var(--color-abril-primary)"
+          [(ngModel)]="esPublicoInterno" />
+        <span class="flex flex-col">
+          <span class="text-sm text-gray-700">Visible para todo Abril</span>
+          <span class="text-xs text-gray-400">Todos los usuarios internos verán este grupo, sin importar su rol.</span>
+        </span>
+      </label>
+
+      <!-- Roles (si no es público interno) -->
+      <div *ngIf="showRoles" class="flex flex-col gap-[6px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Roles que pueden verlo</label>
+        <div class="max-h-[180px] overflow-y-auto border border-[#E2E2E2] rounded-[8px] p-[10px] flex flex-col gap-[6px]">
+          <label *ngFor="let r of roles" class="flex items-center gap-[8px] cursor-pointer select-none text-sm text-gray-700">
+            <input
+              type="checkbox"
+              class="w-4 h-4 cursor-pointer"
+              style="accent-color:var(--color-abril-primary)"
+              [checked]="isRoleSelected(r.id)"
+              (change)="toggleRole(r.id)" />
+            {{ r.descripcion }}
+          </label>
+        </div>
+        <p *ngIf="submitted && selectedRoleIds.length === 0" class="text-xs text-red-500">
+          Selecciona al menos un rol (o marca "Visible para todo Abril").
+        </p>
+      </div>
+    </div>
+
+    <div class="flex justify-center mt-[4px]">
+      <button
+        (click)="save()"
+        class="w-[160px] py-[8px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-primary)">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

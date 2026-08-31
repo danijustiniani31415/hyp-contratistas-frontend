@@ -1,0 +1,298 @@
+<!-- ═══ MODAL: NUEVA AUDITORÍA DE ATS ═══════════════════════════════════════ -->
+<app-abril-modal-panel
+  titulo="Nueva Auditoría de ATS"
+  icono="ti-clipboard-check"
+  variant="blue"
+  width="820px"
+  (closeModal)="cancelar()">
+
+  @if (loadingCatalogos || resolviendoObservador) {
+    <div class="loading-state">
+      <i class="ti ti-loader-2 spin"></i> Cargando...
+    </div>
+  } @else if (sinWorkerVinculado) {
+    <div class="bloqueo-sin-worker">
+      <i class="ti ti-alert-triangle"></i>
+      <div>
+        <div class="bloqueo-sin-worker__titulo">No puedes registrar una Auditoría ATS</div>
+        <div class="bloqueo-sin-worker__texto">
+          Tu usuario no está vinculado a una ficha de trabajador dentro de la plataforma.
+          Comunícate con el área de SSOMA o Administración para que te asocien como trabajador
+          antes de poder reportar.
+        </div>
+      </div>
+    </div>
+  } @else {
+
+    <!-- ── Personas y fecha ──────────────────────────────────────────────── -->
+    <div class="abril-section-title">Auditor y auditado</div>
+    <div class="card-grid">
+
+      <div>
+        <div class="observador-fijo">
+          <i class="ti ti-user-check"></i>
+          <div>
+            <div class="observador-fijo__nombre">{{ auditorNombre }}</div>
+            <div class="observador-fijo__cargo">{{ auditorCargo || '—' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Fecha *</label>
+        <input type="date" class="abril-field-input" [(ngModel)]="fecha" />
+      </div>
+
+      <div>
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Trabajador auditado *"
+          [options]="workers"
+          valueField="workerId"
+          displayField="apellidoNombre"
+          placeholder="Buscar por nombre o DNI..."
+          [value]="auditadoId"
+          (valueChange)="onAuditadoChange($event)">
+        </app-search-select>
+        @if (auditadoSeleccionado; as w) {
+          <p class="worker-meta">{{ w.empresaNombre || '—' }} · {{ w.categoria || '—' }} · {{ w.puesto || '—' }}</p>
+        }
+      </div>
+
+      <div>
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Proyecto *"
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          placeholder="Buscar proyecto..."
+          [value]="proyectoId"
+          (valueChange)="proyectoId = $event">
+        </app-search-select>
+      </div>
+
+    </div>
+
+    <!-- ── Datos del ATS auditado ───────────────────────────────────────── -->
+    <div class="abril-section-title">Datos del ATS auditado</div>
+    <div class="card-grid">
+
+      <div class="abril-field">
+        <label class="abril-field-label">Actividad</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="actividad"
+          placeholder="Actividad descrita en el ATS..." />
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Lugar</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="lugar"
+          placeholder="Lugar de trabajo indicado en el ATS..." />
+      </div>
+
+    </div>
+
+    <!-- ── Resultado de evaluación ───────────────────────────────────────── -->
+    @if (evaluacionCompleta) {
+      <div class="resultado-card" [style.background]="nivelActual.color">
+        <div class="resultado-label" [style.color]="nivelActual.textColor">
+          <i class="ti ti-chart-bar"></i>
+          Resultado: <strong>{{ nivelActual.label }}</strong>
+        </div>
+        <div class="resultado-score" [style.color]="nivelActual.textColor">
+          {{ promedioActual | number:'1.1-1' }} / 5.0
+          &nbsp;·&nbsp; {{ evaluadas }}/{{ totalPreguntas }} criterios
+        </div>
+      </div>
+    }
+
+    <!-- ── Botón Evaluar ─────────────────────────────────────────────────── -->
+    <div class="evaluar-section">
+      <button type="button" class="btn-evaluar" (click)="abrirEvaluacion()">
+        <i class="ti ti-checklist"></i>
+        @if (evaluacionCompleta) { Revisar evaluación }
+        @else { Evaluar ATS &nbsp;
+          @if (evaluadas > 0) {
+            <span class="eval-badge">{{ evaluadas }}/{{ totalPreguntas }}</span>
+          }
+        }
+      </button>
+      @if (!evaluacionCompleta) {
+        <p class="evaluar-hint">Completa los datos obligatorios y luego evalúa los criterios de calidad del ATS.</p>
+      }
+    </div>
+
+    <!-- ── Observaciones (posteriores a la evaluación) ──────────────────── -->
+    <div class="abril-field">
+      <label class="abril-field-label">Observaciones</label>
+      <textarea class="abril-field-input" [(ngModel)]="observaciones" rows="2"
+        placeholder="Observaciones generales..."></textarea>
+    </div>
+
+    <!-- ── Fotos ─────────────────────────────────────────────────────────── -->
+    <div class="abril-section-title">
+      Evidencia fotográfica
+      <span class="fotos-count">{{ fotosBase64.length }}/10</span>
+    </div>
+
+    <div class="fotos-grid">
+      @for (preview of fotosPreview; track $index) {
+        <div class="foto-thumb">
+          <img [src]="preview" alt="Foto {{ $index + 1 }}" />
+          <button type="button" class="foto-remove" (click)="quitarFoto($index)">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+      }
+      @if (fotosBase64.length < 10) {
+        <label class="foto-add">
+          <i class="ti ti-camera-plus"></i>
+          <span>Agregar foto</span>
+          <input #fotoInput type="file" accept="image/*" multiple hidden
+            (change)="onFotoChange($event)" />
+        </label>
+      }
+    </div>
+
+  }<!-- /!loadingCatalogos -->
+
+  <div modalFooter *ngIf="!loadingCatalogos && !resolviendoObservador">
+    <button type="button" class="btn-cancelar" (click)="cancelar()">
+      <i class="ti ti-x"></i> Cancelar
+    </button>
+    <button *ngIf="!sinWorkerVinculado" type="button" class="btn-guardar" [disabled]="guardando || !puedeGuardar" (click)="guardar()">
+      @if (guardando) { <i class="ti ti-loader-2 spin"></i> Guardando... }
+      @else { <i class="ti ti-device-floppy"></i> Guardar }
+    </button>
+  </div>
+
+</app-abril-modal-panel>
+
+
+<!-- ═══ OVERLAY DE EVALUACIÓN ══════════════════════════════════════════════ -->
+@if (modoEvaluacion) {
+  <div class="eval-overlay">
+
+    <!-- Cabecera fija -->
+    <div class="eval-header">
+
+      <!-- Preview ATS -->
+      <div class="preview-chips">
+        @if (auditadoNombre) {
+          <span class="preview-chip">
+            <i class="ti ti-user"></i> {{ auditadoNombre }}
+          </span>
+        }
+        <span class="preview-chip">
+          <i class="ti ti-calendar"></i> {{ fecha }}
+        </span>
+        @if (actividad) {
+          <span class="preview-chip">
+            <i class="ti ti-tools"></i> {{ actividad }}
+          </span>
+        }
+        @if (lugar) {
+          <span class="preview-chip">
+            <i class="ti ti-map-pin"></i> {{ lugar }}
+          </span>
+        }
+      </div>
+
+      <!-- Escala de puntaje (leyenda compacta) -->
+      <div class="eval-escala">
+        @for (sc of scoreConfig; track sc.valor) {
+          <span class="escala-item" [style.background]="sc.color" [style.color]="sc.textColor">
+            {{ sc.valor }} {{ sc.label }}
+          </span>
+        }
+      </div>
+
+      <!-- Botón salir -->
+      <button type="button" class="btn-salir" (click)="cerrarEvaluacion()">
+        <i class="ti ti-x"></i> Salir
+      </button>
+
+    </div><!-- /eval-header -->
+
+    <!-- Lista de preguntas (scrollable) -->
+    <div class="eval-body">
+      @for (r of respuestas; track r.preguntaId) {
+        <div class="pregunta-row" [class.pregunta-row--scored]="r.puntaje !== null">
+
+          <div class="pregunta-info">
+            <span class="pregunta-num">{{ $index + 1 }}</span>
+            <span class="pregunta-texto">{{ r.texto }}</span>
+          </div>
+
+          <div class="pregunta-acciones">
+            <!-- Botones de puntaje 0-5 -->
+            <div class="score-btns">
+              @for (sc of scoreConfig; track sc.valor) {
+                <button
+                  type="button"
+                  class="score-btn"
+                  [class.score-btn--active]="r.puntaje === sc.valor"
+                  [style.background]="r.puntaje === sc.valor ? sc.color : ''"
+                  [style.color]="r.puntaje === sc.valor ? sc.textColor : ''"
+                  [title]="sc.label"
+                  (click)="setPuntaje(r, sc.valor)">
+                  {{ sc.valor }}
+                </button>
+              }
+            </div>
+
+            <!-- Botón comentario -->
+            <button type="button" class="btn-comentario"
+              [class.btn-comentario--active]="r.showComentario || !!r.comentario"
+              [title]="r.showComentario ? 'Ocultar comentario' : 'Agregar comentario'"
+              (click)="toggleComentario(r)">
+              <i class="ti ti-message-circle"></i>
+            </button>
+          </div>
+
+          @if (r.showComentario) {
+            <div class="comentario-area">
+              <textarea class="comentario-input" [(ngModel)]="r.comentario"
+                placeholder="Comentario u observación sobre este criterio..."
+                rows="2">
+              </textarea>
+            </div>
+          }
+
+        </div>
+      }
+    </div><!-- /eval-body -->
+
+    <!-- Footer fijo con resumen y guardar -->
+    <div class="eval-footer">
+      <div class="eval-progress">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill"
+            [style.width.%]="totalPreguntas ? (evaluadas / totalPreguntas * 100) : 0"
+            [style.background]="nivelActual.color">
+          </div>
+        </div>
+        <span class="progress-text">{{ evaluadas }}/{{ totalPreguntas }} evaluados</span>
+      </div>
+
+      @if (evaluadas > 0) {
+        <div class="eval-score-badge" [style.background]="nivelActual.color" [style.color]="nivelActual.textColor">
+          {{ promedioActual | number:'1.1-1' }} — {{ nivelActual.label }}
+        </div>
+      }
+
+      <div class="eval-footer-actions">
+        <button type="button" class="btn-footer-cancelar" (click)="cerrarEvaluacion()">
+          Cancelar
+        </button>
+        <button type="button" class="btn-footer-guardar"
+          [disabled]="guardando || !puedeGuardar"
+          (click)="guardar()">
+          @if (guardando) { <i class="ti ti-loader-2 spin"></i> Guardando... }
+          @else { <i class="ti ti-device-floppy"></i> Guardar auditoría }
+        </button>
+      </div>
+    </div><!-- /eval-footer -->
+
+  </div><!-- /eval-overlay -->
+}

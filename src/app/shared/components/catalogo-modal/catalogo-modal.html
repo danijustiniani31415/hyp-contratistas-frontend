@@ -1,0 +1,65 @@
+<app-base-modal title="Catálogos de Observaciones" width="w-[520px]" height="h-[560px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex gap-[8px] mb-[14px] flex-shrink-0">
+    <button *ngFor="let t of tabs" type="button"
+            class="px-[14px] py-[6px] rounded-[7px] text-sm font-medium border transition-colors"
+            [style.borderColor]="tipoActivo === t.tipo ? 'var(--color-abril-standard)' : 'var(--color-abril-border)'"
+            [style.background]="tipoActivo === t.tipo ? 'var(--color-abril-standard-light)' : '#fff'"
+            [style.color]="tipoActivo === t.tipo ? 'var(--color-abril-standard)' : '#374151'"
+            (click)="cambiarTab(t.tipo)">
+      {{ t.label }}
+    </button>
+  </div>
+
+  <div class="flex gap-[8px] mb-[12px] flex-shrink-0">
+    <input type="text" [(ngModel)]="nuevoNombre" (keydown.enter)="agregar()"
+           placeholder="Nuevo ítem..."
+           class="flex-1 border rounded-[7px] px-[10px] py-[6px] text-sm"
+           style="border-color:var(--color-abril-border)" />
+    <button type="button" [disabled]="!nuevoNombre.trim() || guardandoNuevo" (click)="agregar()"
+            class="px-[14px] rounded-[7px] text-sm font-medium text-white disabled:opacity-50"
+            style="background:var(--color-abril-standard)">
+      <i class="ti ti-plus"></i>
+    </button>
+  </div>
+
+  <div class="flex-1 min-h-0 overflow-y-auto border rounded-[7px]" style="border-color:var(--color-abril-border)">
+    <div *ngIf="loading" class="text-center text-sm text-gray-400 py-[24px]">Cargando...</div>
+
+    <div *ngIf="!loading && items.length === 0" class="text-center text-sm text-gray-400 py-[24px]">
+      Sin ítems todavía.
+    </div>
+
+    <div *ngFor="let item of items" class="flex items-center gap-[8px] px-[10px] py-[8px] border-b last:border-b-0"
+         style="border-color:var(--color-abril-border)"
+         [class.opacity-50]="!item.activo">
+
+      <ng-container *ngIf="editandoId === item.id; else verNombre">
+        <input type="text" [(ngModel)]="editandoNombre" (keydown.enter)="guardarEdicion(item)"
+               class="flex-1 border rounded-[6px] px-[8px] py-[4px] text-sm"
+               style="border-color:var(--color-abril-standard)" />
+        <button type="button" (click)="guardarEdicion(item)" title="Guardar" class="text-sm" style="color:var(--color-abril-standard)">
+          <i class="ti ti-check"></i>
+        </button>
+        <button type="button" (click)="cancelarEdicion()" title="Cancelar" class="text-sm text-gray-400">
+          <i class="ti ti-x"></i>
+        </button>
+      </ng-container>
+
+      <ng-template #verNombre>
+        <span class="flex-1 text-sm text-gray-700">{{ item.nombre }}</span>
+        <span *ngIf="!item.activo" class="text-[10px] font-semibold uppercase text-gray-400">Inactivo</span>
+        <button type="button" (click)="toggleActivo(item)" [title]="item.activo ? 'Desactivar' : 'Activar'" class="text-sm text-gray-400 hover:text-gray-600">
+          <i class="ti" [class.ti-eye]="!item.activo" [class.ti-eye-off]="item.activo"></i>
+        </button>
+        <button type="button" (click)="editar(item)" title="Editar" class="text-sm text-gray-400 hover:text-gray-600">
+          <i class="ti ti-pencil"></i>
+        </button>
+        <button type="button" (click)="eliminar(item)" title="Eliminar" class="text-sm text-red-400 hover:text-red-600">
+          <i class="ti ti-trash"></i>
+        </button>
+      </ng-template>
+    </div>
+  </div>
+
+</app-base-modal>

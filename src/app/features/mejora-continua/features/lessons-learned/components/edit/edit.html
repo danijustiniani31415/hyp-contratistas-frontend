@@ -1,0 +1,141 @@
+<app-base-modal [title]="'EDITAR LECCION'" width="w-[1000px]"
+  closeColor="var(--color-abril-standard)" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-6 mt-5">
+
+    <!-- Seccion 1: Ubicacion -->
+    <div>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Ubicacion</p>
+
+      <!-- Área: un solo label global; los desplegables en cascada aparecen al lado sin label propio -->
+      <div class="flex flex-col gap-[6px]">
+        <label class="text-sm text-[var(--color-abril-standard)] font-medium">Área</label>
+        <div class="flex flex-wrap gap-4">
+          <ng-container *ngFor="let level of areaLevels; let i = index">
+            <div class="w-[220px]">
+              <app-search-select
+                [showLabel]="false"
+                [options]="level"
+                valueField="id"
+                displayField="name"
+                [value]="selectedAreaNodes[i]?.id"
+                (valueChange)="onAreaNodeChange(i, $event)" />
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- Obra / Oficina + Proyecto: debajo de Área -->
+      <div class="flex flex-wrap gap-4 mt-4">
+        <div class="w-[220px]">
+          <app-search-select label="Obra / Oficina" [options]="filtersData.obraOficinaStaff"
+            valueField="obraOficinaStaffId" displayField="name" [sortAlpha]="false"
+            placeholder="Selecciona" [(value)]="obraOficinaStaffId" />
+        </div>
+        <div class="w-[220px]">
+          <app-search-select label="Proyecto" [options]="filtersData.projects" valueField="projectId"
+            displayField="projectDescription" [(value)]="projectId" />
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-gray-100"></div>
+
+    <!-- Seccion 2: Clasificacion (árbol de scope genérico) -->
+    <div>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Clasificacion</p>
+      <div class="flex flex-wrap gap-4">
+        <ng-container *ngFor="let level of scopeLevels; let i = index">
+          <div class="w-[220px]">
+            <app-search-select
+              [label]="getLevelLabel(i)"
+              [options]="level"
+              valueField="scopeItemId"
+              displayField="catalogItemDescription"
+              [value]="selectedScopeItems[i]?.scopeItemId"
+              (valueChange)="onScopeItemChange(i, $event)">
+            </app-search-select>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <div class="border-t border-gray-100"></div>
+
+    <!-- Seccion 3: Contenido + Imagenes -->
+    <div class="flex flex-col sm:flex-row gap-6">
+
+      <!-- Izquierda: campos de texto -->
+      <div class="flex-1 flex flex-col gap-4">
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Contenido</p>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm text-[var(--color-abril-standard)] font-medium">Descripcion de la observacion</label>
+          <textarea [(ngModel)]="problemDescription" placeholder="Escribe aqui" rows="3"
+            class="border border-gray-200 rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-standard)]/30"></textarea>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm text-[var(--color-abril-standard)] font-medium">Causas de la observacion</label>
+          <textarea [(ngModel)]="reasonDescription" placeholder="Escribe aqui" rows="3"
+            class="border border-gray-200 rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-standard)]/30"></textarea>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm text-[var(--color-abril-standard)] font-medium">Leccion aprendida / Propuesta de mejora</label>
+          <textarea [(ngModel)]="lessonDescription" placeholder="Escribe aqui" rows="3"
+            class="border border-gray-200 rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-standard)]/30"></textarea>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm text-[var(--color-abril-standard)] font-medium">Impacto en obra o proyecto</label>
+          <textarea [(ngModel)]="impactDescription" placeholder="Escribe aqui" rows="3"
+            class="border border-gray-200 rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-standard)]/30"></textarea>
+        </div>
+      </div>
+
+      <!-- Derecha: imagenes -->
+      <div class="flex-1 flex flex-col gap-6">
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Imagenes adjuntas</p>
+
+        <!-- Oportunidad -->
+        <div class="flex flex-col gap-2">
+          <label class="text-sm text-[var(--color-abril-standard)] font-medium">Oportunidad</label>
+          <div *ngIf="opportunityExisting.length" class="flex flex-wrap gap-2">
+            <div *ngFor="let img of opportunityExisting" class="relative">
+              <img [src]="imageUrl(img.imageUrl)" class="w-20 h-20 object-cover rounded-lg border border-gray-200" />
+              <button type="button" (click)="removeExisting(img, 'opportunity')"
+                class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 text-xs leading-none cursor-pointer">×</button>
+            </div>
+          </div>
+          <app-file-selector color="var(--color-abril-standard)" background="var(--color-abril-standard-light)"
+            (fileSelected)="onFileSelected($event, 'opportunity')" />
+          <app-image-preview [previews]="opportunityPreviews" (remove)="removeImage($event, 'opportunity')" />
+        </div>
+
+        <!-- Mejora -->
+        <div class="flex flex-col gap-2">
+          <label class="text-sm text-[var(--color-abril-standard)] font-medium">Mejora</label>
+          <div *ngIf="improvementExisting.length" class="flex flex-wrap gap-2">
+            <div *ngFor="let img of improvementExisting" class="relative">
+              <img [src]="imageUrl(img.imageUrl)" class="w-20 h-20 object-cover rounded-lg border border-gray-200" />
+              <button type="button" (click)="removeExisting(img, 'improvement')"
+                class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 text-xs leading-none cursor-pointer">×</button>
+            </div>
+          </div>
+          <app-file-selector color="var(--color-abril-standard)" background="var(--color-abril-standard-light)"
+            (fileSelected)="onFileSelected($event, 'improvement')" />
+          <app-image-preview [previews]="improvementPreviews" (remove)="removeImage($event, 'improvement')" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Boton guardar -->
+    <div class="flex justify-center pt-1">
+      <button (click)="submit()"
+        class="w-[200px] bg-[var(--color-abril-standard)] py-2 rounded-lg cursor-pointer hover:bg-[var(--color-abril-standard-hover)] transition-colors">
+        <p class="text-white text-base font-medium text-center">Guardar cambios</p>
+      </button>
+    </div>
+
+  </div>
+</app-base-modal>

@@ -1,0 +1,52 @@
+<div class="flex flex-col gap-4 flex-1 min-h-0">
+
+  <!-- Filtros -->
+  <div class="flex flex-wrap gap-3 items-end">
+
+    <div class="flex flex-col gap-[6px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Proyecto</label>
+      <app-search-select
+        [options]="projectOptions"
+        valueField="projectId"
+        displayField="projectDescription"
+        placeholder="Todos los proyectos"
+        [showLabel]="false"
+        [(value)]="filters.projectId"
+        style="width: 280px">
+      </app-search-select>
+    </div>
+
+    <button type="button" (click)="onSearch()"
+      class="h-[42px] px-5 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors flex items-center gap-2" style="background:var(--color-abril-primary)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
+      </svg>
+      Buscar
+    </button>
+
+  </div>
+
+  <!-- Lista -->
+  <app-adjudicacion-folder-list
+    [filters]="filters"
+    (pagedData)="onPagedData($event)"
+    class="flex-1 min-h-0 overflow-auto">
+  </app-adjudicacion-folder-list>
+
+  <!-- Paginador -->
+  <app-paginator
+    [totalRecords]="totalRecords"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    (pageChange)="onPageChange($event)">
+  </app-paginator>
+
+</div>
+
+<!-- Modal crear -->
+<app-adjudicacion-folder-create
+  *ngIf="showCreateModal"
+  [formData]="formData"
+  (closeModal)="showCreateModal = false"
+  (saved)="list.load(1)">
+</app-adjudicacion-folder-create>

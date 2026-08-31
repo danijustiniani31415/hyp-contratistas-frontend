@@ -1,0 +1,696 @@
+<div class="dash-root">
+
+  <app-abril-page-header
+    titulo="Charlas y Capacitaciones"
+    subtitulo="Gestión y aprobación de charlas de seguridad"
+    [tabs]="tabsHeader"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="loadAll()">
+
+    <!-- Filtro global Proyecto/Mes/Año: aplica a Dashboard y Capacitaciones. -->
+    <app-filter-trigger *ngIf="activeTab !== 4" tabsExtra [count]="filtrosGlobalesActivos" (open)="filtrosGlobalesAbiertos = true" />
+    <!-- Filtro "Estado" de la pestaña Gestión: solo aplica a esa tabla. -->
+    <app-filter-trigger *ngIf="activeTab === 4" tabsExtra [count]="filtrosTab4Activos" (open)="filtrosTab4Abiertos = true" />
+  </app-abril-page-header>
+
+  <div class="dash-body" [class.dash-body--cap]="activeTab === 2">
+
+    @if (loading) {
+      <div class="kpi-grid">
+        @for (_ of [1,2,3,4]; track $index) { <div class="skeleton-card"></div> }
+      </div>
+      <div class="skeleton-body"></div>
+    }
+
+    @if (!loading) {
+
+      <!-- ═══════════════════════════════ TAB 1 ─ Dashboard -->
+      @if (activeTab === 1) {
+        <div class="dash-mes-label" style="text-align:right; padding-bottom:6px;">{{ mesLabel() }} {{ anio }}</div>
+
+        @if (loadingDash) {
+          <div class="skeleton-body"></div>
+        } @else if (!proyectoId) {
+          <p class="empty-msg">Selecciona un proyecto para ver el dashboard.</p>
+        } @else if (!dashPersonalResult.staff.length) {
+          <p class="empty-msg">Sin datos para el mes seleccionado.</p>
+        } @else {
+          <div class="dash-card">
+            <div class="table-wrap">
+              <table class="dash-table dash-matrix">
+                <thead>
+                  <tr>
+                    <th class="col-persona th-sticky-left">Colaborador</th>
+                    @for (dia of dashPersonalResult.dias; track dia.numDia) {
+                      <th class="col-dia ta-c">
+                        <span class="dia-nombre">{{ dia.nombre }}</span>
+                        <span class="dia-fecha">{{ dia.fecha | date:'d/M':'UTC' }}</span>
+                      </th>
+                    }
+                    <th class="th-sticky-right ta-c">% Asist.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of dashStaffPagina; track p.workerId) {
+                    @let pctP = p.charlasTotales > 0 ? (p.charlasAsistidas / p.charlasTotales * 100) : 0;
+                    <tr>
+                      <td class="col-persona-cell td-sticky-left">
+                        <span class="persona-nombre-dash">{{ p.nombre }}</span>
+                      </td>
+                      @for (dia of dashPersonalResult.dias; track dia.numDia) {
+                        @let diaData = p.dias | findDia:dia.numDia;
+                        <td class="ta-c asist-cell">
+                          @if (diaData?.asistio === true) {
+                            <span class="asist-check">✓</span>
+                          } @else {
+                            <span class="asist-x">✗</span>
+                          }
+                        </td>
+                      }
+                      <td class="td-sticky-right ta-c">
+                        <div class="pct-pill" [class]="pctClass(Math.round(pctP))">{{ Math.round(pctP) }}%</div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="matrix-legend">
+              <span><span class="asist-check">✓</span> Asistió</span>
+              <span><span class="asist-x">✗</span> No asistió</span>
+            </div>
+            <app-paginator
+              [totalRecords]="dashPersonalResult.staff.length"
+              [currentPage]="dashPager.currentPage"
+              [totalPages]="dashStaffTotalPages"
+              (pageChange)="dashGoPage($event)" />
+          </div>
+        }
+      }
+
+      <!-- ═══════════════════════════════ TAB 2 ─ Capacitaciones -->
+      @if (activeTab === 2) {
+
+        @if (!proyectoId) {
+          <p class="empty-msg">Selecciona un proyecto para ver las capacitaciones.</p>
+        }
+        @if (loadingTab2) { <div class="skeleton-body"></div> }
+        @else if (proyectoId) {
+          <!-- Filtros Tab 2 -->
+          <div class="tab2-filtros">
+            <input type="text" class="form-input" style="max-width:220px; height:32px; font-size:12px;"
+              placeholder="Buscar por nombre..." [(ngModel)]="tab2Busqueda" />
+            <app-search-select
+              [compact]="true"
+              [showLabel]="false"
+              [options]="tab2EstadoOpts"
+              valueField="value"
+              displayField="label"
+              [sortAlpha]="false"
+              [value]="tab2Estado"
+              placeholder="Todos los estados"
+              (valueChange)="tab2Estado = $event">
+            </app-search-select>
+            <span class="form-hint" style="margin:0">{{ capacitacionesFiltradas.length }} registros</span>
+          </div>
+          <div class="dash-card cap-table-card">
+            @if (!capacitacionesFiltradas.length) {
+              <div class="cap-empty">
+                <i class="ti ti-file-certificate"></i>
+                <p>Sin capacitaciones para los filtros seleccionados.</p>
+              </div>
+            } @else {
+              <div class="table-wrap">
+                <table class="dash-table">
+                  <thead>
+                    <tr>
+                      <th>Colaborador</th>
+                      <th>Fecha</th>
+                      <th>Tema / Charla</th>
+                      <th class="ta-c">Estado</th>
+                      <th class="ta-c">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (c of capacitacionesFiltradas; track c.id) {
+                      <tr>
+                        <td class="fw-600">{{ c.nombreCompleto }}</td>
+                        <td class="td-muted">{{ c.fecha ? formatFecha(c.fecha) : '—' }}</td>
+                        <td>{{ c.tema || '—' }}</td>
+                        <td class="ta-c">
+                          <span class="badge" [ngClass]="capEstadoClass(c.estado)">{{ c.estado }}</span>
+                        </td>
+                        <td class="ta-c">
+                          <div class="cap-acciones">
+                            @if (c.archivos?.length || c.evidenciaUrl) {
+                              <button class="abril-action-btn" title="Ver" (click)="toggleViewer(c.id)">
+                                <i class="ti" [class.ti-eye]="viewerCapId !== c.id" [class.ti-eye-off]="viewerCapId === c.id"></i>
+                              </button>
+                              @if (c.archivos?.length) {
+                                <span class="abril-table-badge">{{ c.archivos.length }}</span>
+                              }
+                            }
+                            @if (c.estado === 'Enviado' && puedeAprobar) {
+                              <button abrilBulkAction="primary" title="Aprobar" (click)="aprobarCapacitacion(c)">
+                                <i class="ti ti-circle-check"></i>
+                              </button>
+                              <button abrilBulkAction="danger" title="Rechazar" (click)="rechazarCapacitacion(c)">
+                                <i class="ti ti-circle-x"></i>
+                              </button>
+                            }
+                            @if (!c.archivos?.length && !c.evidenciaUrl && !(c.estado === 'Enviado' && puedeAprobar)) {
+                              <span class="td-muted">—</span>
+                            }
+                          </div>
+                        </td>
+                      </tr>
+                      @if (viewerCapId === c.id) {
+                        @let archivos = (c.archivos?.length ? c.archivos : (c.evidenciaUrl ? [{id: 0, url: c.evidenciaUrl, nombre: c.evidenciaNombre || 'Archivo'}] : []));
+                        @if (archivos.length) {
+                          <tr class="cap-viewer-row">
+                            <td colspan="5">
+                              @if (archivos.length > 1) {
+                                <div class="viewer-tabs">
+                                  @for (a of archivos; track a.id; let i = $index) {
+                                    <button class="viewer-tab" [class.viewer-tab--active]="getArchivoIdx(c.id!) === i"
+                                      (click)="setArchivoIdx(c.id!, i)" type="button">
+                                      <i class="ti" [class.ti-file-type-pdf]="isPdf(a.url)" [class.ti-photo]="!isPdf(a.url)"></i>
+                                      {{ a.nombre | slice:0:20 }}{{ a.nombre.length > 20 ? '…' : '' }}
+                                    </button>
+                                  }
+                                </div>
+                              }
+                              @let activeArchivo = archivos[getArchivoIdx(c.id!)];
+                              @if (activeArchivo) {
+                                <div class="viewer-content">
+                                  @if (isPdf(activeArchivo.url)) {
+                                    <iframe [src]="safeUrl(activeArchivo.url)" class="cap-viewer-pdf"></iframe>
+                                  } @else {
+                                    <img [secureImg]="activeArchivo.url" class="cap-viewer-img" alt="Evidencia" />
+                                  }
+                                  <a class="viewer-download" [href]="activeArchivo.url" target="_blank" download title="Descargar">
+                                    <i class="ti ti-download"></i> Descargar
+                                  </a>
+                                </div>
+                              }
+                            </td>
+                          </tr>
+                        }
+                      }
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Modal Nueva Capacitación -->
+        @if (showNuevaCapModal) {
+          <div class="modal-backdrop" (click)="cerrarNuevaCapModal()"></div>
+          <div class="modal-panel modal-panel--sm">
+            <div class="modal-header">
+              <span class="modal-titulo">Nueva Capacitación</span>
+              <button class="modal-close" type="button" (click)="cerrarNuevaCapModal()">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+            <div class="modal-body" style="flex-direction: column; padding: 20px; gap: 14px; overflow-y: auto;">
+              <div class="form-group">
+                <label>Fecha <span class="req">*</span></label>
+                <input type="date" class="form-input" [(ngModel)]="subirFecha" />
+              </div>
+              <div class="form-group">
+                <label>Tema / Descripción <span class="req">*</span></label>
+                <input type="text" class="form-input" [(ngModel)]="subirTema"
+                  placeholder="Ej: Uso de EPP, Primeros auxilios..." />
+              </div>
+              <div class="form-group">
+                <label>Documentos adjuntos <span class="req">*</span></label>
+                <div class="drop-zone" [class.drop-zone--over]="dragOver"
+                  (dragover)="onDragOver($event)" (dragleave)="onDragLeave()" (drop)="onDrop($event)"
+                  (click)="fileInput.click()">
+                  <i class="ti ti-upload"></i>
+                  <span>Arrastra o haz clic para adjuntar</span>
+                  <span class="drop-zone__hint">PDF, JPG, PNG — múltiples archivos</span>
+                </div>
+                <input #fileInput type="file" hidden accept=".pdf,.jpg,.jpeg,.png,.webp" multiple
+                  (change)="onSubirFileChange($event)" />
+                @if (subirFiles.length) {
+                  <div class="file-chips">
+                    @for (f of subirFiles; track f.name; let i = $index) {
+                      <div class="file-chip">
+                        <i class="ti" [class.ti-file-type-pdf]="f.type==='application/pdf'" [class.ti-photo]="f.type!=='application/pdf'"></i>
+                        <span class="file-chip__name">{{ f.name }}</span>
+                        <button type="button" class="file-chip__remove" (click)="removeFile(i)">
+                          <i class="ti ti-x"></i>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+              <p class="form-hint">El estado quedará como <strong>Enviado</strong>. El coordinador SSOMA deberá aprobar.</p>
+            </div>
+            <div class="form-actions" style="padding: 12px 20px; border-top: 0.5px solid #e8e5df;">
+              <button class="btn-secondary" type="button" (click)="cerrarNuevaCapModal()">Cancelar</button>
+              <button class="btn-primary" type="button" (click)="subirEvidencia()"
+                [disabled]="subirLoading || !subirFecha || !subirTema.trim() || !subirFiles.length">
+                @if (subirLoading) { <i class="ti ti-loader-2 spin"></i> } @else { <i class="ti ti-cloud-upload"></i> }
+                Guardar
+              </button>
+            </div>
+          </div>
+        }
+
+      }
+
+      <!-- ═══════════════════════════════ TAB 3 ─ Nueva Charla -->
+      @if (activeTab === 3) {
+        @if (!proyectoId) {
+          <p class="empty-msg">Selecciona un proyecto para ver las charlas.</p>
+        } @else {
+          <div class="charla-proyecto-badge">
+            <i class="ti ti-building"></i>
+            <span>{{ miProyectoNombre }}</span>
+          </div>
+        }
+        @if (loadingTab3) {
+          <div class="skeleton-body"></div>
+        } @else if (!charlaGaleria.length) {
+          <div class="cap-empty">
+            <i class="ti ti-speakerphone"></i>
+            <p>No hay charlas registradas este mes.</p>
+          </div>
+        } @else {
+          <div class="charla-grid">
+            @for (c of charlaGaleria; track c.id) {
+              @let pctCard = staff.length > 0 ? (c.totalAsistio / staff.length) : 0;
+              <div class="charla-card">
+                <div class="charla-card__header">
+                  <span class="charla-tipo" [ngClass]="tipoClass(c.tipo)">{{ c.tipo }}</span>
+                  <span class="charla-fecha">{{ formatFecha(c.fecha) }}</span>
+                </div>
+                <div class="charla-card__titulo">{{ c.titulo }}</div>
+                <div class="charla-card__footer">
+                  <div class="asist-stat"
+                    [class.asist-stat--alto]="pctCard >= 0.8"
+                    [class.asist-stat--medio]="pctCard >= 0.5 && pctCard < 0.8"
+                    [class.asist-stat--bajo]="pctCard < 0.5">
+                    <span class="asist-stat__n">{{ c.totalAsistio }}</span>
+                    <span class="asist-stat__sep">/{{ staff.length }}</span>
+                  </div>
+                  <span class="asist-label">asistieron</span>
+                  <button class="btn-edit-asist" title="Editar charla" (click)="abrirEditCharla(c)">
+                    <i class="ti ti-pencil"></i>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Modal Editar Charla -->
+        @if (editCharlaId !== null) {
+          <div class="modal-backdrop" (click)="cerrarEditCharla()"></div>
+          <div class="modal-panel modal-panel--sm">
+            <div class="modal-header">
+              <span class="modal-titulo">Editar Charla</span>
+              <button class="modal-close" type="button" (click)="cerrarEditCharla()">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+            <div class="modal-body" style="flex-direction: column; padding: 16px 20px; gap: 10px; overflow-y: auto;">
+              <div class="edit-charla-form">
+                <div class="form-group">
+                  <label>Título <span class="req">*</span></label>
+                  <input type="text" class="form-input" [(ngModel)]="editForm.titulo"
+                    placeholder="Ej: Uso correcto de EPP..." />
+                </div>
+                <div class="form-group">
+                  <label>Tipo <span class="req">*</span></label>
+                  <div class="tipo-toggle">
+                    @for (t of tiposCharla; track t) {
+                      <button type="button" class="tipo-btn"
+                        [class.tipo-btn--seg]="t === 'Seguridad' && editForm.tipo === t"
+                        [class.tipo-btn--sal]="t === 'Salud Ocupacional' && editForm.tipo === t"
+                        [class.tipo-btn--amb]="t === 'Medio Ambiente' && editForm.tipo === t"
+                        [class.tipo-btn--active]="editForm.tipo === t"
+                        (click)="editForm.tipo = t">{{ t }}</button>
+                    }
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Fecha <span class="req">*</span></label>
+                  <input type="date" class="form-input" [(ngModel)]="editForm.fecha" />
+                </div>
+              </div>
+              <span class="edit-charla-subtitulo">Asistentes</span>
+              @if (!staff.length) {
+                <p class="form-hint">Sin staff cargado.</p>
+              } @else {
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                  <p class="form-hint" style="margin:0">{{ countEditChecked() }} de {{ staff.length }} marcados</p>
+                  <button type="button" class="btn-secondary" style="padding:4px 10px; font-size:11px;"
+                    (click)="seleccionarTodosEdit()">
+                    {{ staff.every(s => editStaffChecks[s.workerId]) ? 'Desmarcar todos' : 'Seleccionar todos' }}
+                  </button>
+                </div>
+                <div class="staff-check-grid staff-check-grid--modal">
+                  @for (s of staff; track s.workerId) {
+                    <label class="check-label" (click)="toggleEditStaff(s.workerId)">
+                      <div class="check-box" [class.check-box--on]="editStaffChecks[s.workerId]">
+                        @if (editStaffChecks[s.workerId]) { <i class="ti ti-check"></i> }
+                      </div>
+                      <div class="staff-info">
+                        <span class="staff-name">{{ s.nombreCompleto }}</span>
+                        <span class="staff-cargo">{{ s.cargo }}</span>
+                      </div>
+                    </label>
+                  }
+                </div>
+              }
+            </div>
+            <div class="form-actions" style="padding: 12px 20px; border-top: 0.5px solid #e8e5df;">
+              <button class="btn-secondary" type="button" (click)="cerrarEditCharla()">Cancelar</button>
+              <button class="btn-primary" type="button" (click)="guardarEditCharla()"
+                [disabled]="savingEdit || !editForm.titulo.trim() || !editForm.fecha">
+                @if (savingEdit) { <i class="ti ti-loader-2 spin"></i> } @else { <i class="ti ti-device-floppy"></i> }
+                Guardar
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- Modal Nueva Charla -->
+        @if (showNuevaCharlaModal) {
+          <div class="modal-backdrop" (click)="cerrarNuevaCharlaModal()"></div>
+          <div class="modal-panel modal-panel--charla">
+            <div class="modal-header">
+              <span class="modal-titulo">Nueva Charla</span>
+              <button class="modal-close" type="button" (click)="cerrarNuevaCharlaModal()">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+            <div class="charla-modal-body">
+              <!-- Columna izquierda: campos -->
+              <div class="charla-form-col">
+                <div class="form-group">
+                  <label>Título <span class="req">*</span></label>
+                  <input type="text" class="form-input" [(ngModel)]="form.titulo"
+                    placeholder="Ej: Uso correcto de EPP..." />
+                </div>
+                <div class="form-group">
+                  <label>Tipo <span class="req">*</span></label>
+                  <div class="tipo-toggle">
+                    @for (t of tiposCharla; track t) {
+                      <button type="button" class="tipo-btn"
+                        [class.tipo-btn--seg]="t === 'Seguridad' && form.tipo === t"
+                        [class.tipo-btn--sal]="t === 'Salud Ocupacional' && form.tipo === t"
+                        [class.tipo-btn--amb]="t === 'Medio Ambiente' && form.tipo === t"
+                        [class.tipo-btn--active]="form.tipo === t"
+                        (click)="form.tipo = t">{{ t }}</button>
+                    }
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Fecha <span class="req">*</span></label>
+                  <input type="date" class="form-input" [(ngModel)]="form.fecha" />
+                </div>
+              </div>
+              <!-- Columna derecha: asistentes -->
+              <div class="charla-staff-col">
+                <div class="charla-staff-header">
+                  <span class="charla-staff-label">Asistentes <span class="req">*</span></span>
+                  @if (staff.length) {
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span class="form-hint" style="margin:0">{{ form.workerIds.length }} / {{ staff.length }}</span>
+                      <button type="button" class="btn-secondary" style="padding:3px 9px; font-size:11px;"
+                        (click)="seleccionarTodosNueva()">
+                        {{ staff.every(s => staffChecks[s.workerId]) ? 'Desmarcar' : 'Todos' }}
+                      </button>
+                    </div>
+                  }
+                </div>
+                @if (!staff.length) {
+                  <p class="form-hint">Sin staff registrado para este proyecto.</p>
+                } @else {
+                  <div class="staff-list-modal staff-list-modal--full">
+                    @for (s of staff; track s.workerId) {
+                      <label class="staff-row" [class.staff-row--on]="staffChecks[s.workerId]" (click)="toggleStaff(s.workerId)">
+                        <div class="check-box" [class.check-box--on]="staffChecks[s.workerId]">
+                          @if (staffChecks[s.workerId]) { <i class="ti ti-check"></i> }
+                        </div>
+                        <span class="staff-row-name">{{ s.nombreCompleto }}</span>
+                        <span class="staff-row-cargo">{{ s.categoria }}{{ s.categoria && s.cargo ? ' · ' : '' }}{{ s.cargo }}</span>
+                      </label>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+            <div class="form-actions" style="padding: 12px 20px; border-top: 0.5px solid #e8e5df;">
+              <button class="btn-secondary" type="button" (click)="cerrarNuevaCharlaModal()">Cancelar</button>
+              <button class="btn-primary" type="button" (click)="submitCrear()"
+                [disabled]="savingForm || !form.titulo.trim() || !form.fecha || !form.workerIds.length">
+                @if (savingForm) { <i class="ti ti-loader-2 spin"></i> } @else { <i class="ti ti-speakerphone"></i> }
+                Registrar
+              </button>
+            </div>
+          </div>
+        }
+      }
+
+      <!-- ═══════════════════════════════ TAB 4 ─ Gestión y aprobación -->
+      @if (activeTab === 4) {
+        <div class="flex flex-col gap-[10px] flex-1 min-h-0">
+
+          @if (loadingTab4) { <div class="skeleton-body" style="height:120px"></div> }
+          @else if (!tab4Items.length) {
+            <p class="empty-msg">{{ tab4Estado ? 'Sin resultados.' : 'Sin charlas registradas.' }}</p>
+          } @else {
+            <div class="abril-table-wrap">
+              <table class="abril-table">
+                <thead class="sticky top-0 z-10">
+                  <tr>
+                    <th>Título</th>
+                    <th>Tema</th>
+                    <th>Fecha</th>
+                    <th>Supervisor</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-right">Asistentes</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of tab4Items; track item.id) {
+                    <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+                      <td class="fw-600">{{ item.titulo }}</td>
+                      <td class="text-gray-500">{{ item.tema ?? '—' }}</td>
+                      <td class="text-gray-500">{{ formatFecha(item.fecha) }}</td>
+                      <td class="text-gray-500">{{ item.supervisorNombre || '—' }}</td>
+                      <td class="text-center">
+                        <app-status-badge
+                          [text]="item.estado | uppercase"
+                          [bgColor]="item.estado === 'Aprobado' ? '#D7FAF4' : item.estado === 'Rechazado' ? '#FAD5D4' : '#FEF3C7'"
+                          [textColor]="item.estado === 'Aprobado' ? '#009C87' : item.estado === 'Rechazado' ? '#D30000' : '#B45309'" />
+                      </td>
+                      <td class="text-right text-gray-500">{{ item.totalAsistentes }}</td>
+                      <td>
+                        <button class="abril-action-btn" (click)="abrirDetalle(item)" title="Ver detalle">
+                          <i class="ti ti-eye"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="shrink-0 max-w-[440px]">
+              <app-paginator
+                [totalRecords]="tab4Total"
+                [currentPage]="tab4Page"
+                [totalPages]="tab4TotalPages"
+                (pageChange)="tab4GoPage($event)">
+              </app-paginator>
+            </div>
+          }
+        </div>
+      }
+
+    }
+  </div>
+
+  <!-- FAB Nueva Capacitación -->
+  @if (activeTab === 2) {
+    <button type="button" class="fab-cap" (click)="abrirNuevaCapModal()" title="Nueva Capacitación">
+      <i class="ti ti-plus"></i>
+      <span>Nueva Capacitación</span>
+    </button>
+  }
+
+  <!-- FAB Nueva Charla -->
+  @if (activeTab === 3 && proyectoId) {
+    <button type="button" class="fab-cap" (click)="abrirNuevaCharlaModal()" title="Nueva Charla">
+      <i class="ti ti-plus"></i>
+      <span>Nueva Charla</span>
+    </button>
+  }
+</div>
+
+<!-- MODAL: Detalle / Aprobación -->
+@if (charlaDetalle || loadingDetalle) {
+  <div class="modal-backdrop" (click)="cerrarDetalle()"></div>
+  <div class="modal-panel">
+    <div class="modal-header">
+      <span class="modal-titulo">{{ charlaDetalle?.titulo ?? 'Cargando...' }}</span>
+      <button class="modal-close" (click)="cerrarDetalle()"><i class="ti ti-x"></i></button>
+    </div>
+    @if (loadingDetalle) {
+      <div class="modal-loading"><i class="ti ti-loader-2 spin"></i> Cargando detalle...</div>
+    } @else if (charlaDetalle) {
+      <div class="modal-body">
+        <div class="modal-left">
+          <div class="detalle-meta">
+            <div class="meta-row"><span class="meta-lbl">Fecha</span><span>{{ formatFecha(charlaDetalle.fecha) }}</span></div>
+            <div class="meta-row"><span class="meta-lbl">Tema</span><span>{{ charlaDetalle.tema ?? '—' }}</span></div>
+            <div class="meta-row"><span class="meta-lbl">Duración</span><span>{{ charlaDetalle.duracionHoras }}h</span></div>
+            <div class="meta-row"><span class="meta-lbl">Supervisor</span><span>{{ charlaDetalle.supervisorNombre || '—' }}</span></div>
+            <div class="meta-row">
+              <span class="meta-lbl">Estado</span>
+              <span class="badge" [ngClass]="estadoClass(charlaDetalle.estado)">{{ charlaDetalle.estado }}</span>
+            </div>
+            @if (charlaDetalle.descripcion) {
+              <div class="meta-row meta-row--col">
+                <span class="meta-lbl">Descripción</span>
+                <span class="meta-desc">{{ charlaDetalle.descripcion }}</span>
+              </div>
+            }
+          </div>
+          @if (charlaDetalle.asistencias.length > 0) {
+            <div class="asistentes-section">
+              <h4 class="section-title">Asistentes ({{ charlaDetalle.asistencias.length }})</h4>
+              <ul class="asistentes-list">
+                @for (a of charlaDetalle.asistencias; track a.workerId) {
+                  <li>
+                    <i class="ti" [class.ti-circle-check]="a.asistio" [class.ti-circle-x]="!a.asistio"
+                      [style.color]="a.asistio ? '#16a34a' : '#9ca3af'"></i>
+                    {{ a.nombreCompleto }}
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+          @if (charlaDetalle.evidenciaUrl) {
+            <div class="viewer-section">
+              <h4 class="section-title"><i class="ti ti-paperclip"></i> {{ charlaDetalle.evidenciaNombre }}</h4>
+              @if (isPdf(charlaDetalle.evidenciaUrl)) {
+                <iframe [src]="safeUrl(charlaDetalle.evidenciaUrl!)" class="pdf-viewer" title="Evidencia PDF"></iframe>
+              } @else {
+                <img [secureImg]="charlaDetalle.evidenciaUrl" class="img-viewer" alt="Evidencia" />
+              }
+            </div>
+          } @else {
+            <div class="no-evidencia"><i class="ti ti-file-off"></i> Sin evidencia adjunta</div>
+          }
+        </div>
+        <div class="modal-right">
+          <h4 class="section-title">Acciones</h4>
+          @if (charlaDetalle.estado === 'Enviado' && puedeAprobar) {
+            @if (!showRechazarForm) {
+              <div class="acciones-btns">
+                <button class="btn-aprobar" (click)="aprobar()"><i class="ti ti-circle-check"></i> Aprobar</button>
+                <button class="btn-rechazar" (click)="showRechazarForm=true"><i class="ti ti-circle-x"></i> Rechazar</button>
+              </div>
+            } @else {
+              <div class="rechazar-form">
+                <label class="form-group">
+                  <span>Motivo del rechazo <span class="req">*</span></span>
+                  <textarea class="form-input form-textarea" [(ngModel)]="motivoRechazo" rows="3"></textarea>
+                </label>
+                <div class="acciones-btns">
+                  <button class="btn-secondary" (click)="showRechazarForm=false; motivoRechazo=''">Cancelar</button>
+                  <button class="btn-rechazar" (click)="rechazar()" [disabled]="!motivoRechazo.trim()">
+                    <i class="ti ti-circle-x"></i> Confirmar rechazo
+                  </button>
+                </div>
+              </div>
+            }
+          } @else if (charlaDetalle.estado === 'Aprobado') {
+            <div class="estado-badge estado-badge--aprobado">
+              <i class="ti ti-circle-check"></i>
+              <div><strong>Aprobado</strong>
+                @if (charlaDetalle.aprobadoPorNombre) { <span>por {{ charlaDetalle.aprobadoPorNombre }}</span> }
+              </div>
+            </div>
+          } @else if (charlaDetalle.estado === 'Rechazado') {
+            <div class="estado-badge estado-badge--rechazado">
+              <i class="ti ti-circle-x"></i>
+              <div><strong>Rechazado</strong>
+                @if (charlaDetalle.motivoRechazo) { <span class="motivo">{{ charlaDetalle.motivoRechazo }}</span> }
+              </div>
+            </div>
+          } @else {
+            <div class="estado-badge estado-badge--neutral">
+              <i class="ti ti-clock"></i><span>Estado: {{ charlaDetalle.estado }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<!-- ── Modal de filtros estándar (solo pestaña Gestión) ────────────── -->
+<app-filter-modal *ngIf="filtrosTab4Abiertos" (closeModal)="filtrosTab4Abiertos = false" (clear)="limpiarFiltrosTab4()">
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="tab4EstadoOpts"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      [value]="tab4Estado"
+      (valueChange)="tab4Estado = $event; tab4Page = 1; loadTab4()">
+    </app-search-select>
+  </div>
+</app-filter-modal>
+
+<!-- ── Modal de filtros globales: Proyecto/Mes/Año (Dashboard y Capacitaciones) ── -->
+<app-filter-modal *ngIf="filtrosGlobalesAbiertos" (closeModal)="filtrosGlobalesAbiertos = false" (clear)="limpiarFiltrosGlobales()">
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      displayField="nombre"
+      valueField="id"
+      placeholder="Buscar proyecto..."
+      [value]="proyectoId"
+      (valueChange)="proyectoId = $event ? +$event : undefined; onProyectoChange()">
+    </app-search-select>
+  </div>
+  <div class="w-full">
+    <app-search-select
+      label="Mes"
+      [options]="mesesData"
+      displayField="nombre"
+      valueField="id"
+      [sortAlpha]="false"
+      placeholder="Selecciona mes"
+      [value]="mes"
+      (valueChange)="mes = +$event; loadTab1(); loadTab2()">
+    </app-search-select>
+  </div>
+  <div class="w-full">
+    <app-search-select
+      label="Año"
+      [options]="aniosData"
+      displayField="nombre"
+      valueField="id"
+      [sortAlpha]="false"
+      placeholder="Selecciona año"
+      [value]="anio"
+      (valueChange)="anio = +$event; loadTab1(); loadTab2()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

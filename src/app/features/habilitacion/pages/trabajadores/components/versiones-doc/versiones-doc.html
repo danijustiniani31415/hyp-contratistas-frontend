@@ -1,0 +1,45 @@
+<app-base-modal *ngIf="open" title="Historial de versiones" width="w-[760px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <div *ngIf="loading" class="loading-text">Cargando…</div>
+
+    <div *ngIf="!loading" class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Versión</th>
+            <th>Fecha</th>
+            <th>Archivo</th>
+            <th>Estado al subir</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="versiones.length === 0">
+            <td colspan="5" class="empty-row">Sin versiones registradas.</td>
+          </tr>
+          <tr *ngFor="let v of versiones">
+            <td>v{{ v.version }}</td>
+            <td>{{ v.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td>{{ v.archivos && v.archivos.length > 0 ? v.archivos[0].nombreArchivo : (v.archivoUrl ? v.archivoUrl.split('/').pop() : '—') }}</td>
+            <td>{{ v.estadoAlSubir ?? '—' }}</td>
+            <td class="row-actions">
+              <button type="button" class="btn-link" (click)="abrirVisor(v.archivoUrl)">
+                Ver
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cerrar</button>
+    </footer>
+  </div>
+</app-base-modal>
+
+<app-document-viewer
+  [archivoUrl]="visorUrl"
+  [nombre]="visorNombre"
+  (closed)="visorUrl = ''"
+/>

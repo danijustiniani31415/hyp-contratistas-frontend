@@ -1,0 +1,10 @@
+<!--
+  Vista única: se eliminaron las pestañas "Datos generales" / "Imágenes adjuntas".
+  Todo el informe se lee de corrido (las miniaturas viven dentro del detalle, entre
+  la descripción y la respuesta) y el scroll lo resuelve el overlay de app-base-modal.
+-->
+<app-base-modal [title]="'VER INFORME'" [width]="'w-[680px]'" (closeModal)="closeReportViewModal.emit()">
+
+  <app-report-view-detail [selectedIncidence]="selectedIncidence"></app-report-view-detail>
+
+</app-base-modal>

@@ -1,0 +1,275 @@
+<app-abril-modal-panel
+  [titulo]="titulo"
+  [subtitulo]="data ? ((data.area | titleCase) || '') : ''"
+  icono="ti-gavel"
+  variant="blue"
+  width="880px"
+  (closeModal)="closeModal.emit()">
+
+  @if (!cargando && data) {
+
+    <!-- ── Las firmas de la solicitud ──────────────────────────────────── -->
+    <!-- Todas visibles, decida quien decida: en un reemplazo cada firmante necesita
+         ver la postura del otro para entender en qué quedó la solicitud.
+         Acá antes iba un aviso de instrucciones ("estás decidiendo como X, marca
+         Aprobar o Rechazar en cada vacante…"): se quitó por redundante. El chip
+         «Tu casilla» ya dice quién firma, los botones dicen qué hacer y la
+         consecuencia se repite en la confirmación al enviar, que es donde importa.
+         Los estados van en la misma línea del título y el detalle (quién y cuándo)
+         solo aparece si esa casilla ya decidió — el badge basta cuando está
+         pendiente.
+         Solo se pintan las firmas que ESTA solicitud necesita, y la propia primero: quién aprueba
+         lo decide el tipo de cada vacante, así que ya no son siempre las mismas dos. Los reemplazos
+         llevan dos (gerente del área y GTH) y las vacantes nuevas una sola (Gerencia General). -->
+    <div class="ad-niveles">
+      @if (miCasilla) {
+        <div class="ad-nivel ad-nivel--mio">
+          <div class="ad-nivel-head">
+            <span class="ad-nivel-titulo">{{ miNivelLabel }}</span>
+            <span class="ad-nivel-chip">Tu casilla</span>
+            <span class="ad-nivel-badge"
+                  [style.background]="estadoColors(miCasilla.estadoCodigo).bg"
+                  [style.color]="estadoColors(miCasilla.estadoCodigo).text">
+              {{ miCasilla.estadoNombre }}
+            </span>
+          </div>
+          @if (miCasilla.decidida) {
+            <p class="ad-nivel-meta">
+              {{ (miCasilla.decididoPor | titleCase) || 'Sin registro de quién decidió' }}
+              @if (miCasilla.decididoEn) { · {{ miCasilla.decididoEn | date:'dd/MM/yyyy HH:mm' }} }
+            </p>
+          }
+          @if (miCasilla.comentario) {
+            <p class="ad-nivel-comentario">“{{ miCasilla.comentario }}”</p>
+          }
+        </div>
+      }
+
+      @for (c of otrasCasillas; track c.etiqueta) {
+        <div class="ad-nivel">
+          <div class="ad-nivel-head">
+            <span class="ad-nivel-titulo">{{ c.etiqueta }}</span>
+            <span class="ad-nivel-badge"
+                  [style.background]="estadoColors(c.resumen.estadoCodigo).bg"
+                  [style.color]="estadoColors(c.resumen.estadoCodigo).text">
+              {{ c.resumen.estadoNombre }}
+            </span>
+          </div>
+          @if (c.resumen.decidida) {
+            <p class="ad-nivel-meta">
+              {{ (c.resumen.decididoPor | titleCase) || 'Sin registro de quién decidió' }}
+              @if (c.resumen.decididoEn) { · {{ c.resumen.decididoEn | date:'dd/MM/yyyy HH:mm' }} }
+            </p>
+          }
+          @if (c.resumen.comentario) {
+            <p class="ad-nivel-comentario">“{{ c.resumen.comentario }}”</p>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- ── Datos de la solicitud ───────────────────────────────────────── -->
+    <!-- El área solicitante no va acá: es el subtítulo del header del modal. -->
+    <h3 class="ad-section-title">Datos de la solicitud</h3>
+
+    <div class="ad-meta">
+      <div>
+        <div class="ad-meta-label">Solicitante</div>
+        <div class="ad-meta-value">{{ (data.solicitanteNombre | titleCase) || '—' }}</div>
+      </div>
+      <div>
+        <div class="ad-meta-label">Fecha de registro</div>
+        <div class="ad-meta-value">{{ data.enviado | date:'dd/MM/yyyy' }}</div>
+      </div>
+      <div>
+        <div class="ad-meta-label">Vacantes solicitadas</div>
+        <div class="ad-meta-value">{{ vacantes.length }}</div>
+      </div>
+    </div>
+
+    @if (data.justificacion) {
+      <div class="ad-block">
+        <div class="ad-meta-label">Justificación</div>
+        <p class="ad-block-text">{{ data.justificacion }}</p>
+      </div>
+    }
+
+    @if (data.sustentoUrl) {
+      <div class="ad-block">
+        <div class="ad-meta-label">Sustento adjunto</div>
+        <a class="ad-link" [href]="data.sustentoUrl" target="_blank" rel="noopener">
+          <i class="ti ti-paperclip"></i>
+          {{ data.sustentoNombre || 'Ver documento' }}
+        </a>
+      </div>
+    }
+
+    <!-- ── Vacantes ────────────────────────────────────────────────────── -->
+    <div class="ad-vac-head">
+      <h3 class="ad-section-title ad-section-title--flush">
+        {{ soloLectura ? 'Vacantes de la solicitud' : 'Vacantes por decidir' }}
+      </h3>
+
+      @if (!soloLectura && vacantes.length > 1) {
+        <div class="ad-bulk">
+          <button type="button" class="ad-bulk-btn ad-bulk-btn--ok" (click)="marcarTodas(true)">
+            <i class="ti ti-checks"></i> Aprobar todas
+          </button>
+          <button type="button" class="ad-bulk-btn ad-bulk-btn--no" (click)="marcarTodas(false)">
+            <i class="ti ti-x"></i> Rechazar todas
+          </button>
+        </div>
+      }
+    </div>
+
+    <div class="ad-vac-list">
+      @for (v of vacantes; track v.requerimientoId) {
+        <div class="ad-vac"
+             [class.ad-vac--ok]="decision(v) === true"
+             [class.ad-vac--no]="decision(v) === false">
+
+          <div class="ad-vac-info">
+            <div class="ad-vac-top">
+              <span class="ad-vac-code">{{ v.codigo }}</span>
+              <span class="ad-vac-tag">{{ v.tipoRequerimiento | titleCase }}</span>
+              <!-- Ingreso directo: lo que se aprueba no es una vacante a publicar sino a esta
+                   persona, así que la etiqueta va arriba, junto al código. -->
+              @if (v.esFft) {
+                <span class="ad-vac-tag ad-vac-tag--fft">FFT · Ingreso directo</span>
+              }
+            </div>
+            <p class="ad-vac-puesto">{{ v.puesto | titleCase }}</p>
+            <div class="ad-vac-detail">
+              <span><i class="ti ti-building-community"></i> {{ (v.proyectoObra | titleCase) || '—' }}</span>
+              <!-- Candidato del ingreso directo: nombre, documento y correo personal son lo que se
+                   está aprobando. El documento es lo que lo identifica sin ambigüedad y viene con
+                   su tipo (DNI / CE) porque el número solo no dice cuál es. -->
+              @if (v.esFft) {
+                <span><i class="ti ti-user-check"></i> {{ (v.fftCandidatoNombre | titleCase) || '—' }}</span>
+                <span><i class="ti ti-id-badge"></i> {{ v.fftDocumentoTexto || '—' }}</span>
+                <span><i class="ti ti-mail"></i> {{ v.fftCandidatoCorreo || '—' }}</span>
+              }
+              <!-- El salario es parte de lo que se aprueba, así que va en la misma línea de datos
+                   de la vacante. No se muestra cuando la vacante no lo declara: los reemplazos ya
+                   no lo piden, y decir "Salario no registrado" en cada uno sería ruido. -->
+              @if (v.salarioBrutoMensual !== null) {
+                <span class="ad-vac-salario">
+                  <i class="ti ti-cash"></i>
+                  S/ {{ v.salarioBrutoMensual | number:'1.2-2' }} bruto mensual
+                </span>
+              }
+              @if (v.trabajadorReemplazado) {
+                <span><i class="ti ti-arrows-exchange"></i> Reemplaza a {{ v.trabajadorReemplazado | titleCase }}</span>
+              }
+              <!-- Postura del otro nivel sobre ESTA vacante: es el contexto que le falta a
+                   quien decide (p. ej. el GG viendo que su gerente ya observó la vacante).
+                   Solo si ese nivel realmente decidió: un "sin decidir" repetido en cada
+                   fila no aporta nada — su casilla de arriba ya lo dice una vez. -->
+              @if (decisionOtroNivel(v) !== null) {
+                <span class="ad-vac-otro"
+                      [class.ad-vac-otro--ok]="decisionOtroNivel(v) === true"
+                      [class.ad-vac-otro--no]="decisionOtroNivel(v) === false">
+                  <i class="ti" [ngClass]="decisionOtroNivel(v) ? 'ti-user-check' : 'ti-user-x'"></i>
+                  {{ textoOtroNivel(v) }}
+                </span>
+              }
+            </div>
+          </div>
+
+          @if (soloLectura) {
+            <div class="ad-vac-result" [style.color]="decisionRegistrada(v) ? '#15803D' : '#B91C1C'">
+              <i class="ti" [ngClass]="decisionRegistrada(v) ? 'ti-circle-check' : 'ti-circle-x'"></i>
+              {{ decisionRegistrada(v) ? 'Aprobada' : 'Rechazada' }}
+            </div>
+          } @else {
+            <div class="ad-toggle-row">
+              <button type="button" class="ad-toggle ad-toggle--ok"
+                      [class.ad-toggle--on]="decision(v) === true"
+                      (click)="marcar(v, true)">
+                <i class="ti ti-check"></i> Aprobar
+              </button>
+              <button type="button" class="ad-toggle ad-toggle--no"
+                      [class.ad-toggle--on]="decision(v) === false"
+                      (click)="marcar(v, false)">
+                <i class="ti ti-x"></i> Rechazar
+              </button>
+            </div>
+          }
+
+        </div>
+      }
+    </div>
+
+    <!-- ── Comentario ──────────────────────────────────────────────────── -->
+    <!-- En lectura el comentario propio ya se muestra arriba, dentro de la casilla. -->
+    @if (!soloLectura) {
+      <div class="abril-field ad-field">
+        <label class="abril-field-label" for="ad-comentario">Comentario (opcional)</label>
+        <textarea id="ad-comentario" class="abril-field-input ad-textarea" rows="3"
+                  [(ngModel)]="comentario"></textarea>
+      </div>
+
+      <!-- ── A quién le llega la decisión ───────────────────────────────────
+           Aparece para los tres niveles: la de Gerencia General dispara el aviso a GTH y el de
+           vacantes aprobadas a TI; la del gerente del área, el que le pide a GTH la segunda firma
+           del reemplazo; la de GTH, esa segunda firma, el de reemplazos aprobados y el de TI. Los
+           destinatarios los resuelve el backend con la misma lógica del envío real —lo que esté
+           activo en esas secciones de la Configuración, fusionado en una sola lista—, así que el
+           aviso no puede prometer algo distinto de lo que sale. Rechazarlo todo no manda nada, y
+           en ese caso el aviso lo dice en vez de callarlo.
+           Los textos son a propósito telegráficos: lo único que hace falta saber acá es a qué
+           correo llega (o que no llega a ninguno), no el detalle del flujo. -->
+      @if (destinatariosCargados) {
+        @if (sinEnvio) {
+          <div class="ad-note ad-note--mail ad-note--done">
+            <i class="ti ti-mail-off"></i>
+            <span>{{ motivoSinEnvio }}</span>
+          </div>
+        } @else if (destinatariosPara.length) {
+          <div class="ad-note ad-note--mail">
+            <i class="ti ti-mail"></i>
+            <span>
+              Aviso a
+              @for (d of destinatariosPara; track d.email) {<span class="ad-mail"
+                [title]="etiquetaDestinatario(d)">{{ d.email }}</span>{{ separadorCorreo($index, destinatariosPara.length) }}}
+              @if (destinatariosCopias.length) {
+                <span class="ad-note-sub">
+                  Copia a
+                  @for (c of destinatariosCopias; track c.email) {<span class="ad-mail"
+                    [title]="etiquetaDestinatario(c)">{{ c.email }}</span>{{ separadorCorreo($index, destinatariosCopias.length) }}}
+                </span>
+              }
+            </span>
+          </div>
+        } @else {
+          <div class="ad-note ad-note--mail ad-note--warn">
+            <i class="ti ti-alert-triangle"></i>
+            <span>Sin destinatarios activos: no se enviará el aviso. Revísalos en «Configuración».</span>
+          </div>
+        }
+      }
+    }
+
+  }
+
+  <!-- ── Footer ────────────────────────────────────────────────────────── -->
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="ad-btn ad-btn--ghost" (click)="closeModal.emit()">
+      {{ soloLectura ? 'Cerrar' : 'Cancelar' }}
+    </button>
+
+    @if (!cargando && data && !soloLectura) {
+      <div class="ad-footer-right">
+        <span class="ad-footer-text" [class.ad-footer-text--warn]="pendientes > 0">
+          {{ resumenDecision }}
+        </span>
+        <button type="button" class="ad-btn ad-btn--primary"
+                [disabled]="!puedeConfirmar" (click)="confirmar()">
+          <i class="ti ti-send"></i>
+          {{ enviando ? 'Registrando…' : 'Confirmar decisión' }}
+        </button>
+      </div>
+    }
+  </div>
+
+</app-abril-modal-panel>

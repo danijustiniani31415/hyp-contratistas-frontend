@@ -1,0 +1,66 @@
+<div class="pe-page">
+  <div class="pe-shell">
+
+    <!-- ── Registrando la respuesta ─────────────────────────────────────── -->
+    @if (enviando) {
+      <div class="pe-card pe-state">
+        <div class="pe-spinner"></div>
+        <p class="pe-state-text">Registrando tu respuesta…</p>
+      </div>
+    }
+
+    <!-- ── Enlace inválido / no se pudo registrar ───────────────────────── -->
+    @else if (error) {
+      <div class="pe-card pe-state">
+        <img class="pe-state-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
+        <i class="ti ti-alert-circle pe-state-icon" style="color:#B91C1C"></i>
+        <h2 class="pe-state-title">No pudimos registrar tu respuesta</h2>
+        <p class="pe-state-text">{{ mensajeError }}</p>
+      </div>
+    }
+
+    <!-- ── Respuesta registrada ─────────────────────────────────────────── -->
+    @else if (data) {
+      <div class="pe-card pe-state">
+        <img class="pe-state-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
+
+        @if (confirmada) {
+          <i class="ti ti-circle-check pe-state-icon" style="color:var(--pe-green)"></i>
+          <h2 class="pe-state-title">¡Asistencia confirmada!</h2>
+          <p class="pe-state-text">
+            Gracias por confirmar, {{ data.candidatoNombre }}. Te esperamos en la entrevista para la
+            posición <b>{{ data.puesto }}</b>. El equipo de Gestión del Talento Humano ya fue notificado.
+          </p>
+        } @else {
+          <i class="ti ti-circle-x pe-state-icon" style="color:#B91C1C"></i>
+          <h2 class="pe-state-title">Respuesta registrada</h2>
+          <p class="pe-state-text">
+            Gracias por avisarnos, {{ data.candidatoNombre }}. Registramos que no podrás asistir a la
+            entrevista para la posición <b>{{ data.puesto }}</b>. El equipo de Gestión del Talento
+            Humano ya fue notificado y se pondrá en contacto contigo.
+          </p>
+        }
+
+        <!-- La cita, para que el candidato sepa sobre cuál respondió (puede tener más de un
+             proceso abierto o haber recibido una reprogramación). -->
+        <div class="pe-cita" [class.pe-cita--no]="!confirmada">
+          <div class="pe-cita-item">
+            <i class="ti ti-calendar-event"></i>
+            <span>{{ fechaLegible }}</span>
+          </div>
+          <div class="pe-cita-item">
+            <i class="ti ti-clock"></i>
+            <span>{{ data.hora }}</span>
+          </div>
+          @if (data.lugarNombre) {
+            <div class="pe-cita-item">
+              <i class="ti ti-map-pin"></i>
+              <span>{{ data.lugarNombre }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+  </div>
+</div>

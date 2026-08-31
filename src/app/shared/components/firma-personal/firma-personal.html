@@ -1,0 +1,48 @@
+<div class="flex flex-col gap-5 max-w-[760px]">
+
+  <!-- Firma actual -->
+  <div class="rounded-lg border p-4 flex flex-col gap-3" style="border-color:var(--color-abril-border)">
+    <div class="flex items-center gap-2">
+      <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+        [ngClass]="{
+          'bg-[#D7FAF4] text-[#009C87]': current,
+          'bg-[#FAD5D4] text-[#D30000]': !current
+        }">
+        {{ current ? 'REGISTRADA' : 'SIN REGISTRAR' }}
+      </span>
+      <span class="text-sm text-gray-500">{{ descripcion }}</span>
+    </div>
+
+    <div *ngIf="current" class="flex items-center gap-3">
+      <img [src]="current.imageDataUrl" alt="Firma actual"
+        class="h-[90px] w-auto rounded-md border bg-[repeating-conic-gradient(#f3f4f6_0%_25%,#ffffff_0%_50%)] bg-[length:16px_16px]"
+        style="border-color:var(--color-abril-border)" />
+    </div>
+  </div>
+
+  <!-- Dibujar nueva firma -->
+  <div class="flex flex-col gap-2">
+    <label class="text-sm font-medium" style="color:var(--color-abril-standard)">
+      {{ current ? 'Dibujar una nueva firma (reemplaza la actual)' : 'Dibuja tu firma' }}
+    </label>
+
+    <div class="max-w-[600px]">
+      <app-signature-pad #pad (drawingChange)="hasDrawing = $event" />
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button type="button" (click)="clear()"
+        class="px-4 py-2 rounded-lg border text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50"
+        style="border-color:var(--color-abril-border)">
+        Limpiar
+      </button>
+      <button type="button" (click)="save()" [disabled]="!hasDrawing"
+        class="px-5 py-2 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        style="background:var(--color-abril-standard)">
+        Guardar
+      </button>
+      <span class="text-xs text-gray-400">Dibuja con el mouse manteniendo presionado el botón izquierdo.</span>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,245 @@
+<div class="lista-root">
+
+  <app-abril-page-header
+    [badge]="'SSOMA · ' + anioActual"
+    titulo="Observación Planeada de Tarea"
+    subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
+    [tabs]="tabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()">
+
+    <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+    <app-filter-trigger tabsExtra [count]="hayFiltrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <div class="lista-body">
+
+    <!-- SKELETON -->
+    @if (loading) {
+      <div class="skeleton-wrap">
+        @for (_ of [1,2,3,4,5]; track $index) {
+          <div class="skeleton-row"></div>
+        }
+      </div>
+    }
+
+    <!-- TABLA DESKTOP -->
+    @if (!loading && (result?.data?.length ?? 0) > 0) {
+      <div class="tabla-wrap abril-table-wrap">
+        <table class="abril-table tabla-opt">
+          <thead class="sticky top-0 z-10">
+            <tr>
+              <th>Fecha</th>
+              <th>Proyecto</th>
+              <th>PET</th>
+              <th>Tipo</th>
+              <th>Observador</th>
+              <th>Trabajador(es)</th>
+              <th>Score</th>
+              <th>Acción</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of result!.data; track item.id) {
+              <tr class="tabla-row" (click)="irADetalle(item.id)">
+                <td class="col-fecha">{{ item.fecha | date:'dd/MM/yyyy' }}</td>
+                <td class="col-proyecto">{{ item.proyectoNombre }}</td>
+                <td class="col-pet">{{ item.petNombre ?? '—' }}</td>
+                <td>
+                  <span class="chip-tipo" [class.chip-tipo--planeada]="item.tipoObservacion === 'Planeada'">
+                    {{ item.tipoObservacion }}
+                  </span>
+                </td>
+                <td class="col-obs">
+                  {{ item.observadorNombre ?? '—' }}
+                  @if (item.observadorEmpresaNombre) {
+                    <div class="col-empresa-sub">{{ item.observadorEmpresaNombre }}</div>
+                  }
+                </td>
+                <td class="col-trab">
+                  {{ item.trabajadoresPrincipal }}
+                  @if (item.totalTrabajadores > 1) {
+                    <span class="trab-badge">+{{ item.totalTrabajadores - 1 }}</span>
+                  }
+                  @if (item.trabajadorPrincipalEmpresaNombre) {
+                    <div class="col-empresa-sub">{{ item.trabajadorPrincipalEmpresaNombre }}</div>
+                  }
+                </td>
+                <td class="ta-c">
+                  <span class="score-badge" [ngClass]="scoreClass(item.scorePct)">
+                    {{ item.scorePct !== undefined && item.scorePct !== null ? (item.scorePct | number:'1.0-0') + '%' : '—' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="accion-chip" [ngClass]="accionClass(item.accionRequerida)">
+                    {{ item.accionRequerida ?? 'Ninguna' }}
+                  </span>
+                </td>
+                <td class="col-acciones" (click)="$event.stopPropagation()">
+                  <button type="button" class="btn-inline btn-inline--primary" (click)="irADetalle(item.id)">
+                    <i class="ti ti-eye"></i> Ver
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- CARDS MOBILE -->
+    @if (!loading && (result?.data?.length ?? 0) > 0) {
+      <div class="cards-mobile">
+        @for (item of result!.data; track item.id) {
+          <div class="opt-card" (click)="irADetalle(item.id)">
+            <div class="card-top">
+              <div class="card-date"><i class="ti ti-calendar"></i> {{ item.fecha | date:'dd/MM/yyyy' }}</div>
+              <span class="score-badge score-badge--sm" [ngClass]="scoreClass(item.scorePct)">
+                {{ item.scorePct !== undefined && item.scorePct !== null ? (item.scorePct | number:'1.0-0') + '%' : '—' }}
+              </span>
+            </div>
+            <div class="card-proyecto">{{ item.proyectoNombre }}</div>
+            <div class="card-meta">
+              <span class="chip-tipo" [class.chip-tipo--planeada]="item.tipoObservacion === 'Planeada'">{{ item.tipoObservacion }}</span>
+              @if (item.petNombre) { <span class="card-pet">{{ item.petNombre }}</span> }
+            </div>
+            <div class="card-trab">
+              <i class="ti ti-user"></i>
+              {{ item.trabajadoresPrincipal }}
+              @if (item.totalTrabajadores > 1) { <span class="trab-badge">+{{ item.totalTrabajadores - 1 }}</span> }
+              @if (item.trabajadorPrincipalEmpresaNombre) {
+                <span class="col-empresa-sub">· {{ item.trabajadorPrincipalEmpresaNombre }}</span>
+              }
+            </div>
+            @if (item.observadorNombre) {
+              <div class="card-trab">
+                <i class="ti ti-eye"></i>
+                {{ item.observadorNombre }}
+                @if (item.observadorEmpresaNombre) {
+                  <span class="col-empresa-sub">· {{ item.observadorEmpresaNombre }}</span>
+                }
+              </div>
+            }
+            @if (item.accionRequerida && item.accionRequerida !== 'Ninguna') {
+              <div class="card-accion">
+                <i class="ti ti-alert-triangle"></i> {{ item.accionRequerida }}
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- EMPTY STATE -->
+    @if (!loading && (result?.data?.length ?? 0) === 0 && result !== null) {
+      <div class="empty-state">
+        <i class="ti ti-clipboard-list empty-state__icon"></i>
+        <p>No se encontraron OPTs con los filtros aplicados.</p>
+        @if (hayFiltrosActivos) {
+          <button type="button" class="btn-limpiar" (click)="limpiarFiltros()">Limpiar filtros</button>
+        }
+      </div>
+    }
+
+    <!-- PAGINACIÓN -->
+    @if (result) {
+      <div class="shrink-0 max-w-[440px]">
+        <app-paginator
+          [totalRecords]="result.totalRecords"
+          [currentPage]="query.page ?? 1"
+          [totalPages]="result.totalPages"
+          (pageChange)="cambiarPagina($event)">
+        </app-paginator>
+      </div>
+    }
+
+  </div><!-- /lista-body -->
+
+  <app-fab label="Nueva OPT" (clicked)="irANuevo()"></app-fab>
+</div>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      valueField="projectId"
+      displayField="projectDescription"
+      [value]="filtroProyectoId"
+      (valueChange)="filtroProyectoId = $event; load()"
+      placeholder="Todos los proyectos">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Tipo"
+      [options]="tipoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="filtroTipo"
+      (valueChange)="filtroTipo = $event; load()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="PET"
+      [options]="pets"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtroPetId"
+      (valueChange)="filtroPetId = $event; load()"
+      placeholder="Todos los PET">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Observador"
+      [options]="workers"
+      valueField="workerId"
+      displayField="apellidoNombre"
+      [value]="filtroTrabajadorId"
+      (valueChange)="filtroTrabajadorId = $event; load()"
+      placeholder="Buscar por nombre o DNI...">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Empresa del observador"
+      [options]="empresas"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtroEmpresaObservadorId"
+      (valueChange)="filtroEmpresaObservadorId = $event; load()"
+      placeholder="Todas las empresas">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Empresa del trabajador"
+      [options]="empresas"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtroEmpresaTrabajadorId"
+      (valueChange)="filtroEmpresaTrabajadorId = $event; load()"
+      placeholder="Todas las empresas">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaDesde" (change)="load()" />
+    </div>
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaHasta" (change)="load()" />
+    </div>
+  </div>
+</app-filter-modal>

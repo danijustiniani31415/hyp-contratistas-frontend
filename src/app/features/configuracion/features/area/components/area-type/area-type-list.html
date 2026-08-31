@@ -1,0 +1,50 @@
+<div class="w-full rounded-lg overflow-auto border border-[#D6DEE5] bg-white">
+  <table class="w-full">
+    <thead class="bg-[#E5F7D1]">
+      <tr class="text-[#64BC04]">
+        <th class="text-left px-[16px] py-[10px] font-semibold w-[100px]"></th>
+        <th class="text-left px-[16px] py-[10px] font-semibold">Nombre de Área</th>
+        <th class="text-center px-[16px] py-[10px] font-semibold w-[140px]">Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of paged.data" class="border-b border-[#D6DEE5] hover:bg-gray-50">
+        <td class="px-[16px] py-[8px]">
+          <div class="flex items-center gap-2">
+            <button class="cursor-pointer" title="Editar" (click)="openEdit(item, $event)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14.06 9L15 9.94L5.92 19H5V18.08L14.06 9ZM17.66 3C17.41 3 17.15 3.1 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04C21.1 6.65 21.1 6 20.71 5.63L18.37 3.29C18.17 3.09 17.92 3 17.66 3ZM14.06 6.19L3 17.25V21H6.75L17.81 9.94L14.06 6.19Z" fill="#64BC04" />
+              </svg>
+            </button>
+            <button class="cursor-pointer" title="Eliminar" (click)="delete(item.areaTypeId, $event)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z" fill="#D30000" />
+              </svg>
+            </button>
+          </div>
+        </td>
+        <td class="px-[16px] py-[8px] text-gray-700" [title]="item.areaTypeName">
+          {{ item.areaTypeName }}
+        </td>
+        <td class="px-[16px] py-[8px] text-center">
+          <span class="inline-block rounded-lg px-[8px] py-[2px]"
+            [ngClass]="item.active
+              ? 'bg-[#D7FAF4] text-[#009C87]'
+              : 'bg-[#FAD5D4] text-[#D30000]'">
+            {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
+          </span>
+        </td>
+      </tr>
+      <tr *ngIf="!paged.data?.length">
+        <td colspan="3" class="text-center py-8 text-gray-400 text-sm">Sin registros</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-area-type-edit
+  *ngIf="showEditModal"
+  [dto]="editDto"
+  (closeModal)="onEditClosed()"
+  (saved)="onEditSaved()"
+></app-area-type-edit>

@@ -1,0 +1,114 @@
+<div class="auditoria-layout">
+  <div class="card main-card">
+    <div class="section-bar">
+      <div>
+        <h2 class="section-title">AUDITORÍA</h2>
+        <p class="section-sub">Cambios registrados en el módulo de habilitación</p>
+      </div>
+    </div>
+
+    <div class="filters-card">
+      <div class="filters-grid">
+        <select class="field-input" [(ngModel)]="filtroTabla" (change)="onFilter()">
+          <option *ngFor="let t of tablaOptions" [value]="t.id">{{ t.label }}</option>
+        </select>
+        <select class="field-input" [(ngModel)]="filtroAccion" (change)="onFilter()">
+          <option value="">Todas las acciones</option>
+          <option value="INSERT">INSERT</option>
+          <option value="UPDATE">UPDATE</option>
+          <option value="DELETE">DELETE</option>
+        </select>
+        <input
+          type="date"
+          class="field-input"
+          [(ngModel)]="filtroDesde"
+          (change)="onFilter()"
+          placeholder="Desde"
+        />
+        <input
+          type="date"
+          class="field-input"
+          [(ngModel)]="filtroHasta"
+          (change)="onFilter()"
+          placeholder="Hasta"
+        />
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="filtroUsuario"
+          (input)="onFilter()"
+          placeholder="Usuario…"
+        />
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tabla</th>
+            <th>Acción</th>
+            <th>Registro ID</th>
+            <th>Usuario</th>
+            <th>IP</th>
+            <th>Cambios</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let i of items" [class.row-selected]="detalleOpen?.id === i.id">
+            <td>{{ i.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+            <td>{{ i.tabla }}</td>
+            <td>
+              <span class="btn-chip" [class]="accionChip(i.accion)">{{ i.accion }}</span>
+            </td>
+            <td>{{ i.registroId }}</td>
+            <td>{{ i.usuarioNombre ?? (i.usuarioId ? '#' + i.usuarioId : '—') }}</td>
+            <td>{{ i.ipAddress ?? '—' }}</td>
+            <td>
+              <button type="button" class="btn-link" (click)="verCambios(i)">
+                Ver
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && items.length === 0">
+            <td colspan="7" class="empty-row">No hay registros de auditoría.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="paginator-wrapper" *ngIf="totalPages > 1">
+      <app-paginator
+        [totalRecords]="totalRecords"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="onPageChange($event)"
+      />
+    </div>
+  </div>
+
+  <div class="card detalle-card" *ngIf="detalleOpen">
+    <div class="detalle-header">
+      <div>
+        <h3>Detalle del cambio</h3>
+        <span class="muted-line">
+          {{ detalleOpen.tabla }} · ID {{ detalleOpen.registroId }} ·
+          {{ detalleOpen.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}
+        </span>
+      </div>
+      <button type="button" class="btn-ghost btn-x" (click)="closeDetalle()">✕</button>
+    </div>
+
+    <div class="detalle-body">
+      <div class="detalle-col">
+        <div class="detalle-label">Datos anteriores</div>
+        <pre class="detalle-pre">{{ detalleAnterior }}</pre>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Datos nuevos</div>
+        <pre class="detalle-pre">{{ detalleNuevo }}</pre>
+      </div>
+    </div>
+  </div>
+</div>

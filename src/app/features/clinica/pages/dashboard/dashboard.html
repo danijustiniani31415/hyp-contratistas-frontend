@@ -1,0 +1,167 @@
+<app-abril-page-header
+  badge="CLÍNICA"
+  titulo="Dashboard"
+  subtitulo="Vista general de la clínica ocupacional."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="dash-root">
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="loading-spinner"></div>
+    <span>Cargando datos...</span>
+  </div>
+
+  <!-- ── BODY ──────────────────────────────────────── -->
+  <div class="dash-body">
+
+    <!-- C1: KPI cards clickeables -->
+    <section class="kpi-section">
+      <div class="section-label">Alertas críticas</div>
+      <div class="kpi-grid">
+
+        <div class="kpi-card kpi-danger"
+             (click)="navegarConFiltro('/clinica/emos', 'sin-emo')">
+          <div class="kpi-icon">⚠️</div>
+          <div class="kpi-body">
+            <div class="kpi-value">{{ loading ? '—' : sinEmo }}</div>
+            <div class="kpi-label">Trabajadores sin EMO</div>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-critical"
+             (click)="navegarConFiltro('/clinica/emos', 'vencido')">
+          <div class="kpi-icon">🔴</div>
+          <div class="kpi-body">
+            <div class="kpi-value">{{ loading ? '—' : emosVencidos }}</div>
+            <div class="kpi-label">EMOs vencidos</div>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-warning"
+             (click)="navegarConFiltro('/clinica/emos', 'vence-7')">
+          <div class="kpi-icon">⏰</div>
+          <div class="kpi-body">
+            <div class="kpi-value">{{ loading ? '—' : vence7 }}</div>
+            <div class="kpi-label">Vencen en 7 días</div>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-caution"
+             (click)="navegarConFiltro('/clinica/emos', 'vence-30')">
+          <div class="kpi-icon">📅</div>
+          <div class="kpi-body">
+            <div class="kpi-value">{{ loading ? '—' : vence30 }}</div>
+            <div class="kpi-label">Vencen en 30 días</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- C2: Operaciones hoy con barra de progreso -->
+    <section class="ops-section">
+      <div class="section-label">Operaciones hoy</div>
+      <div class="ops-grid">
+
+        <div class="ops-card">
+          <div class="ops-icon ops-blue">📋</div>
+          <div class="ops-value ops-blue-text">{{ loading ? '—' : progHoy }}</div>
+          <div class="ops-label">Programadas</div>
+          <div class="ops-progress-bar">
+            <div class="ops-progress-fill fill-blue"
+                 [style.width.%]="pctCompletadas"></div>
+          </div>
+        </div>
+
+        <div class="ops-card">
+          <div class="ops-icon ops-orange">⚙️</div>
+          <div class="ops-value ops-orange-text">{{ loading ? '—' : progEnProceso }}</div>
+          <div class="ops-label">En proceso</div>
+          <div class="ops-progress-bar">
+            <div class="ops-progress-fill fill-orange"
+                 [style.width.%]="pctEnProceso"></div>
+          </div>
+        </div>
+
+        <div class="ops-card">
+          <div class="ops-icon ops-green">✅</div>
+          <div class="ops-value ops-green-text">{{ loading ? '—' : progCompletadas }}</div>
+          <div class="ops-label">Completadas</div>
+          <div class="ops-progress-bar">
+            <div class="ops-progress-fill fill-green"
+                 [style.width.%]="pctCompletadas"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Sección inferior: tabla + nav -->
+    <div class="bottom-section">
+
+      <!-- C3: Tabla con columna Fecha -->
+      <section class="proximos-card">
+        <div class="card-header">
+          <span class="section-label-inline">Próximos a vencer</span>
+          <span class="card-badge">Top 5</span>
+        </div>
+        <div *ngIf="!loading && proximosVencer.length === 0" class="empty-msg">
+          Sin EMOs próximos a vencer.
+        </div>
+        <table class="prox-table" *ngIf="!loading && proximosVencer.length > 0">
+          <thead>
+            <tr>
+              <th>Trabajador</th>
+              <th>DNI</th>
+              <th>Empresa</th>
+              <th>Vence</th>
+              <th>Días</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of proximosVencer" class="prox-row">
+              <td class="td-nombre">{{ p.nombre }}</td>
+              <td class="td-muted">{{ p.dni }}</td>
+              <td class="td-muted td-empresa">{{ p.empresa }}</td>
+              <td class="td-muted">{{ p.fechaVencimiento | date: 'dd/MM/yyyy' }}</td>
+              <td>
+                <span class="dias-badge" [ngClass]="diasVencerClass(p.diasParaVencer)">
+                  {{ p.diasParaVencer }}d
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- C5: Nav section con mini-stats arregladas -->
+      <div class="nav-section">
+
+        <div class="mini-stats">
+          <div class="mini-stat" [class.has-alert]="interconsultasPendientes > 0">
+            <div class="mini-stat-icon">🔬</div>
+            <div class="mini-stat-body">
+              <div class="mini-stat-value" [class.text-orange]="interconsultasPendientes > 0">
+                {{ loading ? '—' : interconsultasPendientes }}
+              </div>
+              <div class="mini-stat-label">Interconsultas pendientes</div>
+            </div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-icon">📊</div>
+            <div class="mini-stat-body">
+              <div class="mini-stat-value">{{ loading ? '—' : programacionesSemana }}</div>
+              <div class="mini-stat-label">Programadas esta semana</div>
+            </div>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+
+  </div><!-- /dash-body -->
+
+</div>

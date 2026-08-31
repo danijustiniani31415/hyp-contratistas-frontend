@@ -1,0 +1,260 @@
+/* Mismo lenguaje visual que el modal de Nuevo EMO (emos/components/emo-create): el shell,
+   el label flotante (.abril-field* global) y los desplegables ya los aportan los componentes
+   compartidos, así que acá solo queda el espaciado y lo propio de esta pantalla. */
+
+.paso-body {
+  padding: 16px;
+  display: block;
+}
+
+.paso-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a18;
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.paso-title i {
+  color: var(--color-abril-logo-blue);
+}
+
+.mt-6 {
+  margin-top: 1.2rem;
+}
+
+/* .abril-field / .abril-field-label / .abril-field-input son globales (src/styles.css)
+   — no reimplementar el label flotante aquí. */
+.abril-field {
+  margin-bottom: 14px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Trabajador: dato fijo de la fila desde la que se abrió el modal, no un campo editable. */
+.worker-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 0.5px solid #d4d0c8;
+  border-radius: var(--radius-standard);
+  background: #fafaf9;
+}
+
+.worker-card__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a18;
+}
+
+.worker-card__meta {
+  font-size: 12px;
+  color: #8a8880;
+}
+
+.notas {
+  resize: vertical;
+  min-height: 72px;
+}
+
+/* Razón social: campo de solo lectura. Se apaga el fondo y el cursor de texto para que se lea
+   como dato y no como algo que se puede escribir, sin salirse de la caja de .abril-field-input
+   (así conserva la misma altura que la clínica de al lado). El :focus de la clase global se
+   neutraliza porque con tabindex="-1" no debería llegar el foco, pero un click igual lo daba. */
+.abril-field-input--readonly,
+.abril-field-input--readonly:focus {
+  background: #fafaf9;
+  border-color: #d4d0c8;
+  color: #57534e;
+  cursor: default;
+  user-select: none;
+}
+
+/* Cupos de la razón social elegida, debajo del desplegable: mismo lugar y mismo peso que el
+   hint de cupos de Reclutamiento, para que el dato se lea igual en las dos pantallas. */
+.razon-hint {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: #6b7280;
+}
+
+/* Sin cupos no se bloquea la cita (la razón social puede estar por ampliarse), pero tiene que
+   verse: es la misma advertencia que da Reclutamiento al asignarla. */
+.razon-hint--warn {
+  margin-top: 6px;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+/* Aviso de destinatarios: mismo patrón que el de Solicitud de Salidas ("será notificada a …"),
+   pero en el azul de SSOMA. Los correos van resaltados porque son el dato que importa. */
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 10px 12px;
+  border: 0.5px solid #a9c9e6;
+  border-radius: var(--radius-standard);
+  background: var(--color-abril-logo-blue-light);
+  font-size: 12px;
+  line-height: 1.5;
+  color: #4b5563;
+}
+
+.aviso i {
+  color: var(--color-abril-logo-blue);
+  font-size: 15px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+/* Los dos avisos (programación manual y aceptada por la clínica) van seguidos: se separan
+   entre sí un poco más que del campo de arriba para que se lean como dos bloques distintos. */
+.aviso + .aviso {
+  margin-top: 8px;
+}
+
+.aviso__texto {
+  margin: 0;
+}
+
+.aviso__email {
+  color: var(--color-abril-logo-blue);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+/* Clínica todavía sin elegir: se nombra en la frase como un destinatario más, pero en
+   cursiva y sin el azul de los correos porque aún no es una dirección concreta. */
+.aviso__pendiente {
+  font-style: italic;
+  font-weight: 600;
+}
+
+/* Destinatario activo al que no se le puede escribir: el aviso sigue siendo azul (el correo
+   sí sale, solo que sin esa clínica), pero la parte que falla se lee en ámbar. */
+.aviso__alerta {
+  display: block;
+  margin-top: 6px;
+  color: #92400e;
+  font-weight: 600;
+}
+
+/* Sin destinatarios activos el correo no sale: se avisa en ámbar, no en azul informativo. */
+.aviso--warn {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.aviso--warn i {
+  color: #b45309;
+}
+
+/* ── Footer ─────────────────────────────────────────────────
+   El padding/borde los pone el shell (app-abril-modal-panel · .amp-footer);
+   .modal-footer-row solo reparte Cancelar (izq.) y la acción principal (der.). */
+.modal-footer-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.btn-ghost {
+  padding: 9px 14px;
+  border-radius: 9px;
+  border: 0.5px solid #d4d0c8;
+  background: transparent;
+  color: #8a8880;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: #f5f4f2;
+}
+
+.btn-ghost:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: none;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-abril-logo-blue-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── RESPONSIVE ≥768px ────────────────────────────────────── */
+@media (min-width: 768px) {
+  .paso-body {
+    padding: 24px 32px;
+  }
+
+  .form-row {
+    flex-direction: row;
+    gap: 16px;
+  }
+
+  .form-row .abril-field {
+    flex: 1;
+    margin-bottom: 14px;
+  }
+}
+
+/* Ficha de pre-ingreso (finalista aprobado de Reclutamiento): mismo bloque, en ámbar, para que
+   se lea de una que la persona todavía no es trabajadora de Abril. */
+.worker-card--preingreso {
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+
+.worker-card__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.worker-card__tag i {
+  font-size: 13px;
+}

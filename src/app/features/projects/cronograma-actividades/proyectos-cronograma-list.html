@@ -1,0 +1,149 @@
+<app-abril-page-header
+  [badge]="'PROYECTOS · ' + anioActual"
+  titulo="Cronograma de Actividades"
+  subtitulo="Lista de proyectos y sus cronogramas."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="page-wrapper flex-1 overflow-y-auto">
+
+  <div class="dash-card">
+
+    <!-- ── Header (oscuro) ── -->
+    <div class="dash-header">
+      <div class="dash-header-left">
+        <div class="dash-header-main">
+          <span class="dash-title">Cronograma de Actividades</span>
+          <span class="dash-count" *ngIf="!loading && proyectos.length">
+            {{ proyectosFiltrados.length }} de {{ proyectos.length }} proyecto{{ proyectos.length !== 1 ? 's' : '' }}
+          </span>
+        </div>
+        <span class="dash-sub">Selecciona un proyecto para ingresar a su cronograma detallado</span>
+      </div>
+
+      <!-- Buscador dinámico -->
+      <div class="dash-search-box" *ngIf="!loading && proyectos.length">
+        <i class="ti ti-search search-icon"></i>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar por proyecto o responsable..."
+          [(ngModel)]="filtroTexto"
+        />
+        <button *ngIf="filtroTexto" class="clear-btn" (click)="limpiarFiltro()" title="Limpiar búsqueda">
+          <i class="ti ti-x"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Cuerpo claro con Grid Responsivo ── -->
+    <div class="project-list-body">
+
+      <!-- ── Skeleton loader en Grid ── -->
+      <div class="projects-grid-container" *ngIf="loading">
+        <div
+          class="project-grid-card skel-card"
+          *ngFor="let i of [1,2,3,4,5,6]"
+        >
+          <div class="skel-top-line"></div>
+          <div class="card-body">
+            <div class="skel skel-title"></div>
+            <div class="skel skel-sub"></div>
+            <div class="skel-progress-block">
+              <div class="skel skel-bar-row"></div>
+              <div class="skel skel-bar-row"></div>
+              <div class="skel skel-bar-row"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Cuadrícula de Tarjetas de Proyecto ── -->
+      <ng-container *ngIf="!loading">
+
+        <div class="projects-grid-container" *ngIf="proyectosFiltrados.length">
+          <div
+            class="project-grid-card group"
+            *ngFor="let p of proyectosFiltrados; let i = index"
+            (click)="abrirCronograma(p)"
+            [style.--proj-color]="getProjectColor(i)"
+            [style.--proj-glow]="getProjectColorGlow(i)"
+          >
+            <div class="card-top-bar" [style.background]="getProjectColor(i)"></div>
+            <div class="card-body">
+              <div class="card-header-row">
+                <span class="card-num-badge">{{ pad(i + 1) }}</span>
+                <h3 class="card-title">{{ p.projectDescription }}</h3>
+                <i class="ti ti-arrow-up-right card-arrow-icon"></i>
+              </div>
+
+              <div class="card-meta-row" *ngIf="p.responsableUdp">
+                <i class="ti ti-user meta-icon"></i>
+                <span class="card-resp-text">{{ p.responsableUdp }}</span>
+              </div>
+
+              <div class="card-progress-section">
+                <div class="progress-item">
+                  <div class="progress-info-row">
+                    <span class="progress-label">Anteproyecto</span>
+                    <span class="progress-pct">{{ p.avanceAnteproyecto }}%</span>
+                  </div>
+                  <div class="progress-track-bg">
+                    <div class="progress-fill-bar" [style.width.%]="p.avanceAnteproyecto" [style.background]="getProjectColor(i)"></div>
+                  </div>
+                </div>
+
+                <div class="progress-item">
+                  <div class="progress-info-row">
+                    <span class="progress-label">Proyecto</span>
+                    <span class="progress-pct">{{ p.avanceProyecto }}%</span>
+                  </div>
+                  <div class="progress-track-bg">
+                    <div class="progress-fill-bar" [style.width.%]="p.avanceProyecto" [style.background]="getProjectColor(i)"></div>
+                  </div>
+                </div>
+
+                <div class="progress-item">
+                  <div class="progress-info-row">
+                    <span class="progress-label">Actualización</span>
+                    <span class="progress-pct">{{ p.avanceProyectoActualizacion }}%</span>
+                  </div>
+                  <div class="progress-track-bg">
+                    <div class="progress-fill-bar" [style.width.%]="p.avanceProyectoActualizacion" [style.background]="getProjectColor(i)"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estado vacío sin proyectos -->
+        <div class="dash-empty" *ngIf="!proyectos.length">
+          <div class="empty-icon">
+            <i class="ti ti-calendar-off text-3xl opacity-60"></i>
+          </div>
+          <p class="empty-title">Sin proyectos disponibles</p>
+          <p class="empty-sub">No hay proyectos con cronograma asignado en este momento</p>
+        </div>
+
+        <!-- Estado vacío búsqueda sin resultados -->
+        <div class="dash-empty" *ngIf="proyectos.length && !proyectosFiltrados.length">
+          <div class="empty-icon">
+            <i class="ti ti-search-off text-3xl opacity-60"></i>
+          </div>
+          <p class="empty-title">Sin coincidencias</p>
+          <p class="empty-sub">No se encontraron proyectos para "{{ filtroTexto }}"</p>
+          <button class="btn-reset-search" (click)="limpiarFiltro()">
+            <i class="ti ti-rotate-2 mr-1"></i> Ver todos los proyectos
+          </button>
+        </div>
+
+      </ng-container>
+
+    </div>
+
+  </div>
+
+</div>
+
+

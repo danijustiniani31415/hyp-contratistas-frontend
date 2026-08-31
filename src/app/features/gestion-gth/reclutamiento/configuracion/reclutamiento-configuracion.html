@@ -1,0 +1,11 @@
+<app-abril-page-header
+  badge="GESTIÓN GTH · CONFIGURACIÓN"
+  titulo="Configuración de correos"
+  subtitulo="Qué correos del proceso de reclutamiento se envían y quién los recibe."
+  [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+  (secondaryClick)="volver()">
+</app-abril-page-header>
+
+<section class="page-container px-3 py-4 flex flex-col gap-[16px] flex-1 min-h-0 overflow-auto">
+  <app-gth-correos-config modulo="reclutamiento"></app-gth-correos-config>
+</section>

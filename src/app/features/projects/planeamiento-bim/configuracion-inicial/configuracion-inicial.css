@@ -1,0 +1,740 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #F4F6F9;
+}
+
+.bim-config-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.bim-container {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ── Tarjetas planas UDP ────────────────────────────────────── */
+.bim-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  box-shadow: none;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Card Header ────────────────────────────────────────────── */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.card-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.card-subtitle {
+  font-size: 0.8rem;
+  color: #64748B;
+  margin: 0.25rem 0 0 0;
+}
+
+.title-icon {
+  font-size: 1.1rem;
+  color: #1E3A5F;
+}
+
+.card-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #EDF4FB;
+  color: #1E3A5F;
+}
+
+.card-badge--info {
+  background: #EAF3DE;
+  color: #1B6B3A;
+}
+
+/* ── Project Selector ───────────────────────────────────────── */
+.project-selector-card {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: #FFFFFF;
+  border-left: 4px solid #1E3A5F;
+}
+
+.project-selector-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  max-width: 600px;
+}
+
+.project-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.project-select {
+  height: 38px;
+  font-weight: 600;
+  color: #1E3A5F;
+  border-color: #CBD5E1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.status-pill {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-pill--active {
+  background: #EAF3DE;
+  color: #1B6B3A;
+}
+
+.btn-save-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 38px;
+  padding: 0 1.25rem;
+  background: #1E3A5F;
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-save-inline:hover:not(:disabled) {
+  background: #162C48;
+}
+
+.btn-save-inline:disabled {
+  background: #CBD5E1;
+  cursor: not-allowed;
+}
+
+/* ── Top Grid Section ───────────────────────────────────────── */
+.top-section-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .top-section-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.general-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.bim-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.bim-field-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ppc-readonly-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background: #F8FAFC;
+}
+
+.ppc-readonly-value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1E3A5F;
+}
+
+.ppc-readonly-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #64748B;
+}
+
+.field-hint {
+  font-size: 0.75rem;
+  color: #64748B;
+  margin-top: 2px;
+}
+
+/* ── Inputs y Selects ───────────────────────────────────────── */
+.bim-select,
+.bim-input {
+  height: 38px;
+  padding: 0 12px;
+  width: 100%;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #1E293B;
+  background: #FFFFFF;
+  outline: none;
+  box-shadow: none;
+  transition: border-color 0.15s;
+}
+
+.bim-select:focus,
+.bim-input:focus {
+  border-color: #1E3A5F;
+}
+
+.bim-input-date {
+  height: 34px;
+  padding: 0 8px;
+  width: 100%;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: #1E293B;
+  background: #FFFFFF;
+  outline: none;
+}
+
+.bim-input-date:focus {
+  border-color: #1E3A5F;
+}
+
+.bim-input-small {
+  height: 32px;
+  padding: 0 8px;
+  width: 100%;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: #1E293B;
+  background: #FFFFFF;
+  outline: none;
+}
+
+.bim-input-small:focus {
+  border-color: #1E3A5F;
+}
+
+/* ── Tablas Flat UDP ────────────────────────────────────────── */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.bim-table {
+  width: 100%;
+  font-size: 0.85rem;
+  border-collapse: collapse;
+}
+
+.bim-table th {
+  text-align: left;
+  padding: 8px 12px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #1E3A5F;
+  background: #F8FAFC;
+  border-bottom: 2px solid #E2E8F0;
+}
+
+.bim-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+
+.fase-name-label {
+  font-weight: 600;
+  color: #1E293B;
+}
+
+.text-navy {
+  color: #1E3A5F;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* ── Botones Estándar ───────────────────────────────────────── */
+.btn-primary-udp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 34px;
+  padding: 0 1rem;
+  background: #1E3A5F;
+  color: #FFFFFF;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: 8px;
+  border: none;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary-udp:hover {
+  background: #162C48;
+}
+
+/* ── Zona Cards ─────────────────────────────────────────────── */
+.zona-card {
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background: #F8FAFC;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.zona-card:last-child {
+  margin-bottom: 0;
+}
+
+.zona-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px dashed #CBD5E1;
+}
+
+.zona-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.zona-index-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: #FFFFFF;
+  background: #1E3A5F;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.zona-name-input {
+  max-width: 400px;
+  font-weight: 600;
+  color: #1E3A5F;
+}
+
+.zona-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.counts-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #475569;
+  background: #E2E8F0;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.btn-danger-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #FCA5A5;
+  background: #FEF2F2;
+  color: #DC2626;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-danger-icon:hover {
+  background: #FEE2E2;
+}
+
+/* ── Columnas de Niveles y Sectores ─────────────────────────── */
+.zona-columns-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .zona-columns-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sub-column {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.sub-column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.sub-column-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  letter-spacing: 0.03em;
+}
+
+.btn-sub-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  background: #EDF4FB;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-sub-add:hover {
+  background: #D9E7F7;
+}
+
+.empty-sub-list {
+  font-size: 0.78rem;
+  color: #94A3B8;
+  font-style: italic;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.empty-sub-list--sm {
+  padding: 0.35rem;
+  font-size: 0.72rem;
+}
+
+.sub-column-hint {
+  font-size: 0.72rem;
+  color: #64748B;
+  margin: -0.3rem 0 0 0;
+}
+
+/* ── Tarjetas de Nivel (orden/nombre, tipo de estructura, sectores exclusivos) ── */
+.nivel-card {
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background: #F8FAFC;
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nivel-card + .nivel-card {
+  margin-top: 0.6rem;
+}
+
+.nivel-card-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nivel-orden-input {
+  width: 44px;
+  flex-shrink: 0;
+}
+
+.nivel-nombre-input {
+  flex: 1;
+}
+
+.nivel-tipo-select {
+  flex: 1;
+  display: block;
+}
+
+.nivel-sectores-block {
+  border-top: 1px dashed #CBD5E1;
+  padding-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.nivel-sectores-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748B;
+  letter-spacing: 0.03em;
+}
+
+.btn-sub-add--sm {
+  font-size: 0.68rem;
+  padding: 2px 7px;
+}
+
+.nivel-sector-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sub-table {
+  width: 100%;
+  font-size: 0.8rem;
+  border-collapse: collapse;
+}
+
+.sub-table th {
+  text-align: left;
+  padding: 6px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  background: #F8FAFC;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.sub-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+
+.btn-trash-sm {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  color: #94A3B8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-trash-sm:hover {
+  background: #FEF2F2;
+  color: #DC2626;
+  border-color: #FCA5A5;
+}
+
+/* ── State Alerts & Empty States ────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  background: #F8FAFC;
+  border: 2px dashed #E2E8F0;
+  border-radius: 8px;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  color: #94A3B8;
+  margin-bottom: 0.5rem;
+}
+
+.empty-title {
+  font-weight: 700;
+  color: #1E3A5F;
+  font-size: 0.95rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.empty-sub {
+  font-size: 0.8rem;
+  color: #64748B;
+  margin: 0;
+}
+
+.bim-alert {
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.85rem;
+}
+
+.bim-alert--danger {
+  background: #FDF2F2;
+  border: 1px solid #FCA5A5;
+  color: #991B1B;
+}
+
+.alert-icon {
+  font-size: 1.5rem;
+  color: #DC2626;
+}
+
+.btn-retry {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 6px 12px;
+  background: #DC2626;
+  color: #FFFFFF;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+/* ── Skeleton Loaders (DESIGN-VICTOR.md §7) ─────────────────── */
+.skeleton-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400% 0;
+  }
+  100% {
+    background-position: 400% 0;
+  }
+}
+
+.skeleton-line,
+.skeleton-box {
+  background: linear-gradient(90deg, #dde5ef 25%, #eaeff6 50%, #dde5ef 75%);
+  background-size: 400% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 4px;
+}
+
+.skeleton-line {
+  height: 16px;
+  margin-bottom: 8px;
+}
+
+.skeleton-line--title {
+  height: 24px;
+  width: 40%;
+  margin-bottom: 1rem;
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.skeleton-box {
+  height: 60px;
+}
+
+.skeleton-box--lg {
+  height: 180px;
+}
+
+.skeleton-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

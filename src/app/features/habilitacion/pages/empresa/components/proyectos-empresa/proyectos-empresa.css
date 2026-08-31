@@ -1,0 +1,85 @@
+.pe-body {
+  min-width: 420px;
+  max-width: 560px;
+  padding: 4px 0;
+}
+
+.pe-loading {
+  padding: 24px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.pe-section {
+  margin-bottom: 20px;
+}
+
+.pe-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  padding: 0 4px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 8px;
+}
+
+.pe-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 4px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.pe-row:last-child {
+  border-bottom: none;
+}
+
+.pe-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pe-nombre {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pe-fecha {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.btn-activar,
+.btn-desactivar {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  padding: 4px 14px;
+  min-width: 90px;
+}
+
+.btn-desactivar {
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+.btn-desactivar:hover:not(:disabled) {
+  background: #fee2e2;
+}
+
+.pe-empty {
+  padding: 24px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.875rem;
+}

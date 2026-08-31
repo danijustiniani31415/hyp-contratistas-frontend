@@ -1,0 +1,48 @@
+<app-base-modal [title]="'EDITAR CARPETA DE ADJUDICACIONES'" width="w-[560px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-5 mt-5">
+
+    <!-- Tipo de carpeta -->
+    <div *ngIf="folderTypeDescription" class="flex items-center gap-2 text-sm bg-gray-50 border rounded-lg px-3 py-2" style="border-color:var(--color-abril-border)">
+      <span class="text-gray-500">Tipo de carpeta:</span>
+      <b class="text-gray-700">{{ folderTypeDescription }}</b>
+    </div>
+
+    <!-- Carpeta actual -->
+    <div *ngIf="folderName" class="flex items-center gap-2 text-sm bg-gray-50 border rounded-lg px-3 py-2" style="border-color:var(--color-abril-border)">
+      <span class="text-gray-500">Carpeta actual:</span>
+      <b class="text-gray-700">{{ folderName }}</b>
+    </div>
+
+    <!-- Navegador de carpetas (preseleccionado con la carpeta actual) -->
+    <app-folder-picker
+      [linkUrl]="dto.linkUrl"
+      [initialDriveId]="dto.driveId"
+      [initialFolderId]="dto.folderId"
+      [initialFolderName]="folderName"
+      (linkUrlChange)="dto.linkUrl = $event"
+      (selected)="onFolderSelected($event)">
+    </app-folder-picker>
+
+    <!-- Estado -->
+    <div class="flex flex-col gap-1.5">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Estado</label>
+      <app-search-select
+        [options]="statusOptions"
+        valueField="value"
+        displayField="label"
+        [showLabel]="false"
+        [allowClear]="false"
+        [(value)]="dto.active">
+      </app-search-select>
+    </div>
+
+    <!-- Guardar -->
+    <div class="flex justify-center pt-1">
+      <button (click)="save()"
+        class="w-[140px] py-2 rounded-lg cursor-pointer transition-colors" style="background:var(--color-abril-primary)">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+</app-base-modal>

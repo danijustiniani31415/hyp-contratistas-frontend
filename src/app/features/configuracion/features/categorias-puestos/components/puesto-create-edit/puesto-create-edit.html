@@ -1,0 +1,65 @@
+<app-base-modal [title]="titulo" width="w-[480px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[16px] mt-[10px]">
+
+    <div class="abril-field">
+      <label class="abril-field-label">Nombre</label>
+      <input
+        type="text"
+        class="abril-field-input"
+        [(ngModel)]="nombre"
+        (keydown.enter)="save()"
+        placeholder="Ej. Maestro de obra" />
+    </div>
+    <p *ngIf="submitted && !nombre.trim()" class="text-xs text-red-500 -mt-[10px]">Campo requerido</p>
+
+    <app-search-select
+      label="Categoría"
+      [options]="categorias"
+      valueField="id"
+      displayField="nombre"
+      [value]="categoriaId"
+      (valueChange)="categoriaId = $event"
+      [fullText]="true"
+      placeholder="Selecciona categoría">
+    </app-search-select>
+    <p *ngIf="submitted && categoriaId === null" class="text-xs text-red-500 -mt-[10px]">Campo requerido</p>
+
+    <!-- Las dos áreas son opcionales a propósito: los puestos de obra no tienen ninguna. La
+         primera decide en qué desplegable de Solicitud de Personal aparece el puesto; la
+         segunda, a qué área entra el trabajador que lo ocupe. Casi siempre son la misma, así
+         que elegir la primera propone la segunda. -->
+    <app-search-select
+      label="Área que puede pedir este puesto"
+      [options]="areaOptions"
+      valueField="areaScopeId"
+      displayField="ruta"
+      [value]="areaSolicitanteScopeId"
+      (valueChange)="onSolicitanteChange($event ?? null)"
+      [fullText]="true"
+      placeholder="Sin área">
+    </app-search-select>
+
+    <app-search-select
+      label="Área a la que irá el postulante"
+      [options]="areaOptions"
+      valueField="areaScopeId"
+      displayField="ruta"
+      [value]="areaDestinoScopeId"
+      (valueChange)="areaDestinoScopeId = $event ?? null"
+      [fullText]="true"
+      placeholder="La misma del solicitante">
+    </app-search-select>
+
+    <div class="flex justify-center mt-[4px]">
+      <button
+        (click)="save()"
+        class="w-[160px] py-[8px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-standard)">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

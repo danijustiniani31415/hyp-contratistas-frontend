@@ -1,0 +1,84 @@
+<app-abril-modal-panel
+  *ngIf="open"
+  [titulo]="title"
+  icono="ti-building-hospital"
+  variant="blue"
+  width="700px"
+  (closeModal)="close()">
+
+  <div class="form-row">
+    <div class="abril-field">
+      <label class="abril-field-label">Nombre *</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="model.nombre" />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="abril-field">
+      <label class="abril-field-label">RUC</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="model.ruc" maxlength="11" />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Teléfono</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="model.telefono" />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="abril-field">
+      <label class="abril-field-label">Dirección</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="model.direccion" />
+    </div>
+  </div>
+
+  <div class="emails-header">
+    <span class="abril-field-label" style="position:static">Emails de contacto</span>
+    <button type="button" class="btn-link" (click)="agregarEmail()">
+      <i class="ti ti-plus"></i> Agregar email
+    </button>
+  </div>
+  <div class="email-row" *ngFor="let e of emails; let i = index">
+    <input
+      type="email"
+      class="abril-field-input"
+      [(ngModel)]="e.email"
+      [name]="'email-' + i"
+      placeholder="correo@ejemplo.com"
+    />
+    <input
+      type="text"
+      class="abril-field-input"
+      [(ngModel)]="e.nombre"
+      [name]="'nombre-' + i"
+      placeholder="Nombre contacto"
+    />
+    <button type="button" class="btn-delete" (click)="eliminarEmail(i)" title="Eliminar">
+      <i class="ti ti-trash"></i>
+    </button>
+  </div>
+  <p *ngIf="emails.length === 0" class="emails-empty">Sin emails registrados</p>
+
+  <div class="form-row mt-2">
+    <div class="abril-field">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Estado"
+        [options]="estadoOpts"
+        valueField="id"
+        displayField="label"
+        [sortAlpha]="false"
+        [value]="model.activo"
+        [allowClear]="false"
+        placeholder="Selecciona estado"
+        (valueChange)="model.activo = $event">
+      </app-search-select>
+    </div>
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+      <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
+      {{ saving ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+
+</app-abril-modal-panel>

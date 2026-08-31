@@ -1,0 +1,15 @@
+<app-base-modal
+  title="Registra tu firma"
+  width="w-[720px]"
+  closeColor="var(--color-abril-standard)"
+  (closeModal)="cerrar.emit()">
+
+  <p class="text-sm text-gray-500 mb-4">
+    Todavía no tienes una firma registrada. Dibújala una vez y podrás firmar.
+  </p>
+
+  <app-firma-personal
+    descripcion="Se estampará en la planilla de rendición y en el resto de documentos que firmes"
+    (guardada)="guardada.emit($event)" />
+
+</app-base-modal>

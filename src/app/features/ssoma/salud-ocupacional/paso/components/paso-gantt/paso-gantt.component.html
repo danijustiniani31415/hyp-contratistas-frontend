@@ -1,0 +1,10 @@
+<div class="relative">
+  <div *ngIf="loading" class="flex items-center justify-center py-12 text-gray-400">
+    <i class="ti ti-loader-2 animate-spin text-2xl mr-2"></i>
+    <span>Cargando Gantt...</span>
+  </div>
+  <div *ngIf="error" class="text-center py-8 text-red-500 text-sm">
+    <i class="ti ti-alert-circle mr-1"></i>{{ error }}
+  </div>
+  <div #ganttContainer class="paso-gantt-container" [class.hidden]="loading || !!error"></div>
+</div>

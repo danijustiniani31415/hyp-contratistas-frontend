@@ -1,0 +1,112 @@
+<div class="lista-root">
+
+  <app-abril-page-header
+    badge="SSOMA · Gestión"
+    titulo="PETS"
+    subtitulo="Procedimientos Escritos de Trabajo Seguro — catálogo de pasos que jalan automáticamente OPT y otras herramientas."
+    [botonPrimario]="{ label: mostrarFormCrear ? 'Cancelar' : 'Nuevo PETS', icono: mostrarFormCrear ? 'ti-x' : 'ti-plus' }"
+    (primaryClick)="toggleFormCrear()">
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <div class="lista-body">
+
+    @if (mostrarFormCrear) {
+      <div class="crear-card">
+        <h3 class="crear-titulo">Nuevo PETS</h3>
+        <div class="crear-fields">
+          <div class="abril-field">
+            <label class="abril-field-label">Nombre *</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="nuevoNombre" placeholder="Ej. Tarrajeo" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Código</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="nuevoCodigo" placeholder="Ej. SSO-PETS-17" />
+          </div>
+        </div>
+        <p class="crear-hint">
+          Después de crearlo pasas a la pantalla de detalle para armar los pasos.
+          ¿No sabes por dónde empezar? <a [href]="plantillaUrl" download>Descarga la plantilla de Word</a>,
+          complétala y luego impórtala desde la pantalla de detalle.
+        </p>
+        <div class="crear-actions">
+          <button class="btn-primary" (click)="crear()" [disabled]="!puedeCrear">
+            {{ creando ? 'Creando…' : 'Crear y continuar' }}
+          </button>
+        </div>
+      </div>
+    }
+
+    <div *ngIf="loading" class="loading-msg">Cargando PETS…</div>
+
+    <div *ngIf="!loading" class="abril-table-wrap">
+      <table class="abril-table">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th class="text-center">Pasos</th>
+            <th class="text-center">Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="pagedPets.length === 0">
+            <td colspan="5" class="text-center py-[40px] text-gray-400 text-sm">
+              {{ filtrosActivos > 0 ? 'Sin resultados.' : 'No hay PETS registrados todavía.' }}
+            </td>
+          </tr>
+          <tr *ngFor="let p of pagedPets" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border); cursor:pointer" (click)="irADetalle(p.id)">
+            <td>{{ p.codigo || '—' }}</td>
+            <td>{{ p.nombre }}</td>
+            <td class="text-center">{{ p.totalPasos }}</td>
+            <td class="text-center">
+              <span class="estado-badge" [class.estado-activo]="p.activo" [class.estado-inactivo]="!p.activo">
+                {{ p.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="text-center" (click)="$event.stopPropagation()">
+              <div class="flex items-center justify-center gap-[8px]">
+                <button abrilBulkAction="default" (click)="irADetalle(p.id)">Ver / Editar</button>
+                <button [abrilBulkAction]="p.activo ? 'danger' : 'default'" (click)="toggleActivo(p)">
+                  {{ p.activo ? 'Desactivar' : 'Activar' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="filteredPets.length"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="changePage($event)">
+      </app-paginator>
+    </div>
+
+  </div>
+</div>
+
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por código o nombre..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="estadoFilter"
+      (valueChange)="estadoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

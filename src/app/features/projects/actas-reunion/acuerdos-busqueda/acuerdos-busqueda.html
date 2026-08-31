@@ -1,0 +1,123 @@
+<app-abril-page-header
+  badge="ACTAS DE REUNIÓN"
+  titulo="Acuerdos"
+  subtitulo="Todos los acuerdos de las reuniones donde participaste, en un solo lugar."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="bg-white rounded-lg p-5 flex-1 min-h-0 flex flex-col gap-4">
+
+  <!-- ── Filtros ────────────────────────────────────────────────────────── -->
+  <div class="flex flex-wrap items-end gap-3">
+    <div class="w-48">
+      <app-search-select
+        label="Estado"
+        [options]="estados"
+        valueField="id"
+        displayField="descripcion"
+        [value]="filtro.estado"
+        (valueChange)="filtro.estado = $event; onFilterChange()"
+        placeholder="Todos">
+      </app-search-select>
+    </div>
+    <div class="w-64">
+      <app-search-select
+        label="Responsable"
+        [options]="trabajadores"
+        valueField="workerId"
+        displayField="fullName"
+        [value]="filtro.responsableWorkerId"
+        (valueChange)="filtro.responsableWorkerId = $event; onFilterChange()"
+        placeholder="Buscar por nombre o DNI...">
+      </app-search-select>
+    </div>
+    <div class="w-44">
+      <app-date-picker
+        label="Desde"
+        color="var(--color-abril-primary)"
+        [value]="filtro.desde"
+        (valueChange)="filtro.desde = $event; onFilterChange()">
+      </app-date-picker>
+    </div>
+    <div class="w-44">
+      <app-date-picker
+        label="Hasta"
+        color="var(--color-abril-primary)"
+        [value]="filtro.hasta"
+        (valueChange)="filtro.hasta = $event; onFilterChange()">
+      </app-date-picker>
+    </div>
+    <div class="flex-1 min-w-[220px]">
+      <label class="block text-sm text-gray-600 mb-1">Buscar</label>
+      <input type="text" [(ngModel)]="filtro.texto" (blur)="onFilterChange()" (keyup.enter)="onFilterChange()"
+        placeholder="Descripción del acuerdo o tema de la reunión..."
+        class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]" />
+    </div>
+  </div>
+
+  <!-- ── Tabla de acuerdos ──────────────────────────────────────────────── -->
+  <div class="overflow-auto border border-[#E5EAF0] rounded-lg">
+    <table class="w-full text-sm">
+      <thead class="bg-[#F5F8FA] text-[var(--color-abril-primary)]">
+        <tr class="text-left">
+          <th class="px-4 py-3 font-medium">Descripción</th>
+          <th class="px-4 py-3 font-medium">Ámbito</th>
+          <th class="px-4 py-3 font-medium">Acta</th>
+          <th class="px-4 py-3 font-medium">Responsables</th>
+          <th class="px-4 py-3 font-medium text-center">Criticidad</th>
+          <th class="px-4 py-3 font-medium whitespace-nowrap">F. Programada</th>
+          <th class="px-4 py-3 font-medium whitespace-nowrap">F. Cumplimiento</th>
+          <th class="px-4 py-3 font-medium text-center">Estado</th>
+          <th class="px-4 py-3 font-medium text-center">Evidencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let a of acuerdos.data" (click)="irAReunion(a)"
+          class="border-t border-[#E5EAF0] hover:bg-gray-50 cursor-pointer">
+          <td class="px-4 py-3 text-gray-700">
+            {{ a.descripcion }}
+            <p *ngIf="a.comentarioCumplimiento" class="text-xs text-gray-400 mt-0.5">
+              <span class="font-medium">Cómo se levantó:</span> {{ a.comentarioCumplimiento }}
+            </p>
+          </td>
+          <td class="px-4 py-3 text-gray-700">{{ a.ambito }}</td>
+          <td class="px-4 py-3 text-gray-700 whitespace-nowrap">N° {{ a.reunionNumero }} · {{ a.reunionTema }}</td>
+          <td class="px-4 py-3 text-gray-700 text-xs">{{ a.responsables.join(', ') || '—' }}</td>
+          <td class="px-4 py-3 text-center">
+            <span class="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap" [ngClass]="criticidadClass(a.criticidad)">
+              {{ criticidadLabel(a.criticidad) }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ a.fechaProgramada ? (a.fechaProgramada | date:'dd/MM/yyyy') : '—' }}</td>
+          <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ a.fechaCumplimiento ? (a.fechaCumplimiento | date:'dd/MM/yyyy') : '—' }}</td>
+          <td class="px-4 py-3 text-center">
+            <span class="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap" [ngClass]="estadoClass(a)">
+              {{ estadoLabel(a) }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <a *ngIf="a.evidenciaUrl" [href]="a.evidenciaUrl" target="_blank" rel="noopener noreferrer" (click)="$event.stopPropagation()"
+              class="text-[#0086A5] hover:text-[#006a83]" title="Ver o descargar evidencia">
+              <span class="ti ti-paperclip text-base"></span>
+            </a>
+            <span *ngIf="!a.evidenciaUrl" class="text-gray-300">—</span>
+          </td>
+        </tr>
+
+        <tr *ngIf="acuerdos.data.length === 0">
+          <td colspan="9" class="px-4 py-8 text-center text-gray-400">
+            No hay acuerdos que calcen con estos filtros.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginator
+    *ngIf="acuerdos.totalRecords > 0"
+    [totalRecords]="acuerdos.totalRecords"
+    [currentPage]="acuerdos.page"
+    [totalPages]="acuerdos.totalPages"
+    (pageChange)="onPageChange($event)">
+  </app-paginator>
+</div>

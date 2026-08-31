@@ -1,0 +1,201 @@
+<div class="seg-root">
+
+  <!-- ── TOOLBAR ────────────────────────────────────────────────────────────── -->
+  <div class="seg-toolbar">
+    <div class="toolbar-left">
+      <i class="ti ti-calendar-stats"></i>
+      <span class="toolbar-periodo">{{ nombreMes(mes()) }} {{ anio() }}</span>
+      <span class="toolbar-sep" *ngIf="proyectos().length > 0">·</span>
+      <span class="toolbar-count" *ngIf="proyectos().length > 0">{{ proyectos().length }} proyectos activos</span>
+    </div>
+    <div class="toolbar-right">
+      <app-search-select
+        [options]="meses"
+        valueField="valor"
+        displayField="nombre"
+        placeholder="Todos los meses"
+        [sortAlpha]="false"
+        [value]="mes()"
+        [compact]="true"
+        [showLabel]="false"
+        color="var(--color-abril-primary)"
+        (valueChange)="mes.set(+$event)">
+      </app-search-select>
+      <app-search-select
+        [options]="anios"
+        valueField="valor"
+        displayField="nombre"
+        placeholder="Todos los años"
+        [sortAlpha]="false"
+        [value]="anio()"
+        [compact]="true"
+        [showLabel]="false"
+        color="var(--color-abril-primary)"
+        (valueChange)="anio.set(+$event)">
+      </app-search-select>
+      <label class="tb-check">
+        <input type="checkbox" [ngModel]="verOcultos()" (ngModelChange)="verOcultos.set($event); cargar()" />
+        Ver ocultas
+      </label>
+      <button type="button" class="tb-btn" (click)="cargar()">
+        <i class="ti ti-refresh"></i> Aplicar
+      </button>
+    </div>
+  </div>
+
+  <div class="seg-body">
+
+    <ng-container *ngIf="proyectos().length > 0">
+
+      <!-- ── COMPARATIVO EN CARDS ─────────────────────────────────────────────── -->
+      <div class="comp-section">
+
+        <!-- Cards de proyectos -->
+        <div class="comp-grid">
+            <div *ngFor="let p of ranking; let i = index"
+                 class="proy-card"
+                 [ngClass]="[cardStatusClass(p.pctProactivoGeneral), proyectoExpandido() === p.proyectoId ? 'proy-card--selected' : '']"
+                 (click)="toggleExpandir(p.proyectoId)">
+
+              <!-- Header de la card -->
+              <div class="pc-header">
+                <div class="pc-info">
+                  <h3 class="pc-nombre">{{ p.proyectoNombre }}</h3>
+                  <span class="pc-empresas">{{ p.totalEmpresasActivas }} empresa(s) activa(s)</span>
+                </div>
+                <div class="pc-general" [ngClass]="colorClass(p.pctProactivoGeneral)">
+                  {{ p.pctProactivoGeneral | number:'1.0-0' }}%
+                </div>
+              </div>
+
+              <!-- Indicadores -->
+              <div class="pc-indicadores">
+
+                <div class="pc-ind-row">
+                  <span class="pc-ind-label">RACS reportados</span>
+                  <span class="pc-ind-vals">Prog: {{ p.metaRacsTotal }}&nbsp; Ejec: <strong>{{ p.actualRacsTotal }}</strong></span>
+                  <span class="pc-ind-pct" [ngClass]="colorClassInd(p.metaRacsTotal, p.pctRacs)">{{ pctLabel(p.metaRacsTotal, p.pctRacs) }}</span>
+                </div>
+
+                <div class="pc-ind-row">
+                  <span class="pc-ind-label">RACS cerrados</span>
+                  <span class="pc-ind-vals">Prog: {{ p.actualRacsAtribuidosTotal }}&nbsp; Ejec: <strong>{{ p.actualRacsCerradosTotal }}</strong></span>
+                  <span class="pc-ind-pct" [ngClass]="colorClassInd(p.actualRacsAtribuidosTotal, p.pctRacsCerrados)">{{ pctLabel(p.actualRacsAtribuidosTotal, p.pctRacsCerrados) }}</span>
+                </div>
+
+                <div class="pc-ind-row">
+                  <span class="pc-ind-label">Inspecciones</span>
+                  <span class="pc-ind-vals">Prog: {{ p.metaInspeccionesTotal }}&nbsp; Ejec: <strong>{{ p.actualInspeccionesTotal }}</strong></span>
+                  <span class="pc-ind-pct" [ngClass]="colorClassInd(p.metaInspeccionesTotal, p.pctInspecciones)">{{ pctLabel(p.metaInspeccionesTotal, p.pctInspecciones) }}</span>
+                </div>
+
+                <div class="pc-ind-row">
+                  <span class="pc-ind-label">OPT</span>
+                  <span class="pc-ind-vals">Prog: {{ p.metaOptTotal }}&nbsp; Ejec: <strong>{{ p.actualOptTotal }}</strong></span>
+                  <span class="pc-ind-pct" [ngClass]="colorClassInd(p.metaOptTotal, p.pctOpt)">{{ pctLabel(p.metaOptTotal, p.pctOpt) }}</span>
+                </div>
+
+                <div class="pc-ind-row">
+                  <span class="pc-ind-label">Capacitaciones</span>
+                  <span class="pc-ind-vals">Prog: {{ p.metaCharlasTotal }}&nbsp; Ejec: <strong>{{ p.actualCharlasTotal }}</strong></span>
+                  <span class="pc-ind-pct" [ngClass]="colorClassInd(p.metaCharlasTotal, p.pctCharlas)">{{ pctLabel(p.metaCharlasTotal, p.pctCharlas) }}</span>
+                </div>
+
+                <div class="pc-ind-row">
+                  <span class="pc-ind-label">Auditorías ATS</span>
+                  <span class="pc-ind-vals">Prog: {{ p.metaAtsTotal }}&nbsp; Ejec: <strong>{{ p.actualAtsTotal }}</strong></span>
+                  <span class="pc-ind-pct" [ngClass]="colorClassInd(p.metaAtsTotal, p.pctAts)">{{ pctLabel(p.metaAtsTotal, p.pctAts) }}</span>
+                </div>
+
+              </div>
+
+              <!-- Footer -->
+              <div class="pc-footer" (click)="$event.stopPropagation(); toggleExpandir(p.proyectoId)">
+                <i class="ti" [class.ti-chevron-down]="proyectoExpandido() !== p.proyectoId" [class.ti-chevron-up]="proyectoExpandido() === p.proyectoId"></i>
+                {{ proyectoExpandido() === p.proyectoId ? 'Ocultar empresas' : 'Ver empresas' }}
+              </div>
+
+            </div>
+          </div>
+
+        <!-- ── DETALLE POR EMPRESA (panel expandido) ──────────────────────────── -->
+        <ng-container *ngFor="let p of ranking">
+          <ng-container *ngIf="proyectoExpandido() === p.proyectoId">
+            <div class="det-panel">
+              <div class="det-panel-header">
+                <i class="ti ti-building-skyscraper"></i>
+                {{ p.proyectoNombre }} — Detalle por empresa
+              </div>
+              <div class="det-emp-grid">
+                <div *ngFor="let emp of p.empresas" class="emp-card" [class.emp-card--inactiva]="!emp.esActiva" [class.emp-card--oculta]="emp.esOculto">
+
+                  <button class="emp-ocultar-btn"
+                          *ngIf="emp.puedeOcultarse"
+                          [title]="emp.esOculto ? 'Volver a mostrar en el indicador' : 'Ocultar de este indicador (solo Coordinadores SSOMA)'"
+                          (click)="$event.stopPropagation(); toggleOculto(emp)">
+                    <i class="ti" [ngClass]="emp.esOculto ? 'ti-eye' : 'ti-eye-off'"></i>
+                  </button>
+
+                  <div class="emp-card-header">
+                    <i class="ti" [class.ti-home]="emp.empresaTipo === 'Casa'" [class.ti-truck]="emp.empresaTipo !== 'Casa'"></i>
+                    <div class="emp-info">
+                      <span class="emp-nombre">{{ emp.empresaNombre }}</span>
+                      <span class="emp-sub">{{ emp.promedioTrabajadores | number:'1.0-0' }} trab. · {{ emp.diasLaborados }} días</span>
+                    </div>
+                    <span class="chip-inactivo" *ngIf="!emp.esActiva">Inactiva</span>
+                    <div class="emp-general" [ngClass]="pctClass(emp.pctProactivoGeneral)">
+                      {{ emp.pctProactivoGeneral | number:'1.0-0' }}%
+                    </div>
+                  </div>
+
+                  <div class="emp-indicadores">
+                    <div class="pc-ind-row">
+                      <span class="pc-ind-label">RACS rep.</span>
+                      <span class="pc-ind-vals">Prog: {{ emp.metaRacs }}&nbsp; Ejec: <strong>{{ emp.actualRacs }}</strong></span>
+                      <span class="pc-ind-pct" [ngClass]="colorClassInd(emp.metaRacs, emp.pctRacs)">{{ pctLabel(emp.metaRacs, emp.pctRacs) }}</span>
+                    </div>
+                    <div class="pc-ind-row">
+                      <span class="pc-ind-label">RACS cerr.</span>
+                      <span class="pc-ind-vals">Prog: {{ emp.actualRacsAtribuidos }}&nbsp; Ejec: <strong>{{ emp.actualRacsCerrados }}</strong></span>
+                      <span class="pc-ind-pct" [ngClass]="colorClassInd(emp.actualRacsAtribuidos, emp.pctRacsCerrados)">{{ pctLabel(emp.actualRacsAtribuidos, emp.pctRacsCerrados) }}</span>
+                    </div>
+                    <div class="pc-ind-row">
+                      <span class="pc-ind-label">Inspecciones</span>
+                      <span class="pc-ind-vals">Prog: {{ emp.metaInspecciones }}&nbsp; Ejec: <strong>{{ emp.actualInspecciones }}</strong></span>
+                      <span class="pc-ind-pct" [ngClass]="colorClassInd(emp.metaInspecciones, emp.pctInspecciones)">{{ pctLabel(emp.metaInspecciones, emp.pctInspecciones) }}</span>
+                    </div>
+                    <div class="pc-ind-row">
+                      <span class="pc-ind-label">OPT</span>
+                      <span class="pc-ind-vals">Prog: {{ emp.metaOpt }}&nbsp; Ejec: <strong>{{ emp.actualOpt }}</strong></span>
+                      <span class="pc-ind-pct" [ngClass]="colorClassInd(emp.metaOpt, emp.pctOpt)">{{ pctLabel(emp.metaOpt, emp.pctOpt) }}</span>
+                    </div>
+                    <div class="pc-ind-row">
+                      <span class="pc-ind-label">Capacitaciones</span>
+                      <span class="pc-ind-vals">Prog: {{ emp.metaCharlas }}&nbsp; Ejec: <strong>{{ emp.actualCharlas }}</strong></span>
+                      <span class="pc-ind-pct" [ngClass]="colorClassInd(emp.metaCharlas, emp.pctCharlas)">{{ pctLabel(emp.metaCharlas, emp.pctCharlas) }}</span>
+                    </div>
+                    <div class="pc-ind-row">
+                      <span class="pc-ind-label">Auditorías ATS</span>
+                      <span class="pc-ind-vals">Prog: {{ emp.metaAts }}&nbsp; Ejec: <strong>{{ emp.actualAts }}</strong></span>
+                      <span class="pc-ind-pct" [ngClass]="colorClassInd(emp.metaAts, emp.pctAts)">{{ pctLabel(emp.metaAts, emp.pctAts) }}</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </ng-container>
+
+      </div>
+
+    </ng-container>
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" *ngIf="proyectos().length === 0">
+      <i class="ti ti-chart-bar empty-state__icon"></i>
+      <p class="empty-state__text">No hay proyectos activos para el período seleccionado.</p>
+    </div>
+
+  </div>
+</div>

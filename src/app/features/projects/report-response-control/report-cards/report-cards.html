@@ -1,0 +1,118 @@
+<div class="flex-1 min-h-0 overflow-y-auto">
+
+  <!-- Skeleton de carga inicial (F8) -->
+  @if (loading) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+      @for (card of skeletonCards; track $index) {
+        <div class="report-card">
+          <div class="report-card__timebar" [style.background]="rielBarra"></div>
+          <div class="skeleton-line h-[150px] w-full rounded-[8px]"></div>
+          <div class="p-[14px] flex flex-col gap-[10px]">
+            <div class="skeleton-line h-[12px] w-[60%]"></div>
+            <div class="skeleton-line h-[12px] w-[90%]"></div>
+            <div class="skeleton-line h-[12px] w-[80%]"></div>
+            <div class="skeleton-line h-[24px] w-[100px] rounded-[4px]"></div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (data.length === 0) {
+    <!-- Estado vacío (DESIGN §6.10) -->
+    <div class="flex flex-col items-center justify-center gap-2 py-[56px] text-center">
+      <i class="ti ti-file-off text-[48px]" style="color:#94A3B8"></i>
+      <p class="text-[14px]" style="color:#64748B">No hay informes para mostrar</p>
+      <p class="text-[13px]" style="color:#94A3B8">Prueba con otro filtro</p>
+    </div>
+  } @else {
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+      @for (item of data; track item.residentReportIncidenceId) {
+        <div class="report-card cursor-pointer" (click)="openView.emit(item)">
+
+          <!-- Barra de tiempo transcurrido: solo se rellena si está NO LEVANTADO.
+               Levantado = riel gris completo, sin color de urgencia. -->
+          <div class="report-card__timebar" [style.background]="rielBarra"
+            [title]="tiempo(item).levantado ? 'Incidencia levantada' : tiempo(item).texto">
+            <div class="report-card__timebar-fill"
+              [style.width.%]="tiempo(item).porcentaje"
+              [style.background]="tiempo(item).color"></div>
+          </div>
+
+          <!-- Imagen / placeholder + contador de adjuntos -->
+          <div class="report-card__media">
+            @if (item.images?.length) {
+              <img [src]="item.images[0].imageUrl" class="report-card__img" />
+            } @else {
+              <div class="report-card__img flex items-center justify-center"
+                style="background:var(--color-abril-bg-alt);color:#94A3B8">
+                <i class="ti ti-photo text-[32px]"></i>
+              </div>
+            }
+
+            <!-- Evidencia fotográfica visible sin abrir el modal -->
+            <span class="report-card__count"
+              [title]="(item.images?.length || 0) + ' imagen(es) adjunta(s)'">
+              <i class="ti ti-photo text-[13px]"></i>
+              {{ item.images?.length || 0 }}
+            </span>
+          </div>
+
+          <div class="p-[14px] flex flex-col gap-[10px] flex-1 min-h-0">
+            <!-- Proyecto + estado -->
+            <div class="flex items-start justify-between gap-2">
+              <span class="text-[13px] font-semibold line-clamp-1" style="color:#1E3A5F"
+                [title]="item.projectDescription | titleCase">
+                {{ item.projectDescription | titleCase }}
+              </span>
+              <span class="shrink-0 inline-block rounded-[4px] px-[8px] py-[2px] text-[10px] font-bold uppercase"
+                [style.background]="item.stateDescription === 'LEVANTADO' ? '#dcfce7' : '#fee2e2'"
+                [style.color]="item.stateDescription === 'LEVANTADO' ? '#166534' : '#991b1b'">
+                {{ item.stateDescription }}
+              </span>
+            </div>
+
+            <!-- Tiempo transcurrido (mismo color que la barra) + fecha cruda discreta -->
+            <div class="flex items-baseline gap-[6px]">
+              <span class="text-[12px] font-semibold" [style.color]="tiempo(item).color"
+                [title]="'Registrado el ' + (item.createdDateTime | date:'dd/MM/yyyy')">
+                {{ tiempo(item).texto }}
+              </span>
+              <span class="text-[11px]" style="color:#94A3B8">
+                · {{ item.createdDateTime | date:'dd/MM/yyyy' }}
+              </span>
+            </div>
+
+            <!-- Descripción -->
+            <p class="text-[13px] line-clamp-3" style="color:#64748B"
+              [title]="item.residentReportIncidenceDescription">
+              {{ item.residentReportIncidenceDescription }}
+            </p>
+
+            <!-- Respuesta (mismo gating de rol que la tabla) -->
+            <div class="mt-auto pt-[6px]">
+              @if (item.residentReportResponseDescriptions.length > 0) {
+                <p class="text-[12px] line-clamp-2" style="color:#64748B"
+                  [title]="item.residentReportResponseDescriptions[0].residentReportResponseDescription">
+                  <span class="font-semibold" style="color:#1E3A5F">Respuesta: </span>
+                  {{ item.residentReportResponseDescriptions[0].residentReportResponseDescription }}
+                </p>
+              } @else if (authService.hasRole(Roles.RESIDENTE)) {
+                <button (click)="onRespond(item, $event)"
+                  class="inline-flex items-center gap-[8px] py-[6px] px-[16px] rounded-[7px] border cursor-pointer text-[13px] font-medium transition-colors"
+                  style="background:var(--color-abril-standard-light);border-color:var(--color-abril-standard);color:var(--color-abril-standard)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 12C22 17.523 17.523 22 12 22H2V12C2 6.477 6.477 2 12 2C17.523 2 22 6.477 22 12Z"
+                      stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M7 13L10 16L16.5 9.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  Responder
+                </button>
+              } @else {
+                <span class="text-[12px] text-gray-400 italic">Sin respuesta</span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,432 @@
+<app-abril-modal-panel
+  titulo="Detalle EMO"
+  icono="ti-stethoscope"
+  variant="blue"
+  width="900px"
+  (closeModal)="close()">
+  <div *ngIf="loading && !emo" class="state-msg">Cargando EMO…</div>
+
+  <ng-container *ngIf="emo">
+    <!-- Header -->
+    <header class="detail-header">
+      <div>
+        <h3 class="worker-name">{{ emo.workerNombre }}</h3>
+        <div class="worker-meta">
+          <span>DNI {{ emo.workerDni }}</span>
+          <span class="sep">·</span>
+          <span>{{ emo.empresa }}</span>
+          <span class="sep">·</span>
+          <span>{{ emo.tipoEmo }}</span>
+        </div>
+      </div>
+      <div class="badges">
+        <span class="badge border" [ngClass]="aptitudClass(emo.aptitud)">{{ emo.aptitud }}</span>
+        <span class="badge border" [ngClass]="diasClass(emo.diasParaVencer)">{{ diasLabel(emo.diasParaVencer) }}</span>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button type="button" [class.active]="activeTab === 'datos'" (click)="setTab('datos')">Datos</button>
+      <button type="button" [class.active]="activeTab === 'examenes'" (click)="setTab('examenes')">
+        Exámenes <small>({{ emo.examenes?.length || 0 }})</small>
+      </button>
+      <button type="button" [class.active]="activeTab === 'restricciones'" (click)="setTab('restricciones')">
+        Restricciones <small>({{ emo.restricciones?.length || 0 }})</small>
+      </button>
+      <button type="button" [class.active]="activeTab === 'convalidaciones'" (click)="setTab('convalidaciones')">
+        Convalidaciones <small>({{ emo.convalidaciones?.length || 0 }})</small>
+      </button>
+      <button type="button" [class.active]="activeTab === 'clinica'" (click)="setTab('clinica')">
+        Clínica
+      </button>
+      <button type="button" [class.active]="activeTab === 'documentos'" (click)="setTab('documentos')">
+        Documentos
+      </button>
+      <button type="button" [class.active]="activeTab === 'historial'" (click)="setTab('historial')">
+        Historial
+      </button>
+    </nav>
+
+    <!-- Tab: Datos -->
+    <section *ngIf="activeTab === 'datos'" class="tab-panel">
+      <dl class="info-grid">
+        <div>
+          <dt>Fecha EMO</dt>
+          <dd>{{ emo.fechaEmo | date: 'dd/MM/yyyy' }}</dd>
+        </div>
+        <div>
+          <dt>Vencimiento</dt>
+          <dd>{{ emo.fechaVencimiento | date: 'dd/MM/yyyy' }}</dd>
+        </div>
+        <div>
+          <dt>Estado</dt>
+          <dd>{{ emo.estado }}</dd>
+        </div>
+        <div>
+          <dt>Requiere interconsulta</dt>
+          <dd>{{ emo.requiereInterconsulta ? 'Sí' : 'No' }}</dd>
+        </div>
+        <div>
+          <dt>Clínica</dt>
+          <dd>{{ emo.clinica || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Médico</dt>
+          <dd>{{ emo.medico || '—' }}</dd>
+        </div>
+        <div>
+          <dt>N° Informe</dt>
+          <dd>{{ emo.numeroInforme || '—' }}</dd>
+        </div>
+        <div>
+          <dt>URL Resultado</dt>
+          <dd>
+            <button *ngIf="emo.urlResultado" type="button" class="doc-btn-ver"
+              (click)="verDocumento(emo.urlResultado, 'Lectura EMO')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Ver
+            </button>
+            <span *ngIf="!emo.urlResultado">—</span>
+          </dd>
+        </div>
+        <div class="col-span-2">
+          <dt>Notas</dt>
+          <dd>{{ emo.notas || '—' }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- Tab: Exámenes -->
+    <section *ngIf="activeTab === 'examenes'" class="tab-panel">
+      <div *ngIf="!emo.examenes?.length" class="empty">Sin exámenes registrados.</div>
+      <div *ngIf="emo.examenes?.length" class="sub-table-wrapper">
+        <table class="sub-table">
+          <thead>
+            <tr>
+              <th>Examen</th>
+              <th>Resultado</th>
+              <th>Valor</th>
+              <th>Unidad</th>
+              <th>Observación</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let ex of emo.examenes">
+              <td class="cell-title">{{ ex.examenTipo }}</td>
+              <td>{{ ex.resultado || '—' }}</td>
+              <td>{{ ex.valor || '—' }}</td>
+              <td>{{ ex.unidad || '—' }}</td>
+              <td>{{ ex.observacion || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tab: Restricciones -->
+    <section *ngIf="activeTab === 'restricciones'" class="tab-panel">
+      <div *ngIf="!emo.restricciones?.length" class="empty">Sin restricciones.</div>
+      <ul *ngIf="emo.restricciones?.length" class="restriction-list">
+        <li *ngFor="let r of emo.restricciones" [class.inactive]="!r.vigente">
+          <div>
+            <div class="r-title">{{ r.restriccionTipo || r.descripcionLibre || 'Restricción' }}</div>
+            <div *ngIf="r.restriccionTipo && r.descripcionLibre" class="r-sub">{{ r.descripcionLibre }}</div>
+          </div>
+          <span class="r-status" [class.on]="r.vigente">{{ r.vigente ? 'Vigente' : 'Inactiva' }}</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Tab: Convalidaciones -->
+    <section *ngIf="activeTab === 'convalidaciones'" class="tab-panel">
+      <div *ngIf="!emo.convalidaciones?.length" class="empty">Sin convalidaciones registradas.</div>
+      <div *ngIf="emo.convalidaciones?.length" class="sub-table-wrapper">
+        <table class="sub-table">
+          <thead>
+            <tr>
+              <th>Empresa Destino</th>
+              <th>Fecha</th>
+              <th>Vencimiento</th>
+              <th>Resultado</th>
+              <th class="text-right">Días</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of emo.convalidaciones">
+              <td class="cell-title">{{ c.empresaDestino }}</td>
+              <td>{{ c.fechaConvalidacion | date: 'dd/MM/yyyy' }}</td>
+              <td>{{ c.fechaVencimiento | date: 'dd/MM/yyyy' }}</td>
+              <td>{{ c.resultado }}</td>
+              <td class="text-right">
+                <span class="badge border" [ngClass]="diasClass(c.diasParaVencer)">
+                  {{ diasLabel(c.diasParaVencer) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tab: Clínica -->
+    <section *ngIf="activeTab === 'clinica'" class="tab-panel">
+
+      <!-- Programación vinculada -->
+      <h4 class="section-subtitle">Programación</h4>
+      <ng-container *ngIf="emo.programacion; else sinProg">
+        <dl class="info-grid">
+          <div>
+            <dt>Fecha programada</dt>
+            <dd>{{ emo.programacion.fechaProgramada | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+          <div>
+            <dt>Hora</dt>
+            <dd>{{ emo.programacion.horaProgramada || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Check-in</dt>
+            <dd>{{ emo.programacion.checkInHora || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Estado</dt>
+            <dd>{{ emo.programacion.estado }}</dd>
+          </div>
+          <div>
+            <dt>Clínica</dt>
+            <dd>{{ emo.programacion.clinicaNombre || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Médico</dt>
+            <dd>{{ emo.programacion.medicoNombre || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Origen</dt>
+            <dd>{{ emo.programacion.origen || '—' }}</dd>
+          </div>
+          <div *ngIf="emo.programacion.motivoRechazo">
+            <dt>Motivo rechazo</dt>
+            <dd class="text-red-600">{{ emo.programacion.motivoRechazo }}</dd>
+          </div>
+        </dl>
+      </ng-container>
+      <ng-template #sinProg>
+        <p class="empty">Sin programación vinculada a este EMO.</p>
+      </ng-template>
+
+      <!-- Interconsulta vinculada -->
+      <h4 class="section-subtitle" style="margin-top:1.5rem">Interconsulta</h4>
+      <ng-container *ngIf="emo.interconsulta; else sinInter">
+        <dl class="info-grid">
+          <div>
+            <dt>Especialidad</dt>
+            <dd>{{ emo.interconsulta.especialidad }}</dd>
+          </div>
+          <div>
+            <dt>Estado</dt>
+            <dd>{{ emo.interconsulta.estado }}</dd>
+          </div>
+          <div>
+            <dt>Médico deriva</dt>
+            <dd>{{ emo.interconsulta.medicoDeriva || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Fecha derivación</dt>
+            <dd>{{ emo.interconsulta.fechaDerivacion | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+          <div>
+            <dt>Fecha atención</dt>
+            <dd>{{ emo.interconsulta.fechaAtencion ? (emo.interconsulta.fechaAtencion | date: 'dd/MM/yyyy') : '—' }}</dd>
+          </div>
+          <div>
+            <dt>Centro atención</dt>
+            <dd>{{ emo.interconsulta.centroAtencion || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Diagnóstico</dt>
+            <dd>{{ emo.interconsulta.diagnostico || '—' }}</dd>
+          </div>
+          <div>
+            <dt>CIE-10</dt>
+            <dd>{{ emo.interconsulta.cie10 || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Resultado</dt>
+            <dd>{{ emo.interconsulta.resultado || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Requiere seguimiento</dt>
+            <dd>{{ emo.interconsulta.requiereSeguimiento ? 'Sí' : 'No' }}</dd>
+          </div>
+          <div class="col-span-2">
+            <dt>Informe / Evidencia</dt>
+            <dd>
+              <button *ngIf="emo.interconsulta.urlInforme" type="button" class="doc-btn-ver"
+                (click)="verDocumento(emo.interconsulta.urlInforme, 'Informe Interconsulta')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Ver
+              </button>
+              <span *ngIf="!emo.interconsulta.urlInforme">—</span>
+            </dd>
+          </div>
+        </dl>
+      </ng-container>
+      <ng-template #sinInter>
+        <p class="empty">Sin interconsulta vinculada a este EMO.</p>
+      </ng-template>
+    </section>
+
+    <!-- Tab: Documentos -->
+    <section *ngIf="activeTab === 'documentos'" class="tab-panel">
+      <div class="doc-grid">
+
+        <!-- Lectura EMO (URL Resultado) -->
+        <div class="doc-card">
+          <div class="doc-card-icon resultado-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="9" y1="13" x2="15" y2="13"/>
+              <line x1="9" y1="17" x2="15" y2="17"/>
+            </svg>
+          </div>
+          <div class="doc-card-body">
+            <p class="doc-card-title">Lectura EMO</p>
+            <p class="doc-card-sub" *ngIf="emo.urlResultado">Archivo cargado</p>
+            <p class="doc-card-sub missing" *ngIf="!emo.urlResultado">Sin archivo</p>
+          </div>
+          <div class="doc-card-actions">
+            <button *ngIf="emo.urlResultado" type="button" class="doc-btn-ver" (click)="verDocumento(emo.urlResultado, 'Lectura EMO')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Ver
+            </button>
+          </div>
+        </div>
+
+        <!-- Certificado de Aptitud -->
+        <div class="doc-card">
+          <div class="doc-card-icon aptitud-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <polyline points="9 15 11 17 15 13"/>
+            </svg>
+          </div>
+          <div class="doc-card-body">
+            <p class="doc-card-title">Certificado de Aptitud</p>
+            <p class="doc-card-sub" *ngIf="emo.urlAptitud">Archivo cargado</p>
+            <p class="doc-card-sub missing" *ngIf="!emo.urlAptitud">Sin archivo</p>
+          </div>
+          <div class="doc-card-actions">
+            <button *ngIf="emo.urlAptitud" type="button" class="doc-btn-ver" (click)="verDocumento(emo.urlAptitud, 'Certificado de Aptitud')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Ver
+            </button>
+            <label *ngIf="canUpload" class="doc-btn-subir" [class.uploading]="uploadingDoc['Aptitud']">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              {{ uploadingDoc['Aptitud'] ? 'Subiendo…' : (emo.urlAptitud ? 'Reemplazar' : 'Subir') }}
+              <input type="file" accept=".pdf" hidden [disabled]="uploadingDoc['Aptitud']" (change)="subirDocumento($event, 'Aptitud')" />
+            </label>
+          </div>
+        </div>
+
+        <!-- EMO Completo -->
+        <div class="doc-card">
+          <div class="doc-card-icon emo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <rect x="8" y="12" width="8" height="6" rx="1"/>
+            </svg>
+          </div>
+          <div class="doc-card-body">
+            <p class="doc-card-title">EMO Completo</p>
+            <p class="doc-card-sub" *ngIf="emo.urlEmoCompleto">Archivo cargado</p>
+            <p class="doc-card-sub missing" *ngIf="!emo.urlEmoCompleto">Sin archivo</p>
+          </div>
+          <div class="doc-card-actions">
+            <button *ngIf="emo.urlEmoCompleto" type="button" class="doc-btn-ver" (click)="verDocumento(emo.urlEmoCompleto, 'EMO Completo')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Ver
+            </button>
+            <label *ngIf="canUpload" class="doc-btn-subir" [class.uploading]="uploadingDoc['EMO']">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              {{ uploadingDoc['EMO'] ? 'Subiendo…' : (emo.urlEmoCompleto ? 'Reemplazar' : 'Subir') }}
+              <input type="file" accept=".pdf" hidden [disabled]="uploadingDoc['EMO']" (change)="subirDocumento($event, 'EMO')" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Informe Interconsulta -->
+        <div class="doc-card" *ngIf="emo.requiereInterconsulta || emo.interconsulta">
+          <div class="doc-card-icon inter-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <path d="M9 10h6M9 14h4"/>
+            </svg>
+          </div>
+          <div class="doc-card-body">
+            <p class="doc-card-title">Informe Interconsulta</p>
+            <ng-container *ngIf="emo.interconsulta">
+              <p class="doc-card-sub" *ngIf="emo.interconsulta.urlInforme">Archivo cargado · {{ emo.interconsulta.especialidad }}</p>
+              <p class="doc-card-sub missing" *ngIf="!emo.interconsulta.urlInforme">Pendiente · {{ emo.interconsulta.especialidad }}</p>
+            </ng-container>
+            <p class="doc-card-sub missing" *ngIf="!emo.interconsulta">Sin interconsulta registrada</p>
+          </div>
+          <div class="doc-card-actions">
+            <button *ngIf="emo.interconsulta?.urlInforme" type="button" class="doc-btn-ver" (click)="verDocumento(emo.interconsulta!.urlInforme, 'Informe Interconsulta')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Ver
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Tab: Historial -->
+    <section *ngIf="activeTab === 'historial'" class="tab-panel">
+      <div *ngIf="historialLoading" class="state-msg">Cargando historial…</div>
+
+      <ng-container *ngIf="historial && !historialLoading">
+        <div class="historial-summary">
+          <div>
+            <b>{{ historial.vinculaciones?.length || 0 }}</b> vinculaciones registradas
+          </div>
+          <button type="button" class="btn-link" (click)="irAHistorialCompleto()">
+            Ver historial completo →
+          </button>
+        </div>
+
+        <ul class="historial-mini">
+          <li *ngFor="let v of historial.vinculaciones">
+            <div class="hm-head">
+              <span class="hm-empresa">{{ v.empresaNombre }}</span>
+              <span class="hm-range">
+                {{ v.fechaInicio | date: 'dd/MM/yyyy' }} —
+                {{ v.fechaFin ? (v.fechaFin | date: 'dd/MM/yyyy') : 'Actual' }}
+              </span>
+            </div>
+            <ul class="hm-emos">
+              <li *ngFor="let e of v.emos || []">
+                <span>{{ e.fechaEmo | date: 'dd/MM/yyyy' }} · {{ e.tipoEmo }}</span>
+                <span class="badge border" [ngClass]="aptitudClass(e.aptitud)">{{ e.aptitud }}</span>
+              </li>
+              <li *ngIf="!v.emos?.length" class="hm-empty">Sin EMOs en esta vinculación.</li>
+            </ul>
+          </li>
+          <li *ngIf="!historial.vinculaciones?.length" class="hm-empty">
+            Sin vinculaciones registradas.
+          </li>
+        </ul>
+      </ng-container>
+    </section>
+  </ng-container>
+
+  <app-document-viewer
+    [archivoUrl]="visorUrl"
+    [nombre]="visorNombre"
+    (closed)="onVisorClosed()">
+  </app-document-viewer>
+</app-abril-modal-panel>

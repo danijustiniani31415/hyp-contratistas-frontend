@@ -1,0 +1,230 @@
+<app-base-modal *ngIf="open" [title]="title" [width]="modalWidth" [height]="modalHeight" (closeModal)="close()">
+  <div class="form-wrapper">
+
+    <!-- Step indicator -->
+    <div class="wizard-steps">
+      <div class="step-item">
+        <div class="step-dot" [class.step-dot--active]="paso === 1" [class.step-dot--done]="paso > 1">1</div>
+        <span class="step-label" [class.step-label--active]="paso === 1">Datos básicos</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item">
+        <div class="step-dot" [class.step-dot--active]="paso === 2" [class.step-dot--pending]="paso < 2">2</div>
+        <span class="step-label" [class.step-label--active]="paso === 2">Trabajadores cubiertos</span>
+      </div>
+    </div>
+
+    <!-- PASO 1: Datos básicos -->
+    <ng-container *ngIf="paso === 1">
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Tipo *</label>
+          @if (!esOficinaStaff) {
+            <select class="field-input" [(ngModel)]="model.tipo">
+              <option value="SCTR">SCTR</option>
+              <option value="VIDA_LEY">Vida Ley</option>
+            </select>
+          } @else {
+            <div class="tipo-badge-vidaley">Vida Ley</div>
+          }
+          <div class="ostaff-toggle-wrap">
+            <label class="ostaff-toggle" [class.ostaff-toggle--on]="esOficinaStaff">
+              <input type="checkbox" [(ngModel)]="esOficinaStaff" (change)="onEsOficinaStaffChange()" />
+              Oficina Central / Staff
+            </label>
+          </div>
+        </div>
+        <div>
+          <label class="field-label">Tipo de póliza *</label>
+          <select class="field-input" [(ngModel)]="model.tipoPoliza">
+            <option value="Renovacion">Renovación</option>
+            <option value="Inclusion">Inclusión / Trabajador Nuevo</option>
+          </select>
+          <p class="field-hint" *ngIf="model.tipoPoliza === 'Renovacion'">
+            Para trabajadores que ya cuentan con SCTR/Vida Ley aprobado y se va a renovar la póliza vigente.
+          </p>
+          <p class="field-hint" *ngIf="model.tipoPoliza === 'Inclusion'">
+            Para trabajadores nuevos, reingresados o con SCTR/Vida Ley en estado Falta o Rechazado.
+          </p>
+        </div>
+
+        <div class="col-span-2" *ngIf="isAdmin()">
+          <label class="field-label">Empresa *</label>
+          <app-search-select
+            [options]="empresasFiltradas"
+            valueField="id"
+            displayField="nombre"
+            [value]="model.empresaId"
+            (valueChange)="model.empresaId = $event"
+            placeholder="Seleccionar empresa"
+          />
+        </div>
+
+        @if (!esOficinaStaff) {
+          <div class="col-span-2">
+            <label class="field-label">Proyecto *</label>
+            <app-search-select
+              [options]="proyectos"
+              valueField="projectId"
+              displayField="projectDescription"
+              [value]="model.proyectoId"
+              (valueChange)="model.proyectoId = $event"
+              placeholder="Selecciona un proyecto"
+            />
+          </div>
+        }
+
+      </div>
+    </ng-container>
+
+    <!-- PASO 2: Trabajadores + visor -->
+    <ng-container *ngIf="paso === 2">
+
+      <!-- Fechas en paso 2 -->
+      <div class="paso2-fechas-row">
+        <div>
+          <label class="field-label">Fecha inicio *</label>
+          <input #inputFechaInicio type="text" class="field-input" placeholder="dd/mm/aaaa" readonly />
+        </div>
+        <div>
+          <label class="field-label">Fecha vencimiento *</label>
+          <input #inputFechaVencimiento type="text" class="field-input" placeholder="dd/mm/aaaa" readonly />
+        </div>
+      </div>
+
+      <div class="wizard-paso2">
+
+        <!-- Panel izquierdo: workers -->
+        <div class="panel-workers">
+          <div class="advertencia">
+            ⚠ Marca solo los trabajadores que figuran en el documento
+          </div>
+
+          <div class="workers-filter" *ngIf="!loadingWorkers && trabajadores.length > 0 && !isContratista()">
+            <button
+              type="button"
+              class="filter-btn"
+              [class.filter-btn--active]="filtroObra === ''"
+              (click)="setFiltroObra('')"
+            >Todos ({{ trabajadores.length }})</button>
+            <button
+              type="button"
+              class="filter-btn"
+              [class.filter-btn--active]="filtroObra === 'obra'"
+              (click)="setFiltroObra('obra')"
+            >Obra</button>
+            <button
+              type="button"
+              class="filter-btn"
+              [class.filter-btn--active]="filtroObra === 'staff'"
+              (click)="setFiltroObra('staff')"
+            >Staff / Oficina Central</button>
+          </div>
+
+          <div class="workers-select-all" *ngIf="!loadingWorkers && trabajadoresFiltrados.length > 0">
+            <input
+              type="checkbox"
+              [checked]="allChecked"
+              [indeterminate]="someChecked && !allChecked"
+              (change)="toggleAll($any($event.target).checked)"
+            />
+            <span class="field-label" style="margin:0">Seleccionar todos</span>
+            <span class="workers-count">{{ workersSeleccionados.size }} / {{ trabajadores.length }}</span>
+          </div>
+
+          <div class="workers-list">
+            <div *ngIf="loadingWorkers" class="muted-line">Cargando trabajadores…</div>
+            <div *ngIf="!loadingWorkers && trabajadoresFiltrados.length === 0" class="muted-line">
+              Sin trabajadores disponibles para los filtros seleccionados.
+            </div>
+            <div
+              *ngFor="let w of trabajadoresFiltrados"
+              class="worker-row"
+              (click)="toggleWorker(w.workerId)"
+            >
+              <input
+                type="checkbox"
+                [checked]="workersSeleccionados.has(w.workerId)"
+                (click)="$event.stopPropagation()"
+                (change)="toggleWorker(w.workerId)"
+              />
+              <div class="worker-info">
+                <strong>{{ w.apellidoNombre }}</strong>
+              </div>
+              <span class="worker-dni">{{ w.dni }}</span>
+              <span class="btn-chip worker-estado-chip" [class]="getEstadoClass(model.tipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr)">
+                {{ model.tipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel derecho: visor PDF -->
+        <div class="panel-visor"
+             (dragenter)="isDragging = true; $event.preventDefault()"
+             (dragleave)="isDragging = false"
+             (dragover)="$event.preventDefault()"
+             (drop)="isDragging = false; onDrop($event)">
+          <div *ngIf="isDragging" class="drag-overlay">
+            <span>📄 Suelta el archivo aquí</span>
+          </div>
+          <div class="visor-upload-bar"
+               (dragover)="$event.preventDefault()"
+               (drop)="onDrop($event)">
+            <span class="visor-upload-filename">
+              <ng-container *ngIf="uploadingFile">
+                <span class="upload-spinner"></span> Subiendo…
+              </ng-container>
+              <ng-container *ngIf="!uploadingFile">
+                {{ model.archivoNombre || 'Sin archivo seleccionado' }}
+              </ng-container>
+            </span>
+            <button
+              type="button"
+              class="btn-link"
+              [disabled]="uploadingFile"
+              (click)="triggerFile()"
+            >
+              {{ uploadingFile ? 'Subiendo…' : model.archivoUrl ? 'Cambiar' : 'Subir archivo' }}
+            </button>
+            <input #fileInput type="file" hidden accept=".pdf,.png,.jpg,.jpeg" (change)="onFileSelected($event)" />
+          </div>
+
+          <div class="visor-frame" *ngIf="safeArchivoUrl">
+            <iframe [src]="safeArchivoUrl" width="100%" height="100%"></iframe>
+          </div>
+          <div class="visor-frame visor-empty" *ngIf="!safeArchivoUrl">
+            <p class="muted-line">Sube el archivo para previsualizar</p>
+          </div>
+        </div>
+
+      </div>
+    </ng-container>
+
+    <!-- Footer -->
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="paso === 1 ? close() : volver()">
+        {{ paso === 1 ? 'Cancelar' : '← Volver' }}
+      </button>
+      <button
+        *ngIf="paso === 1"
+        type="button"
+        class="btn-primary"
+        [disabled]="!canPaso1"
+        (click)="avanzar()"
+      >
+        Siguiente →
+      </button>
+      <button
+        *ngIf="paso === 2"
+        type="button"
+        class="btn-primary"
+        [disabled]="!canSubmit"
+        (click)="submit()"
+      >
+        {{ saving ? 'Guardando…' : 'Crear documento' }}
+      </button>
+    </footer>
+
+  </div>
+</app-base-modal>

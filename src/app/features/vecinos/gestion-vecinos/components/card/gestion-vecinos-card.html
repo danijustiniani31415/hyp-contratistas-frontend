@@ -1,0 +1,56 @@
+<div
+  (click)="cardClick.emit(item)"
+  class="bg-white rounded-lg border border-gray-200 p-4 cursor-pointer hover:shadow-md hover:border-[#4CAF50]/50 transition-all flex flex-col gap-3">
+
+  <!-- Encabezado: colindancia + fecha -->
+  <div class="flex items-start justify-between gap-2">
+    <span
+      class="inline-block rounded-full px-3 py-0.5 text-[11px] font-semibold border"
+      [ngClass]="item.colindanciaDescripcion === 'Colindante'
+        ? 'bg-[#D7FAF4] text-[#009C87] border-[#009C87]/30'
+        : 'bg-[#FEF3C7] text-[#92400E] border-[#92400E]/30'">
+      {{ item.colindanciaDescripcion }}
+    </span>
+    <span class="text-[11px] text-gray-400 shrink-0">
+      {{ item.createdDateTime | date:'dd/MM/yyyy' }}
+    </span>
+  </div>
+
+  <!-- Dirección + interior -->
+  <div>
+    <p class="text-sm font-semibold text-gray-800 leading-tight">{{ item.direccion || '—' }}</p>
+    <p *ngIf="item.interiorDepartamento" class="text-xs text-gray-400 mt-0.5">
+      Int./Dpto.: {{ item.interiorDepartamento }}
+    </p>
+  </div>
+
+  <!-- Propietario / representante -->
+  <div class="flex items-start gap-1.5">
+    <svg class="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+    </svg>
+    <span class="text-xs text-gray-600 line-clamp-2">
+      {{ item.nombrePropietario || '—' }}
+      <span *ngIf="item.dni" class="text-gray-400">· DNI {{ item.dni }}</span>
+      <span *ngIf="item.personas.length > 1" class="text-gray-400">· +{{ item.personas.length - 1 }} más</span>
+    </span>
+  </div>
+
+  <!-- Proyecto + uso + tipo construcción -->
+  <div class="border-t border-gray-100 pt-2 flex flex-col gap-1">
+    <span class="text-xs text-gray-500">
+      <span class="text-gray-400">Proyecto:</span> {{ item.projectDescription }}
+    </span>
+    <span *ngIf="item.usoDescripcion" class="text-xs text-gray-500">
+      <span class="text-gray-400">Uso:</span> {{ item.usoDescripcion }}
+    </span>
+    <span class="text-xs text-gray-500">
+      <span class="text-gray-400">Construcción:</span> {{ item.tipoConstruccionDescripcion }}
+    </span>
+    <span *ngIf="item.celular" class="text-xs text-gray-500">
+      <span class="text-gray-400">Celular:</span> {{ item.celular }}
+    </span>
+  </div>
+
+</div>

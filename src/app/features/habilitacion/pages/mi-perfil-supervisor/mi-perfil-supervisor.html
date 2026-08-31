@@ -1,0 +1,36 @@
+<app-abril-page-header
+  badge="HABILITACIÓN"
+  titulo="Mi Desempeño SSOMA"
+  subtitulo="Tu promedio y comentarios recibidos del equipo SSOMA de Abril. No se muestra quién te evaluó."
+  [tabs]="headerTabs">
+</app-abril-page-header>
+
+<div class="mp-root">
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div><span>Cargando tu desempeño...</span>
+  </div>
+
+  <div class="mp-content" *ngIf="!loading && perfil">
+
+    <div class="stat-card">
+      <div class="stat-label">Promedio general</div>
+      <div class="stat-num" [ngClass]="notaClase(perfil.promedioGeneral)">
+        {{ notaDisplay(perfil.promedioGeneral) }}
+      </div>
+      <div class="stat-sub">{{ perfil.totalEvaluaciones }} evaluación(es) recibida(s)</div>
+    </div>
+
+    <div class="section-card" *ngIf="perfil.comentarios.length">
+      <div class="section-title">Comentarios recibidos</div>
+      <div class="comentario-item" *ngFor="let c of perfil.comentarios">
+        <i class="ti ti-quote"></i> {{ c }}
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="!perfil.comentarios.length">
+      <i class="ti ti-message-off"></i>
+      <p>Aún no tienes comentarios registrados.</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,134 @@
+<div class="relative" [ngClass]="showLabel && label ? 'mt-[9px]' : ''" [style.--ss-accent]="color">
+
+  <!-- Label opcional: se posiciona sobre el borde superior del combobox, "cortándolo" -->
+  <label *ngIf="showLabel && label"
+    class="absolute -top-[8px] left-[9px] z-[1] px-[4px] text-[11px] font-semibold text-gray-600 pointer-events-none leading-none"
+    [ngClass]="dark ? 'bg-[#1B3A6B] text-white' : 'bg-white'">
+    {{ label }}<span *ngIf="required" class="text-red-500"> *</span>
+  </label>
+
+  <!-- Contenedor relativo para el dropdown -->
+  <div class="relative overflow-visible">
+
+    <!-- Trigger -->
+    <button
+      #trigger
+      type="button"
+      (pointerdown)="onTriggerPointerDown($event)"
+      (click)="onTriggerClick($event)"
+      [disabled]="disabled"
+      class="ss-trigger w-full flex items-center justify-between focus:outline-none transition-colors"
+      [class.cursor-pointer]="!disabled"
+      [class.cursor-not-allowed]="disabled"
+      [class.opacity-60]="disabled"
+      [style.background]="badgeStyle ? badgeStyle.background : null"
+      [style.color]="badgeStyle ? badgeStyle.color : null"
+      [style.border-color]="badgeStyle ? 'transparent' : null"
+      [ngClass]="dark ? [
+        triggerSizeClasses, 'rounded-[7px] font-medium',
+        'border border-[rgba(255,255,255,0.2)]',
+        isOpen ? 'bg-[#2a4a71]' : 'bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)]'
+      ] : [
+        triggerSizeClasses, 'rounded-[7px] font-medium border focus:ring-1 focus:ring-[var(--ss-accent)]/20',
+        badgeStyle ? '' : 'bg-white',
+        isOpen && !badgeStyle ? 'border-[var(--ss-accent)] ring-1 ring-[var(--ss-accent)]/30' : (badgeStyle ? '' : 'border-[#e2e8f0]')
+      ]"
+    >
+      <span
+        class="ss-trigger-label"
+        [class.ss-full]="fullText"
+        [ngClass]="badgeStyle ? '' : (dark ? 'text-white' : (hasValue ? 'text-gray-800' : 'text-gray-500'))"
+      >
+        {{ selectedLabel }}
+      </span>
+      <span class="flex items-center gap-[8px]">
+        <span
+          *ngIf="allowClear && hasValue && !disabled"
+          (click)="clear($event)"
+          (keydown.enter)="clear($any($event))"
+          tabindex="0"
+          role="button"
+          aria-label="Limpiar selección"
+          title="Limpiar"
+          class="ss-clear flex items-center justify-center w-[18px] h-[18px] rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors"
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </span>
+        <svg
+          class="flex-shrink-0 text-gray-400 transition-transform duration-200"
+          [ngClass]="isOpen ? 'rotate-180' : ''"
+          width="11" height="11" viewBox="0 0 16 9" fill="none"
+        >
+          <path
+            d="M14.692 0L16 1.339L8.873 8.629a1.997 1.997 0 0 1-2.746 0L0 1.339 1.308.001 8 6.844 14.692 0Z"
+            fill="currentColor"
+          />
+        </svg>
+      </span>
+    </button>
+
+    <!-- Dropdown: `fixed` respecto al viewport (no `absolute`) para que pueda salirse de su
+         contenedor. Dentro de un modal angosto un panel `absolute` queda recortado, y hacer que el
+         contenedor crezca haría que el modal se agrande y se achique al abrir y cerrar el combo.
+         La posición se recalcula en cada scroll para que acompañe al campo (ver search-select.ts). -->
+    <div
+      #panel
+      *ngIf="isOpen"
+      class="fixed bg-white border border-[#e2e8f0] rounded-[7px] shadow-lg z-50 overflow-hidden"
+      [style.top.px]="panelTop"
+      [style.bottom.px]="panelBottom"
+      [style.left.px]="panelLeft"
+      [style.width.px]="panelWidth"
+    >
+      <!-- Buscador -->
+      <div *ngIf="options.length > 5" class="p-[6px] border-b border-[#e2e8f0]">
+        <div class="flex items-center gap-[6px] bg-[#F8F8F8] border border-[#e2e8f0] rounded-[6px] px-[8px] py-[4px]">
+          <svg class="flex-shrink-0 text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none">
+            <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 15A5.5 5.5 0 1 0 9.5 4a5.5 5.5 0 0 0 0 11Z" fill="currentColor"/>
+          </svg>
+          <!-- autocomplete="off": es un buscador interno del desplegable, no un campo del formulario;
+               sin esto el navegador lo toma como un campo más y ofrece autocompletarlo. -->
+          <input
+            #searchInput
+            type="text"
+            [(ngModel)]="searchText"
+            placeholder="Buscar..."
+            autocomplete="off"
+            class="w-full bg-transparent text-[11px] focus:outline-none text-gray-700 placeholder-gray-400"
+            (click)="$event.stopPropagation()"
+          />
+        </div>
+      </div>
+
+      <!-- Lista de opciones -->
+      <div class="overflow-y-auto max-h-[200px] overscroll-contain">
+
+        <!-- Sin resultados -->
+        <div
+          *ngIf="filteredOptions.length === 0"
+          class="px-[10px] py-[8px] text-[11px] text-gray-400 text-center"
+        >
+          Sin resultados
+        </div>
+
+        <!-- Opciones -->
+        <div
+          *ngFor="let option of filteredOptions; trackBy: trackByOption"
+          (click)="select(option)"
+          class="ss-option px-[10px] py-[7px] text-[11px] cursor-pointer transition-colors"
+          [class.ss-full]="fullText"
+          [ngClass]="option[valueField] === value
+            ? 'ss-option-selected font-medium'
+            : 'text-gray-700 hover:bg-[#F0F0F0]'"
+        >
+          {{ optionLabel(option) }}
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>

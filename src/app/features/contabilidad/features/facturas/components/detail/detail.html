@@ -1,0 +1,96 @@
+<app-base-modal [title]="'Detalle de factura'" width="w-[820px]" (closeModal)="closeModal.emit()">
+  @if (detail) {
+    <div class="flex flex-col gap-5 mt-2">
+
+      <!-- Encabezado -->
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="text-lg font-semibold text-gray-800">{{ detail.invoiceNumber }}</div>
+          <div class="text-xs text-gray-400">Emitida el {{ detail.issueDate }}</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs rounded-lg px-2 py-1" style="background:var(--color-abril-primary-light); color:var(--color-abril-primary-dark)">
+            {{ detail.invoicePaymentFormDescription }}
+          </span>
+          <span class="text-base font-semibold" style="color:var(--color-abril-primary)">
+            {{ detail.currencySymbol || detail.currencyCode || 'S/' }} {{ detail.total | number: '1.2-2' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Datos -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <div>
+          <div class="text-xs font-medium text-gray-400">Proveedor</div>
+          <div class="text-gray-800">{{ detail.contributorName }}</div>
+          <div class="text-xs text-gray-500">RUC {{ detail.contributorRuc }}</div>
+        </div>
+        <div>
+          <div class="text-xs font-medium text-gray-400">Razón social Abril</div>
+          <div class="text-gray-800">{{ detail.abrilContributorName ?? '—' }}</div>
+          <div class="text-xs text-gray-500" *ngIf="detail.abrilContributorRuc">RUC {{ detail.abrilContributorRuc }}</div>
+        </div>
+        <div>
+          <div class="text-xs font-medium text-gray-400">Moneda</div>
+          <div class="text-gray-800">{{ detail.currencyCode ?? '—' }}</div>
+        </div>
+        <div>
+          <div class="text-xs font-medium text-gray-400">Carpeta de guardado</div>
+          <div class="text-gray-800">{{ detail.invoiceFolderName ?? '—' }}</div>
+        </div>
+        <div class="md:col-span-2">
+          <div class="text-xs font-medium text-gray-400">Descripción</div>
+          <div class="text-gray-800 whitespace-pre-line">{{ detail.description }}</div>
+        </div>
+        <div>
+          <div class="text-xs font-medium text-gray-400">Registrada</div>
+          <div class="text-gray-700">{{ detail.createdDateTime | date: 'dd-MM-yyyy HH:mm' }}</div>
+        </div>
+        <div *ngIf="detail.updatedDateTime">
+          <div class="text-xs font-medium text-gray-400">Última edición</div>
+          <div class="text-gray-700">{{ detail.updatedDateTime | date: 'dd-MM-yyyy HH:mm' }}</div>
+        </div>
+      </div>
+
+      <!-- Documento -->
+      <div class="flex flex-col gap-2">
+        <div class="text-xs font-medium" style="color:var(--color-abril-primary)">Documento</div>
+        @if (detail.documentUrl) {
+          @if (isImage && canEmbed && safeDocUrl) {
+            <img [src]="detail.documentUrl" alt="Documento" class="max-h-[420px] w-auto rounded-lg border" style="border-color:var(--color-abril-border)" />
+          } @else if (canEmbed && safeDocUrl) {
+            <iframe [src]="safeDocUrl" class="w-full h-[420px] rounded-lg border" style="border-color:var(--color-abril-border)"></iframe>
+          }
+          <a [href]="detail.documentUrl" target="_blank" rel="noopener"
+            class="inline-flex items-center gap-2 text-sm font-medium" style="color:var(--color-abril-primary)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 3h7v7M21 3l-9 9M5 5h6M5 5v14h14v-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            Abrir documento en pestaña nueva
+          </a>
+        } @else {
+          <span class="text-sm text-gray-400">Esta factura no tiene documento adjunto.</span>
+        }
+
+        @if (detail.signedDocumentUrl) {
+          <a [href]="detail.signedDocumentUrl" target="_blank" rel="noopener"
+            class="inline-flex items-center gap-2 text-sm font-medium" style="color:var(--color-abril-primary)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z" fill="currentColor"/></svg>
+            Abrir documento firmado
+          </a>
+        }
+      </div>
+
+      <!-- Acciones -->
+      <div class="flex justify-end gap-3 pt-1">
+        <button type="button" (click)="closeModal.emit()"
+          class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">
+          Cerrar
+        </button>
+        <button type="button" (click)="onEdit()"
+          class="rounded-lg px-5 py-2 text-sm font-medium text-white hover:opacity-90" style="background:var(--color-abril-primary)">
+          Editar
+        </button>
+      </div>
+
+    </div>
+  }
+</app-base-modal>

@@ -1,0 +1,66 @@
+<div class="flex-1 w-full min-h-0 overflow-y-auto rounded-lg border-t border-x border-[#D6DEE5]">
+  <table class="w-full table-fixed">
+
+    <thead class="bg-[#E8F5E9] sticky top-0">
+      <tr class="text-[#4CAF50] text-sm">
+        <th class="w-[200px] py-3 px-4 text-left font-semibold">Lote / Dirección</th>
+        <th class="w-[120px] py-3 px-4 text-left font-semibold">Uso</th>
+        <th class="w-[200px] py-3 px-4 text-left font-semibold">Propietario / Representante</th>
+        <th class="w-[100px] py-3 px-4 text-left font-semibold">DNI</th>
+        <th class="py-3 px-4 text-left font-semibold">Proyecto</th>
+        <th class="w-[130px] py-3 px-4 text-center font-semibold">Colindancia</th>
+        <th class="w-[150px] py-3 px-4 text-left font-semibold">Construcción</th>
+        <th class="w-[120px] py-3 px-4 text-left font-semibold">Celular</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr
+        *ngFor="let item of vecinos"
+        (click)="rowClick.emit(item)"
+        class="border-b border-[#D6DEE5] hover:bg-[#f7fbf3] cursor-pointer transition-colors">
+
+        <td class="py-3 px-4">
+          <span [title]="item.direccion || ''" class="block text-sm text-gray-800 line-clamp-2">{{ item.direccion || '—' }}</span>
+          <span *ngIf="item.interiorDepartamento" class="block text-xs text-gray-400">{{ item.interiorDepartamento }}</span>
+        </td>
+
+        <td class="py-3 px-4 text-sm text-gray-600">{{ item.usoDescripcion || '—' }}</td>
+
+        <td class="py-3 px-4">
+          <span [title]="item.nombrePropietario || ''" class="block text-sm text-gray-700 line-clamp-2">
+            {{ item.nombrePropietario || '—' }}
+            <span *ngIf="item.personas.length > 1" class="text-gray-400">· +{{ item.personas.length - 1 }}</span>
+          </span>
+        </td>
+
+        <td class="py-3 px-4 text-sm text-gray-600">{{ item.dni || '—' }}</td>
+
+        <td class="py-3 px-4">
+          <span [title]="item.projectDescription" class="block text-sm text-gray-600 line-clamp-2">{{ item.projectDescription }}</span>
+        </td>
+
+        <td class="py-3 px-4 text-center">
+          <span
+            class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium"
+            [ngClass]="item.colindanciaDescripcion === 'Colindante'
+              ? 'bg-[#D7FAF4] text-[#009C87]'
+              : 'bg-[#FEF3C7] text-[#92400E]'">
+            {{ item.colindanciaDescripcion }}
+          </span>
+        </td>
+
+        <td class="py-3 px-4 text-sm text-gray-600">{{ item.tipoConstruccionDescripcion }}</td>
+
+        <td class="py-3 px-4 text-sm text-gray-600">{{ item.celular || '—' }}</td>
+      </tr>
+
+      <tr *ngIf="vecinos.length === 0">
+        <td colspan="8" class="py-10 text-center text-sm text-gray-400 italic">
+          No hay vecinos registrados.
+        </td>
+      </tr>
+    </tbody>
+
+  </table>
+</div>

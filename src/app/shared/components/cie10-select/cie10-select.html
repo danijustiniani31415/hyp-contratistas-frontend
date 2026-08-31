@@ -1,0 +1,68 @@
+<div class="relative">
+  <button
+    type="button"
+    (click)="toggle($event)"
+    class="c10-trigger w-full flex items-center justify-between rounded-[7px] border border-[#e2e8f0] bg-white h-[34px] text-[12px] pl-[10px] pr-[8px] font-medium focus:outline-none transition-colors"
+    [class.c10-trigger--open]="isOpen"
+  >
+    <span class="truncate" [class.text-gray-500]="!value" [class.text-gray-800]="!!value">
+      {{ triggerLabel }}
+    </span>
+    <span class="flex items-center gap-[8px] flex-shrink-0">
+      <span
+        *ngIf="allowClear && value"
+        (click)="clear($event)"
+        class="flex items-center justify-center w-[18px] h-[18px] rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer"
+        title="Limpiar"
+      >
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </span>
+      <svg class="text-gray-400 transition-transform duration-200" [class.rotate-180]="isOpen" width="11" height="11" viewBox="0 0 16 9" fill="none">
+        <path d="M14.692 0L16 1.339L8.873 8.629a1.997 1.997 0 0 1-2.746 0L0 1.339 1.308.001 8 6.844 14.692 0Z" fill="currentColor"/>
+      </svg>
+    </span>
+  </button>
+
+  <div *ngIf="isOpen" class="absolute top-[calc(100%+4px)] left-0 right-0 bg-white border border-[#e2e8f0] rounded-[7px] shadow-lg z-50 overflow-hidden">
+    <div class="p-[6px] border-b border-[#e2e8f0]">
+      <div class="flex items-center gap-[6px] bg-[#F8F8F8] border border-[#e2e8f0] rounded-[6px] px-[8px] py-[4px]">
+        <svg class="flex-shrink-0 text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none">
+          <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 15A5.5 5.5 0 1 0 9.5 4a5.5 5.5 0 0 0 0 11Z" fill="currentColor"/>
+        </svg>
+        <input
+          #searchInput
+          type="text"
+          [(ngModel)]="searchText"
+          (ngModelChange)="onSearchInput()"
+          placeholder="Escribe código o descripción (mín. 2 letras)..."
+          autocomplete="off"
+          class="w-full bg-transparent text-[11px] focus:outline-none text-gray-700 placeholder-gray-400"
+          (click)="$event.stopPropagation()"
+        />
+      </div>
+    </div>
+
+    <div class="overflow-y-auto max-h-[220px] overscroll-contain">
+      <div *ngIf="loading" class="px-[10px] py-[8px] text-[11px] text-gray-400 text-center">Buscando…</div>
+
+      <div *ngIf="!loading && searchText.trim().length < 2" class="px-[10px] py-[8px] text-[11px] text-gray-400 text-center">
+        Escribe al menos 2 letras para buscar
+      </div>
+
+      <div *ngIf="!loading && searchText.trim().length >= 2 && resultados.length === 0" class="px-[10px] py-[8px] text-[11px] text-gray-400 text-center">
+        Sin resultados
+      </div>
+
+      <div
+        *ngFor="let item of resultados; trackBy: trackByCodigo"
+        (click)="select(item)"
+        class="px-[10px] py-[7px] text-[11px] cursor-pointer transition-colors hover:bg-[#F0F0F0]"
+        [class.font-medium]="item.codigo === value"
+      >
+        <span class="font-semibold">{{ item.codigo }}</span> — {{ item.descripcion }}
+      </div>
+    </div>
+  </div>
+</div>

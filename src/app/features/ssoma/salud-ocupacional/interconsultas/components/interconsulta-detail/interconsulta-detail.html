@@ -1,0 +1,83 @@
+<app-abril-modal-panel
+  titulo="Interconsulta"
+  icono="ti-arrows-right-left"
+  variant="blue"
+  width="780px"
+  (closeModal)="close()">
+  <div *ngIf="loading && !data" class="state-msg">Cargando interconsulta…</div>
+
+  <ng-container *ngIf="data">
+    <header class="detail-header">
+      <div>
+        <h3 class="worker-name">{{ data.workerNombre }}</h3>
+        <div class="worker-meta">
+          <span>DNI {{ data.workerDni }}</span>
+          <span class="sep">·</span>
+          <span class="font-medium">{{ data.especialidad }}</span>
+        </div>
+        <div class="worker-meta" *ngIf="data.motivo">
+          <span>Motivo: {{ data.motivo }}</span>
+        </div>
+      </div>
+      <span class="badge border" [ngClass]="estadoClass(data.estado)">{{ data.estado }}</span>
+    </header>
+
+    <div class="info-row">
+      <div>
+        <div class="field-label">Fecha derivación</div>
+        <div>{{ data.fechaDerivacion | date: 'dd/MM/yyyy' }}</div>
+      </div>
+      <div *ngIf="data.medico">
+        <div class="field-label">Médico derivador</div>
+        <div>{{ data.medico }}</div>
+      </div>
+      <div *ngIf="data.estado === 'Pendiente'">
+        <div class="field-label">Días pendiente</div>
+        <div class="text-red-700 font-semibold">{{ data.diasPendiente }}</div>
+      </div>
+    </div>
+
+    <h2 class="paso-title mt-6"><i class="ti ti-clipboard-check"></i> Registro de atención</h2>
+    <div class="grid-2">
+      <div *ngIf="data.fechaAtencion">
+        <div class="field-label">Fecha atención</div>
+        <div>{{ data.fechaAtencion | date: 'dd/MM/yyyy' }}</div>
+      </div>
+      <div *ngIf="data.cie10">
+        <div class="field-label">CIE-10</div>
+        <div>{{ data.cie10 }}</div>
+      </div>
+      <div *ngIf="data.resultado">
+        <div class="field-label">Resultado</div>
+        <div>{{ data.resultado }}</div>
+      </div>
+      <div *ngIf="data.diagnostico" class="col-span-2">
+        <div class="field-label">Diagnóstico</div>
+        <div>{{ data.diagnostico }}</div>
+      </div>
+      <div *ngIf="data.urlInforme" class="col-span-2">
+        <div class="field-label">Informe / Levantamiento</div>
+        <button type="button" class="doc-btn-ver" (click)="verDocumento(data.urlInforme, 'Informe Interconsulta')">
+          Ver documento
+        </button>
+      </div>
+      <div *ngIf="data.notas" class="col-span-2">
+        <div class="field-label">Notas</div>
+        <div>{{ data.notas }}</div>
+      </div>
+      <div *ngIf="!data.fechaAtencion && !data.diagnostico && !data.urlInforme" class="col-span-2 text-gray-400 italic text-sm">
+        La clínica aún no ha registrado la atención de esta interconsulta.
+      </div>
+    </div>
+
+    <div modalFooter style="justify-content: flex-end;">
+      <button type="button" class="btn-primary" (click)="close()">Cerrar</button>
+    </div>
+  </ng-container>
+</app-abril-modal-panel>
+
+<app-document-viewer
+  [archivoUrl]="visorUrl"
+  [nombre]="visorNombre"
+  (closed)="onVisorClosed()">
+</app-document-viewer>

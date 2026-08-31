@@ -1,0 +1,159 @@
+<div class="dash-root">
+
+  <app-abril-page-header
+    badge="SSOMA"
+    titulo="Inspecciones"
+    subtitulo="Gestión de inspecciones de seguridad"
+    [tabs]="tabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()">
+  </app-abril-page-header>
+
+  <div class="dash-body">
+
+    @if (loading) {
+      <div class="kpi-grid">
+        @for (_ of [1,2,3,4,5]; track $index) {
+          <div class="skeleton-card"></div>
+        }
+      </div>
+      <div class="skeleton-body"></div>
+    }
+
+    @if (!loading && data) {
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-label">Total inspecciones</span>
+          <span class="kpi-val">{{ data.totalInspecciones }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Este mes</span>
+          <span class="kpi-val">{{ data.totalEsteMes }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Tasa cumplimiento</span>
+          <span class="kpi-val" [ngClass]="scoreClass(data.tasaCumplimientoPromedio)">
+            {{ data.tasaCumplimientoPromedio != null ? (data.tasaCumplimientoPromedio | number:'1.0-0') + '%' : '—' }}
+          </span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Tasa este mes</span>
+          <span class="kpi-val" [ngClass]="scoreClass(data.tasaCumplimientoEsteMes)">
+            {{ data.tasaCumplimientoEsteMes != null ? (data.tasaCumplimientoEsteMes | number:'1.0-0') + '%' : '—' }}
+          </span>
+        </div>
+        <div class="kpi-card" [class.kpi-card--warn]="data.hallazgosCriticosAbiertos > 0">
+          <span class="kpi-label">Hallazgos abiertos</span>
+          <span class="kpi-val">{{ data.hallazgosAbiertos }}</span>
+          @if (data.hallazgosCriticosAbiertos > 0) {
+            <span class="kpi-sub kpi-sub--rojo">{{ data.hallazgosCriticosAbiertos }} críticos</span>
+          }
+        </div>
+      </div>
+
+      <div class="charts-row">
+
+        <!-- Tendencia mensual -->
+        <div class="chart-card chart-card--tendencia">
+          <div class="chart-title">Tendencia mensual {{ anioActual }}</div>
+          <div class="bar-chart">
+            @for (t of data.tendenciaMensual; track t.mes) {
+              <div class="bar-col">
+                <div class="bar-wrap">
+                  <div class="bar-fill" [ngClass]="scoreClass(t.tasaPromedio)"
+                    [style.height.px]="barHeight(t.total)">
+                    @if (t.total > 0) { <span class="bar-val">{{ t.total }}</span> }
+                  </div>
+                </div>
+                <div class="bar-lbl">{{ t.mesNombre.slice(0,3) }}</div>
+                @if (t.tasaPromedio != null) {
+                  <div class="bar-tasa" [ngClass]="scoreClass(t.tasaPromedio)">{{ t.tasaPromedio | number:'1.0-0' }}%</div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Por tipo -->
+        <div class="chart-card chart-card--tipo">
+          <div class="chart-title">Por tipo de inspección</div>
+          <div class="tipo-list">
+            @for (t of data.porTipo.slice(0,10); track t.tipoNombre) {
+              <div class="tipo-row">
+                <div class="tipo-header">
+                  <span class="badge-ambito" [ngClass]="ambitoClass(t.ambito)">{{ t.ambito }}</span>
+                  <span class="tipo-nombre">{{ t.tipoNombre }}</span>
+                  <span class="tipo-total">{{ t.total }}</span>
+                </div>
+                <div class="tipo-bar-bg">
+                  <div class="tipo-bar-fill" [style.width.%]="barWidthPct(t.total)"></div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+      </div><!-- /charts-row -->
+
+      <div class="bottom-row">
+
+        <!-- Hallazgos por área -->
+        @if (data.hallazgosPorArea.length) {
+          <div class="table-card">
+            <div class="chart-title">Hallazgos por área</div>
+            <table class="area-table">
+              <thead>
+                <tr>
+                  <th>Área</th>
+                  <th class="ta-r">Total</th>
+                  <th class="ta-r">Críticos</th>
+                  <th class="ta-r">Abiertos</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (a of data.hallazgosPorArea; track a.area) {
+                  <tr [class.row-critico]="a.criticos > 0">
+                    <td>{{ a.area }}</td>
+                    <td class="ta-r">{{ a.total }}</td>
+                    <td class="ta-r">
+                      @if (a.criticos > 0) {
+                        <span class="badge-critico-sm">{{ a.criticos }}</span>
+                      } @else { 0 }
+                    </td>
+                    <td class="ta-r">{{ a.abiertos }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <!-- Hallazgos recurrentes -->
+        @if (data.hallazgosRecurrentes.length) {
+          <div class="recurrentes-card">
+            <div class="chart-title">Hallazgos recurrentes</div>
+            <div class="recurrentes-list">
+              @for (h of data.hallazgosRecurrentes.slice(0,5); track h.descripcion) {
+                <div class="recurrente-item">
+                  <div class="recurrente-top">
+                    <span class="badge-tipo" [ngClass]="tipoClass(h.ultimoTipo)">{{ h.ultimoTipo }}</span>
+                    <span class="recurrente-cnt">×{{ h.ocurrencias }}</span>
+                  </div>
+                  <div class="recurrente-desc">{{ h.descripcion }}</div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+      </div><!-- /bottom-row -->
+
+    }<!-- /data -->
+
+  </div><!-- /dash-body -->
+
+
+  <app-fab label="Nueva inspección" (clicked)="irANueva()"></app-fab>
+</div>

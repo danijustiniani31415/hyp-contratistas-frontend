@@ -1,0 +1,438 @@
+<div class="pf-page">
+  <div class="pf-shell">
+
+    <!-- ── Cargando ─────────────────────────────────────────────────────── -->
+    @if (cargando) {
+      <div class="pf-card pf-state">
+        <div class="pf-spinner"></div>
+        <p class="pf-state-text">Cargando formulario…</p>
+      </div>
+    }
+
+    <!-- ── Error / token inválido ───────────────────────────────────────── -->
+    @else if (errorCarga) {
+      <div class="pf-card pf-state">
+        <img class="pf-state-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
+        <i class="ti ti-alert-circle pf-state-icon" style="color:#B91C1C"></i>
+        <h2 class="pf-state-title">No pudimos abrir el formulario</h2>
+        <p class="pf-state-text">{{ mensajeError }}</p>
+      </div>
+    }
+
+    <!-- ── Enviado (agradecimiento) ─────────────────────────────────────── -->
+    @else if (enviado) {
+      <div class="pf-card pf-state">
+        <img class="pf-state-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
+        <i class="ti ti-circle-check pf-state-icon" style="color:var(--color-abril-primary-dark)"></i>
+        <h2 class="pf-state-title">{{ esCorreccion ? '¡Correcciones enviadas!' : '¡Formulario enviado!' }}</h2>
+        <p class="pf-state-text">
+          Gracias por completar tu información. El equipo de Gestión del Talento Humano de Abril Grupo
+          Inmobiliario revisará tus datos y se pondrá en contacto contigo para los siguientes pasos.
+        </p>
+      </div>
+    }
+
+    <!-- ── Solo lectura (ya aprobado por GTH) ───────────────────────────── -->
+    @else if (data?.soloLectura) {
+      <div class="pf-card pf-state">
+        <img class="pf-state-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
+        <i class="ti ti-lock pf-state-icon" style="color:var(--color-abril-primary-dark)"></i>
+        <h2 class="pf-state-title">Formulario ya procesado</h2>
+        <p class="pf-state-text">
+          Este formulario ya fue revisado y aprobado por el equipo de selección, por lo que no admite más
+          cambios. Si necesitas actualizar tu información, comunícate con tu contacto en Abril Grupo Inmobiliario.
+        </p>
+      </div>
+    }
+
+    <!-- ── Formulario (5 pasos) ─────────────────────────────────────────── -->
+    @else if (data) {
+      <!-- Encabezado de marca -->
+      <div class="pf-card pf-header">
+        <img class="pf-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
+        <h1 class="pf-title">Formulario del postulante</h1>
+        @if (esCorreccion) {
+          <p class="pf-intro">
+            Estimado(a) postulante, revisamos el formulario que enviaste para la posición
+            <b>{{ data.puesto }}</b> y necesitamos que corrijas algunos puntos. Tus respuestas ya están
+            cargadas: solo actualiza lo observado y vuelve a enviarlo. Los campos marcados con
+            <span style="color:#B91C1C">*</span> son obligatorios.
+          </p>
+        } @else {
+          <p class="pf-intro">
+            Estimado(a) postulante, gracias por participar de este proceso de selección para la posición
+            <b>{{ data.puesto }}</b>. A continuación, te pediremos que completes tus datos para tener tu
+            información lo más clara posible. Los campos marcados con <span style="color:#B91C1C">*</span> son
+            obligatorios.
+          </p>
+        }
+
+        <!-- Indicador de pasos -->
+        <div class="pf-steps">
+          @for (nombre of pasosNombres; track $index) {
+            <div class="pf-step"
+                 [class.pf-step--active]="paso === $index + 1"
+                 [class.pf-step--done]="paso > $index + 1">
+              <span class="pf-step-circle">
+                @if (paso > $index + 1) { <i class="ti ti-check"></i> } @else { {{ $index + 1 }} }
+              </span>
+              <span class="pf-step-label">{{ nombre }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Cuerpo del paso -->
+      <div class="pf-card pf-body">
+
+        <!-- Observaciones de GTH: van fuera del @if de cada paso a propósito, para que el postulante
+             las tenga a la vista en todas las páginas mientras corrige. -->
+        @if (esCorreccion) {
+          <div class="pf-alert">
+            <i class="ti ti-alert-triangle pf-alert-icon"></i>
+            <div>
+              <p class="pf-alert-title">Tu formulario necesita correcciones</p>
+              @if (observaciones) {
+                <p class="pf-alert-label">Observaciones del equipo de selección:</p>
+                <p class="pf-alert-text">{{ observaciones }}</p>
+              } @else {
+                <p class="pf-alert-text">
+                  El equipo de selección revisó tu formulario y necesita que lo corrijas. Verifica que toda
+                  la información esté completa y sea correcta antes de volver a enviarlo.
+                </p>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- ── Paso 1 · Consentimiento de protección de datos ─────────────── -->
+        <!-- Va primero y bloquea el resto: es la autorización que habilita a pedir y guardar todo
+             lo que sigue. El backend valida lo mismo al recibir el envío. -->
+        @if (paso === 1) {
+          <h2 class="pf-section-title">Consentimiento de Protección de Datos</h2>
+
+          <div class="pf-toggle-group">
+            <p class="pf-toggle-label">
+              Autorizo el tratamiento de mis datos personales
+              <span class="pf-req">*</span>
+            </p>
+            <div class="pf-toggle-row">
+              <button type="button" class="pf-toggle" [class.pf-toggle--on]="model.consentimientoDatosPersonales === true"
+                      (click)="setBool('consentimientoDatosPersonales', true)">Sí</button>
+              <button type="button" class="pf-toggle" [class.pf-toggle--on]="model.consentimientoDatosPersonales === false"
+                      (click)="setBool('consentimientoDatosPersonales', false)">No</button>
+            </div>
+          </div>
+        }
+
+        <!-- ── Paso 2 · Datos personales ─────────────────────────────────── -->
+        @if (paso === 2) {
+          <h2 class="pf-section-title">Datos personales</h2>
+          <div class="pf-grid">
+            <!-- Los `autocomplete` no son cosmética: sin ellos Chrome adivina el tipo de cada campo por
+                 el texto de la etiqueta y termina clasificando el formulario como uno de pago, con lo
+                 que ofrece autocompletar métodos de pago. Declarar el tipo real (o `off`) lo evita. -->
+            <div class="abril-field pf-col-2">
+              <label class="abril-field-label">Nombres y apellidos completos <span class="pf-req">*</span></label>
+              <input type="text" class="abril-field-input" [(ngModel)]="model.nombresCompletos"
+                     name="nombresCompletos" autocomplete="name"
+                     placeholder="Escribe tus nombres y apellidos" />
+            </div>
+
+            <!-- dense + floatingLabel: mismas medidas (34px) y mismo label flotante que
+                 app-search-select, para que la fecha no quede más alta que el combo de al lado. -->
+            <!-- max = hoy menos 18 años: no se contrata a menores de edad, así que el calendario
+                 no deja elegir (ni tipear) una fecha de nacimiento posterior. -->
+            <app-date-picker label="Fecha de nacimiento *" [color]="accent"
+              [dense]="true" [floatingLabel]="true"
+              [max]="fechaNacimientoMaxima"
+              [value]="model.fechaNacimiento" (valueChange)="model.fechaNacimiento = $event"></app-date-picker>
+
+            <app-search-select label="Estado civil *" [options]="estadosCiviles" valueField="id" displayField="nombre"
+              [value]="model.estadoCivilId" (valueChange)="model.estadoCivilId = $event"
+              placeholder="Selecciona estado civil" [color]="accent" [sortAlpha]="false"></app-search-select>
+
+            <!-- uppercase: DNI y CE son siglas y el search-select, por defecto, suaviza el TODO
+                 MAYÚSCULAS del catálogo a nombre propio ("Dni" / "Ce"). -->
+            <app-search-select label="Tipo de documento *" [options]="tiposDocumento" valueField="id" displayField="nombre"
+              [value]="model.tipoDocumentoId" (valueChange)="onTipoDocumentoChange($event)"
+              placeholder="Selecciona tipo de documento" [color]="accent" [sortAlpha]="false"
+              [uppercase]="true"></app-search-select>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Número de documento (DNI o CE) <span class="pf-req">*</span></label>
+              <input type="text" class="abril-field-input" [ngModel]="model.numeroDocumento"
+                     (input)="onNumeroDocumentoInput($event)"
+                     name="numeroDocumento" autocomplete="off"
+                     [attr.maxlength]="documentoLargoMaximo"
+                     [attr.inputmode]="esDni ? 'numeric' : 'text'"
+                     [placeholder]="documentoPlaceholder" />
+            </div>
+
+            <app-search-select label="Distrito de residencia *" [options]="distritos" valueField="id" displayField="nombre"
+              [value]="model.distritoId" (valueChange)="model.distritoId = $event"
+              placeholder="Busca tu distrito (Lima / Callao)" [color]="accent"></app-search-select>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Correo electrónico <span class="pf-req">*</span></label>
+              <input type="email" class="abril-field-input" [(ngModel)]="model.correoElectronico"
+                     name="correoElectronico" autocomplete="email"
+                     placeholder="tucorreo@ejemplo.com" />
+            </div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Número de celular <span class="pf-req">*</span></label>
+              <input type="text" class="abril-field-input" [ngModel]="model.numeroCelular"
+                     (input)="onCelularInput($event)"
+                     name="numeroCelular" autocomplete="tel-national"
+                     [attr.maxlength]="celularLargo" inputmode="numeric"
+                     placeholder="Ej. 987654321" />
+            </div>
+
+            <!-- La convocatoria no se pregunta: es la del proceso al que ya fue invitado y sale
+                 en el encabezado del formulario. -->
+            <app-search-select label="Disponibilidad *" [options]="disponibilidades" valueField="id" displayField="nombre"
+              [value]="model.disponibilidadId" (valueChange)="model.disponibilidadId = $event"
+              placeholder="Selecciona tu disponibilidad" [color]="accent" [sortAlpha]="false"></app-search-select>
+
+            <!-- El detalle del campo va en el .pf-hint y no en el label: el label flotante es
+                 `nowrap` y `absolute`, así que un texto largo se sale del campo y agrega scroll
+                 horizontal a toda la página en el celular (que es donde se llena el formulario). -->
+            <div class="abril-field pf-col-2">
+              <label class="abril-field-label">Pretensiones salariales <span class="pf-req">*</span></label>
+              <input type="text" class="abril-field-input" [(ngModel)]="model.pretensionesSalariales"
+                     name="pretensionesSalariales" autocomplete="off"
+                     placeholder="Ej. S/ 4,000 a S/ 5,000" />
+              <p class="pf-hint">Indica un monto mínimo y uno máximo, en remuneración bruta.</p>
+            </div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Perfil de LinkedIn</label>
+              <input type="text" class="abril-field-input" [(ngModel)]="model.linkedin"
+                     name="linkedin" autocomplete="off"
+                     placeholder="linkedin.com/in/tu-perfil (opcional)" />
+            </div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Portafolio de trabajos (link)</label>
+              <input type="text" class="abril-field-input" [(ngModel)]="model.portafolioLink"
+                     name="portafolioLink" autocomplete="off"
+                     placeholder="Enlace a tu portafolio (opcional)" />
+            </div>
+          </div>
+        }
+
+        <!-- ── Paso 3 · Estudios realizados ──────────────────────────────── -->
+        @if (paso === 3) {
+          <h2 class="pf-section-title">Estudios realizados</h2>
+          <div class="pf-grid">
+            <div class="abril-field pf-col-2">
+              <label class="abril-field-label">¿Cuál es tu profesión? <span class="pf-req">*</span></label>
+              <input type="text" class="abril-field-input" [(ngModel)]="model.profesion"
+                     name="profesion" autocomplete="off"
+                     placeholder="Ej. Ingeniería Civil" />
+            </div>
+
+            <!-- Orden propio (alfabético con "Otras" al final) → sortAlpha en false. -->
+            <app-search-select label="Universidad o instituto *" [options]="universidades" valueField="id" displayField="nombre"
+              [value]="model.universidadId" (valueChange)="model.universidadId = $event"
+              placeholder="Busca tu universidad" [color]="accent" [sortAlpha]="false"></app-search-select>
+
+            <app-search-select label="Grado académico *" [options]="gradosAcademicos" valueField="id" displayField="nombre"
+              [value]="model.gradoAcademicoId" (valueChange)="model.gradoAcademicoId = $event"
+              placeholder="Selecciona tu grado académico" [color]="accent" [sortAlpha]="false"></app-search-select>
+
+            <div class="abril-field pf-col-2">
+              <label class="abril-field-label">Número de colegiatura (si aplica)</label>
+              <input type="text" class="abril-field-input" [(ngModel)]="model.numeroColegiatura"
+                     name="numeroColegiatura" autocomplete="off"
+                     placeholder="Número de colegiatura (opcional)" />
+            </div>
+          </div>
+        }
+
+        <!-- ── Paso 4 · Experiencia laboral ──────────────────────────────── -->
+        @if (paso === 4) {
+          <h2 class="pf-section-title">Experiencia laboral</h2>
+          <p class="pf-section-hint">Registra la información de tu experiencia más reciente o actual.</p>
+          <div class="pf-grid">
+            <div class="abril-field">
+              <label class="abril-field-label">Empresa donde laboraste (más reciente) <span class="pf-req">*</span></label>
+              <input type="text" class="abril-field-input" [(ngModel)]="model.empresa"
+                     name="empresa" autocomplete="off"
+                     placeholder="Nombre de la empresa" />
+            </div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Área de trabajo <span class="pf-req">*</span></label>
+              <input type="text" class="abril-field-input" [(ngModel)]="model.areaTrabajo"
+                     name="areaTrabajo" autocomplete="off"
+                     placeholder="Ej. Operaciones de obra" />
+            </div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Cargo desempeñado <span class="pf-req">*</span></label>
+              <input type="text" class="abril-field-input" [(ngModel)]="model.cargo"
+                     name="cargo" autocomplete="off"
+                     placeholder="Ej. Supervisor de Obra" />
+            </div>
+
+            <app-search-select label="Motivo de cese *" [options]="motivosCese" valueField="id" displayField="nombre"
+              [value]="model.motivoCeseId" (valueChange)="model.motivoCeseId = $event"
+              placeholder="Selecciona el motivo de cese" [color]="accent" [sortAlpha]="false"></app-search-select>
+
+            <!-- dense + floatingLabel: mismas medidas (34px) y mismo label flotante que
+                 app-search-select, para que las fechas queden alineadas con los demás campos. -->
+            <app-date-picker label="Fecha de inicio *" [color]="accent"
+              [dense]="true" [floatingLabel]="true"
+              [value]="model.fechaInicio" (valueChange)="onFechaInicioChange($event)"></app-date-picker>
+
+            <!-- min = fecha de inicio: no se puede haber salido de una empresa antes de entrar. -->
+            <app-date-picker label="Fecha de término" [color]="accent"
+              [dense]="true" [floatingLabel]="true"
+              [min]="model.fechaInicio"
+              [value]="model.fechaTermino" (valueChange)="model.fechaTermino = $event"></app-date-picker>
+
+            <div class="abril-field pf-col-2">
+              <label class="abril-field-label">Funciones principales (mínimo 4) <span class="pf-req">*</span></label>
+              <textarea class="abril-field-input" rows="3" [(ngModel)]="model.funcionesPrincipales"
+                        name="funcionesPrincipales" autocomplete="off"
+                        placeholder="Describe tus funciones principales"></textarea>
+            </div>
+
+            <div class="abril-field pf-col-2">
+              <label class="abril-field-label">Logros obtenidos en esta posición <span class="pf-req">*</span></label>
+              <textarea class="abril-field-input" rows="3" [(ngModel)]="model.logros"
+                        name="logros" autocomplete="off"
+                        placeholder="Describe tus logros"></textarea>
+              <p class="pf-hint">Menciona al menos 2 logros.</p>
+            </div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Ingreso bruto mensual <span class="pf-req">*</span></label>
+              <input type="text" class="abril-field-input" [(ngModel)]="model.ingresoBrutoMensual"
+                     name="ingresoBrutoMensual" autocomplete="off"
+                     placeholder="Ej. S/ 5,500" />
+            </div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Número de personas a cargo</label>
+              <input type="number" min="0" class="abril-field-input" [(ngModel)]="model.personasACargo"
+                     name="personasACargo" autocomplete="off"
+                     placeholder="Ej. 12 (opcional)" />
+            </div>
+
+            <div class="abril-field pf-col-2">
+              <label class="abril-field-label">Jefe inmediato <span class="pf-req">*</span></label>
+              <input type="text" class="abril-field-input" [(ngModel)]="model.jefeInmediato"
+                     name="jefeInmediato" autocomplete="off"
+                     placeholder="Ej. Juan Pérez, Gerente de Obra, 999 888 777" />
+              <p class="pf-hint">Escribe su nombre, cargo y número de contacto.</p>
+            </div>
+
+            <div class="pf-col-2 pf-toggle-group">
+              <p class="pf-toggle-label">Autorizo la verificación de referencias en este trabajo <span class="pf-req">*</span></p>
+              <div class="pf-toggle-row">
+                <button type="button" class="pf-toggle" [class.pf-toggle--on]="model.autorizaVerificacionReferencias === true"
+                        (click)="setBool('autorizaVerificacionReferencias', true)">Sí</button>
+                <button type="button" class="pf-toggle" [class.pf-toggle--on]="model.autorizaVerificacionReferencias === false"
+                        (click)="setBool('autorizaVerificacionReferencias', false)">No</button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- ── Paso 5 · CV documentado + consentimiento y veracidad ───────── -->
+        @if (paso === 5) {
+          <h2 class="pf-section-title">CV documentado y consentimiento</h2>
+          <p class="pf-section-hint">
+            Adjunta tu CV documentado (con tus certificados y constancias) y confirma la veracidad de
+            la información registrada.
+          </p>
+
+          <!-- CV documentado: obligatorio. Si ya subió uno en un envío anterior no se le vuelve a
+               pedir el archivo (el <input type=file> no se puede precargar), pero se le dice cuál
+               quedó guardado y puede reemplazarlo. -->
+          <div class="pf-cv">
+            <p class="pf-toggle-label">
+              CV documentado <span class="pf-req">*</span>
+            </p>
+
+            @if (cv) {
+              <div class="pf-cv-file">
+                <i class="ti ti-file-text pf-cv-file-icon"></i>
+                <span class="pf-cv-file-name" [title]="cv.file.name">{{ cv.file.name }}</span>
+                <button type="button" class="pf-cv-remove" (click)="quitarCv()" title="Quitar el archivo">
+                  Quitar
+                </button>
+              </div>
+            } @else {
+              @if (cvNombreCargado) {
+                <div class="pf-cv-file">
+                  <i class="ti ti-file-check pf-cv-file-icon"></i>
+                  <span class="pf-cv-file-name" [title]="cvNombreCargado">{{ cvNombreCargado }}</span>
+                  <span class="pf-cv-file-tag">Ya enviado</span>
+                </div>
+                <p class="pf-hint">
+                  Ya tenemos tu CV. Solo adjunta otro archivo si necesitas reemplazarlo.
+                </p>
+              }
+
+              <app-file-selector
+                [accept]="cvAccept"
+                label="Arrastra tu CV aquí o"
+                [hint]="'PDF, DOC o DOCX · máx. ' + cvMaxMb + ' MB'"
+                [color]="accent"
+                background="#F6FBF2"
+                (fileSelected)="onCvSelected($event)" />
+            }
+          </div>
+
+          <div class="pf-consent">
+            <p class="pf-toggle-label">
+              Declaro bajo juramento que la información consignada es veraz y sustentada en hechos, para
+              efectos del proceso de postulación en Abril Grupo Inmobiliario. <span class="pf-req">*</span>
+            </p>
+            <div class="pf-toggle-row">
+              <button type="button" class="pf-toggle" [class.pf-toggle--on]="model.declaracionVeracidad === true"
+                      (click)="setBool('declaracionVeracidad', true)">Sí</button>
+              <button type="button" class="pf-toggle" [class.pf-toggle--on]="model.declaracionVeracidad === false"
+                      (click)="setBool('declaracionVeracidad', false)">No</button>
+            </div>
+          </div>
+
+          <div class="pf-consent">
+            <p class="pf-toggle-label">
+              Confirmo que he completado todos los datos requeridos de manera consciente y con la mayor
+              veracidad posible. <span class="pf-req">*</span>
+            </p>
+            <div class="pf-toggle-row">
+              <button type="button" class="pf-toggle" [class.pf-toggle--on]="model.confirmacionDocumentos === true"
+                      (click)="setBool('confirmacionDocumentos', true)">Sí</button>
+              <button type="button" class="pf-toggle" [class.pf-toggle--on]="model.confirmacionDocumentos === false"
+                      (click)="setBool('confirmacionDocumentos', false)">No</button>
+            </div>
+          </div>
+        }
+
+        <!-- Navegación -->
+        <div class="pf-nav">
+          <button type="button" class="pf-btn pf-btn--ghost" [disabled]="paso === 1 || enviando" (click)="anterior()">
+            <i class="ti ti-arrow-left"></i> Anterior
+          </button>
+
+          @if (paso < totalPasos) {
+            <button type="button" class="pf-btn pf-btn--primary" (click)="siguiente()">
+              Siguiente <i class="ti ti-arrow-right"></i>
+            </button>
+          } @else {
+            <button type="button" class="pf-btn pf-btn--primary" [disabled]="enviando" (click)="enviar()">
+              {{ enviando ? 'Enviando…' : 'Enviar formulario' }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+  </div>
+</div>

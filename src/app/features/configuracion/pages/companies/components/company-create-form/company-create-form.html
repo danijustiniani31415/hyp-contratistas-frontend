@@ -1,0 +1,96 @@
+<app-base-modal [title]="'Nueva razón social'" width="w-[620px]" (closeModal)="close()">
+  <div class="flex flex-col gap-4 mt-2">
+
+    <!-- Consulta RUC -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">RUC *</label>
+      <div class="flex items-center gap-2">
+        <input
+          type="text"
+          [(ngModel)]="rucInput"
+          maxlength="11"
+          (keydown.enter)="searchRuc()"
+          placeholder="Ingrese los 11 dígitos del RUC"
+          class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        <button
+          type="button"
+          (click)="searchRuc()"
+          [disabled]="rucInput.length !== 11"
+          class="rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-white cursor-pointer hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">
+          Consultar
+        </button>
+      </div>
+      <button
+        *ngIf="!manualEntry && !lookupDone"
+        type="button"
+        (click)="enableManualEntry()"
+        class="mt-2 text-xs font-medium cursor-pointer hover:underline" style="color:var(--color-abril-primary)">
+        ¿La consulta no funciona? Registrar manualmente
+      </button>
+    </div>
+
+    <ng-container *ngIf="lookupDone || manualEntry">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div *ngIf="manualEntry" class="md:col-span-2">
+          <label class="block text-xs font-medium text-gray-500 mb-1">RUC *</label>
+          <input type="text" maxlength="11" [(ngModel)]="model.ruc"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Razón social *</label>
+          <input type="text" [(ngModel)]="model.nombre"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Tipo de actividad *</label>
+          <input type="text" [(ngModel)]="model.tipoActividad"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Dirección *</label>
+          <input type="text" [(ngModel)]="model.direccion"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Departamento *</label>
+          <input type="text" [(ngModel)]="model.departamento"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Provincia *</label>
+          <input type="text" [(ngModel)]="model.provincia"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Distrito *</label>
+          <input type="text" [(ngModel)]="model.distrito"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Partida registral (opcional)</label>
+          <input type="text" [(ngModel)]="model.partidaRegistral"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
+        </div>
+      </div>
+
+      <div class="mt-2 flex justify-end gap-3">
+        <button type="button" (click)="close()"
+          class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50">
+          Cancelar
+        </button>
+        <button type="button" (click)="submit()"
+          class="rounded-lg px-5 py-2 text-sm font-medium text-white cursor-pointer hover:opacity-90" style="background:var(--color-abril-primary)">
+          Registrar
+        </button>
+      </div>
+    </ng-container>
+
+  </div>
+</app-base-modal>

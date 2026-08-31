@@ -1,0 +1,343 @@
+:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+.flash-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Sección ─────────────────────────────────────────── */
+/* .abril-form-section / .abril-section-title son globales (src/styles.css)
+   — no reimplementar la caja/título de sección aquí. */
+
+/* ── Grid ────────────────────────────────────────────── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* .abril-field-label / .abril-field-input son globales (src/styles.css) —
+   no reimplementar el label flotante aquí. .abril-field local SÍ hace falta
+   (a diferencia de otras páginas) porque acá cada campo apila un mensaje de
+   error (.campo-error) debajo del input, algo que la clase global no cubre;
+   pero antes le faltaba position:relative, así que el label absoluto de
+   cada campo se posicionaba contra el ancestro posicionado más cercano
+   fuera de ese campo — bug real: labels superpuestos con contenido de otros
+   campos (ver Consecuencia potencial). */
+.abril-field {
+  position: relative;
+  margin-top: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.abril-field--full { grid-column: 1 / -1; }
+.abril-field--flex { flex: 1; }
+
+.campo-textarea { resize: vertical; min-height: 80px; }
+
+.campo-error { font-size: 11px; color: #991b1b; }
+
+/* ── Radio ───────────────────────────────────────────── */
+.radio-group { display: flex; gap: 20px; }
+.radio-label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+
+/* ── Checkbox ────────────────────────────────────────── */
+.checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; font-weight: 600; color: #1a1a18; }
+.checkbox-label input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--color-abril-logo-blue); cursor: pointer; }
+.otro-correo { margin-top: 8px; font-weight: 500; }
+
+/* ── Info hint ───────────────────────────────────────── */
+.info-hint { font-size: 11px; color: var(--color-abril-logo-blue); background: var(--color-abril-logo-blue-light); border-radius: 6px; padding: 4px 8px; margin: 0 0 4px; display: flex; align-items: center; gap: 4px; }
+
+/* ── Alerta SUNAFIL ──────────────────────────────────── */
+.alerta-sunafil { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px 14px; font-size: 12px; font-weight: 600; color: #991b1b; display: flex; align-items: center; gap: 8px; }
+
+/* ── Badge opcional ──────────────────────────────────── */
+.badge-opcional { font-size: 10px; font-weight: 600; background: #fef9c3; color: #854d0e; border-radius: 12px; padding: 2px 8px; margin-left: 6px; }
+
+/* ── Descanso rows ───────────────────────────────────── */
+.descanso-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  background: #faf9f6;
+  border: 0.5px solid #e8e5df;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.btn-del-row {
+  flex-shrink: 0;
+  padding: 8px 10px;
+  background: #fee2e2;
+  color: #991b1b;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-add-small {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #e6f0eb;
+  color: var(--color-abril-logo-blue);
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.empty-hint { font-size: 13px; color: #9a9589; margin: 0; }
+
+/* ── Fotos ───────────────────────────────────────────── */
+.fotos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.foto-slot { display: flex; flex-direction: column; gap: 8px; }
+.foto-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #5a5850; }
+
+.foto-upload-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 140px;
+  border: 1.5px dashed #c8c4bc;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #7a7670;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.foto-upload-btn:hover { border-color: var(--color-abril-logo-blue); background: var(--color-abril-logo-blue-light); }
+.foto-upload-btn i { font-size: 22px; }
+
+.foto-preview-wrap { position: relative; border-radius: 10px; overflow: hidden; }
+.foto-preview { width: 100%; height: 140px; object-fit: cover; border-radius: 10px; display: block; }
+
+.btn-quitar-foto {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* ── Skeleton ────────────────────────────────────────── */
+.skeleton-form { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.skeleton-row {
+  height: 52px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #ede9e4 25%, #e4e0da 50%, #ede9e4 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ── Bloqueo: sin worker vinculado ──────────────────────────── */
+.bloqueo-sin-worker {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 16px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.bloqueo-sin-worker i {
+  font-size: 20px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.bloqueo-sin-worker__titulo {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.bloqueo-sin-worker__texto {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ── "Elaborado por" fijo (no editable) ─────────────────────── */
+.observador-fijo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-standard);
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.observador-fijo i {
+  font-size: 18px;
+  color: var(--color-abril-logo-blue);
+}
+
+.observador-fijo__nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.observador-fijo__cargo {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ── Actions ─────────────────────────────────────────── */
+/* El chrome del footer vive en app-abril-modal-panel — esto solo separa
+   Cancelar (izquierda) de Guardar (derecha) dentro de ese footer. */
+.modal-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.btn-cancelar {
+  padding: 10px 18px;
+  background: none;
+  color: #5a5850;
+  border: 0.5px solid #e8e5df;
+  border-radius: 9px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-guardar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-guardar:disabled { opacity: 0.6; cursor: default; }
+
+.spin { animation: spin 0.8s linear infinite; display: inline-block; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+@media (max-width: 640px) {
+  .flash-form { padding: 12px; gap: 12px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .abril-field--full { grid-column: 1; }
+  .fotos-grid { grid-template-columns: 1fr; }
+  .descanso-row { flex-wrap: wrap; }
+}
+
+@media (min-width: 768px) {
+  .flash-form { padding: 20px 24px; }
+  .form-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ── Trabajadores afectados ──────────────────────────────── */
+.trabajadores-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.trabajador-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f0f5f2;
+  border: 0.5px solid #c8ddd2;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.trabajador-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trabajador-item__nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-abril-logo-blue);
+}
+
+.trabajador-item__sub {
+  font-size: 11px;
+  color: #6b7a72;
+}
+
+.btn-quitar-trabajador {
+  background: none;
+  border: none;
+  color: #991b1b;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1;
+  transition: background 0.15s;
+}
+.btn-quitar-trabajador:hover { background: #fde8e8; }
+
+.trabajador-form {
+  border: 0.5px dashed #b0c4b8;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fafcfb;
+}
+
+.trabajador-form__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2d6a4f;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-agregar-trabajador {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #2d6a4f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-agregar-trabajador:hover { background: var(--color-abril-logo-blue); }

@@ -1,0 +1,138 @@
+<div class="ci-wrap">
+
+  <!-- Barra superior: pills de tipo + botón crear -->
+  <div class="ci-card ci-toolbar">
+    <div class="ci-pills" *ngIf="!loadingTypes && types.length > 0">
+      <button type="button"
+        *ngFor="let t of types; trackBy: trackByTypeId"
+        class="ci-pill"
+        [class.ci-pill--active]="selectedTypeId === t.catalogTypeId"
+        (click)="selectType(t.catalogTypeId)">
+        {{ t.catalogTypeName }}
+      </button>
+    </div>
+    <div class="ci-pills" *ngIf="loadingTypes">
+      <span class="skeleton-line skeleton-pill" *ngFor="let i of [1,2,3,4,5,6]"></span>
+    </div>
+
+    <button type="button" class="btn-primary-udp" (click)="openCreate()" [disabled]="selectedTypeId === null">
+      <i class="ti ti-plus"></i> NUEVO ÍTEM
+    </button>
+  </div>
+
+  <!-- Alerta de duplicados -->
+  <div class="ci-alert ci-alert--warning" *ngIf="!loadingItems && duplicateGroups.length > 0">
+    <i class="ti ti-alert-triangle-filled alert-icon"></i>
+    <div class="alert-content">
+      <strong>{{ duplicateGroups.length }} {{ duplicateGroups.length === 1 ? 'descripción duplicada' : 'descripciones duplicadas' }}</strong>
+      en este catálogo — revisa y decide si fusionar o eliminar alguna con las acciones de la tabla.
+      <div class="dup-chips">
+        <span class="dup-chip" *ngFor="let g of duplicateGroups">
+          {{ g.description }} <b>&times;{{ g.count }}</b>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card de tabla -->
+  <div class="ci-card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">
+          <i class="ti ti-list-details title-icon"></i> ÍTEMS DEL CATÁLOGO
+        </h3>
+        <p class="card-subtitle">Descripciones registradas para el tipo seleccionado</p>
+      </div>
+      <span class="card-badge" *ngIf="!loadingItems && selectedTypeId !== null">
+        {{ totalRecords }} {{ totalRecords === 1 ? 'ÍTEM' : 'ÍTEMS' }}
+      </span>
+    </div>
+
+    <div class="card-body">
+
+      <!-- Buscador -->
+      <div class="ci-search" *ngIf="selectedTypeId !== null">
+        <i class="ti ti-search search-icon"></i>
+        <input
+          type="text"
+          class="ci-search-input"
+          placeholder="Buscar por descripción..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="onSearchChange()"
+        />
+      </div>
+
+      <!-- Skeleton loading (F8) -->
+      <div *ngIf="loadingItems" class="skeleton-table">
+        <div class="skeleton-line" *ngFor="let i of [1,2,3,4,5,6]"></div>
+      </div>
+
+      <!-- Sin tipo seleccionado -->
+      <div *ngIf="!loadingItems && selectedTypeId === null" class="empty-state">
+        <i class="ti ti-click empty-icon"></i>
+        <p class="empty-title">Selecciona un tipo de catálogo</p>
+        <p class="empty-sub">Elige una de las pestañas de arriba para ver sus ítems.</p>
+      </div>
+
+      <!-- Sin resultados de búsqueda -->
+      <div *ngIf="!loadingItems && selectedTypeId !== null && items.length > 0 && filteredItems.length === 0" class="empty-state">
+        <i class="ti ti-list-search empty-icon"></i>
+        <p class="empty-title">Sin resultados</p>
+        <p class="empty-sub">Ningún ítem coincide con "{{ searchTerm }}".</p>
+      </div>
+
+      <!-- Sin ítems en el tipo -->
+      <div *ngIf="!loadingItems && selectedTypeId !== null && items.length === 0" class="empty-state">
+        <i class="ti ti-package-off empty-icon"></i>
+        <p class="empty-title">Sin ítems registrados</p>
+        <p class="empty-sub">Este tipo de catálogo todavía no tiene ítems.</p>
+      </div>
+
+      <!-- Tabla -->
+      <div *ngIf="!loadingItems && filteredItems.length > 0" class="table-responsive">
+        <table class="ci-table">
+          <thead>
+            <tr>
+              <th>DESCRIPCIÓN</th>
+              <th style="width: 120px;" class="text-center">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of pagedItems; trackBy: trackByItemId">
+              <td class="desc-cell">
+                <span class="desc-text">{{ item.catalogItemDescription }}</span>
+              </td>
+              <td class="text-center actions-cell">
+                <button type="button" class="btn-action btn-action--edit" title="Editar" (click)="openEdit(item)">
+                  <i class="ti ti-edit"></i>
+                </button>
+                <button type="button" class="btn-action btn-action--delete" title="Eliminar" (click)="delete(item)">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <app-paginator
+      *ngIf="!loadingItems && filteredItems.length > 0"
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- Modal crear / editar -->
+<app-catalog-item-form
+  *ngIf="showForm && selectedTypeId !== null"
+  [catalogTypeId]="selectedTypeId!"
+  [editingItem]="editingItem"
+  (closeModal)="showForm = false"
+  (saved)="onSaved()"
+/>

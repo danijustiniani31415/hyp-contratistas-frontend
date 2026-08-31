@@ -1,0 +1,80 @@
+<div class="card">
+  <div class="section-bar">
+    <div>
+      <h2 class="section-title">EVALUACIÓN SUPERVISORES</h2>
+      <p class="section-sub">Evaluación mensual por criterios</p>
+    </div>
+    <button type="button" class="btn-primary" *ngIf="isAdmin()" (click)="abrirNuevo()">
+      + Nueva evaluación
+    </button>
+  </div>
+
+  <div class="filters-card">
+    <div class="filters-grid">
+      <select class="field-input" [(ngModel)]="filtroMes" (change)="onFilter()">
+        <option [ngValue]="null">Todos los meses</option>
+        <option *ngFor="let m of meses" [ngValue]="m.num">{{ m.label }}</option>
+      </select>
+      <input
+        type="number"
+        class="field-input"
+        [(ngModel)]="filtroAnio"
+        (change)="onFilter()"
+        min="2020"
+        max="2100"
+        placeholder="Año"
+      />
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Supervisor</th>
+          <th>DNI</th>
+          <th>Empresa</th>
+          <th>Proyecto</th>
+          <th>Mes</th>
+          <th>Año</th>
+          <th>Nota total</th>
+          <th>Evaluador</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let e of evaluaciones">
+          <td>{{ e.workerNombre }}</td>
+          <td>{{ e.workerDni }}</td>
+          <td>{{ e.empresaNombre }}</td>
+          <td>{{ e.proyectoNombre }}</td>
+          <td>{{ getMesLabel(e.mes) }}</td>
+          <td>{{ e.anio }}</td>
+          <td>
+            <span class="btn-chip" [class]="notaChip(e.notaTotal)">
+              {{ e.notaTotal != null ? e.notaTotal : '—' }}
+            </span>
+          </td>
+          <td>{{ e.evaluadorNombre ?? '—' }}</td>
+        </tr>
+        <tr *ngIf="!loading && evaluaciones.length === 0">
+          <td colspan="8" class="empty-row">No hay evaluaciones registradas.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="paginator-wrapper" *ngIf="totalPages > 1">
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)"
+    />
+  </div>
+</div>
+
+<app-eval-form
+  [open]="modalNuevoOpen"
+  (closed)="closeNuevo()"
+  (saved)="onSaved()"
+/>

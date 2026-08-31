@@ -1,0 +1,127 @@
+<app-base-modal [title]="'Registrar facturas (Excel)'" width="w-[820px]" [preventCloseWhenDirty]="true" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-5 mt-2">
+
+    <!-- Paso 1: Excel -->
+    <div class="flex flex-col gap-2">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">1. Carga el Excel de órdenes de pago</label>
+      @if (!excelName) {
+        <app-file-selector
+          accept=".xls,.xlsx"
+          hint="Arrastra el archivo .xls / .xlsx"
+          color="var(--color-abril-primary)"
+          (fileSelected)="onExcelSelected($event)">
+        </app-file-selector>
+      } @else {
+        <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+          <span class="truncate text-gray-700">{{ excelName }} — <b>{{ rows.length }}</b> registros leídos</span>
+          <button type="button" (click)="excelName=''; rows=[]" class="ml-3 cursor-pointer text-red-500 hover:underline">Cambiar</button>
+        </div>
+      }
+    </div>
+
+    @if (rows.length > 0) {
+      <!-- Paso 2: archivos -->
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">
+          2. Arrastra las facturas (se asocian por el N° en el nombre del archivo)
+        </label>
+        <app-file-selector
+          accept=".pdf,.png,.jpg,.jpeg,.webp"
+          hint="Puedes arrastrar varios archivos a la vez"
+          color="var(--color-abril-primary)"
+          (fileSelected)="onFilesSelected($event)">
+        </app-file-selector>
+        <span class="text-xs text-gray-400">{{ matchedCount }} de {{ rows.length }} registros con documento asociado.</span>
+      </div>
+
+      <!-- Filtros del resumen -->
+      <div class="flex flex-wrap items-end gap-3">
+        <div class="flex flex-col gap-1 w-[160px]">
+          <label class="text-xs font-medium" style="color:var(--color-abril-primary)">N° factura</label>
+          <input type="text" [(ngModel)]="fNumber" placeholder="Buscar…"
+            class="border rounded-lg px-3 py-2 text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+        </div>
+        <div class="flex flex-col gap-1 flex-1 min-w-[180px]">
+          <label class="text-xs font-medium" style="color:var(--color-abril-primary)">Razón social</label>
+          <input type="text" [(ngModel)]="fRazon" placeholder="Buscar…"
+            class="border rounded-lg px-3 py-2 text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+        </div>
+        <div class="flex flex-col gap-1 w-[150px]">
+          <label class="text-xs font-medium" style="color:var(--color-abril-primary)">RUC</label>
+          <input type="text" [(ngModel)]="fRuc" placeholder="Buscar…"
+            class="border rounded-lg px-3 py-2 text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+        </div>
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer h-[38px]">
+          <input type="checkbox" [(ngModel)]="fOnlyMissing" class="accent-[var(--color-abril-primary)]" />
+          Solo faltan documento
+        </label>
+        <span class="text-xs text-gray-400 ml-auto">{{ filteredRows.length }} de {{ rows.length }}</span>
+      </div>
+
+      <!-- Resumen -->
+      <div class="overflow-x-auto rounded-lg border max-h-[340px] overflow-y-auto" style="border-color:var(--color-abril-border)">
+        <table class="min-w-full text-sm">
+          <thead class="sticky top-0 text-left text-xs uppercase" style="background:var(--color-abril-primary-light); color:var(--color-abril-primary-dark)">
+            <tr>
+              <th class="px-3 py-2">N° Factura</th>
+              <th class="px-3 py-2">Razón social</th>
+              <th class="px-3 py-2 text-center">Documento</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            @for (r of filteredRows; track r) {
+              <tr
+                (dragover)="onRowDragOver(r, $event)"
+                (dragleave)="onRowDragLeave(r, $event)"
+                (drop)="onRowDrop(r, $event)"
+                [class.bg-green-50]="dragRow === r"
+                [class.ring-1]="dragRow === r"
+                class="hover:bg-gray-50 transition-colors"
+                style="--tw-ring-color: var(--color-abril-primary)"
+                [style.outline]="dragRow === r ? '2px dashed var(--color-abril-primary)' : 'none'">
+                <td class="px-3 py-2 whitespace-nowrap font-medium text-gray-800">{{ invoiceNumber(r) }}</td>
+                <td class="px-3 py-2 align-top break-words whitespace-normal" [title]="r.proveedorName">{{ r.proveedorName }}</td>
+                <td class="px-3 py-2 text-center whitespace-nowrap">
+                  @if (r.displayFileName) {
+                    <span class="inline-flex items-center gap-1 text-xs" style="color:var(--color-abril-primary)">
+                      <span class="max-w-[160px] truncate" [title]="r.displayFileName">{{ r.displayFileName }}</span>
+                      <button type="button" (click)="removeFile(r)" title="Quitar documento"
+                        class="ml-1 cursor-pointer text-red-500 hover:text-red-600">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                          <path d="M7 21C6.45 21 5.98 20.8 5.59 20.41C5.2 20.02 5 19.55 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8 20.02 18.41 20.41C18.02 20.8 17.55 21 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z" fill="currentColor"/>
+                        </svg>
+                      </button>
+                    </span>
+                  } @else {
+                    <label class="inline-flex items-center gap-1 text-xs cursor-pointer hover:underline" style="color:var(--color-abril-primary)"
+                      [title]="'Haz clic o arrastra un archivo a esta fila'">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                      {{ dragRow === r ? 'Suelta aquí' : 'Adjuntar' }}
+                      <input type="file" class="hidden" accept=".pdf,.png,.jpg,.jpeg,.webp"
+                        (change)="onRowFileInput(r, $event)" />
+                    </label>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="3" class="px-3 py-6 text-center text-sm text-gray-400">No hay registros que coincidan con los filtros.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- Acciones -->
+    <div class="flex justify-end gap-3">
+      <button type="button" (click)="closeModal.emit()"
+        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50">
+        Cancelar
+      </button>
+      <button type="button" (click)="save()" [disabled]="rows.length === 0"
+        class="rounded-lg px-5 py-2 text-sm font-medium text-white cursor-pointer hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed" style="background:var(--color-abril-primary)">
+        Registrar {{ rows.length || '' }} facturas
+      </button>
+    </div>
+
+  </div>
+</app-base-modal>

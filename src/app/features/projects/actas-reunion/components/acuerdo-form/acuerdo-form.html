@@ -1,0 +1,146 @@
+<app-base-modal [title]="esEdicion ? 'Editar acuerdo' : 'Registrar acuerdo'" width="w-[640px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-4 p-1">
+
+    <div>
+      <label class="block text-sm text-gray-600 mb-1">Descripción del acuerdo *</label>
+      <textarea [(ngModel)]="descripcion" rows="4"
+        class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)] resize-none"
+        placeholder="¿Qué se acordó y qué acciones se van a ejecutar?"></textarea>
+    </div>
+
+    <div class="w-48">
+      <label class="block text-sm text-gray-600 mb-1">Criticidad</label>
+      <app-search-select
+        [showLabel]="false"
+        [options]="criticidades"
+        valueField="id"
+        displayField="descripcion"
+        [value]="criticidad"
+        (valueChange)="criticidad = $event"
+        [allowClear]="false"
+        placeholder="Selecciona criticidad">
+      </app-search-select>
+    </div>
+
+    <!-- ── Responsables ───────────────────────────────────────────────────── -->
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <label class="text-sm text-gray-600">Responsables</label>
+        <button type="button" (click)="showConvocatoriaMasivaModal = true"
+          class="text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
+          <span class="ti ti-users"></span> Agregar por área/puesto
+        </button>
+      </div>
+      <p class="text-xs text-gray-400 mb-2">
+        No tienen que haber asistido a la reunión: puedes elegir a cualquier trabajador de la organización,
+        uno por uno o en bloque (ej. todas las jefaturas de proyectos, todo el staff de un proyecto).
+      </p>
+      <div class="flex flex-wrap gap-2 mb-2" *ngIf="responsables.length > 0">
+        <span *ngFor="let r of responsables"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--color-abril-primary)] text-white">
+          {{ r.nombre }}
+          <button type="button" (click)="removerResponsable(r.workerId)" class="cursor-pointer hover:opacity-70">
+            <span class="ti ti-x text-xs"></span>
+          </button>
+        </span>
+      </div>
+      <div *ngIf="responsables.length > 1" class="flex flex-col gap-1 mb-2 p-2 border border-[#E5EAF0] rounded-lg bg-[#F5F8FA]">
+        <p class="text-xs text-gray-500">Hay varios responsables: marca quién queda a cargo de que el acuerdo se cumpla, para que no quede en el aire.</p>
+        <label *ngFor="let r of responsables" class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+          <input type="radio" name="responsablePrincipal" [value]="r.workerId" [(ngModel)]="responsablePrincipalWorkerId"
+            class="accent-[var(--color-abril-primary)]" />
+          {{ r.nombre }}
+        </label>
+      </div>
+      <app-search-select
+        [showLabel]="false"
+        [options]="opcionesResponsable"
+        valueField="workerId"
+        displayField="fullName"
+        [value]="nuevoResponsableId"
+        (valueChange)="seleccionarResponsable($event)"
+        placeholder="Buscar por nombre o DNI...">
+      </app-search-select>
+    </div>
+
+    <!-- ── Informativo / aceptación / evidencia ─────────────────────────────── -->
+    <div class="flex flex-col gap-2">
+      <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+        <input type="checkbox" [(ngModel)]="esInformativo" (ngModelChange)="onEsInformativoChange()" class="accent-[var(--color-abril-primary)]" />
+        Es informativo (solo queda registrado, no requiere seguimiento de nadie)
+      </label>
+
+      <ng-container *ngIf="!esInformativo">
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="requiereAceptacion" class="accent-[var(--color-abril-primary)]" />
+          Requiere que cada responsable acepte el acuerdo
+        </label>
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="requiereEvidencia" class="accent-[var(--color-abril-primary)]" />
+          Requiere evidencia para poder marcarse como cumplido
+        </label>
+        <p *ngIf="requiereEvidencia && !esEdicion" class="text-[11px] text-gray-400 pl-6">
+          Podrás subir el archivo más adelante, cuando edites este acuerdo.
+        </p>
+
+        <div *ngIf="requiereEvidencia && esEdicion" class="pl-6 flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-gray-500">Archivo de evidencia</label>
+          <div class="flex items-center gap-2">
+            <label class="h-[38px] px-4 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-2">
+              <span class="ti ti-upload text-base"></span>
+              {{ subiendoEvidencia ? 'Subiendo...' : 'Elegir archivo' }}
+              <input type="file" class="hidden" [disabled]="subiendoEvidencia" (change)="onEvidenciaSeleccionada($event)" />
+            </label>
+            <a *ngIf="evidenciaUrl" [href]="evidenciaUrl" target="_blank" rel="noopener noreferrer"
+              class="text-sm truncate max-w-[220px]" style="color:var(--color-abril-primary)" [title]="evidenciaNombre ?? evidenciaUrl">
+              {{ evidenciaNombre ?? 'Ver archivo' }}
+            </a>
+            <button *ngIf="evidenciaUrl" type="button" (click)="quitarEvidencia()" class="text-red-400 hover:text-red-600 cursor-pointer">
+              <span class="ti ti-x text-sm"></span>
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="w-48">
+      <app-date-picker label="Fecha programada" color="var(--color-abril-primary)" [value]="fechaProgramada" (valueChange)="fechaProgramada = $event"></app-date-picker>
+    </div>
+    <p *ngIf="esEdicion" class="text-[11px] text-gray-400 -mt-2">
+      La reprogramación y el cumplimiento se registran desde las acciones de la tabla de acuerdos, no aquí.
+    </p>
+
+    <div *ngIf="esEdicion" class="w-56">
+      <label class="block text-sm text-gray-600 mb-1">Estado</label>
+      <app-search-select
+        [showLabel]="false"
+        [options]="estados"
+        valueField="id"
+        displayField="descripcion"
+        [value]="estadoId"
+        (valueChange)="estadoId = $event"
+        [allowClear]="false"
+        placeholder="Selecciona un estado">
+      </app-search-select>
+    </div>
+
+    <div class="flex justify-end gap-3 pt-2">
+      <button type="button" (click)="closeModal.emit()"
+        class="h-[42px] px-5 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors">
+        Cancelar
+      </button>
+      <button type="button" (click)="submit()"
+        class="h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
+        <span class="ti ti-check text-base"></span>
+        {{ esEdicion ? 'Guardar cambios' : 'Registrar acuerdo' }}
+      </button>
+    </div>
+  </div>
+</app-base-modal>
+
+<app-convocatoria-masiva
+  *ngIf="showConvocatoriaMasivaModal"
+  [proyectos]="proyectos"
+  (closeModal)="showConvocatoriaMasivaModal = false"
+  (agregarTrabajadores)="onTrabajadoresAgregadosMasivamente($event)">
+</app-convocatoria-masiva>

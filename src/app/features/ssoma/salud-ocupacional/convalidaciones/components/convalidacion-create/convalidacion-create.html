@@ -1,0 +1,144 @@
+<app-abril-modal-panel
+  *ngIf="open"
+  titulo="Nueva convalidación"
+  icono="ti-check"
+  variant="blue"
+  width="820px"
+  (closeModal)="close()">
+
+  <h2 class="paso-title"><i class="ti ti-user"></i> Trabajador</h2>
+  <app-worker-search-input
+    color="var(--color-abril-logo-blue)"
+    [selected]="worker"
+    (selectedChange)="onWorkerSelected($event)">
+  </app-worker-search-input>
+
+  <ng-container *ngIf="worker">
+    <h2 class="paso-title mt-6"><i class="ti ti-stethoscope"></i> EMO origen *</h2>
+    <div *ngIf="loadingEmos" class="hint">Cargando EMOs del trabajador…</div>
+
+    <div *ngIf="!loadingEmos && emosDisponibles.length === 0" class="hint text-red-600">
+      Este trabajador no tiene EMOs vigentes que puedan convalidarse.
+    </div>
+
+    <div *ngIf="!loadingEmos && emosDisponibles.length > 0">
+      <div class="abril-field">
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          [options]="emoOrigenOptions"
+          valueField="id"
+          displayField="display"
+          [value]="emoOrigenId"
+          placeholder="Selecciona EMO origen"
+          (valueChange)="emoOrigenId = $event">
+        </app-search-select>
+      </div>
+
+      <div *ngIf="selectedEmo" class="emo-preview">
+        <div>
+          <div class="ep-title">{{ selectedEmo.tipoEmo }} · {{ selectedEmo.empresa }}</div>
+          <div class="ep-meta">
+            Fecha EMO: {{ selectedEmo.fechaEmo | date: 'dd/MM/yyyy' }}
+            · Vence: {{ selectedEmo.fechaVencimiento | date: 'dd/MM/yyyy' }}
+          </div>
+        </div>
+        <span class="badge border" [ngClass]="aptitudClass(selectedEmo.aptitud)">
+          {{ selectedEmo.aptitud }}
+        </span>
+      </div>
+    </div>
+  </ng-container>
+
+  <h2 class="paso-title mt-6"><i class="ti ti-clipboard-list"></i> Datos de la convalidación</h2>
+  <div class="form-row">
+    <div class="abril-field">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Empresa destino *"
+        [options]="empresas"
+        valueField="id"
+        displayField="nombre"
+        [value]="empresaDestinoId"
+        placeholder="Selecciona empresa"
+        (valueChange)="empresaDestinoId = $event">
+      </app-search-select>
+    </div>
+  </div>
+
+  <ng-container *ngIf="worker">
+    <h2 class="paso-title mt-6"><i class="ti ti-briefcase"></i> Cambio de puesto</h2>
+    <div class="puesto-preview">
+      <span class="puesto-preview-label">Puesto / clasificación destino (registro vigente del trabajador)</span>
+      <span class="puesto-preview-value">{{ puestoDestinoPreview }} · {{ clasificacionDestinoPreview }}</span>
+    </div>
+    <p class="hint">
+      El puesto de origen (al momento del EMO elegido) y la validación de riesgo se calculan
+      automáticamente al guardar. Si el destino de arriba no es correcto, corrígelo en
+      Habilitación → Gestión de Trabajadores → "Cambiar obra / puesto de trabajo" antes de
+      convalidar.
+    </p>
+  </ng-container>
+
+  <div class="form-row">
+    <div class="abril-field">
+      <label class="abril-field-label">Fecha convalidación *</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="fechaConvalidacion" />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Fecha vencimiento *</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="fechaVencimiento" />
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="abril-field">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Médico"
+        [options]="medicos"
+        valueField="id"
+        displayField="apellidoNombre"
+        [value]="medicoId"
+        placeholder="Selecciona médico"
+        (valueChange)="medicoId = $event">
+      </app-search-select>
+    </div>
+    <div class="abril-field">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Resultado *"
+        [options]="resultadoOptions"
+        valueField="id"
+        displayField="nombre"
+        [value]="resultado"
+        placeholder="Selecciona resultado"
+        (valueChange)="resultado = $event">
+      </app-search-select>
+    </div>
+  </div>
+
+  <div class="abril-field">
+    <label class="abril-field-label">Notas</label>
+    <textarea rows="2" class="abril-field-input" [(ngModel)]="notas"></textarea>
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+      <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
+      {{ saving ? 'Guardando…' : 'Registrar convalidación' }}
+    </button>
+  </div>
+
+</app-abril-modal-panel>
+
+<app-programacion-create
+  *ngIf="worker"
+  [open]="showProgramarEmo"
+  [preselectedWorkerId]="worker.id"
+  [preselectedWorkerNombre]="worker.apellidoNombre"
+  [preselectedWorkerDni]="worker.dni"
+  [preselectedEmpresaId]="empresaDestinoId || null"
+  (closed)="onProgramacionClosed()"
+  (saved)="onProgramacionSaved()">
+</app-programacion-create>

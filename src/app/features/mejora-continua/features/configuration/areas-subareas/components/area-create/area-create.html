@@ -1,0 +1,20 @@
+<app-base-modal *ngIf="showCreateModal" title="AGREGAR ÁREA" width="w-[500px]" (closeModal)="closeCreateModal.emit()">
+    <div class="flex flex-col gap-[15px] items-center mt-[15px]">
+        <div class="flex justify-between gap-[20px] w-full">
+            <div class="flex flex-col max-w-[50%]">
+                <p class="text-[#64BC04]">Descripción</p>
+                <input type="text" [(ngModel)]="createDto.areaDescription"
+                    class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+            </div>
+            <div class="flex flex-col">
+                <p class="text-[#64BC04]">Estado</p>
+                <app-search-select [options]="estadoOptions" [value]="createDto.active"
+                    (valueChange)="createDto.active = $event" [allowClear]="false" [showLabel]="false">
+                </app-search-select>
+            </div>
+        </div>
+        <button (click)="saveArea()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
+            <p class="text-[#ffffff] text-lg">Guardar</p>
+        </button>
+    </div>
+</app-base-modal>

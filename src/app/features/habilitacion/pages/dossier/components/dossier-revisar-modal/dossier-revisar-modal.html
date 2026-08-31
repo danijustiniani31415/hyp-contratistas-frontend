@@ -1,0 +1,135 @@
+<div class="modal-backdrop" (click)="cerrar()"></div>
+<div class="modal-panel">
+
+  <div class="modal-header">
+    <div class="modal-title">
+      <div class="modal-title-top">
+        <span class="modal-badge">DOSSIER SSOMA</span>
+        @if (detalle) {
+          <h2>Semana {{ detalle.numeroSemana }} — {{ detalle.fechaInicio | date:'dd/MM' }} al {{ detalle.fechaFin | date:'dd/MM/yyyy' }}</h2>
+          <span class="chip" [ngClass]="chipSemana(detalle.estado)">{{ labelEstado(detalle.estado) }}</span>
+        }
+      </div>
+      @if (detalle) {
+        <div class="progress-row">
+          <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="(detalle.docsSubidos / detalle.totalDocs) * 100"></div>
+          </div>
+          <span>{{ detalle.docsSubidos }}/{{ detalle.totalDocs }} documentos</span>
+        </div>
+      }
+    </div>
+    <button type="button" class="modal-close" (click)="cerrar()">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+
+  @if (loading) {
+    <div class="modal-loading"><i class="ti ti-loader-2 spin"></i> Cargando…</div>
+  } @else if (detalle) {
+
+    @if (detalle.estado === 'Rechazado' && detalle.obsRevisor) {
+      <div class="obs-rechazado">
+        <i class="ti ti-alert-circle"></i>
+        <span><strong>Observación:</strong> {{ detalle.obsRevisor }}</span>
+      </div>
+    }
+
+    @if (!semanaEnRevision) {
+      <div class="aviso-espera">
+        <i class="ti ti-info-circle"></i>
+        <span>
+          Esta semana está en <strong>{{ labelEstado(detalle.estado) }}</strong>: el contratista todavía no la envía
+          para revisión. Puedes ver los documentos que ya subió, pero recién podrás aprobarlos u observarlos
+          cuando le dé <strong>Enviar</strong>.
+        </span>
+      </div>
+    }
+
+    <div class="modal-body">
+
+      <div class="docs-list">
+        @for (tipo of tipos; track tipo) {
+          @let doc = getDoc(tipo);
+          <div class="doc-row"
+            [class.doc-row--subido]="doc?.estado === 'Subido' || doc?.estado === 'Aprobado'"
+            [class.doc-row--na]="doc?.estado === 'NA'"
+            [class.doc-row--observado]="doc?.estado === 'Observado'"
+            [class.doc-row--pendiente]="!doc || doc.estado === 'Pendiente'">
+            <div class="doc-info">
+              <span class="doc-tipo">{{ tipo }}</span>
+              @if (doc) {
+                <span class="chip chip-sm" [ngClass]="chipDoc(doc.estado)">
+                  {{ doc.estado === 'NA' ? 'N/A' : doc.estado }}
+                </span>
+              } @else {
+                <span class="chip chip-sm chip-blue">Pendiente</span>
+              }
+            </div>
+            <div class="doc-actions">
+              @if (doc && (doc.archivos?.length ?? 0) > 1) {
+                @for (a of doc.archivos; track a.id) {
+                  <button type="button" class="btn-ver" (click)="verArchivo(doc!, a.archivoPath)">
+                    <i class="ti ti-eye"></i> {{ $index + 1 }}
+                  </button>
+                }
+              } @else if (doc && getArchivoPath(doc)) {
+                <button type="button" class="btn-ver" (click)="verArchivo(doc!)">
+                  <i class="ti ti-eye"></i> Ver
+                </button>
+              }
+              @if (puedeRevisarDoc(doc)) {
+                <button type="button" class="btn-outline-warning btn-sm" (click)="observarDoc(doc!)">
+                  <i class="ti ti-message-circle"></i> Observar
+                </button>
+                <button type="button" class="btn-primary btn-sm" [disabled]="guardandoDoc" (click)="aprobarDoc(doc!)">
+                  <i class="ti ti-circle-check"></i> Aprobar
+                </button>
+              }
+            </div>
+            @if (doc && doc.id === docObservarId) {
+              <div class="observar-panel observar-panel--doc">
+                <label class="form-label">Observación para {{ tipo }}</label>
+                <textarea class="field-input" rows="2" [(ngModel)]="comentarioDoc"
+                  placeholder="Detalla qué debe corregir el contratista…"></textarea>
+                <div class="observar-actions">
+                  <button type="button" class="btn-ghost-sm" (click)="cancelarObservarDoc()">Cancelar</button>
+                  <button type="button" class="btn-primary" [disabled]="guardandoDoc" (click)="confirmarObservacionDoc(doc.id)">
+                    <i class="ti ti-message-circle"></i> Enviar observación
+                  </button>
+                </div>
+              </div>
+            }
+            @if (doc && doc.estado === 'Observado' && doc.obsRevisor) {
+              <div class="obs-rechazado obs-rechazado--doc">
+                <i class="ti ti-alert-circle"></i>
+                <span><strong>Observación:</strong> {{ doc.obsRevisor }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="doc-preview">
+        @if (loadingDoc) {
+          <div class="doc-empty"><i class="ti ti-loader-2 spin"></i> Cargando…</div>
+        } @else if (docSafeUrl) {
+          <div class="doc-preview-header">
+            <span class="doc-preview-nombre">{{ visorNombre }}</span>
+          </div>
+          <iframe [src]="docSafeUrl" frameborder="0"></iframe>
+        } @else {
+          <div class="doc-empty">
+            <i class="ti ti-file-description" style="font-size:32px; margin-bottom:8px;"></i>
+            <span>Selecciona un documento para previsualizarlo</span>
+          </div>
+        }
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-ghost-sm" (click)="cerrar()">Cerrar</button>
+    </div>
+  }
+</div>

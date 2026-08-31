@@ -1,0 +1,34 @@
+<div [class.rm-public-page]="publicMode">
+  <header *ngIf="publicMode" class="rm-public-header">
+    <img src="/images/abril-logo-verde-letra-blanca.png" alt="Abril" class="rm-public-logo" />
+    <h1>Modelos de Registros</h1>
+  </header>
+
+  <div class="card" [class.rm-public-card]="publicMode">
+    <div class="section-bar">
+      <div>
+        <h2 class="section-title">MODELOS DE REGISTROS</h2>
+        <p class="section-sub">Plantillas descargables para uso en obra</p>
+      </div>
+      <input
+        type="text"
+        class="field-input search-input"
+        placeholder="Buscar documento…"
+        [(ngModel)]="search"
+        (input)="onSearch()"
+      />
+    </div>
+
+  <div class="registros-grid">
+    <div *ngFor="let r of registrosFiltrados" class="registro-card">
+      <span class="registro-nombre">{{ r.nombre }}</span>
+      <button type="button" class="btn-icon" title="Descargar" (click)="descargar(r)">
+        ⬇
+      </button>
+    </div>
+    <div *ngIf="!loading && registrosFiltrados.length === 0" class="empty-grid">
+      No hay registros modelo disponibles.
+    </div>
+    </div>
+  </div>
+</div>

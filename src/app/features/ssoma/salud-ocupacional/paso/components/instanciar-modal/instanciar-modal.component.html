@@ -1,0 +1,80 @@
+<app-abril-modal-panel
+  [titulo]="step === 1 ? 'Agregar PASO al Proyecto' : 'Instanciar Plantilla — Confirmar'"
+  icono="ti-copy"
+  variant="blue"
+  width="480px"
+  (closeModal)="close()">
+
+    <!-- Origen info -->
+    <div class="origen-box">
+      <span class="origen-label">Plantilla origen</span>
+      <p class="origen-nombre">{{ plantillaNombre }}</p>
+    </div>
+
+    <!-- PASO 1 -->
+    <ng-container *ngIf="step === 1">
+      <div class="abril-field">
+        <label class="abril-field-label">Proyecto destino *</label>
+        <div *ngIf="loadingProyectos" class="hint">Cargando proyectos...</div>
+        <app-search-select *ngIf="!loadingProyectos"
+          color="var(--color-abril-logo-blue)"
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="proyectoId"
+          placeholder="Buscar proyecto..."
+          (valueChange)="proyectoId = $event">
+        </app-search-select>
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Año *</label>
+        <input type="number" min="2020" max="2035" class="abril-field-input" [(ngModel)]="anio" />
+      </div>
+      <div class="abril-field">
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Mes de inicio *"
+          [options]="meses"
+          valueField="valor"
+          displayField="nombre"
+          [value]="mesInicio"
+          placeholder="Selecciona mes"
+          [allowClear]="false"
+          [sortAlpha]="false"
+          (valueChange)="mesInicio = $event">
+        </app-search-select>
+      </div>
+
+      <div modalFooter>
+        <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+        <button type="button" class="btn-primary" (click)="siguente()">
+          Siguiente <i class="ti ti-arrow-right"></i>
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- PASO 2 -->
+    <ng-container *ngIf="step === 2">
+      <div class="resumen-grid">
+        <div class="resumen-label">Proyecto</div>
+        <div class="resumen-valor">{{ proyectoNombre }}</div>
+        <div class="resumen-label">Año</div>
+        <div class="resumen-valor">{{ anio }}</div>
+      </div>
+      <div class="abril-field mt-2">
+        <label class="abril-field-label">Nombre del programa (editable)</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="nombreGenerado" />
+      </div>
+
+      <div modalFooter>
+        <button type="button" class="btn-ghost" (click)="anterior()">
+          <i class="ti ti-arrow-left"></i> Anterior
+        </button>
+        <button type="button" class="btn-primary" [disabled]="saving" (click)="instanciar()">
+          <i class="ti" [ngClass]="saving ? 'ti-loader-2 spin' : 'ti-copy'"></i>
+          {{ saving ? 'Instanciando...' : 'Instanciar' }}
+        </button>
+      </div>
+    </ng-container>
+
+</app-abril-modal-panel>

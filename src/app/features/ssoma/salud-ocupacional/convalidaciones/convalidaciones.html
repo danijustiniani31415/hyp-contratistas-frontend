@@ -1,0 +1,166 @@
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Convalidaciones"
+  subtitulo="Convalidaciones de EMOs entre empresas (origen → destino)."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<section class="page-container flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Trabajador</th>
+            <th>Proyecto</th>
+            <th>Empresa origen</th>
+            <th>Empresa destino</th>
+            <th>Fecha</th>
+            <th class="text-center">Resultado</th>
+            <th>Vencimiento</th>
+            <th class="text-right">Días</th>
+            <th class="text-right">PDF</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)" (click)="openReview(item)">
+            <td class="cursor-pointer">
+              <div class="worker-cell">
+                <span class="worker-name">{{ item.workerNombre | titleCase }}</span>
+                <span class="worker-dni">DNI · {{ item.workerDni }}</span>
+              </div>
+            </td>
+            <td class="text-gray-500 cursor-pointer">{{ item.proyecto || '—' }}</td>
+            <td class="text-gray-500 cursor-pointer">{{ item.empresaOrigen }}</td>
+            <td class="font-medium cursor-pointer">{{ item.empresaDestino }}</td>
+            <td class="cursor-pointer">{{ item.fechaConvalidacion | date: 'dd/MM/yyyy' }}</td>
+            <td class="text-center cursor-pointer">
+              <span class="badge border" [ngClass]="resultadoClass(item.resultado)">
+                {{ item.resultado }}
+              </span>
+            </td>
+            <td class="cursor-pointer">{{ item.fechaVencimiento | date: 'dd/MM/yyyy' }}</td>
+            <td class="text-right cursor-pointer">
+              <ng-container *ngIf="item.diasParaVencer != null; else sinVencimiento">
+                <span class="badge border" [ngClass]="diasClass(item.diasParaVencer)">
+                  {{ diasLabel(item.diasParaVencer) }}
+                </span>
+              </ng-container>
+              <ng-template #sinVencimiento>
+                <span class="text-gray-400">—</span>
+              </ng-template>
+            </td>
+            <td class="text-right">
+              <button
+                type="button"
+                abrilBulkAction="default"
+                [disabled]="descargandoPdfId === item.id"
+                (click)="descargarPdf(item, $event)"
+                title="Descargar constancia de convalidación"
+              >
+                {{ descargandoPdfId === item.id ? '...' : 'Descargar' }}
+              </button>
+            </td>
+            <td class="text-right">
+              <button
+                *ngIf="item.resultado === 'Pendiente'"
+                type="button"
+                abrilBulkAction="danger"
+                [disabled]="descartandoId === item.id"
+                (click)="descartar(item, $event)"
+                title="Descartar: el registro no corresponde (no requiere firma médica)"
+              >
+                {{ descartandoId === item.id ? '...' : 'Descartar' }}
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading && items.length === 0">
+            <td colspan="10" class="text-center py-[40px] text-gray-400 text-sm">
+              {{ hasActiveFilters ? 'Sin resultados.' : 'Sin convalidaciones.' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+  </div>
+
+  <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)"
+    ></app-paginator>
+  </div>
+</section>
+
+<app-convalidacion-review
+  [open]="reviewOpen"
+  [item]="selectedItem"
+  (closed)="closeReview()"
+  (saved)="onReviewed()"
+></app-convalidacion-review>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Nombre o DNI..."
+      [value]="filters.search"
+      (valueChange)="onSearchChange($event)"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Resultado"
+      [options]="resultadoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.resultado"
+      placeholder="Todos"
+      (valueChange)="filters.resultado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.proyectoId"
+      placeholder="Todos"
+      (valueChange)="filters.proyectoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Razón social"
+      [options]="empresaDestinoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.empresaDestinoId"
+      placeholder="Todas"
+      (valueChange)="filters.empresaDestinoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Tipo"
+      [options]="tipoEmoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.tipoEmoId"
+      placeholder="Todos"
+      (valueChange)="filters.tipoEmoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

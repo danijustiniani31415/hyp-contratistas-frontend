@@ -1,0 +1,148 @@
+<div class="flex flex-col gap-[10px] flex-1 min-h-0">
+  <header class="section-bar">
+    <div>
+      <h3 class="section-title">Médicos ocupacionales</h3>
+      <p class="section-sub">Profesionales asignados a clínicas para EMOs e interconsultas.</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <app-filter-trigger [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+      <button type="button" class="btn-primary" (click)="openCreate()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        Nuevo médico
+      </button>
+    </div>
+  </header>
+
+  <div class="abril-table-wrap">
+    <table class="abril-table">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Nombre</th>
+          <th>CMP</th>
+          <th>Especialidad</th>
+          <th>Clínica</th>
+          <th>Email</th>
+          <th>Celular</th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of pageItems" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+          <td class="text-gray-700">{{ item.apellidoNombre | titleCase }}</td>
+          <td class="text-gray-500">{{ item.cmp || '—' }}</td>
+          <td class="text-gray-500">{{ item.especialidad || '—' }}</td>
+          <td class="text-gray-500">{{ item.clinicaNombre || '—' }}</td>
+          <td class="text-gray-500">{{ item.email || '—' }}</td>
+          <td class="text-gray-500">{{ item.celular || '—' }}</td>
+          <td class="text-center">
+            <app-status-badge
+              [text]="item.activo ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="item.activo ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="item.activo ? '#009C87' : '#D30000'" />
+          </td>
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[8px]">
+              <button type="button" abrilBulkAction="default" (click)="openEdit(item)">
+                Editar
+              </button>
+              <button type="button" abrilBulkAction="default" (click)="abrirFirmaDigital(item)">
+                Firma digital
+              </button>
+              <button type="button" abrilBulkAction="default" (click)="descargarAutorizacionFirma(item)">
+                Autorización de firma
+              </button>
+              <button type="button" abrilBulkAction="default" (click)="escaneadoInput.click()">
+                Subir escaneado
+              </button>
+              <input
+                #escaneadoInput
+                type="file"
+                accept="application/pdf,image/*"
+                class="hidden-file-input"
+                (change)="subirAutorizacionEscaneada(item, escaneadoInput)"
+              />
+              <button type="button" abrilBulkAction="default" (click)="configurarPinFirma(item)">
+                PIN de firma
+              </button>
+              <button
+                type="button"
+                [abrilBulkAction]="item.activo ? 'danger' : 'default'"
+                (click)="toggleActivo(item)"
+              >
+                {{ item.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && pageItems.length === 0">
+          <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ hasActiveFilters ? 'Sin resultados.' : 'Sin médicos registrados.' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)"
+    ></app-paginator>
+  </div>
+</div>
+
+<app-medico-form
+  *ngIf="formOpen"
+  [open]="formOpen"
+  [mode]="formMode"
+  [initial]="formInitial"
+  [clinicas]="clinicas"
+  (closed)="closeForm()"
+  (saved)="onSaved()"
+></app-medico-form>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Nombre, CMP, especialidad o email..."
+      [value]="filters.search"
+      (valueChange)="onSearchChange($event)"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Clínica"
+      [options]="clinicaOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.clinicaId"
+      (valueChange)="filters.clinicaId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="filters.estado"
+      (valueChange)="filters.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>
+
+<app-firma-digital-pad
+  [open]="firmaPadOpen"
+  [medicoId]="medicoFirmaPadId"
+  (closed)="onFirmaDigitalClosed()"
+  (saved)="onFirmaDigitalSaved()"
+></app-firma-digital-pad>

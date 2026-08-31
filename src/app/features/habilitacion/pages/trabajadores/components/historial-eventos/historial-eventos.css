@@ -1,0 +1,145 @@
+.hist-wrapper {
+  padding-top: 0.25rem;
+  min-height: 120px;
+}
+
+.hist-state {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2rem 0;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.hist-empty {
+  color: #9ca3af;
+}
+
+.hist-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #64bc04;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Timeline ─────────────────────────── */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.tl-item {
+  display: flex;
+  gap: 0.9rem;
+}
+
+.tl-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 28px;
+}
+
+.tl-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  color: #ffffff;
+}
+
+.tl-dot--rojo    { background: #dc2626; }
+.tl-dot--verde   { background: #64bc04; }
+.tl-dot--azul    { background: #3b82f6; }
+.tl-dot--naranja { background: #f97316; }
+.tl-dot--gris    { background: #6b7280; }
+
+.tl-line {
+  flex: 1;
+  width: 2px;
+  background: #e5e7eb;
+  margin: 3px 0;
+  min-height: 12px;
+}
+
+.tl-content {
+  padding-bottom: 1.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.tl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.tl-tipo {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.tl-tipo.tl-dot--rojo    { color: #dc2626; }
+.tl-tipo.tl-dot--verde   { color: #64bc04; }
+.tl-tipo.tl-dot--azul    { color: #3b82f6; }
+.tl-tipo.tl-dot--naranja { color: #f97316; }
+.tl-tipo.tl-dot--gris    { color: #6b7280; }
+
+.tl-fecha {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.tl-desc {
+  font-size: 0.85rem;
+  color: #374151;
+  margin: 0 0 0.35rem;
+  line-height: 1.45;
+}
+
+.tl-cambio {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.tl-lbl {
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #9ca3af;
+}
+
+.tl-val {
+  color: #6b7280;
+}
+
+.tl-val--new {
+  color: #111827;
+  font-weight: 600;
+}

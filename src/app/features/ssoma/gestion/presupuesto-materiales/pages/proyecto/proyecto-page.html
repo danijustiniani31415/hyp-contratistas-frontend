@@ -1,0 +1,249 @@
+<div class="page-root">
+  <app-abril-page-header
+    badge="SSOMA · Materiales"
+    [titulo]="proyectNombre"
+    subtitulo="Versiones de presupuesto de materiales"
+    [tabs]="headerTabs"
+    [botonPrimario]="{ label: 'Generar presupuesto', icono: 'ti-plus' }"
+    [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+    (primaryClick)="mostrarFormGenerar = !mostrarFormGenerar; cdr.markForCheck()"
+    (secondaryClick)="volver()">
+  </app-abril-page-header>
+
+  <!-- Cronograma de hitos del proyecto: tabla simple, misma data que /mejora-continua/milestone-schedule -->
+  <div class="page-body" style="padding-bottom: 0;">
+    <div class="hitos-card">
+      <div class="hitos-card-header">
+        <h3 class="form-titulo" style="margin:0;">Cronograma de hitos</h3>
+        <div style="display:flex; gap:0.5rem;">
+          <button class="btn-outline btn-sm" (click)="irACronograma()" title="Ver cronograma completo en Gantt, con orden y dependencias">
+            <i class="ti ti-chart-gantt"></i> Ver Gantt
+          </button>
+          <button class="btn-primary" (click)="asignarHitos()" [disabled]="asignandoHitos || hitosCriticos.length === 0">
+            <i class="ti ti-arrows-shuffle"></i>
+            {{ asignandoHitos ? 'Asignando...' : 'Asignar hitos al consumo' }}
+          </button>
+        </div>
+      </div>
+      <p class="form-desc" style="margin-top:0;">
+        Marca "crítico" los hitos que cortan una etapa constructiva — esos reparten el consumo de
+        materiales y la dotación de personal por fase. Los cambios aquí se guardan en el mismo
+        cronograma que /mejora-continua/milestone-schedule.
+      </p>
+
+      <div *ngIf="loadingSchedule" class="loading-msg">Cargando cronograma...</div>
+
+      <div *ngIf="errorSchedule" class="empty-cell" style="color:#dc2626; background:#fef2f2; border-radius:6px; padding:0.75rem;">
+        {{ errorSchedule }}
+      </div>
+
+      <div *ngIf="!loadingSchedule && !errorSchedule" class="schedule-tabla">
+        <div class="schedule-tabla__header">
+          <div>Hito</div>
+          <div>Inicio</div>
+          <div>Fin</div>
+          <div>Crítico</div>
+          <div></div>
+        </div>
+        <div *ngFor="let h of hitosSchedule; let i = index" class="schedule-tabla__row">
+          <div class="schedule-tabla__nombre">{{ h.text }}</div>
+          <div><input type="date" [(ngModel)]="h.plannedStartDate" /></div>
+          <div><input type="date" [(ngModel)]="h.plannedEndDate" /></div>
+          <div class="schedule-tabla__critico"><input type="checkbox" [(ngModel)]="h.esHitoCritico" /></div>
+          <div>
+            <button class="btn-icon-danger" (click)="quitarHitoSchedule(i)" title="Quitar">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div *ngIf="hitosSchedule.length === 0" class="empty-cell">
+          No hay hitos en el catálogo todavía.
+        </div>
+      </div>
+
+      <div class="schedule-agregar">
+        <input type="text" [(ngModel)]="nuevoHitoTexto" placeholder="Agregar un hito que no está en el catálogo..." class="schedule-input-texto" />
+        <button class="btn-outline btn-sm" (click)="agregarHitoPersonalizado()" [disabled]="!nuevoHitoTexto.trim()">
+          <i class="ti ti-plus"></i> Agregar
+        </button>
+      </div>
+
+      <div class="form-actions" style="margin-top: 0.75rem;">
+        <button class="btn-primary" (click)="guardarSchedule()" [disabled]="guardandoSchedule">
+          <i class="ti ti-device-floppy"></i>
+          {{ guardandoSchedule ? 'Guardando...' : 'Guardar cronograma' }}
+        </button>
+      </div>
+
+      <!-- Dotación de personal por hito, aquí mismo -->
+      <div *ngIf="!loadingHitos && hitosCriticos.length > 0" class="personal-section">
+        <h3 class="form-titulo personal-section-titulo">Dotación de personal por hito</h3>
+        <div *ngIf="personalLoading" class="loading-msg">Cargando dotación...</div>
+
+        <div *ngIf="!personalLoading" class="personal-grid">
+          <div class="personal-hito-block" *ngFor="let grupo of personalPorHito">
+            <div class="personal-hito-titulo">
+              {{ grupo.hitoDescripcion }}
+              <span class="hito-fecha" *ngIf="grupo.hitoFecha">{{ grupo.hitoFecha | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <table class="abril-table personal-tabla">
+              <thead>
+                <tr>
+                  <th>Rol</th>
+                  <th>Cant.</th>
+                  <th>Sem.</th>
+                  <th>S/ mes</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let fila of grupo.filas">
+                  <td class="personal-rol">{{ fila.rol }}</td>
+                  <td><input type="number" min="0" [(ngModel)]="fila.cantidad" (change)="recalcularTotalPersonal(fila)" /></td>
+                  <td><input type="number" min="0" step="0.5" [(ngModel)]="fila.semanas" (change)="recalcularTotalPersonal(fila)" /></td>
+                  <td><input type="number" min="0" step="50" [(ngModel)]="fila.costoMensual" (change)="recalcularTotalPersonal(fila)" /></td>
+                  <td class="personal-total-cell">{{ fila.total | number:'1.2-2' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div *ngIf="!personalLoading" class="personal-footer">
+          <span>Total general: S/ {{ personalTotalGeneral | number:'1.2-2' }}</span>
+          <button class="btn-primary" (click)="guardarPersonal()" [disabled]="personalGuardando">
+            <i class="ti ti-device-floppy"></i>
+            {{ personalGuardando ? 'Guardando...' : 'Guardar dotación' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ratios calculados del proyecto -->
+  <div class="page-body" style="padding-bottom: 0;">
+    <div class="hitos-card">
+      <div class="hitos-card-header">
+        <h3 class="form-titulo" style="margin:0;">Ratios calculados del proyecto</h3>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-outline btn-sm" [disabled]="calculandoRatios" (click)="calcularRatios()"
+            title="Calcula el consumo por família de este proyecto contra su propia Área Techada/HH/Trabajadores.">
+            <i class="ti" [ngClass]="calculandoRatios ? 'ti-loader-2 spin' : 'ti-calculator'"></i>
+            {{ calculandoRatios ? 'Calculando...' : (ratios.length > 0 ? 'Recalcular ratios' : 'Calcular ratios') }}
+          </button>
+          <button class="btn-outline btn-sm" (click)="toggleRatios()">
+            <i class="ti" [ngClass]="mostrarRatios ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+            {{ mostrarRatios ? 'Ocultar' : 'Ver ratios' }} ({{ ratios.length }})
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="mostrarRatios">
+        <div *ngIf="loadingRatios" class="loading-msg">Cargando ratios...</div>
+        <div *ngIf="!loadingRatios && ratios.length === 0" class="empty-state" style="padding: 1rem;">
+          <p>Este proyecto todavía no tiene ratios calculados. Dale al botón "Calcular ratios" de arriba (necesita que Área Techada/HH/Trabajadores estén configurados en "Datos Base", y que el Kardex ya esté estandarizado).</p>
+        </div>
+        <div *ngIf="!loadingRatios && ratios.length > 0" class="ratios-tabla">
+          <div class="ratios-tabla__header">
+            <div>Familia</div>
+            <div>Tipo</div>
+            <div>Ratio</div>
+            <div>Precio unit.</div>
+            <div>Cant. total</div>
+          </div>
+          <div
+            *ngFor="let r of ratios"
+            class="ratios-tabla__row"
+            [class.ratios-tabla__row--outlier]="r.esOutlier"
+          >
+            <div class="ratios-tabla__familia">
+              {{ r.nombreFamilia }}
+              <span *ngIf="r.esOutlier" class="badge badge-warn" title="Outlier respecto a otros proyectos">outlier</span>
+            </div>
+            <div>{{ r.tipoMaterial }}</div>
+            <div>{{ r.ratioCantidad | number:'1.2-6' }}</div>
+            <div>S/ {{ r.precioUnitarioPromedio | number:'1.2-2' }}</div>
+            <div>{{ r.cantidadTotal | number:'1.0-2' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-body">
+
+    <!-- Formulario generar -->
+    <div *ngIf="mostrarFormGenerar" class="form-generar">
+      <h3 class="form-titulo">Generar nuevo presupuesto</h3>
+      <p class="form-desc">Deja los campos vacíos para usar los datos base configurados del proyecto (pestaña "Datos Base").</p>
+      <div class="form-fields">
+        <label>HH Total (override)
+          <input type="number" [(ngModel)]="formGenerar.hhTotalCasa" placeholder="Usar valor del proyecto" />
+        </label>
+        <label>Área Techada m² (override)
+          <input type="number" [(ngModel)]="formGenerar.areaTechadaM2" placeholder="Usar valor del proyecto" />
+        </label>
+        <label>Trabajadores (override)
+          <input type="number" [(ngModel)]="formGenerar.trabajadores" placeholder="Usar valor del proyecto" />
+        </label>
+        <label class="full-width">Notas
+          <textarea [(ngModel)]="formGenerar.notas" rows="2" placeholder="Versión inicial, ajuste Q2..."></textarea>
+        </label>
+      </div>
+      <div class="form-sugerencia">
+        <button type="button" class="btn-sugerir" [disabled]="sugiriendoDrivers" (click)="sugerirDesdeHistorico()">
+          <i class="ti ti-bulb"></i> {{ sugiriendoDrivers ? 'Calculando...' : 'Sugerir HH y Trabajadores desde histórico' }}
+        </button>
+        <span class="form-sugerencia__nota">Usa la mediana de HH/m² y Trabajadores/m² de los proyectos que marcaste como incluidos en Ratios · Dotación. Solo prellena los campos de arriba — vos decidís si lo dejas o lo ajustas.</span>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" (click)="generar()" [disabled]="generando">
+          <i class="ti ti-calculator"></i>
+          {{ generando ? 'Generando...' : 'Generar presupuesto' }}
+        </button>
+        <button class="btn-secondary" (click)="mostrarFormGenerar = false; cdr.markForCheck()">Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Lista de versiones -->
+    <div *ngIf="loading" class="loading-msg">Cargando presupuestos...</div>
+
+    <div *ngIf="!loading && presupuestos.length === 0 && !mostrarFormGenerar" class="empty-state">
+      <i class="ti ti-file-off" style="font-size: 2.5rem; color: #d1d5db;"></i>
+      <p>No hay presupuestos para este proyecto.</p>
+      <button class="btn-primary" (click)="mostrarFormGenerar = true; cdr.markForCheck()">
+        <i class="ti ti-plus"></i> Generar primer presupuesto
+      </button>
+    </div>
+
+    <div *ngIf="!loading && presupuestos.length > 0" class="versiones-grid">
+      <div *ngFor="let p of presupuestos" class="version-card">
+        <div class="version-header">
+          <span class="version-num">v{{ p.version }}</span>
+          <span class="badge" [ngClass]="estadoClass(p.estado)">{{ p.estado }}</span>
+        </div>
+        <div class="version-total">S/ {{ p.totalEstimado | number:'1.2-2' }}</div>
+        <div class="version-meta">
+          <span>{{ p.totalFamilias }} familias</span>
+          <span *ngIf="p.familiasSinHistoria > 0" class="sin-historia">
+            · {{ p.familiasSinHistoria }} sin histórico
+          </span>
+        </div>
+        <div class="version-drivers">
+          <span>HH: {{ p.hhUsado | number:'1.0-0' }}</span>
+          <span>Área: {{ p.areaUsada | number:'1.0-0' }} m²</span>
+          <span>Trab: {{ p.trabajadoresUsados }}</span>
+        </div>
+        <div class="version-fecha">{{ p.generadoEn | date:'dd/MM/yyyy HH:mm' }}</div>
+        <div class="version-actions">
+          <button class="btn-sm btn-outline" (click)="irADetalle(p.id)">
+            <i class="ti ti-list-details"></i> Detalle
+          </button>
+          <button *ngIf="p.estado === 'APROBADO'" class="btn-sm btn-primary-sm" (click)="irAControl(p.id)">
+            <i class="ti ti-chart-bar"></i> Control
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

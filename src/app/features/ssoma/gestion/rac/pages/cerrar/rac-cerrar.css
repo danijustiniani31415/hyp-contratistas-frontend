@@ -1,0 +1,198 @@
+/* ── BADGE CÓDIGO ────────────────────────────────────────── */
+.rac-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #16a34a;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+/* ── SKELETON ────────────────────────────────────────────── */
+.skeleton-wrap {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.skeleton-row {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── RESUMEN ─────────────────────────────────────────────── */
+.resumen-card {
+  background: #f9fafb;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #f0f0f0;
+}
+
+.resumen-fila {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.resumen-fila:last-child {
+  border-bottom: none;
+}
+
+.resumen-label {
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  width: 90px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.resumen-valor {
+  font-size: 13px;
+  color: #1a1a1a;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.resumen-desc {
+  font-weight: 400;
+  color: #374151;
+  line-height: 1.5;
+}
+
+/* ── BADGES SEVERIDAD ────────────────────────────────────── */
+.badge-sev {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-critico { background: #fef2f2; color: #b91c1c; }
+.badge-alto    { background: #fff7ed; color: #e65100; }
+.badge-medio   { background: #fffbeb; color: #b45309; }
+.badge-bajo    { background: #f0fdf4; color: #0a7c52; }
+.badge-default { background: #f3f4f6; color: #6b7280; }
+
+/* ── DESCRIPCIÓN DEL CIERRE ──────────────────────────────── */
+.char-count {
+  float: right;
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.form-hint {
+  display: block;
+  font-size: 11px;
+  color: #e65100;
+  margin-top: 4px;
+}
+
+.form-hint-error {
+  display: block;
+  font-size: 11px;
+  color: #b91c1c;
+  margin-top: 6px;
+}
+
+/* ── FOTOS DEL HALLAZGO (qué se debe levantar) ──────────────── */
+.fotos-hallazgo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.foto-hallazgo-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 1;
+  background: #f3f4f6;
+}
+
+.foto-hallazgo-cargando {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 20px;
+}
+
+/* ── FOTO CIERRE ─────────────────────────────────────────── */
+.foto-subiendo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.foto-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #16a34a;
+  font-weight: 500;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.spin {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ── BOTÓN CERRAR (rojo, se mantiene) ───────────────────────── */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: #b91c1c;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #991b1b;
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

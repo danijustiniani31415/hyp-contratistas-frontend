@@ -1,0 +1,60 @@
+/* Columna scrolleable de horas/minutos */
+.tp-col {
+  height: 168px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 2px;
+  scrollbar-width: thin;
+}
+
+.tp-col::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tp-col::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+/* Opción individual (una hora o un minuto) */
+.tp-opt {
+  flex-shrink: 0;
+  height: 30px;
+  border-radius: 7px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.tp-opt:hover:not(.tp-selected) {
+  background: #f3f4f6;
+}
+
+/* Marca sutil de la hora/minuto actual (anillo con el color de acento) */
+.tp-now:not(.tp-selected) {
+  box-shadow: inset 0 0 0 1.5px var(--tp-accent);
+}
+
+/* Opción seleccionada (verde de la marca por defecto) */
+.tp-selected {
+  background: var(--tp-accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Botones del pie (Ahora / Limpiar) */
+.tp-footer-btn {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.tp-footer-btn:hover {
+  background: #f3f4f6;
+}

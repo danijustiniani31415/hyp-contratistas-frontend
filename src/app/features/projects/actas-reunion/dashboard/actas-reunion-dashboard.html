@@ -1,0 +1,252 @@
+<app-abril-page-header
+  badge="ACTAS DE REUNIÓN"
+  titulo="Mis Acuerdos"
+  subtitulo="Seguimiento personal de los acuerdos de los que eres responsable, en cualquier reunión."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5">
+
+  <!-- ── Stat cards ─────────────────────────────────────────────────────── -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white rounded-lg p-4 border-t-4 border-[var(--color-abril-primary)] flex flex-col gap-1">
+      <span class="text-xs font-medium text-gray-500 uppercase">Pendientes</span>
+      <span class="text-2xl font-semibold text-[var(--color-abril-primary)]">{{ totalPendientes }}</span>
+    </div>
+    <div class="bg-white rounded-lg p-4 border-t-4 border-red-500 flex flex-col gap-1">
+      <span class="text-xs font-medium text-gray-500 uppercase">Vencidos</span>
+      <span class="text-2xl font-semibold text-red-600">{{ totalVencidos }}</span>
+    </div>
+    <div class="bg-white rounded-lg p-4 border-t-4 border-amber-500 flex flex-col gap-1">
+      <span class="text-xs font-medium text-gray-500 uppercase">Críticos</span>
+      <span class="text-2xl font-semibold text-amber-600">{{ totalCriticos }}</span>
+    </div>
+    <div class="bg-white rounded-lg p-4 border-t-4 border-gray-300 flex flex-col gap-1">
+      <span class="text-xs font-medium text-gray-500 uppercase">Cumplidos (últimos 30 días)</span>
+      <span class="text-2xl font-semibold text-gray-600">{{ totalCumplidosRecientes }}</span>
+    </div>
+  </div>
+
+  <p *ngIf="acuerdos.length === 0" class="bg-white rounded-lg p-8 text-center text-gray-400">
+    No tienes acuerdos asignados como responsable.
+  </p>
+
+  <!-- ── Vencidos ───────────────────────────────────────────────────────── -->
+  <div *ngIf="vencidos.length > 0" class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <h3 class="text-sm font-semibold text-red-600 uppercase flex items-center gap-1.5">
+      <span class="ti ti-alert-triangle"></span> Vencidos
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      <div *ngFor="let a of vencidos" (click)="abrirAcuerdo(a)"
+        class="border border-red-200 bg-red-50/40 rounded-lg p-3 flex flex-col gap-2 cursor-pointer hover:shadow-sm transition-shadow">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap" [ngClass]="criticidadClass(a.criticidad)">
+            {{ criticidadLabel(a.criticidad) }}
+          </span>
+          <a *ngIf="a.evidenciaUrl" [href]="a.evidenciaUrl" target="_blank" rel="noopener noreferrer" (click)="$event.stopPropagation()"
+            class="ti ti-paperclip text-sm text-[var(--color-abril-primary)]" title="Ver o descargar evidencia">
+          </a>
+          <span *ngIf="!a.evidenciaUrl && a.requiereEvidencia" class="ti ti-paperclip text-sm text-red-500"
+            title="Requiere evidencia (aún no adjuntada)">
+          </span>
+          <span class="text-[11px] text-red-600 font-medium whitespace-nowrap">
+            Programado: {{ a.fechaProgramada | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+        <p class="text-sm text-gray-700">{{ a.descripcion }}</p>
+        <p class="text-xs text-gray-400">Acta N° {{ a.reunionNumero }} · {{ a.reunionTema }} · {{ a.ambito }}</p>
+        <p *ngIf="a.otrosResponsables.length > 0" class="text-xs text-gray-400">
+          {{ a.esPrincipal ? '★ Tú eres el principal · ' : '' }}Con: {{ a.otrosResponsables.join(', ') }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Críticos ───────────────────────────────────────────────────────── -->
+  <div *ngIf="criticos.length > 0" class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <h3 class="text-sm font-semibold text-amber-600 uppercase flex items-center gap-1.5">
+      <span class="ti ti-flame"></span> Críticos
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      <div *ngFor="let a of criticos" (click)="abrirAcuerdo(a)"
+        class="border border-amber-200 bg-amber-50/40 rounded-lg p-3 flex flex-col gap-2 cursor-pointer hover:shadow-sm transition-shadow">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap" [ngClass]="criticidadClass(a.criticidad)">
+            {{ criticidadLabel(a.criticidad) }}
+          </span>
+          <a *ngIf="a.evidenciaUrl" [href]="a.evidenciaUrl" target="_blank" rel="noopener noreferrer" (click)="$event.stopPropagation()"
+            class="ti ti-paperclip text-sm text-[var(--color-abril-primary)]" title="Ver o descargar evidencia">
+          </a>
+          <span *ngIf="!a.evidenciaUrl && a.requiereEvidencia" class="ti ti-paperclip text-sm text-red-500"
+            title="Requiere evidencia (aún no adjuntada)">
+          </span>
+          <span *ngIf="a.fechaProgramada" class="text-[11px] text-gray-500 whitespace-nowrap">
+            {{ a.fechaProgramada | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+        <p class="text-sm text-gray-700">{{ a.descripcion }}</p>
+        <p class="text-xs text-gray-400">Acta N° {{ a.reunionNumero }} · {{ a.reunionTema }} · {{ a.ambito }}</p>
+        <p *ngIf="a.otrosResponsables.length > 0" class="text-xs text-gray-400">
+          {{ a.esPrincipal ? '★ Tú eres el principal · ' : '' }}Con: {{ a.otrosResponsables.join(', ') }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Otros pendientes ───────────────────────────────────────────────── -->
+  <div *ngIf="otrosPendientes.length > 0" class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <h3 class="text-sm font-semibold text-[var(--color-abril-primary)] uppercase">Otros pendientes</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      <div *ngFor="let a of otrosPendientes" (click)="abrirAcuerdo(a)"
+        class="border border-[#E5EAF0] bg-[#F5F8FA] rounded-lg p-3 flex flex-col gap-2 cursor-pointer hover:shadow-sm transition-shadow">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap" [ngClass]="criticidadClass(a.criticidad)">
+            {{ criticidadLabel(a.criticidad) }}
+          </span>
+          <a *ngIf="a.evidenciaUrl" [href]="a.evidenciaUrl" target="_blank" rel="noopener noreferrer" (click)="$event.stopPropagation()"
+            class="ti ti-paperclip text-sm text-[var(--color-abril-primary)]" title="Ver o descargar evidencia">
+          </a>
+          <span *ngIf="!a.evidenciaUrl && a.requiereEvidencia" class="ti ti-paperclip text-sm text-red-500"
+            title="Requiere evidencia (aún no adjuntada)">
+          </span>
+          <span *ngIf="a.fechaProgramada" class="text-[11px] text-gray-500 whitespace-nowrap">
+            {{ a.fechaProgramada | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+        <p class="text-sm text-gray-700">{{ a.descripcion }}</p>
+        <p class="text-xs text-gray-400">Acta N° {{ a.reunionNumero }} · {{ a.reunionTema }} · {{ a.ambito }}</p>
+        <p *ngIf="a.otrosResponsables.length > 0" class="text-xs text-gray-400">
+          {{ a.esPrincipal ? '★ Tú eres el principal · ' : '' }}Con: {{ a.otrosResponsables.join(', ') }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Cumplidos recientes ────────────────────────────────────────────── -->
+  <div *ngIf="cumplidosRecientes.length > 0" class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <h3 class="text-sm font-semibold text-gray-500 uppercase flex items-center gap-1.5">
+      <span class="ti ti-circle-check"></span> Cumplidos recientemente
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      <div *ngFor="let a of cumplidosRecientes" (click)="abrirAcuerdo(a)"
+        class="border border-[#E5EAF0] rounded-lg p-3 flex flex-col gap-2 cursor-pointer hover:shadow-sm transition-shadow opacity-70">
+        <div class="flex items-center justify-between gap-2">
+          <p class="text-sm text-gray-700 line-through decoration-gray-300">{{ a.descripcion }}</p>
+          <a *ngIf="a.evidenciaUrl" [href]="a.evidenciaUrl" target="_blank" rel="noopener noreferrer" (click)="$event.stopPropagation()"
+            class="ti ti-paperclip text-sm text-[var(--color-abril-primary)] shrink-0" title="Ver o descargar evidencia">
+          </a>
+        </div>
+        <p class="text-xs text-gray-400">Acta N° {{ a.reunionNumero }} · {{ a.reunionTema }} · {{ a.ambito }}</p>
+        <p *ngIf="a.comentarioCumplimiento" class="text-xs text-gray-500">
+          <span class="font-medium">Cómo se levantó:</span> {{ a.comentarioCumplimiento }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Modal de acción rápida (marcar cumplido / reprogramar) ────────────── -->
+<app-base-modal *ngIf="acuerdoSeleccionado" title="Acuerdo" width="w-[520px]" (closeModal)="cerrarModal()">
+  <div class="flex flex-col gap-3 p-1">
+    <div class="flex items-center gap-2">
+      <span class="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap" [ngClass]="criticidadClass(acuerdoSeleccionado.criticidad)">
+        {{ criticidadLabel(acuerdoSeleccionado.criticidad) }}
+      </span>
+      <span *ngIf="acuerdoSeleccionado.fechaProgramada" class="text-xs text-gray-500">
+        Programado: {{ acuerdoSeleccionado.fechaProgramada | date:'dd/MM/yyyy' }}
+      </span>
+      <a *ngIf="acuerdoSeleccionado.evidenciaUrl" [href]="acuerdoSeleccionado.evidenciaUrl" target="_blank" rel="noopener noreferrer"
+        class="text-[11px] flex items-center gap-1 text-[var(--color-abril-primary)] hover:underline">
+        <span class="ti ti-paperclip"></span> Ver evidencia
+      </a>
+      <span *ngIf="!acuerdoSeleccionado.evidenciaUrl && acuerdoSeleccionado.requiereEvidencia" class="text-[11px] flex items-center gap-1 text-red-500">
+        <span class="ti ti-paperclip"></span> Requiere evidencia
+      </span>
+    </div>
+
+    <p class="text-sm text-gray-700">{{ acuerdoSeleccionado.descripcion }}</p>
+    <p class="text-xs text-gray-400">
+      Acta N° {{ acuerdoSeleccionado.reunionNumero }} · {{ acuerdoSeleccionado.reunionTema }} · {{ acuerdoSeleccionado.ambito }}
+    </p>
+    <p *ngIf="acuerdoSeleccionado.otrosResponsables.length > 0" class="text-xs text-gray-400">
+      {{ acuerdoSeleccionado.esPrincipal ? '★ Tú eres el principal · ' : '' }}Con: {{ acuerdoSeleccionado.otrosResponsables.join(', ') }}
+    </p>
+    <p *ngIf="acuerdoSeleccionado.comentarioCumplimiento" class="text-xs text-gray-500">
+      <span class="font-medium">Cómo se levantó:</span> {{ acuerdoSeleccionado.comentarioCumplimiento }}
+    </p>
+
+    <ng-container *ngIf="acuerdoSeleccionado.reunionAcuerdoEstado !== 'CUMPLIDO' && acuerdoSeleccionado.reunionAcuerdoEstado !== 'ANULADO'">
+      <div *ngIf="!reprogramando && !marcando" class="flex gap-2 pt-2">
+        <button type="button" (click)="abrirMarcarCumplido()"
+          class="flex-1 h-[42px] px-4 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center justify-center gap-2">
+          <span class="ti ti-circle-check text-base"></span> Marcar cumplido
+        </button>
+        <button type="button" (click)="abrirReprogramar()"
+          class="flex-1 h-[42px] px-4 border border-amber-300 text-amber-600 rounded-lg text-sm font-medium cursor-pointer hover:bg-amber-50 transition-colors flex items-center justify-center gap-2">
+          <span class="ti ti-calendar-time text-base"></span> Reprogramar
+        </button>
+      </div>
+
+      <div *ngIf="marcando" class="border-t border-[#E5EAF0] pt-3 flex flex-col gap-2">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-gray-500">
+            Archivo de evidencia{{ acuerdoSeleccionado.requiereEvidencia ? ' (obligatorio)' : ' (opcional)' }}
+          </label>
+          <div class="flex items-center gap-2">
+            <label class="h-[38px] px-4 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-2">
+              <span class="ti ti-upload text-base"></span>
+              {{ subiendoEvidencia ? 'Subiendo...' : 'Elegir archivo' }}
+              <input type="file" class="hidden" [disabled]="subiendoEvidencia" (change)="onEvidenciaSeleccionada($event)" />
+            </label>
+            <a *ngIf="evidenciaUrlNueva" [href]="evidenciaUrlNueva" target="_blank" rel="noopener noreferrer"
+              class="text-sm truncate max-w-[180px]" style="color:var(--color-abril-primary)" [title]="evidenciaNombreNueva ?? evidenciaUrlNueva">
+              {{ evidenciaNombreNueva ?? 'Ver archivo' }}
+            </a>
+            <button *ngIf="evidenciaUrlNueva" type="button" (click)="quitarEvidenciaNueva()" class="text-red-400 hover:text-red-600 cursor-pointer">
+              <span class="ti ti-x text-sm"></span>
+            </button>
+          </div>
+        </div>
+        <label class="text-xs font-medium text-gray-500">Cómo se levantó (obligatorio)</label>
+        <textarea [(ngModel)]="comentarioCumplimiento" rows="2" maxlength="1000"
+          placeholder="Describe cómo se resolvió el acuerdo..."
+          class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)] resize-none"></textarea>
+        <div class="flex justify-end gap-2">
+          <button type="button" (click)="marcando = false"
+            class="h-[34px] px-3 border border-[#E5EAF0] rounded-lg text-xs text-gray-600 cursor-pointer hover:bg-gray-50">
+            Cancelar
+          </button>
+          <button type="button" (click)="confirmarMarcarCumplido()" [disabled]="subiendoEvidencia"
+            class="h-[34px] px-3 bg-[var(--color-abril-primary)] rounded-lg text-white text-xs font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] disabled:opacity-50">
+            Confirmar cumplido
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="reprogramando" class="border-t border-[#E5EAF0] pt-3 flex flex-col gap-2">
+        <div class="flex gap-2">
+          <input type="date" [(ngModel)]="nuevaFecha"
+            class="h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]" />
+          <input type="text" [(ngModel)]="motivo" maxlength="300" placeholder="Motivo de la reprogramación"
+            class="flex-1 h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]" />
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" (click)="reprogramando = false"
+            class="h-[34px] px-3 border border-[#E5EAF0] rounded-lg text-xs text-gray-600 cursor-pointer hover:bg-gray-50">
+            Cancelar
+          </button>
+          <button type="button" (click)="confirmarReprogramar()"
+            class="h-[34px] px-3 bg-[var(--color-abril-primary)] rounded-lg text-white text-xs font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)]">
+            Confirmar reprogramación
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <button type="button" (click)="irAReunion(acuerdoSeleccionado)"
+      class="self-start text-sm text-[var(--color-abril-primary)] hover:underline pt-1">
+      Ver el acta completa
+    </button>
+  </div>
+</app-base-modal>

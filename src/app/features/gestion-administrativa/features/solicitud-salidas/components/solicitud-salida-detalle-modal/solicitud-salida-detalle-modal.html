@@ -1,0 +1,180 @@
+﻿<app-base-modal
+  [title]="'Detalle de la solicitud'"
+  width="w-[720px]"
+  (closeModal)="cerrar()">
+
+  <div *ngIf="detalle" class="flex flex-col gap-4 pt-4">
+
+    <div class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+      <div>
+        <div class="text-xs text-gray-500 uppercase">Fecha</div>
+        <div class="text-gray-800">{{ detalle.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</div>
+      </div>
+      <div>
+        <div class="text-xs text-gray-500 uppercase">Registrada</div>
+        <div class="text-gray-800">{{ detalle.createdAt | date:'dd/MM/yyyy HH:mm' }}</div>
+      </div>
+      <div>
+        <div class="text-xs text-gray-500 uppercase">Estado</div>
+        <app-status-badge
+          [text]="detalle.estadoAprobacion"
+          [bgColor]="aprobacionColors(detalle.estadoAprobacion).bg"
+          [textColor]="aprobacionColors(detalle.estadoAprobacion).text" />
+      </div>
+      <div>
+        <div class="text-xs text-gray-500 uppercase">Rendición</div>
+        <app-status-badge
+          *ngIf="detalle.estadoAprobacion === 'Aprobado'; else sinRendicion"
+          [text]="detalle.estadoRendicion"
+          [bgColor]="rendicionColors(detalle.estadoRendicion).bg"
+          [textColor]="rendicionColors(detalle.estadoRendicion).text" />
+        <ng-template #sinRendicion>
+          <span class="text-gray-300">—</span>
+        </ng-template>
+      </div>
+      <div *ngIf="detalle.motivoRechazo" class="col-span-2">
+        <div class="text-xs text-gray-500 uppercase">Motivo de rechazo</div>
+        <div class="text-gray-800">{{ detalle.motivoRechazo }}</div>
+      </div>
+    </div>
+
+    <!-- ── Trayectos ──────────────────────────────────────────────────── -->
+    <div class="border-t pt-4 flex flex-col gap-3" style="border-color:var(--color-abril-border)">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-gray-700">
+          Trayectos
+          <span class="text-xs text-gray-400 font-normal">({{ detalle.trayectos.length }})</span>
+        </h3>
+        <div *ngIf="totalGeneral > 0" class="text-xs font-medium text-gray-700">
+          Total: S/ {{ totalGeneral | number:'1.2-2' }}
+        </div>
+      </div>
+
+      <div *ngFor="let t of detalle.trayectos" class="border rounded-lg p-3 flex flex-col gap-2" style="border-color:var(--color-abril-border)">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-semibold uppercase" style="color:var(--color-abril-primary)">Trayecto {{ t.orden + 1 }}</div>
+          <div *ngIf="t.montoTotal > 0" class="text-xs font-medium text-gray-700">
+            S/ {{ t.montoTotal | number:'1.2-2' }}
+            <span *ngIf="totalCapturas(t) === 0 && t.montoCatalogo !== null"
+                  class="ml-1 text-[10px] font-semibold uppercase tracking-wider" style="color:var(--color-abril-accent)">
+              catálogo
+            </span>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          <div>
+            <div class="text-xs text-gray-500 uppercase">Salida</div>
+            <div class="text-gray-800">{{ t.horaSalida }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 uppercase">Retorno</div>
+            <div class="text-gray-800">{{ t.horaRetorno ?? '—' }}</div>
+          </div>
+          <div class="col-span-2">
+            <div class="text-xs text-gray-500 uppercase">Motivo</div>
+            <div class="text-gray-800">{{ t.motivo }}</div>
+          </div>
+          <div *ngIf="t.motivoAdicional" class="col-span-2">
+            <div class="text-xs text-gray-500 uppercase">Motivo adicional</div>
+            <div class="text-gray-800">{{ t.motivoAdicional }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 uppercase">Origen</div>
+            <div class="text-gray-800">{{ t.lugarOrigen ?? '—' }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 uppercase">Destino</div>
+            <div class="text-gray-800">{{ t.lugarDestino ?? '—' }}</div>
+          </div>
+          <div *ngIf="t.adjuntos.length > 0" class="col-span-2">
+            <div class="text-xs text-gray-500 uppercase">
+              {{ t.adjuntos.length > 1 ? 'Documentos adjuntos' : 'Documento adjunto' }}
+            </div>
+            <div class="flex flex-col gap-1 mt-0.5">
+              <a *ngFor="let a of t.adjuntos" [href]="a.url" target="_blank" rel="noopener noreferrer"
+                 class="inline-flex items-center gap-1.5 hover:underline text-sm font-medium break-all"
+                 style="color:var(--color-abril-standard)">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6" />
+                </svg>
+                {{ a.filename || 'Ver documento' }}
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="t.capturas.length > 0" class="mt-1 flex flex-wrap gap-2">
+          <div *ngFor="let c of t.capturas" class="flex flex-col items-center gap-1" [title]="c.filename">
+            <div class="w-[110px] h-[110px] flex items-center justify-center">
+              <app-draggable-image [src]="c.imageUrl" />
+            </div>
+            <div class="text-xs font-medium text-gray-700">S/ {{ c.monto | number:'1.2-2' }}</div>
+          </div>
+        </div>
+        <div *ngIf="t.capturas.length === 0 && t.montoCatalogo === null" class="text-xs text-gray-400 italic">
+          Sin capturas en este trayecto.
+        </div>
+        <div *ngIf="t.capturas.length === 0 && t.montoCatalogo !== null"
+             class="text-xs bg-[#DBEAFE] border border-[#BFDBFE] rounded px-2 py-1 inline-block w-fit" style="color:var(--color-abril-accent)">
+          Monto del catálogo: <b>S/ {{ t.montoCatalogo | number:'1.2-2' }}</b>
+          <span class="text-gray-500 ml-1">— no requieres subir captura.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Planilla rendida ──────────────────────────────────────────── -->
+    <div *ngIf="detalle.rendicion" class="border-t pt-4 flex flex-col gap-2" style="border-color:var(--color-abril-border)">
+      <div class="text-xs text-gray-500 uppercase">Planilla de rendición</div>
+      <a
+        [href]="detalle.rendicion.pdfUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all" style="color:var(--color-abril-accent)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+        {{ detalle.rendicion.pdfFilename }}
+      </a>
+      <div class="text-xs text-gray-400">
+        Rendido el {{ detalle.rendicion.rendidoAt | date:'dd/MM/yyyy HH:mm' }}
+      </div>
+    </div>
+
+    <!-- ── Consolidado del S10 ───────────────────────────────────────── -->
+    <div *ngIf="detalle.consolidadoS10" class="border-t pt-4 flex flex-col gap-2" style="border-color:var(--color-abril-border)">
+      <div class="text-xs text-gray-500 uppercase">
+        Consolidado del S10
+        <span class="normal-case text-gray-400">
+          ({{ detalle.consolidadoS10.ambito === 'Rendicion' ? 'toda la planilla' : 'solo esta salida' }})
+        </span>
+      </div>
+      <a
+        [href]="detalle.consolidadoS10.pdfUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all" style="color:var(--color-abril-accent)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+        {{ detalle.consolidadoS10.pdfFilename }}
+      </a>
+      <div class="text-xs text-gray-400">
+        Adjuntado el {{ detalle.consolidadoS10.uploadedAt | date:'dd/MM/yyyy HH:mm' }}
+      </div>
+    </div>
+
+    <div class="flex justify-end pt-2">
+      <button
+        type="button"
+        (click)="cerrar()"
+        class="h-[36px] px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium cursor-pointer transition-colors">
+        Cerrar
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

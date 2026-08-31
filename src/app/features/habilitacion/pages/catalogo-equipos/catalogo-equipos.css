@@ -1,0 +1,62 @@
+.cat-root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cat-tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 0.5px solid var(--color-abril-border, #e8e5df);
+  padding-bottom: 8px;
+}
+
+.cat-tab {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 0.5px solid #e8e5df;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5a5850;
+  cursor: pointer;
+}
+
+.cat-tab--active {
+  background: var(--color-abril-standard);
+  border-color: var(--color-abril-standard);
+  color: #fff;
+}
+
+.cat-filtros {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: #8a8880;
+}
+
+.cat-acciones {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.empty-msg {
+  font-size: 12px;
+  color: #a8a59e;
+  padding: 16px 0;
+  text-align: center;
+}
+
+.skeleton-body {
+  height: 200px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #f0ede8 25%, #e8e5df 50%, #f0ede8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }

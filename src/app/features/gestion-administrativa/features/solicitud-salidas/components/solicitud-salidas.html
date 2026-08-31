@@ -1,0 +1,328 @@
+﻿<app-abril-page-header
+  [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
+  titulo="Solicitud de Salidas"
+  subtitulo="Mis solicitudes de viáticos y movilidad."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden pb-[64px]">
+
+  <!-- ── Acción bulk sobre la selección (rendir) ──────────────────────────
+       Visible siempre (deshabilitada si no aplica), mismo lenguaje que Gestión de Salidas. -->
+  <div class="flex flex-wrap items-center gap-2">
+    <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">{{ selectedIds.size }} seleccionada{{ selectedIds.size === 1 ? '' : 's' }}</span>
+
+    <button
+      type="button"
+      abrilBulkAction="primary"
+      (click)="rendirBulk()"
+      [disabled]="selectedRendibles.length === 0">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
+      </svg>
+      Rendir<span *ngIf="selectedRendibles.length > 0"> ({{ selectedRendibles.length }})</span>
+    </button>
+
+    <button
+      type="button"
+      abrilBulkAction="default"
+      (click)="rendirMesAnterior()"
+      [title]="'Rinde de una vez todas tus salidas de ' + mesAnteriorLabel + ' que ya tengan sus capturas'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="4" width="18" height="17" rx="2"/>
+        <path stroke-linecap="round" d="M8 2v4M16 2v4M3 10h18"/>
+      </svg>
+      Rendir {{ mesAnteriorLabel }}
+    </button>
+
+    <button
+      type="button"
+      abrilBulkAction="danger"
+      (click)="cancelarBulk()"
+      [disabled]="selectedCancelables.length === 0"
+      title="Solo puedes cancelar tus solicitudes pendientes">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
+        <circle cx="12" cy="12" r="9"/>
+        <path stroke-linecap="round" d="M6.3 6.3l11.4 11.4"/>
+      </svg>
+      Cancelar<span *ngIf="selectedCancelables.length > 0"> ({{ selectedCancelables.length }})</span>
+    </button>
+  </div>
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>
+            <input
+              type="checkbox"
+              [checked]="allSelected"
+              [disabled]="solicitudes.length === 0"
+              (change)="toggleSelectAll()"
+              class="cursor-pointer disabled:cursor-not-allowed"
+              style="accent-color:var(--color-abril-accent)"
+              title="Seleccionar / deseleccionar todo" />
+          </th>
+          <th>#</th>
+          <th>Fecha</th>
+          <th>Salida</th>
+          <th>Retorno</th>
+          <th>Motivo</th>
+          <th>Origen</th>
+          <th>Destino</th>
+          <th>Estado</th>
+          <th>Rendición</th>
+          <th>Reembolso</th>
+          <th>Registrada</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="solicitudes.length === 0">
+          <td colspan="13" class="text-center py-[40px] text-gray-400 text-sm">
+            No hay solicitudes registradas.
+          </td>
+        </tr>
+        <tr
+          *ngFor="let s of solicitudes; let i = index"
+          (click)="onRowClick($event, i)"
+          title="Ver detalle (Shift+clic para seleccionar)"
+          class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
+          [style.background]="selectedIds.has(s.id) ? '#EAF6FF' : null"
+          style="border-color:var(--color-abril-border)">
+
+          <!-- Selección (Shift+clic para rango). select-none evita que Shift resalte texto. -->
+          <td class="select-none" (click)="onSelectClick($event, i)">
+            <input
+              type="checkbox"
+              [checked]="selectedIds.has(s.id)"
+              class="cursor-pointer pointer-events-none"
+              style="accent-color:var(--color-abril-accent)" />
+          </td>
+
+          <td class="text-gray-500">{{ i + 1 }}</td>
+          <td class="text-gray-700">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
+          <td class="text-gray-700">
+            {{ s.horaSalida }}
+            <span *ngIf="s.trayectosCount > 1"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle" style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
+                  [title]="s.trayectosCount + ' trayectos'">
+              +{{ s.trayectosCount - 1 }}
+            </span>
+          </td>
+          <td class="text-gray-400">
+            {{ s.horaRetorno ?? '—' }}
+            <span *ngIf="s.trayectosCount > 1"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle" style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
+                  [title]="s.trayectosCount + ' trayectos'">
+              +{{ s.trayectosCount - 1 }}
+            </span>
+          </td>
+          <td class="text-gray-700">
+            {{ s.motivo | titleCase }}
+            <span *ngIf="s.trayectosCount > 1"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle" style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
+                  [title]="s.trayectosCount + ' trayectos'">
+              +{{ s.trayectosCount - 1 }}
+            </span>
+          </td>
+          <td class="text-gray-500">
+            {{ (s.lugarOrigen | titleCase) || '—' }}
+            <span *ngIf="s.trayectosCount > 1"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle" style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
+                  [title]="s.trayectosCount + ' trayectos'">
+              +{{ s.trayectosCount - 1 }}
+            </span>
+          </td>
+          <td class="text-gray-500">
+            {{ (s.lugarDestino | titleCase) || '—' }}
+            <span *ngIf="s.trayectosCount > 1"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle" style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
+                  [title]="s.trayectosCount + ' trayectos'">
+              +{{ s.trayectosCount - 1 }}
+            </span>
+          </td>
+          <td>
+            <app-status-badge
+              [text]="s.estadoAprobacion"
+              [bgColor]="aprobacionColors(s.estadoAprobacion).bg"
+              [textColor]="aprobacionColors(s.estadoAprobacion).text" />
+          </td>
+          <td>
+            <app-status-badge
+              *ngIf="s.estadoAprobacion === 'Aprobado'; else sinRendicion"
+              [text]="s.estadoRendicion"
+              [bgColor]="rendicionColors(s.estadoRendicion).bg"
+              [textColor]="rendicionColors(s.estadoRendicion).text" />
+            <ng-template #sinRendicion>
+              <span class="text-gray-300">—</span>
+            </ng-template>
+          </td>
+          <!-- Reembolso: el visto bueno de la jefatura al gasto. Con el rechazo se muestra la
+               observación en el tooltip, que es lo que hay que subsanar. -->
+          <td>
+            <app-status-badge
+              *ngIf="s.estadoRendicion === 'Rendido'; else sinReembolso"
+              [text]="s.estadoReembolso"
+              [bgColor]="reembolsoColors(s.estadoReembolso).bg"
+              [textColor]="reembolsoColors(s.estadoReembolso).text"
+              [title]="s.estadoReembolso === 'Rechazado' && s.observacionReembolso
+                ? 'Observación: ' + s.observacionReembolso
+                : null" />
+            <ng-template #sinReembolso>
+              <span class="text-gray-300">—</span>
+            </ng-template>
+          </td>
+
+          <td class="text-gray-400 whitespace-nowrap">
+            {{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}
+          </td>
+          <td (click)="$event.stopPropagation()">
+            <div *ngIf="puedeSubirCapturas(s) || esSeleccionable(s) || puedeAdjuntarConsolidado(s) || s.puedeNotificarRevisor; else sinAcciones" class="flex items-center gap-2">
+              <button
+                *ngIf="puedeSubirCapturas(s)"
+                type="button"
+                (click)="abrirCapturas(s, $event)"
+                title="Subir las capturas de movilidad (imagen + monto) de cada trayecto"
+                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                style="background:#3b82f6"
+                onmouseover="this.style.background='#2563eb'"
+                onmouseout="this.style.background='#3b82f6'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" fill="white"/>
+                </svg>
+                Subir capturas
+              </button>
+              <button
+                *ngIf="esSeleccionable(s)"
+                type="button"
+                (click)="rendirUna(s, $event)"
+                title="Rendir esta solicitud y descargar la planilla de gasto por movilidad"
+                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                style="background:#0086A5"
+                onmouseover="this.style.background='#006f8a'"
+                onmouseout="this.style.background='#0086A5'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
+                </svg>
+                Rendir
+              </button>
+              <button
+                *ngIf="puedeAdjuntarConsolidado(s)"
+                type="button"
+                (click)="abrirConsolidado(s, $event)"
+                [title]="s.consolidadoS10Url ? 'Reemplazar el Consolidado del S10' : 'Adjuntar el PDF Consolidado del S10'"
+                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                style="background:var(--color-abril-standard)"
+                onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+                onmouseout="this.style.background='var(--color-abril-standard)'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                {{ s.consolidadoS10Url ? 'Consolidado S10 ✓' : 'Consolidado S10' }}
+              </button>
+
+              <!-- Se habilita recién con el S10 adjunto: antes de eso el revisor no tendría qué
+                   mirar. Después de aprobado (o firmado, o pagado) desaparece. -->
+              <button
+                *ngIf="s.puedeNotificarRevisor"
+                type="button"
+                (click)="notificarRevisor(s, $event)"
+                [title]="s.revisorNotificadoAt
+                  ? 'Ya le avisaste el ' + (s.revisorNotificadoAt | date:'dd/MM/yyyy HH:mm') + ' — puedes volver a avisarle'
+                  : 'Avísale a tu jefe/revisor que ya adjuntaste el Consolidado del S10'"
+                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold transition-colors"
+                [style.background]="s.revisorNotificadoAt ? '#FFFFFF' : '#005D9D'"
+                [style.color]="s.revisorNotificadoAt ? '#005D9D' : '#FFFFFF'"
+                [style.border]="s.revisorNotificadoAt ? '1px solid #005D9D' : '1px solid #005D9D'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2.5" y="4.5" width="19" height="15" rx="2"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m3 6 9 6 9-6"/>
+                </svg>
+                {{ s.revisorNotificadoAt ? 'Revisor avisado ✓' : 'Avisar al revisor' }}
+              </button>
+            </div>
+            <ng-template #sinAcciones>
+              <span class="text-gray-300">—</span>
+            </ng-template>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<app-fab *ngIf="!showModal" label="Solicitar salida" (clicked)="showModal = true"></app-fab>
+
+<!-- ── Modal de creación ─────────────────────────────────────────────── -->
+<app-solicitud-salida-create
+  *ngIf="showModal"
+  [fullScreen]="modalFullScreen"
+  (closeModal)="showModal = false"
+  (saved)="onSaved()" />
+
+<!-- ── Modal de detalle (read-only) ──────────────────────────────────── -->
+<app-solicitud-salida-detalle-modal
+  *ngIf="detalleId !== null"
+  [solicitudId]="detalleId"
+  (close)="cerrarDetalle()" />
+
+<!-- ── Modal de subir capturas ───────────────────────────────────────── -->
+<app-solicitud-salida-capturas-modal
+  *ngIf="capturasId !== null"
+  [solicitudId]="capturasId"
+  (close)="cerrarCapturas($event)" />
+
+<!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->
+<app-consolidado-s10-modal
+  *ngIf="consolidadoDe !== null"
+  [upload]="subirConsolidado"
+  [actual]="consolidadoActual"
+  (close)="cerrarConsolidado($event)" />
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <app-search-select
+      label="Lugar de proyecto"
+      placeholder="Selecciona el proyecto"
+      [options]="lugarProyectoOptions"
+      valueField="id"
+      displayField="nombreDisplay"
+      [value]="filters.lugarProyectoId"
+      (valueChange)="filters.lugarProyectoId = $event; onSearch()">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <app-search-select
+        label="Estado"
+        [options]="estadoAprobacionOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filters.estadoAprobacion"
+        (valueChange)="filters.estadoAprobacion = $event; onSearch()">
+      </app-search-select>
+    </div>
+
+    <div class="flex-1">
+      <app-search-select
+        label="Rendición"
+        [options]="estadoRendicionOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filters.estadoRendicion"
+        (valueChange)="filters.estadoRendicion = $event; onSearch()">
+      </app-search-select>
+    </div>
+  </div>
+
+</app-filter-modal>

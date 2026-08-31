@@ -1,0 +1,15 @@
+/* Modo público: el host es un bloque normal; el contenido usa min-h-screen propio. */
+:host {
+  display: block;
+}
+
+/* Modo interno (dentro del shell autenticado): el host debe comportarse como una
+   columna flex que llena el área de contenido, igual que las demás páginas del shell
+   (ver contractor-management.css) — así el header queda arriba fijo y el formulario
+   scrollea dentro del área disponible. */
+:host(.registro-shell) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}

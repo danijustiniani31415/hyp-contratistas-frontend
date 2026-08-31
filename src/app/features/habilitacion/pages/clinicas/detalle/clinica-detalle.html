@@ -1,0 +1,231 @@
+<div class="p-6">
+
+  <!-- Back + title -->
+  <div class="flex items-center gap-3 mb-6">
+    <button
+      type="button"
+      (click)="volver()"
+      class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
+      Volver
+    </button>
+    <span class="text-gray-300">|</span>
+    <h1 class="text-xl font-bold text-gray-800">{{ clinica?.nombre ?? '...' }}</h1>
+    <span
+      *ngIf="clinica"
+      class="text-[0.7rem] font-bold border rounded-full px-2 py-0.5"
+      [ngClass]="clinica.activo
+        ? 'bg-green-100 text-green-800 border-green-200'
+        : 'bg-red-100 text-red-700 border-red-200'"
+    >{{ clinica.activo ? 'ACTIVO' : 'INACTIVO' }}</span>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-1 bg-gray-100 rounded-lg p-1 mb-6 w-fit">
+    <button
+      type="button"
+      (click)="setTab('datos')"
+      class="px-5 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer"
+      [ngClass]="activeTab === 'datos'
+        ? 'bg-white text-gray-800 shadow-sm'
+        : 'text-gray-500 hover:text-gray-700'"
+    >Datos</button>
+    <button
+      type="button"
+      (click)="setTab('usuarios')"
+      class="px-5 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer"
+      [ngClass]="activeTab === 'usuarios'
+        ? 'bg-white text-gray-800 shadow-sm'
+        : 'text-gray-500 hover:text-gray-700'"
+    >Usuarios</button>
+  </div>
+
+  <!-- Tab: Datos -->
+  <ng-container *ngIf="activeTab === 'datos'">
+    <div class="bg-white border border-gray-200 rounded-lg p-6 max-w-lg">
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Nombre *</label>
+          <input
+            type="text"
+            [(ngModel)]="form.nombre"
+            class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04]
+                   focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm"
+          />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1">
+            <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">RUC</label>
+            <input
+              type="text"
+              [(ngModel)]="form.ruc"
+              class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04]
+                     focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Teléfono</label>
+            <input
+              type="text"
+              [(ngModel)]="form.telefono"
+              class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04]
+                     focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm"
+            />
+          </div>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Email</label>
+          <input
+            type="email"
+            [(ngModel)]="form.email"
+            class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04]
+                   focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Dirección</label>
+          <input
+            type="text"
+            [(ngModel)]="form.direccion"
+            class="border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#64BC04]
+                   focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all text-sm"
+          />
+        </div>
+      </div>
+
+      <div class="flex justify-end mt-6">
+        <button
+          type="button"
+          (click)="guardarDatos()"
+          [disabled]="savingDatos"
+          class="px-5 py-2 rounded-lg bg-[#64BC04] text-white text-sm font-semibold
+                 hover:bg-[#58a804] transition-colors cursor-pointer disabled:opacity-50"
+        >{{ savingDatos ? 'Guardando…' : 'Guardar cambios' }}</button>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Tab: Usuarios -->
+  <div [hidden]="activeTab !== 'usuarios'">
+    <div class="flex items-center justify-between mb-4">
+      <p class="text-sm text-gray-500">{{ totalRecords }} usuario(s)</p>
+      <button
+        type="button"
+        (click)="showAgregarUsuario = true"
+        class="flex items-center gap-2 bg-[#64BC04] text-white text-sm font-semibold px-4 py-2
+               rounded-lg hover:bg-[#58a804] transition-colors cursor-pointer"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        Agregar Usuario
+      </button>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="text-left px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Nombre</th>
+            <th class="text-left px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Email</th>
+            <th class="text-center px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Estado</th>
+            <th class="text-left px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Último Acceso</th>
+            <th class="text-center px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngIf="!loadingUsuarios; else loadingTpl">
+            <tr
+              *ngFor="let u of usuarios"
+              class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
+            >
+              <td class="px-4 py-3 font-medium text-gray-800">{{ u.nombre }}</td>
+              <td class="px-4 py-3 text-gray-600">{{ u.email }}</td>
+              <td class="px-4 py-3 text-center">
+                <span
+                  class="text-[0.7rem] font-bold border rounded-full px-2 py-0.5"
+                  [ngClass]="u.activo
+                    ? 'bg-green-100 text-green-800 border-green-200'
+                    : 'bg-red-100 text-red-700 border-red-200'"
+                >{{ u.activo ? 'ACTIVO' : 'INACTIVO' }}</span>
+              </td>
+              <td class="px-4 py-3 text-gray-500 text-xs">
+                {{ u.ultimoAcceso ? (u.ultimoAcceso | date: 'dd/MM/yyyy HH:mm') : '—' }}
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-center gap-2">
+                  <!-- Reenviar activación -->
+                  <button
+                    type="button"
+                    title="Reenviar activación"
+                    (click)="reenviarActivacion(u)"
+                    class="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                  <!-- Toggle activo -->
+                  <button
+                    type="button"
+                    [title]="u.activo ? 'Desactivar' : 'Activar'"
+                    (click)="toggleActivo(u)"
+                    class="p-1.5 rounded-lg transition-colors cursor-pointer"
+                    [ngClass]="u.activo
+                      ? 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
+                      : 'text-gray-400 hover:text-green-600 hover:bg-green-50'"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path *ngIf="u.activo" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                      <path *ngIf="!u.activo" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                  <!-- Eliminar -->
+                  <button
+                    type="button"
+                    title="Eliminar"
+                    (click)="eliminarUsuario(u)"
+                    class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="usuarios.length === 0">
+              <td colspan="5" class="text-center text-gray-400 py-10">No hay usuarios registrados.</td>
+            </tr>
+          </ng-container>
+          <ng-template #loadingTpl>
+            <tr>
+              <td colspan="5" class="text-center text-gray-400 py-10">Cargando...</td>
+            </tr>
+          </ng-template>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4" *ngIf="totalPages > 1">
+      <app-paginator
+        [totalRecords]="totalRecords"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="loadUsuarios($event)"
+      />
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal: Agregar usuario -->
+<app-agregar-usuario
+  *ngIf="showAgregarUsuario"
+  [clinicaId]="clinicaId"
+  (closeModal)="showAgregarUsuario = false"
+  (usuarioCreado)="loadUsuarios(1)"
+/>

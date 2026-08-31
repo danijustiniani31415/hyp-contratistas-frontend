@@ -1,0 +1,64 @@
+<app-abril-modal-panel
+  titulo="Registrar Descanso Médico"
+  icono="ti-bed"
+  variant="blue"
+  (closeModal)="closed.emit()">
+
+    <div class="form-row">
+      <app-date-picker
+        label="Fecha inicio *"
+        color="var(--color-abril-logo-blue)"
+        [floatingLabel]="true"
+        [allowClear]="false"
+        [value]="fechaInicio"
+        (valueChange)="onFechaInicioChange($event)">
+      </app-date-picker>
+      <app-date-picker
+        label="Fecha fin *"
+        color="var(--color-abril-logo-blue)"
+        [floatingLabel]="true"
+        [allowClear]="false"
+        [min]="fechaInicio"
+        [value]="fechaFin"
+        (valueChange)="onFechaFinChange($event)">
+      </app-date-picker>
+    </div>
+
+    <div class="dias-badge" *ngIf="diasCalculados > 0">
+      <span>{{ diasCalculados }} día{{ diasCalculados !== 1 ? 's' : '' }} de descanso</span>
+    </div>
+
+    <div class="abril-field">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Tipo *"
+        [options]="tipos"
+        valueField="id"
+        displayField="nombreCorto"
+        [sortAlpha]="false"
+        [value]="tipoId"
+        placeholder="Selecciona tipo"
+        [allowClear]="false"
+        (valueChange)="tipoId = $event">
+      </app-search-select>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Diagnóstico</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="diagnostico" placeholder="Diagnóstico médico" />
+    </div>
+
+    <app-descanso-adjuntos
+      color="var(--color-abril-logo-blue)"
+      [archivos]="documentos"
+      (archivosChange)="onDocumentosChange($event)">
+    </app-descanso-adjuntos>
+
+  <div modalFooter>
+    <button type="button" class="btn-ghost" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="saving" (click)="guardar()">
+      <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
+      {{ saving ? 'Guardando...' : 'Registrar descanso' }}
+    </button>
+  </div>
+</app-abril-modal-panel>

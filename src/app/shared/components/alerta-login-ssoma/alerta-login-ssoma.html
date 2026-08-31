@@ -1,0 +1,76 @@
+@if (visible && resultado) {
+  <div class="alerta-overlay" (click)="cerrar()">
+    <div class="alerta-panel" (click)="$event.stopPropagation()">
+
+      <div class="alerta-header">
+        <div class="alerta-header-titulo">
+          <i class="ti ti-alert-triangle"></i>
+          <h2>Tienes pendientes de Salud Ocupacional</h2>
+        </div>
+        <button type="button" class="alerta-close" (click)="cerrar()" aria-label="Cerrar">
+          <i class="ti ti-x"></i>
+        </button>
+      </div>
+
+      <p class="alerta-subtitulo">
+        Interconsultas médicas sin atender y EMOs vencidos de trabajadores en tus proyectos.
+      </p>
+
+      <div class="alerta-body">
+        @for (proyecto of resultado.proyectos; track proyecto.proyectoId) {
+          <div class="alerta-proyecto">
+            <div class="alerta-proyecto-header">
+              <span class="alerta-proyecto-nombre">{{ proyecto.proyectoNombre }}</span>
+              <span class="alerta-proyecto-total">{{ totalDe(proyecto) }} pendiente(s)</span>
+            </div>
+
+            @if (proyecto.interconsultas.length > 0) {
+              <div class="alerta-seccion">
+                <h3>Interconsultas pendientes</h3>
+                <table class="alerta-tabla">
+                  <thead>
+                    <tr><th>Trabajador</th><th>Razón Social</th><th>Días de retraso</th></tr>
+                  </thead>
+                  <tbody>
+                    @for (item of proyecto.interconsultas; track $index) {
+                      <tr>
+                        <td>{{ item.workerNombre }}</td>
+                        <td>{{ item.razonSocial ?? '—' }}</td>
+                        <td class="alerta-dias">{{ item.dias }} día(s)</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+
+            @if (proyecto.emosVencidos.length > 0) {
+              <div class="alerta-seccion">
+                <h3>EMOs vencidos</h3>
+                <table class="alerta-tabla">
+                  <thead>
+                    <tr><th>Trabajador</th><th>Razón Social</th><th>Días vencido</th></tr>
+                  </thead>
+                  <tbody>
+                    @for (item of proyecto.emosVencidos; track $index) {
+                      <tr>
+                        <td>{{ item.workerNombre }}</td>
+                        <td>{{ item.razonSocial ?? '—' }}</td>
+                        <td class="alerta-dias">{{ item.dias }} día(s)</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="alerta-footer">
+        <button type="button" class="alerta-btn-entendido" (click)="cerrar()">Entendido</button>
+      </div>
+
+    </div>
+  </div>
+}

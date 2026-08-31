@@ -1,0 +1,71 @@
+/* touch-action: manipulation le dice al navegador que acá no hay doble-tap-zoom
+   que desambiguar, así que puede entregar el gesto de una en vez de esperar por
+   un segundo toque. Es la otra mitad de por qué en móvil el desplegable parecía
+   tardar en responder (la primera es abrir en pointerdown y no en click, ver
+   search-select.ts). Aplica al trigger, a las opciones y a la ✕ de limpiar. */
+.ss-trigger,
+.ss-option,
+.ss-clear {
+  touch-action: manipulation;
+}
+
+/* Foco visible por teclado (Tab), no al hacer clic con mouse. Usa el mismo
+   acento que ya inyecta el Input `color` (--ss-accent) en vez de un color
+   fijo, para que el aro calce con el acento que la página haya elegido
+   (teal por defecto, azul en formularios SSOMA/UDP, etc.). */
+.ss-trigger:focus-visible {
+  outline: 2px solid var(--ss-accent, var(--color-abril-primary));
+  outline-offset: 2px;
+}
+
+.ss-clear:focus-visible {
+  outline: 2px solid var(--ss-accent, var(--color-abril-primary));
+  outline-offset: 1px;
+}
+
+.ss-trigger-label {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  display: block;
+}
+
+.ss-option {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Opción seleccionada: texto en el color de acento y fondo claro derivado del mismo.
+   --ss-accent lo inyecta el componente (Input color), con fallback al verde primario. */
+.ss-option-selected {
+  color: var(--ss-accent, var(--color-abril-primary));
+  background: color-mix(in srgb, var(--ss-accent, var(--color-abril-primary)) 16%, white);
+}
+.ss-option-selected:hover {
+  background: color-mix(in srgb, var(--ss-accent, var(--color-abril-primary)) 26%, white);
+}
+
+/* fullText=true → muestra el texto completo (sin "…"), permitiendo que se ajuste en varias líneas.
+   El crecimiento es solo vertical: el ancho sigue siendo el del combobox (el desplegable es
+   `left-0 right-0` sobre el trigger), así que un texto largo nunca empuja a los campos vecinos. */
+.ss-trigger-label.ss-full,
+.ss-option.ss-full {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  max-width: none;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+/* El label del trigger es un flex item: sin `min-width: 0` su mínimo automático es la palabra
+   más larga y un texto sin espacios terminaría empujando la flecha/✕ fuera del botón. */
+.ss-trigger-label.ss-full {
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: left;
+}

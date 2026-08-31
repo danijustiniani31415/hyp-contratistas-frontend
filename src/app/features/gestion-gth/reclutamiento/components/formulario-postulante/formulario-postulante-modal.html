@@ -1,0 +1,232 @@
+<app-abril-modal-panel
+  variant="blue"
+  icono="ti-file-text"
+  [titulo]="(revision?.candidatoNombre | titleCase) || 'Formulario del postulante'"
+  subtitulo="Información declarada por el candidato · vista de solo lectura"
+  width="940px"
+  [preventCloseWhenDirty]="true"
+  (closeModal)="cerrar()">
+
+  @if (revision) {
+    <div class="flex flex-col gap-[16px]">
+
+      <!-- ── Aviso de estado ────────────────────────────────────────────── -->
+      @if (aprobado) {
+        <div class="flex items-start gap-[10px] rounded-[10px] border px-[16px] py-[12px]"
+             style="border-color:#a7f3d0;background:#F0FDF4">
+          <i class="ti ti-circle-check text-[20px] shrink-0" style="color:#15803D"></i>
+          <div>
+            <p class="text-[13.5px] font-bold text-emerald-800">Formulario aprobado por GTH.</p>
+            <p class="text-[12.5px] text-emerald-700 mt-[1px]">
+              Revisado por {{ (revision.revisadoNombre | titleCase) || 'GTH' }}
+              @if (revision.revisadoEn) { el {{ fmtFechaHora(revision.revisadoEn) }} }.
+            </p>
+          </div>
+        </div>
+      } @else if (rechazado) {
+        <div class="flex items-start gap-[10px] rounded-[10px] border px-[16px] py-[12px]"
+             style="border-color:#fecaca;background:#FEF2F2">
+          <i class="ti ti-circle-x text-[20px] shrink-0" style="color:#B91C1C"></i>
+          <div>
+            <p class="text-[13.5px] font-bold text-red-800">Formulario rechazado por GTH.</p>
+            <p class="text-[12.5px] text-red-700 mt-[1px]">
+              Revisado por {{ (revision.revisadoNombre | titleCase) || 'GTH' }}
+              @if (revision.revisadoEn) { el {{ fmtFechaHora(revision.revisadoEn) }} }.
+            </p>
+            @if (revision.motivoRechazo) {
+              <p class="text-[12.5px] text-red-700 mt-[4px]"><b>Motivo:</b> {{ revision.motivoRechazo }}</p>
+            }
+          </div>
+        </div>
+      } @else if (completado) {
+        <div class="flex items-start gap-[10px] rounded-[10px] border px-[16px] py-[12px]"
+             style="border-color:#bfdbfe;background:#EFF6FF">
+          <i class="ti ti-clipboard-check text-[20px] shrink-0" style="color:var(--color-abril-logo-blue)"></i>
+          <div>
+            <p class="text-[13.5px] font-bold" style="color:var(--color-abril-logo-blue)">El postulante completó el formulario.</p>
+            @if (revision.completadoEn) {
+              <p class="text-[12.5px] text-gray-600 mt-[1px]">Completado el {{ fmtFechaHora(revision.completadoEn) }}.</p>
+            }
+          </div>
+        </div>
+      } @else if (revision.existe) {
+        <div class="flex items-start gap-[10px] rounded-[10px] border px-[16px] py-[12px]"
+             style="border-color:#fde68a;background:#FFFBEB">
+          <i class="ti ti-clock text-[20px] shrink-0" style="color:#B45309"></i>
+          <div>
+            <p class="text-[13.5px] font-bold text-amber-800">Formulario enviado. Pendiente de completar.</p>
+            <p class="text-[12.5px] text-amber-700 mt-[1px]">
+              Enviado a <b>{{ revision.correoEnvio }}</b>@if (revision.enviadoEn) { el {{ fmtFechaHora(revision.enviadoEn) }} }.
+              Abajo puedes ver qué campos incluye el formulario.
+            </p>
+          </div>
+        </div>
+      } @else {
+        <div class="flex items-start gap-[10px] rounded-[10px] border px-[16px] py-[12px]"
+             style="border-color:var(--color-abril-border);background:#F9FAFB">
+          <i class="ti ti-mail text-[20px] shrink-0 text-gray-500"></i>
+          <div>
+            <p class="text-[13.5px] font-bold text-gray-700">Aún no has enviado este formulario.</p>
+            <p class="text-[12.5px] text-gray-500 mt-[1px]">
+              Envía el enlace al correo del postulante desde la bandeja. Abajo puedes ver qué campos incluye.
+            </p>
+          </div>
+        </div>
+      }
+
+      <!-- ── Coincidencia con la base de datos ──────────────────────────── -->
+      <!-- El documento que declaró el postulante ya existe en `person`, así que aprobar actualiza
+           esa ficha en vez de crear una nueva. Va después del estado y antes de los datos: es lo
+           que le cambia la decisión a GTH. El postulante nunca ve nada de esto. -->
+      @if (avisoCoincidencia; as coinc) {
+        <div class="flex items-start gap-[10px] rounded-[10px] border px-[16px] py-[12px]"
+             [style.border-color]="coinc.borde" [style.background]="coinc.fondo">
+          <i class="ti text-[20px] shrink-0" [ngClass]="coinc.icono" [style.color]="coinc.color"></i>
+          <div>
+            <p class="text-[13.5px] font-bold" [style.color]="coinc.color">{{ coinc.titulo }}</p>
+            <p class="text-[12.5px] mt-[1px]" [style.color]="coinc.color">{{ coinc.detalle }}</p>
+          </div>
+        </div>
+      }
+
+      <!-- ── CVs del candidato ──────────────────────────────────────────── -->
+      <!-- Los dos CVs del proceso, juntos y arriba: el que consiguió el reclutador y el que el
+           postulante declara como suyo. El sentido de pedirle el segundo es poder compararlos, así
+           que se abren desde el mismo sitio. -->
+      <div>
+        <h3 class="text-[13px] font-bold mb-[8px]" style="color:var(--color-abril-logo-blue)">CVs del candidato</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-[10px]">
+          <div class="ff-box">
+            <p class="ff-label">CV cargado por GTH</p>
+            @if (revision.cvGth?.url) {
+              <a [href]="revision.cvGth!.url" target="_blank" rel="noopener"
+                 class="inline-flex items-center gap-[6px] mt-[2px] text-[12.5px] font-semibold hover:underline"
+                 style="color:var(--color-abril-logo-blue)">
+                <i class="ti ti-file-text text-[15px]"></i>
+                <span class="truncate">{{ revision.cvGth!.nombre }}</span>
+              </a>
+            } @else {
+              <p class="ff-value">No cargado</p>
+            }
+          </div>
+
+          <div class="ff-box">
+            <p class="ff-label">CV documentado del postulante</p>
+            @if (revision.cvPostulante?.url) {
+              <a [href]="revision.cvPostulante!.url" target="_blank" rel="noopener"
+                 class="inline-flex items-center gap-[6px] mt-[2px] text-[12.5px] font-semibold hover:underline"
+                 style="color:#15803D">
+                <i class="ti ti-file-check text-[15px]"></i>
+                <span class="truncate">{{ revision.cvPostulante!.nombre }}</span>
+              </a>
+            } @else {
+              <p class="ff-value">{{ completado || aprobado || rechazado ? 'No lo adjuntó' : 'Pendiente de envío' }}</p>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Datos declarados (o estructura vacía) ──────────────────────── -->
+      <!-- Página 0 · Protección de datos -->
+      <div>
+        <h3 class="text-[13px] font-bold mb-[8px]" style="color:var(--color-abril-logo-blue)">Protección de datos personales</h3>
+        <div class="ff-box"><p class="ff-label">Autoriza el tratamiento de sus datos personales (Ley N.° 29733)</p><p class="ff-value">{{ boolTexto(revision.datos?.consentimientoDatosPersonales) }}</p></div>
+      </div>
+
+      <!-- Página 1 · Datos personales -->
+      <div>
+        <h3 class="text-[13px] font-bold mb-[8px]" style="color:var(--color-abril-logo-blue)">Datos personales</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-[10px]">
+          <div class="ff-box"><p class="ff-label">Nombres y apellidos</p><p class="ff-value">{{ revision.datos?.nombresCompletos || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Fecha de nacimiento</p><p class="ff-value">{{ fmtFecha(revision.datos?.fechaNacimiento) }}</p></div>
+          <div class="ff-box"><p class="ff-label">Estado civil</p><p class="ff-value">{{ revision.datos?.estadoCivil || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Tipo de documento</p><p class="ff-value">{{ revision.datos?.tipoDocumento || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Número de documento</p><p class="ff-value">{{ revision.datos?.numeroDocumento || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Distrito de residencia</p><p class="ff-value">{{ revision.datos?.distrito || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Correo personal</p><p class="ff-value">{{ revision.datos?.correoElectronico || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Celular</p><p class="ff-value">{{ revision.datos?.numeroCelular || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Pretensiones salariales</p><p class="ff-value">{{ revision.datos?.pretensionesSalariales || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Disponibilidad</p><p class="ff-value">{{ revision.datos?.disponibilidad || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">LinkedIn</p><p class="ff-value">{{ revision.datos?.linkedin || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Portafolio</p><p class="ff-value">{{ revision.datos?.portafolioLink || '—' }}</p></div>
+        </div>
+      </div>
+
+      <!-- Página 2 · Estudios -->
+      <div>
+        <h3 class="text-[13px] font-bold mb-[8px]" style="color:var(--color-abril-logo-blue)">Estudios realizados</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-[10px]">
+          <div class="ff-box"><p class="ff-label">Profesión</p><p class="ff-value">{{ revision.datos?.profesion || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Universidad o instituto</p><p class="ff-value">{{ revision.datos?.universidad || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Grado académico</p><p class="ff-value">{{ revision.datos?.gradoAcademico || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">N° de colegiatura</p><p class="ff-value">{{ revision.datos?.numeroColegiatura || '—' }}</p></div>
+        </div>
+      </div>
+
+      <!-- Página 3 · Experiencia laboral -->
+      <div>
+        <h3 class="text-[13px] font-bold mb-[8px]" style="color:var(--color-abril-logo-blue)">Experiencia laboral</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-[10px]">
+          <div class="ff-box"><p class="ff-label">Última empresa</p><p class="ff-value">{{ revision.datos?.empresa || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Área de trabajo</p><p class="ff-value">{{ revision.datos?.areaTrabajo || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Cargo desempeñado</p><p class="ff-value">{{ revision.datos?.cargo || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Motivo de cese</p><p class="ff-value">{{ revision.datos?.motivoCese || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Fecha de inicio</p><p class="ff-value">{{ fmtFecha(revision.datos?.fechaInicio) }}</p></div>
+          <div class="ff-box"><p class="ff-label">Fecha de término</p><p class="ff-value">{{ fmtFecha(revision.datos?.fechaTermino) }}</p></div>
+          <div class="ff-box"><p class="ff-label">Ingreso bruto mensual</p><p class="ff-value">{{ revision.datos?.ingresoBrutoMensual || '—' }}</p></div>
+          <div class="ff-box"><p class="ff-label">Personas a cargo</p><p class="ff-value">{{ revision.datos?.personasACargo ?? '—' }}</p></div>
+          <div class="ff-box md:col-span-2"><p class="ff-label">Jefe inmediato (nombre, cargo y contacto)</p><p class="ff-value">{{ revision.datos?.jefeInmediato || '—' }}</p></div>
+          <div class="ff-box md:col-span-2"><p class="ff-label">Funciones principales</p><p class="ff-value">{{ revision.datos?.funcionesPrincipales || '—' }}</p></div>
+          <div class="ff-box md:col-span-2"><p class="ff-label">Principales logros</p><p class="ff-value">{{ revision.datos?.logros || '—' }}</p></div>
+        </div>
+      </div>
+
+      <!-- Página 4 · Consentimiento -->
+      <div>
+        <h3 class="text-[13px] font-bold mb-[8px]" style="color:var(--color-abril-logo-blue)">Consentimiento y veracidad</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-[10px]">
+          <div class="ff-box"><p class="ff-label">Autoriza verificación de referencias</p><p class="ff-value">{{ boolTexto(revision.datos?.autorizaVerificacionReferencias) }}</p></div>
+          <div class="ff-box"><p class="ff-label">Declara veracidad de la información</p><p class="ff-value">{{ boolTexto(revision.datos?.declaracionVeracidad) }}</p></div>
+          <div class="ff-box"><p class="ff-label">Confirma documentos completados</p><p class="ff-value">{{ boolTexto(revision.datos?.confirmacionDocumentos) }}</p></div>
+        </div>
+      </div>
+
+    </div>
+  }
+
+  <!-- Footer -->
+  <div modalFooter class="w-full flex items-center justify-between gap-[10px]">
+    <button type="button" (click)="cerrar()"
+      class="h-[38px] px-[20px] rounded-[7px] text-[13px] font-medium text-gray-600 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+      Cerrar
+    </button>
+
+    <!-- Rechazar también está disponible sin completar (destraba el paso a entrevistas);
+         aprobar no: no se puede dar por buena información que nadie declaró. -->
+    @if (puedeRechazar) {
+      <div class="flex items-center gap-[10px]">
+        <button type="button" [disabled]="procesando" (click)="rechazar()"
+          class="h-[38px] px-[18px] rounded-[7px] text-[13px] font-semibold border cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          style="border-color:#fecaca;color:#B91C1C;background:#FEF2F2">
+          <i class="ti ti-x text-[14px]"></i>
+          {{ completado ? 'Rechazar formulario' : 'Rechazar sin completar' }}
+        </button>
+        <!-- Aprobar desaparece cuando el documento declarado es de un trabajador que está adentro:
+             aprobarlo actualizaría la ficha de ese trabajador. El aviso de arriba dice de quién es. -->
+        @if (puedeAprobar) {
+          <button type="button" [disabled]="procesando" (click)="aprobar()"
+            class="h-[38px] px-[20px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            style="background:#15803D">
+            <i class="ti ti-check text-[14px]"></i> Aprobar formulario
+          </button>
+        } @else if (completado) {
+          <span class="inline-flex items-center gap-[6px] h-[38px] px-[16px] rounded-[7px] text-[13px] font-semibold"
+                style="border:1px solid #fecaca;background:#FEF2F2;color:#B91C1C">
+            <i class="ti ti-lock text-[14px]"></i> Aprobación bloqueada
+          </span>
+        }
+      </div>
+    }
+  </div>
+
+</app-abril-modal-panel>

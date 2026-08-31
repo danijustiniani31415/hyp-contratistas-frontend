@@ -1,0 +1,134 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.config-card {
+  background: #fff;
+  border: 1px solid var(--color-abril-border, #e5e7eb);
+  border-radius: var(--radius-standard, 7px);
+  padding: 20px 22px;
+  max-width: 720px;
+}
+
+.config-card__head {
+  margin-bottom: 16px;
+}
+
+.config-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 6px;
+}
+.config-card__title i {
+  color: var(--color-abril-standard, #0f6e56);
+  font-size: 1.05rem;
+}
+
+.config-card__sub {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* ── Lista de destinatarios ── */
+.correo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.correo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-abril-border, #e5e7eb);
+  border-radius: var(--radius-standard, 7px);
+  background: #fafafa;
+}
+
+.correo-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.correo-item__name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+.correo-item__desc {
+  font-size: 0.78rem;
+  color: #6b7280;
+  word-break: break-word;
+}
+
+.correo-item__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.correo-item__state {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+  min-width: 66px;
+  text-align: right;
+}
+.correo-item__state--on {
+  color: var(--color-abril-standard, #0f6e56);
+}
+
+/* ── Switch ── */
+.switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  border: none;
+  background: #cbd5e1;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.18s ease;
+  flex-shrink: 0;
+}
+.switch--on {
+  background: var(--color-abril-standard, #0f6e56);
+}
+.switch:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.switch__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.18s ease;
+}
+.switch--on .switch__knob {
+  transform: translateX(20px);
+}
+
+.correo-empty {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0;
+  padding: 12px 0;
+}

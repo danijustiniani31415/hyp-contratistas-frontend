@@ -1,0 +1,88 @@
+<ng-container *ngIf="isOpen">
+  <div class="dv-overlay" (click)="close()"></div>
+
+  <div class="dv-modal">
+
+    <div class="dv-hdr">
+      <span class="dv-nombre">{{ nombreDisplay }}</span>
+      <div class="dv-hdr-actions">
+        <button *ngIf="tempUrl" type="button" class="dv-btn" (click)="descargar()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Descargar
+        </button>
+        <button type="button" class="dv-close" title="Cerrar" (click)="close()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="dv-body">
+
+      <div *ngIf="loading" class="dv-loading">
+        <span class="dv-spinner"></span>
+        <span>Cargando documento…</span>
+      </div>
+
+      <div *ngIf="!loading && tipo === 'pdf'" class="dv-pdf-wrapper">
+        <div class="dv-search-bar">
+          <input
+            #searchInput
+            type="text"
+            class="dv-search-input"
+            placeholder="Buscar texto…"
+            [value]="searchQuery"
+            (input)="searchQuery = searchInput.value; buscarTexto()"
+            (keydown.enter)="navegarBusqueda(1)"
+          />
+          <span class="dv-search-count" *ngIf="searchQuery">
+            {{ searchMatches.length ? searchIdx + 1 : 0 }} / {{ searchMatches.length }}
+          </span>
+          <button type="button" class="dv-btn dv-btn-sm" (click)="navegarBusqueda(-1)" [disabled]="!searchMatches.length">‹</button>
+          <button type="button" class="dv-btn dv-btn-sm" (click)="navegarBusqueda(1)"  [disabled]="!searchMatches.length">›</button>
+          <span class="dv-page-info" *ngIf="pdfPageCount">{{ pdfPageCount }} pág.</span>
+        </div>
+        <div class="dv-pdf-pages" #pdfContainer></div>
+      </div>
+
+      <iframe
+        *ngIf="!loading && tipo === 'office'"
+        class="dv-iframe"
+        [src]="safeUrl"
+        frameborder="0"
+        allowfullscreen
+      ></iframe>
+
+      <img
+        *ngIf="!loading && tipo === 'img'"
+        class="dv-img"
+        [src]="imgUrl"
+        [alt]="nombreDisplay"
+      />
+
+      <div *ngIf="!loading && tipo === 'no-preview'" class="dv-no-preview">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="20" y1="8" x2="14" y2="8"/>
+          <line x1="14" y1="2" x2="14" y2="8"/>
+        </svg>
+        <p class="dv-no-preview-txt">Este formato no admite previsualización.</p>
+        <button type="button" class="dv-btn dv-btn--primary" (click)="descargar()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Descargar archivo
+        </button>
+      </div>
+
+    </div>
+  </div>
+</ng-container>

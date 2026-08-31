@@ -1,0 +1,40 @@
+<div class="guides-panel" [class.large]="large">
+  <div class="guides-heading" *ngIf="showHeading" [style.color]="defaultAccent">
+    <svg width="14" height="14" viewBox="0 0 24 24" [attr.fill]="defaultAccent"><path d="M8 5v14l11-7z"/></svg>
+    <span>{{ titulo }}</span>
+  </div>
+
+  <div class="guides-scroll">
+    <div class="guides-group" *ngFor="let cat of categorias">
+      <div
+        class="group-name"
+        [class.group-toggle]="collapsible"
+        (click)="collapsible ? toggle(cat) : null"
+      >
+        <span>{{ cat.nombre }}</span>
+        <svg
+          *ngIf="collapsible"
+          class="chevron"
+          [class.collapsed]="isCollapsed(cat)"
+          width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+        ><path d="M6 9l6 6 6-6" /></svg>
+      </div>
+
+      <div class="guides-grid" *ngIf="!collapsible || !isCollapsed(cat)">
+        <a *ngFor="let v of cat.videos" [href]="v.url" target="_blank" rel="noopener noreferrer" class="guide-card">
+          <div class="guide-thumb" [style.background]="v.img ? null : accent(cat) + '14'">
+            <img *ngIf="v.img" [src]="v.img" [alt]="v.titulo" loading="lazy" />
+            <span class="guide-play" [style.background]="accent(cat)">
+              <svg width="12" height="12" fill="#ffffff" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </span>
+          </div>
+          <div class="guide-info">
+            <span class="guide-title">{{ v.titulo }}</span>
+            <span class="guide-link" [style.color]="accent(cat)">Ver guía →</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

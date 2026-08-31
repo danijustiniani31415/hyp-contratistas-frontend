@@ -1,0 +1,12 @@
+.ss-trigger-label {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  display: block;
+}
+
+.ss-option {
+  font-size: 13px;
+}

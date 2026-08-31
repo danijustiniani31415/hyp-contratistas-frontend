@@ -1,0 +1,44 @@
+<div *ngIf="!selected" class="ws-wrapper">
+  <div class="ws-input">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="7"/>
+      <path d="M21 21l-4.3-4.3"/>
+    </svg>
+    <input
+      type="text"
+      [placeholder]="placeholder"
+      [ngModel]="query"
+      (ngModelChange)="onQueryChange($event)"
+    />
+  </div>
+
+  <div *ngIf="searching" class="ws-hint">Buscando…</div>
+
+  <ul *ngIf="results.length > 0" class="ws-results">
+    <li *ngFor="let w of results" (click)="select(w)">
+      <div>
+        <div class="ws-name">{{ w.apellidoNombre }}</div>
+        <div class="ws-meta">DNI {{ w.dni }}<span *ngIf="w.empresaActual"> · {{ w.empresaActual }}</span></div>
+      </div>
+      <span class="ws-action">Seleccionar</span>
+    </li>
+  </ul>
+
+  <div *ngIf="query.length >= 2 && !searching && results.length === 0" class="ws-hint">
+    Sin resultados.
+  </div>
+</div>
+
+<div *ngIf="selected" class="ws-card">
+  <div>
+    <div class="ws-sel-name">{{ selected.apellidoNombre }}</div>
+    <div class="ws-sel-meta">
+      DNI {{ selected.dni }}
+      <span *ngIf="selected.puesto"> · {{ selected.puesto }}</span>
+    </div>
+    <div *ngIf="selected.empresaActual" class="ws-sel-meta">
+      Empresa actual: <b>{{ selected.empresaActual }}</b>
+    </div>
+  </div>
+  <button type="button" class="ws-clear" (click)="clear()">Cambiar</button>
+</div>

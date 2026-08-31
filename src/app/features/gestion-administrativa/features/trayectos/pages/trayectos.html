@@ -1,0 +1,104 @@
+<!-- Sección embebida en GaConfiguracion: el header, el botón de crear y el
+     disparador de filtros viven en el contenedor (`ga-configuracion`). -->
+<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Origen</th>
+          <th>Destino</th>
+          <th>Monto (S/)</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="filteredTrayectos.length === 0">
+          <td colspan="5" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ searchText.trim() || estadoFilter !== null ? 'Sin resultados.' : 'No hay trayectos registrados.' }}
+          </td>
+        </tr>
+
+        <tr *ngFor="let t of pagedTrayectos" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+
+          <td class="text-gray-700">{{ t.lugarOrigenNombre | titleCase }}</td>
+          <td class="text-gray-700">{{ t.lugarDestinoNombre | titleCase }}</td>
+          <td class="text-right text-gray-800 font-medium">
+            {{ t.monto | number:'1.2-2' }}
+          </td>
+
+          <td class="text-center">
+            <app-status-badge
+              [text]="t.activo ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="t.activo ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="t.activo ? '#009C87' : '#D30000'" />
+          </td>
+
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[8px]">
+              <button
+                (click)="toggle(t)"
+                [abrilBulkAction]="t.activo ? 'danger' : 'default'">
+                {{ t.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+              <button
+                (click)="openEdit(t)"
+                abrilBulkAction="default">
+                Editar
+              </button>
+            </div>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredTrayectos.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modales ─────────────────────────────────────────────────────────── -->
+<app-ga-trayecto-create
+  *ngIf="showCreateModal"
+  (closeModal)="showCreateModal = false"
+  (saved)="load()" />
+
+<app-ga-trayecto-edit
+  *ngIf="showEditModal && trayectoToEdit"
+  [trayecto]="trayectoToEdit!"
+  (closeModal)="showEditModal = false; trayectoToEdit = null"
+  (saved)="load()" />
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por origen o destino..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="estadoFilter"
+      (valueChange)="estadoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

@@ -1,0 +1,123 @@
+<div class="sidebar-inner">
+
+  <!-- Logo + toggle collapse en la misma fila -->
+  <div class="logo-section">
+    <a class="logo-content" *ngIf="!collapsed" routerLink="/inicio" title="Ir al inicio">
+      <img src="/images/abril-logo.png" alt="Abril" class="logo-img" />
+    </a>
+    <button class="toggle-btn" (click)="toggleCollapsed()" [title]="collapsed ? 'Expandir sidebar' : 'Contraer sidebar'">
+      <i class="ti ti-layout-sidebar"></i>
+    </button>
+  </div>
+
+  <!-- User profile -->
+  <div class="profile-section" (click)="toggleAccountMenu($event)" [class.menu-open]="accountMenuOpen">
+    <div class="avatar">{{ userInitials }}</div>
+    <ng-container *ngIf="!collapsed">
+      <div class="profile-info">
+        <span class="profile-name">{{ userName || 'Usuario' }}</span>
+        <span class="profile-role">{{ userRole || '' }}</span>
+      </div>
+      <i class="ti ti-chevron-down chev" [class.rotated]="accountMenuOpen"></i>
+    </ng-container>
+
+    <!-- Account dropdown -->
+    <div class="account-menu" *ngIf="accountMenuOpen && !collapsed" (click)="$event.stopPropagation()">
+      <div class="account-info" *ngIf="userEmail">
+        <span class="account-email">{{ userEmail }}</span>
+      </div>
+      <button class="account-logout" (click)="logout()">
+        <i class="ti ti-logout"></i>
+        Cerrar sesión
+      </button>
+    </div>
+  </div>
+
+  <!-- Separator -->
+  <div class="separator"></div>
+
+  <!-- Main module list -->
+  <nav class="modules-nav">
+    <ng-container *ngFor="let module of mainModules; trackBy: trackByModuleKey">
+
+      <!-- Module header row -->
+      <div
+        class="module-item"
+        [class.active]="isActiveModule(module.baseRoute)"
+        [class.expanded]="expandedModule === module.key"
+        (click)="onModuleClick(module)"
+        [title]="collapsed ? module.label : ''"
+      >
+        <div class="active-bar" *ngIf="isActiveModule(module.baseRoute)"></div>
+        <app-nav-icon [key]="module.iconKey" [size]="20" />
+        <span class="module-label" *ngIf="!collapsed">{{ module.label }}</span>
+        <i
+          class="ti ti-chevron-down accordion-chev"
+          *ngIf="!collapsed && hasAccordion(module)"
+          [class.rotated]="expandedModule === module.key"
+        ></i>
+      </div>
+
+      <!-- Accordion panel: sub-items -->
+      <div class="accordion-panel" *ngIf="!collapsed && expandedModule === module.key">
+
+        <!-- Direct items -->
+        <a
+          *ngFor="let item of navService.filterItems(module.items); trackBy: trackByItemRoute"
+          [routerLink]="item.route"
+          class="sub-item"
+          [class.sub-active]="isActiveRoute(item.route)"
+        >
+          {{ item.label }}
+        </a>
+
+        <!-- Groups with nested items -->
+        <ng-container *ngFor="let group of navService.filterGroups(module.groups); trackBy: trackByGroupLabel">
+          <div class="group-label" (click)="toggleSidebarGroup(group.label, $event)">
+            <span>{{ group.label }}</span>
+            <i class="ti ti-chevron-down group-chev" [class.rotated]="expandedGroup === group.label"></i>
+          </div>
+          <div class="group-items" *ngIf="expandedGroup === group.label">
+            <a
+              *ngFor="let item of group.items; trackBy: trackByItemRoute"
+              [routerLink]="item.route"
+              class="sub-item indent"
+              [class.sub-active]="isActiveRoute(item.route)"
+            >
+              {{ item.label }}
+            </a>
+          </div>
+        </ng-container>
+
+      </div>
+    </ng-container>
+  </nav>
+
+  <!-- Separator -->
+  <div class="separator"></div>
+
+  <!-- Bottom: configuración + logout -->
+  <div class="bottom-nav">
+    <div
+      *ngIf="configModule"
+      class="module-item"
+      [class.active]="isActiveModule(configModule.baseRoute)"
+      (click)="onModuleClick(configModule)"
+      [title]="collapsed ? configModule.label : ''"
+    >
+      <div class="active-bar" *ngIf="isActiveModule(configModule.baseRoute)"></div>
+      <app-nav-icon [key]="configModule.iconKey" [size]="20" />
+      <span class="module-label" *ngIf="!collapsed">{{ configModule.label }}</span>
+    </div>
+
+    <button
+      class="module-item logout-item"
+      (click)="logout()"
+      [title]="collapsed ? 'Cerrar sesión' : ''"
+    >
+      <app-nav-icon key="logout" [size]="20" />
+      <span class="module-label" *ngIf="!collapsed">Cerrar sesión</span>
+    </button>
+  </div>
+
+</div>

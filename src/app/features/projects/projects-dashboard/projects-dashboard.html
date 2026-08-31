@@ -1,0 +1,455 @@
+<app-abril-page-header
+  [badge]="'PROYECTOS · ' + anioActual"
+  titulo="Dashboard de Proyectos"
+  subtitulo="Estado general y métricas de todos los proyectos."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="page-wrapper flex-1 overflow-y-auto">
+
+  <!-- ── KPIs ── -->
+  <div class="kpi-grid">
+
+    <div class="kpi-card kpi-azul">
+      <div class="kpi-top">
+        <span class="kpi-label">Total Proyectos</span>
+        <span class="kpi-icon kpi-icon-azul">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+          </svg>
+        </span>
+      </div>
+      <span class="kpi-value">{{ data?.totalProyectos ?? '—' }}</span>
+      <span class="kpi-sub">proyectos activos</span>
+    </div>
+
+    <div class="kpi-card kpi-verde">
+      <div class="kpi-top">
+        <span class="kpi-label">Avance Promedio</span>
+        <span class="kpi-icon kpi-icon-verde">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </span>
+      </div>
+      <span class="kpi-value kpi-value-verde">
+        {{ data !== null ? ((data.avancePromedio ?? 0) | number:'1.0-1') + '%' : '—' }}
+      </span>
+      <div class="kpi-progressbar" *ngIf="data !== null">
+        <div class="kpi-progressfill" [style.width]="avanceBarWidth(data.avancePromedio)"></div>
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-rojo">
+      <div class="kpi-top">
+        <span class="kpi-label">Con Retraso</span>
+        <span class="kpi-icon kpi-icon-rojo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </span>
+      </div>
+      <span class="kpi-value kpi-value-rojo">{{ data?.conRetraso ?? '—' }}</span>
+      <span class="kpi-sub">requieren atención</span>
+    </div>
+
+    <div class="kpi-card kpi-naranja">
+      <div class="kpi-top">
+        <span class="kpi-label">Actividades Vencidas</span>
+        <span class="kpi-icon kpi-icon-naranja">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </span>
+      </div>
+      <span class="kpi-value kpi-value-naranja">{{ data?.actividadesVencidas ?? '—' }}</span>
+      <span class="kpi-sub">en todos los proyectos</span>
+    </div>
+
+  </div>
+
+  <!-- ── Filtros ── -->
+  <div class="card filters-card">
+    <div class="section-bar" style="margin-bottom: 0.75rem;">
+      <span class="section-title">Filtros</span>
+    </div>
+    <div class="filters-grid">
+      <div>
+        <label class="field-label">Proyecto</label>
+        <app-search-select
+          [options]="proyectos"
+          displayField="nombre"
+          valueField="id"
+          placeholder="Todos los proyectos"
+          [value]="selectedProyectoId"
+          (valueChange)="selectedProyectoId = $event"
+        ></app-search-select>
+      </div>
+      <div>
+        <label class="field-label">Responsable</label>
+        <app-search-select
+          [options]="responsables"
+          displayField="nombre"
+          valueField="id"
+          placeholder="Todos los responsables"
+          [value]="selectedResponsableId"
+          (valueChange)="selectedResponsableId = $event"
+        ></app-search-select>
+      </div>
+      <div>
+        <label class="field-label">Estado</label>
+        <select class="field-input" [(ngModel)]="selectedEstado">
+          <option value="">Todos</option>
+          <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Especialidad</label>
+        <select class="field-input" [(ngModel)]="selectedEspecialidad">
+          <option value="">Todas</option>
+          <option *ngFor="let e of especialidades" [value]="e">{{ e }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Fin Programado desde</label>
+        <input type="date" class="field-input" [(ngModel)]="fechaDesde" />
+      </div>
+      <div>
+        <label class="field-label">Fin Programado hasta</label>
+        <input type="date" class="field-input" [(ngModel)]="fechaHasta" />
+      </div>
+      <div class="filter-actions">
+        <button class="btn-primary" (click)="applyFilters()" [disabled]="loading">Buscar</button>
+        <button class="btn-ghost" (click)="clearFilters()" [disabled]="loading">Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Fila de charts: Donut + Barras ── -->
+  <div class="charts-row">
+
+    <!-- Donut: distribución por estado -->
+    <div class="card chart-panel">
+      <div class="panel-header">
+        <span class="section-title">Distribución por Estado</span>
+        <span class="section-sub" *ngIf="data?.distribucionPorEstado?.length">
+          {{ data!.totalProyectos }} proyectos
+        </span>
+      </div>
+      <div class="donut-body">
+        <canvas #donutCanvas [hidden]="donutEmpty"></canvas>
+        <div class="donut-center" *ngIf="data?.totalProyectos && !donutEmpty">
+          <span class="donut-num">{{ data!.totalProyectos }}</span>
+          <span class="donut-lbl">total</span>
+        </div>
+        <div class="sin-datos-msg" *ngIf="donutEmpty && !loading">Sin datos</div>
+      </div>
+    </div>
+
+    <!-- Barras: avance por proyecto -->
+    <div class="card chart-panel">
+      <div class="panel-header">
+        <span class="section-title">Avance por Proyecto</span>
+        <span class="section-sub">Programado vs. Real — top 12</span>
+      </div>
+      <div class="barras-body">
+        <canvas #barrasCanvas [hidden]="barrasEmpty"></canvas>
+        <div class="sin-datos-msg" *ngIf="barrasEmpty && !loading">Sin datos</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Heatmap ── -->
+  <div class="card heatmap-card" *ngIf="data?.heatmapCarga?.length">
+    <div class="panel-header">
+      <span class="section-title">Carga por Responsable y Semana</span>
+      <span class="section-sub">Actividades asignadas por semana</span>
+    </div>
+    <div class="heatmap-scroll">
+      <table class="heatmap-table">
+        <thead>
+          <tr>
+            <th class="hm-name-th">Responsable</th>
+            <th *ngFor="let sem of heatmapSemanas" class="hm-week-th">{{ sem }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of data!.heatmapCarga">
+            <td class="hm-name-td">{{ row.responsable }}</td>
+            <td
+              *ngFor="let s of row.semanas"
+              class="hm-cell"
+              [style.background]="heatmapCellBg(s.cantidad)"
+              [style.color]="heatmapCellFg(s.cantidad)"
+              [title]="s.semana + ': ' + s.cantidad + ' actividades'"
+            >{{ s.cantidad || '' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Fila inferior: Ranking + Tabla de proyectos ── -->
+  <div class="bottom-row">
+
+    <!-- Ranking de responsables -->
+    <div class="card ranking-card">
+      <div class="panel-header">
+        <span class="section-title">Ranking Responsables</span>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 36px;">#</th>
+              <th>Responsable</th>
+              <th style="text-align: center;">Proy.</th>
+              <th style="text-align: center;">Compl.</th>
+              <th style="text-align: center;">Venc.</th>
+              <th style="text-align: center;">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngIf="data?.rankingResponsables?.length">
+              <tr *ngFor="let r of data!.rankingResponsables">
+                <td>
+                  <span
+                    class="rank-badge"
+                    [class.rank-gold]="r.posicion === 1"
+                    [class.rank-silver]="r.posicion === 2"
+                    [class.rank-bronze]="r.posicion === 3"
+                  >{{ r.posicion }}</span>
+                </td>
+                <td class="resp-name">{{ r.nombre }}</td>
+                <td style="text-align: center;">{{ r.proyectos }}</td>
+                <td style="text-align: center;" class="num-verde">{{ r.completadas }}</td>
+                <td style="text-align: center;" class="num-rojo">{{ r.vencidas }}</td>
+                <td style="text-align: center;">
+                  <span class="score-badge">{{ r.score }}</span>
+                </td>
+              </tr>
+            </ng-container>
+            <tr *ngIf="loading">
+              <td colspan="6" class="empty-row">Cargando...</td>
+            </tr>
+            <tr *ngIf="!loading && !data?.rankingResponsables?.length">
+              <td colspan="6" class="empty-row">Sin datos de ranking</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tabla de proyectos -->
+    <div class="card table-card">
+      <div class="panel-header">
+        <span class="section-title">Detalle por Proyecto</span>
+        <span class="section-sub">Clic en una fila para ver detalle</span>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 24px;"></th>
+              <th>Proyecto</th>
+              <th>Responsable</th>
+              <th style="width: 200px;">Avance</th>
+              <th style="text-align: center;">Retraso</th>
+              <th style="text-align: center;">Vencidas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngIf="!loading && data?.proyectos?.length">
+              <tr
+                *ngFor="let item of data!.proyectos"
+                class="row-clickable"
+                (click)="openPanel(item)"
+              >
+                <td>
+                  <span class="sem-dot" [class]="semaforoClass(item.semaforo)"
+                        [title]="semaforoLabel(item.semaforo)"></span>
+                </td>
+                <td class="proyecto-nombre">{{ item.projectDescription }}</td>
+                <td class="resp-cell">{{ item.responsableNombre || '—' }}</td>
+                <td>
+                  <div class="avance-stack">
+                    <div class="avance-pair">
+                      <span class="avance-mini-lbl">Prog</span>
+                      <div class="avance-bar-bg">
+                        <div class="avance-bar-fill fill-prog" [style.width]="avanceBarWidth(item.avanceProgramado)"></div>
+                      </div>
+                      <span class="avance-pct">{{ item.avanceProgramado | number:'1.0-1' }}%</span>
+                    </div>
+                    <div class="avance-pair">
+                      <span class="avance-mini-lbl">Real</span>
+                      <div class="avance-bar-bg">
+                        <div
+                          class="avance-bar-fill"
+                          [class]="avanceFillClass(item.semaforo)"
+                          [style.width]="avanceBarWidth(item.avanceReal)"
+                        ></div>
+                      </div>
+                      <span class="avance-pct">{{ item.avanceReal | number:'1.0-1' }}%</span>
+                    </div>
+                  </div>
+                </td>
+                <td style="text-align: center;">
+                  <span *ngIf="(item.diasRetraso ?? 0) > 0" class="badge chip-red">
+                    {{ item.diasRetraso }}d
+                  </span>
+                  <span *ngIf="(item.diasRetraso ?? 0) <= 0" class="badge chip-green">Al día</span>
+                </td>
+                <td style="text-align: center;">
+                  <span *ngIf="(item.actividadesVencidas ?? 0) > 0" class="badge chip-orange">
+                    {{ item.actividadesVencidas }}
+                  </span>
+                  <span *ngIf="(item.actividadesVencidas ?? 0) === 0" class="text-muted">—</span>
+                </td>
+              </tr>
+            </ng-container>
+            <tr *ngIf="loading">
+              <td colspan="6" class="empty-row">Cargando...</td>
+            </tr>
+            <tr *ngIf="!loading && !data?.proyectos?.length">
+              <td colspan="6" class="empty-row">No hay proyectos para los filtros seleccionados.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Backdrop del panel ── -->
+<div class="panel-backdrop" [class.visible]="panelOpen" (click)="closePanel()"></div>
+
+<!-- ── Panel lateral deslizable ── -->
+<div class="side-panel" [class.panel-open]="panelOpen">
+
+  <div class="panel-head">
+    <div class="panel-head-info">
+      <h2 class="panel-title">{{ selectedProyecto?.projectDescription || 'Detalle del Proyecto' }}</h2>
+      <span
+        *ngIf="selectedProyecto"
+        class="badge"
+        [class]="chipBySemaforo(selectedProyecto.semaforo)"
+      >{{ semaforoLabel(selectedProyecto?.semaforo) }}</span>
+    </div>
+    <button class="btn-panel-close" (click)="closePanel()" title="Cerrar">✕</button>
+  </div>
+
+  <!-- KPIs del proyecto -->
+  <div class="panel-kpis" *ngIf="detalle && !panelLoading">
+    <div class="panel-kpi">
+      <span class="panel-kpi-label">Programado</span>
+      <span class="panel-kpi-value">{{ detalle.avanceProgramado | number:'1.0-1' }}%</span>
+    </div>
+    <div class="panel-kpi">
+      <span class="panel-kpi-label">Real</span>
+      <span
+        class="panel-kpi-value"
+        [class.pkv-verde]="detalle.semaforo === 'verde'"
+        [class.pkv-rojo]="detalle.semaforo === 'rojo'"
+        [class.pkv-naranja]="detalle.semaforo === 'amarillo'"
+      >{{ detalle.avanceReal | number:'1.0-1' }}%</span>
+    </div>
+    <div class="panel-kpi">
+      <span class="panel-kpi-label">Días retraso</span>
+      <span class="panel-kpi-value" [class.pkv-rojo]="(detalle.diasRetraso ?? 0) > 0">
+        {{ (detalle.diasRetraso ?? 0) > 0 ? detalle.diasRetraso + 'd' : '—' }}
+      </span>
+    </div>
+    <div class="panel-kpi">
+      <span class="panel-kpi-label">Act. vencidas</span>
+      <span
+        class="panel-kpi-value"
+        [class.pkv-rojo]="(detalle.actividadesVencidas?.length ?? 0) > 0"
+      >{{ detalle.actividadesVencidas?.length ?? 0 }}</span>
+    </div>
+  </div>
+
+  <!-- Estado de carga -->
+  <div class="panel-loading-state" *ngIf="panelLoading">
+    <div class="loader-dots"><span></span><span></span><span></span></div>
+    <p>Cargando detalle del proyecto...</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="panel-tabs" *ngIf="detalle && !panelLoading">
+    <button [class.active]="activeTab === 'gantt'" (click)="activeTab = 'gantt'">
+      Gantt
+    </button>
+    <button [class.active]="activeTab === 'actividades'" (click)="activeTab = 'actividades'">
+      Actividades críticas
+      <span
+        *ngIf="(detalle.actividadesVencidas?.length ?? 0) > 0"
+        class="tab-badge"
+      >{{ detalle.actividadesVencidas.length }}</span>
+    </button>
+  </div>
+
+  <!-- Gantt (siempre en DOM para evitar re-init) -->
+  <div
+    class="panel-tab-body"
+    *ngIf="detalle && !panelLoading"
+    [style.display]="activeTab === 'gantt' ? 'block' : 'none'"
+  >
+    <div #ganttPanel class="gantt-panel-container"></div>
+  </div>
+
+  <!-- Actividades críticas / vencidas -->
+  <div
+    class="panel-tab-body panel-tab-acts"
+    *ngIf="detalle && !panelLoading && activeTab === 'actividades'"
+  >
+    <!-- Vencidas -->
+    <div *ngIf="detalle.actividadesVencidas?.length">
+      <h4 class="act-section-title act-title-red">
+        <span class="act-dot act-dot-red"></span> Actividades Vencidas
+      </h4>
+      <div class="act-list">
+        <div class="act-item" *ngFor="let a of detalle.actividadesVencidas">
+          <div class="act-item-main">
+            <span class="act-nombre">{{ a.nombre }}</span>
+            <span class="act-resp">{{ a.responsable || '—' }}</span>
+          </div>
+          <div class="act-item-meta">
+            <span class="badge chip-red">{{ a.diasRetraso }}d</span>
+            <span class="act-fecha">{{ a.fechaFin }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Críticas -->
+    <div *ngIf="detalle.actividadesCriticas?.length" style="margin-top: 1rem;">
+      <h4 class="act-section-title act-title-orange">
+        <span class="act-dot act-dot-orange"></span> Actividades Críticas
+      </h4>
+      <div class="act-list">
+        <div class="act-item" *ngFor="let a of detalle.actividadesCriticas">
+          <div class="act-item-main">
+            <span class="act-nombre">{{ a.nombre }}</span>
+            <span class="act-resp">{{ a.responsable || '—' }}</span>
+          </div>
+          <div class="act-item-meta">
+            <span class="act-fecha">Fin: {{ a.fechaFin }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p
+      *ngIf="!detalle.actividadesVencidas?.length && !detalle.actividadesCriticas?.length"
+      class="empty-row"
+    >
+      Sin actividades vencidas ni críticas.
+    </p>
+  </div>
+
+</div>

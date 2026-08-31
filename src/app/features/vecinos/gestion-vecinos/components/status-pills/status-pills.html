@@ -1,0 +1,13 @@
+<div class="flex flex-wrap items-center gap-1">
+  <button
+    *ngFor="let opt of options"
+    type="button"
+    (click)="select(opt.id)"
+    class="rounded-full border font-medium cursor-pointer transition-colors whitespace-nowrap"
+    [ngClass]="[
+      size === 'xs' ? 'px-2 py-[2px] text-[10px]' : 'px-2.5 py-[3px] text-[11px]',
+      classesFor(opt)
+    ]">
+    {{ opt.descripcion }}
+  </button>
+</div>

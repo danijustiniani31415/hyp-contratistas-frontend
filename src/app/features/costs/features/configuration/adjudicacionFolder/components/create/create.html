@@ -1,0 +1,46 @@
+<app-base-modal [title]="'AGREGAR CARPETA DE ADJUDICACIONES'" width="w-[560px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-5 mt-5">
+
+    <!-- Proyecto -->
+    <div class="flex flex-col gap-1.5">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Proyecto</label>
+      <app-search-select
+        [options]="formData.projects"
+        valueField="projectId"
+        displayField="projectDescription"
+        placeholder="— Selecciona un proyecto —"
+        [showLabel]="false"
+        [(value)]="projectId">
+      </app-search-select>
+    </div>
+
+    <!-- Tipo de carpeta -->
+    <div class="flex flex-col gap-1.5">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Tipo de carpeta</label>
+      <app-search-select
+        [options]="formData.folderTypes"
+        valueField="folderTypeId"
+        displayField="folderTypeDescription"
+        placeholder="— Selecciona el tipo de carpeta —"
+        [showLabel]="false"
+        [(value)]="folderTypeId">
+      </app-search-select>
+    </div>
+
+    <!-- Navegador de carpetas -->
+    <app-folder-picker
+      [linkUrl]="linkUrl"
+      (linkUrlChange)="linkUrl = $event"
+      (selected)="onFolderSelected($event)">
+    </app-folder-picker>
+
+    <!-- Guardar -->
+    <div class="flex justify-center pt-1">
+      <button (click)="save()"
+        class="w-[140px] py-2 rounded-lg cursor-pointer transition-colors" style="background:var(--color-abril-primary)">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+</app-base-modal>

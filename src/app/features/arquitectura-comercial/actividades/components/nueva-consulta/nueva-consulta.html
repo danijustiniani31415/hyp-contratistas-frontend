@@ -1,0 +1,97 @@
+<app-base-modal *ngIf="open" title="Nueva Consulta" width="w-[600px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <div class="grid-2">
+
+      <div class="col-span-2">
+        <label class="field-label">Etapa del nombre *</label>
+        <select class="field-input" [(ngModel)]="model.etapaNombre">
+          <option value="">Seleccionar etapa</option>
+          <option *ngFor="let e of etapasNombre" [value]="e">{{ e }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Número RFI *</label>
+        <input
+          type="number"
+          class="field-input"
+          [(ngModel)]="model.rfiNumero"
+          placeholder="Ej: 1"
+          min="1"
+        />
+      </div>
+
+      <div>
+        <label class="field-label">Ubicación *</label>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="model.ubicacion"
+          placeholder="Ej: Piso 3"
+        />
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Nombre generado</label>
+        <input
+          type="text"
+          class="field-input field-readonly"
+          [value]="nombreCalculado || '—'"
+          readonly
+        />
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Etapa *</label>
+        <select class="field-input" [(ngModel)]="model.etapaId" [disabled]="loadingEtapas">
+          <option [ngValue]="null">{{ loadingEtapas ? 'Cargando…' : 'Sin etapa' }}</option>
+          <option *ngFor="let e of etapas; trackBy: trackByEtapa" [ngValue]="e.id">{{ e.nombre }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Categoría *</label>
+        <select class="field-input" [(ngModel)]="model.categoriaId">
+          <option [ngValue]="null">Sin categoría</option>
+          <option *ngFor="let c of categorias" [ngValue]="c.id">{{ c.nombre }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Especialidad *</label>
+        <select class="field-input" [(ngModel)]="model.especialidadId">
+          <option [ngValue]="null">Sin especialidad</option>
+          <option *ngFor="let e of especialidades" [ngValue]="e.id">{{ e.nombre }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Inicio programado *</label>
+        <input type="date" class="field-input" [(ngModel)]="model.inicioProgramado" />
+      </div>
+
+      <div>
+        <label class="field-label">Fin programado</label>
+        <input type="date" class="field-input" [(ngModel)]="model.finProgramado" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Responsable</label>
+        <select class="field-input" [(ngModel)]="model.userId">
+          <option [ngValue]="null">— sin responsable —</option>
+          <option *ngFor="let s of supervisores; trackBy: trackBySupervisor" [ngValue]="s.id">
+            {{ s.apellidoNombre }}
+          </option>
+        </select>
+      </div>
+
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Crear consulta' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

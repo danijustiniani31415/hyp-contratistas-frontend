@@ -1,0 +1,28 @@
+<div class="fixed inset-0 bg-black z-50 flex flex-col justify-center items-center">
+
+  <video
+    #video
+    autoplay
+    playsinline
+    class="w-full h-full object-cover">
+  </video>
+
+  <canvas #canvas hidden></canvas>
+
+  <!-- botones -->
+  <div class="absolute bottom-10 flex gap-10 items-center">
+
+    <button
+      (click)="closeCamera()"
+      class="bg-red-500 text-white px-6 py-3 rounded-lg">
+      Cancelar
+    </button>
+
+    <button
+      (click)="takePhoto()"
+      class="w-20 h-20 bg-white rounded-full border-4 border-gray-300">
+    </button>
+
+  </div>
+
+</div>

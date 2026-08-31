@@ -1,0 +1,154 @@
+<app-abril-page-header
+  badge="CONTRATISTAS"
+  titulo="Homologación de Contratistas"
+  subtitulo="Gestión y evaluación de empresas contratistas habilitadas."
+  [tabs]="[
+    { label: 'Registro de contratistas',     icono: 'ti-file-plus',       route: '/contractors/registro-interno', featureKey: 'contractors.registro' },
+    { label: 'Homologación de contratistas', icono: 'ti-clipboard-check', route: '/contractors/management',        featureKey: 'contractors.management' }
+  ]">
+</app-abril-page-header>
+
+<div class="bg-white rounded-lg p-5 flex-1 min-h-0 flex flex-col gap-3">
+
+  <!-- ── FILTROS ───────────────────────────────────────────────────── -->
+  <div class="flex flex-wrap gap-4 py-1 items-end">
+
+    <!-- Razón social -->
+    <div class="w-[220px] flex flex-col gap-[6px]">
+      <label class="text-sm text-[#64BC04] font-medium">Razón social</label>
+      <input
+        type="text"
+        [(ngModel)]="searchName"
+        (keyup.enter)="search()"
+        placeholder="Buscar…"
+        class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors" />
+    </div>
+
+    <!-- RUC -->
+    <div class="w-[160px] flex flex-col gap-[6px]">
+      <label class="text-sm text-[#64BC04] font-medium">RUC</label>
+      <input
+        type="text"
+        [(ngModel)]="searchRuc"
+        (keyup.enter)="search()"
+        placeholder="Buscar…"
+        class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors" />
+    </div>
+
+    <!-- Estado -->
+    <div class="w-[180px]">
+      <app-search-select
+        label="Estado"
+        placeholder="Todos"
+        [options]="stateOptions"
+        valueField="id"
+        displayField="label"
+        [value]="searchStateId"
+        (valueChange)="searchStateId = $event">
+      </app-search-select>
+    </div>
+
+    <!-- Filtros avanzados -->
+    <ng-container *ngIf="showAdvanced">
+
+      <div class="w-[160px] flex flex-col gap-[6px]">
+        <label class="text-sm text-[#64BC04] font-medium">DNI representante</label>
+        <input
+          type="text"
+          [(ngModel)]="searchDni"
+          (keyup.enter)="search()"
+          placeholder="Buscar…"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors" />
+      </div>
+
+      <div class="w-[220px] flex flex-col gap-[6px]">
+        <label class="text-sm text-[#64BC04] font-medium">Nombre del representante</label>
+        <input
+          type="text"
+          [(ngModel)]="searchRepName"
+          (keyup.enter)="search()"
+          placeholder="Buscar…"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors" />
+      </div>
+
+      <div class="w-[200px] flex flex-col gap-[6px]">
+        <label class="text-sm text-[#64BC04] font-medium">Partida registral</label>
+        <input
+          type="text"
+          [(ngModel)]="searchRegistry"
+          (keyup.enter)="search()"
+          placeholder="Buscar…"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors" />
+      </div>
+
+    </ng-container>
+
+    <!-- Botón búsqueda avanzada -->
+    <button type="button" (click)="showAdvanced = !showAdvanced"
+      class="h-[42px] px-4 bg-[#E5F7D1] rounded-lg text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors flex items-center gap-2 self-end">
+      <svg class="w-4 h-4" viewBox="0 0 15 15" fill="none">
+        <path fill-rule="evenodd" clip-rule="evenodd"
+          d="M6.417 0v9.167H5.5V11H6.417v3.667H8.25V11h.917V9.167H8.25V0H6.417ZM.917 0v3.668H0V5.5h.917v9.167H2.75V5.5h.917V3.668H2.75V0H.917ZM11.916.0002V5.5h-.917v1.833h.917v7.334h1.834V7.333h.917V5.5h-.917V0l-1.834.0002Z"
+          fill="#64BC04"/>
+      </svg>
+      {{ showAdvanced ? 'Ocultar filtros' : 'Búsqueda avanzada' }}
+    </button>
+
+    <!-- Botón buscar -->
+    <button type="button" (click)="search()"
+      class="h-[42px] px-5 bg-[#64BC04] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2 self-end">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
+      </svg>
+      Buscar
+    </button>
+
+    <!-- Contador + toggle de vista -->
+    <div class="ml-auto flex items-center gap-3 self-end pb-[2px]">
+      <span class="text-xs text-gray-400">{{ totalRecords }} registros</span>
+      <app-view-toggle [modes]="viewModes" [(value)]="viewMode"></app-view-toggle>
+    </div>
+
+  </div>
+
+  <!-- ── TABLA / CARDS ────────────────────────────────────────────── -->
+  <app-contractor-management-list
+    *ngIf="viewMode === 'table'"
+    [contractors]="contractors"
+    (rowClick)="openDetail($event)"
+    class="flex flex-1 min-h-0 flex-col">
+  </app-contractor-management-list>
+
+  <!-- ── CARDS ─────────────────────────────────────────────────────  -->
+  <div *ngIf="viewMode === 'card'" class="flex-1 min-h-0 overflow-y-auto">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pb-1">
+      <app-contractor-management-card
+        *ngFor="let item of contractors"
+        [item]="item"
+        (cardClick)="openDetail($event)">
+      </app-contractor-management-card>
+
+      <p *ngIf="contractors.length === 0"
+        class="sm:col-span-2 lg:col-span-3 text-center text-sm text-gray-400 italic py-10">
+        No hay contratistas registrados.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── PAGINADOR ─────────────────────────────────────────────────── -->
+  <app-paginator
+    [totalRecords]="totalRecords"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    (pageChange)="load($event)">
+  </app-paginator>
+
+</div>
+
+<!-- ── MODAL DETALLE ─────────────────────────────────────────────── -->
+<app-contractor-management-detail
+  *ngIf="selectedContractor"
+  [item]="selectedContractor"
+  (closeModal)="closeDetail()"
+  (actionCompleted)="load(currentPage)">
+</app-contractor-management-detail>

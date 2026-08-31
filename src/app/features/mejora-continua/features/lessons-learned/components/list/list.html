@@ -1,0 +1,112 @@
+<div class="w-full rounded-lg overflow-x-auto border border-gray-200">
+  <table class="table-auto w-full">
+    <thead class="bg-[var(--color-abril-standard-light)] border-b border-[var(--color-abril-standard-border)] sticky top-0">
+      <tr class="text-[var(--color-abril-standard)] text-sm">
+        <th class="py-2 px-3 text-left font-semibold w-[280px]">Datos generales</th>
+        <th class="py-2 px-3 text-center font-semibold w-[200px]">Descripcion</th>
+        <th class="py-2 px-3 text-center font-semibold w-[200px]">Causas</th>
+        <th class="py-2 px-3 text-center font-semibold w-[200px]">Leccion aprendida</th>
+        <th class="py-2 px-3 text-center font-semibold w-[200px]">Impacto en obra</th>
+        <th class="py-2 px-2 text-center font-semibold w-[150px]">Oportunidad</th>
+        <th class="py-2 px-2 text-center font-semibold w-[150px]">Mejora</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of lessons" class="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+
+        <!-- Datos generales -->
+        <td class="px-2 py-2 bg-[var(--color-abril-standard-light)] border-r border-[var(--color-abril-standard-border)] cursor-pointer w-[280px]" (click)="openDetail(item.lessonId, $event, 'general')">
+
+          <!-- Estado de aprobación -->
+          <span class="inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full mb-1"
+            [ngClass]="{
+              'bg-amber-100 text-amber-700': item.approvalStatus === 'PENDIENTE',
+              'bg-[var(--color-status-success-light)] text-[var(--color-status-success)]': item.approvalStatus === 'APROBADA',
+              'bg-red-100 text-red-700': item.approvalStatus === 'RECHAZADA'
+            }">{{ item.approvalStatus }}</span>
+
+          <!-- Proyecto -->
+          <div class="flex items-center gap-2" title="Proyecto">
+            <svg class="min-w-5 min-h-5 w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none">
+              <path d="M19 3H15.702C15.603 2.853 15.496 2.711 15.382 2.575L15.372 2.563C14.637 1.708 13.603 1.165 12.482 1.045C12.164 .985 11.836.985 11.518 1.045C10.397 1.165 9.363 1.708 8.628 2.563L8.618 2.575C8.504 2.711 8.397 2.852 8.298 2.999V3H5C4.205 3.001 3.442 3.317 2.88 3.88C2.317 4.442 2.001 5.205 2 6V20C2.001 20.795 2.317 21.558 2.88 22.12C3.442 22.683 4.205 22.999 5 23H19C19.795 22.999 20.558 22.683 21.12 22.12C21.683 21.558 21.999 20.795 22 20V6C21.999 5.205 21.683 4.442 21.12 3.88C20.558 3.317 19.795 3.001 19 3ZM20 20C20 20.265 19.895 20.52 19.707 20.707C19.52 20.895 19.265 21 19 21H5C4.735 21 4.48 20.895 4.293 20.707C4.105 20.52 4 20.265 4 20V6C4 5.735 4.105 5.48 4.293 5.293C4.48 5.105 4.735 5 5 5H9.55C9.665 4.435 9.971 3.927 10.418 3.562C10.864 3.197 11.423 2.998 12 2.998C12.577 2.998 13.136 3.197 13.582 3.562C14.029 3.927 14.335 4.435 14.45 5H19C19.265 5 19.52 5.105 19.707 5.293C19.895 5.48 20 5.735 20 6V20Z" fill="var(--color-abril-standard)"/>
+            </svg>
+            <p [title]="item.projectDescription" class="line-clamp-1 text-sm">{{ item.projectDescription }}</p>
+          </div>
+
+          <!-- Periodo -->
+          <div class="flex items-center gap-2" title="Periodo">
+            <svg class="min-w-5 min-h-5 w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2C17.523 2 22 6.477 22 12C22 17.523 17.523 22 12 22C6.477 22 2 17.523 2 12C2 6.477 6.477 2 12 2ZM12 4C9.878 4 7.843 4.843 6.343 6.343C4.843 7.843 4 9.878 4 12C4 14.122 4.843 16.157 6.343 17.657C7.843 19.157 9.878 20 12 20C14.122 20 16.157 19.157 17.657 17.657C19.157 16.157 20 14.122 20 12C20 9.878 19.157 7.843 17.657 6.343C16.157 4.843 14.122 4 12 4ZM12 6C12.245 6 12.481 6.09 12.664 6.253C12.847 6.415 12.964 6.64 12.993 6.883L13 7V11.586L15.707 14.293C15.886 14.473 15.99 14.714 15.998 14.968C16.006 15.222 15.917 15.47 15.749 15.66C15.581 15.851 15.346 15.97 15.094 15.994C14.841 16.019 14.588 15.945 14.387 15.79L14.293 15.707L11.293 12.707C11.138 12.551 11.038 12.349 11.009 12.131L11 12V7C11 6.735 11.105 6.48 11.293 6.293C11.48 6.105 11.735 6 12 6Z" fill="var(--color-abril-standard)"/>
+            </svg>
+            <p [title]="item.period" class="line-clamp-1 text-sm">{{ item.period | periodLabel }}</p>
+          </div>
+
+          <!-- Area -->
+          <div class="flex items-center gap-2" title="Area">
+            <svg class="min-w-5 min-h-5 w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M8 2C7.205 2 6.442 2.316 5.88 2.879C5.317 3.441 5 4.204 5 5C5 5.796 5.317 6.559 5.88 7.121C6.442 7.684 7.205 8 8 8C8.796 8 9.56 7.684 10.122 7.121C10.685 6.559 11 5.796 11 5C11 4.204 10.685 3.441 10.122 2.879C9.56 2.316 8.796 2 8 2ZM7 5C7 4.735 7.105 4.48 7.293 4.293C7.48 4.105 7.735 4 8 4C8.265 4 8.52 4.105 8.707 4.293C8.895 4.48 9 4.735 9 5C9 5.265 8.895 5.52 8.707 5.707C8.52 5.895 8.265 6 8 6C7.735 6 7.48 5.895 7.293 5.707C7.105 5.52 7 5.265 7 5ZM16 2C15.205 2 14.442 2.316 13.88 2.879C13.317 3.441 13 4.204 13 5C13 5.796 13.317 6.559 13.88 7.121C14.442 7.684 15.205 8 16 8C16.796 8 17.56 7.684 18.122 7.121C18.685 6.559 19 5.796 19 5C19 4.204 18.685 3.441 18.122 2.879C17.56 2.316 16.796 2 16 2ZM15 5C15 4.735 15.105 4.48 15.293 4.293C15.48 4.105 15.735 4 16 4C16.265 4 16.52 4.105 16.707 4.293C16.895 4.48 17 4.735 17 5C17 5.265 16.895 5.52 16.707 5.707C16.52 5.895 16.265 6 16 6C15.735 6 15.48 5.895 15.293 5.707C15.105 5.52 15 5.265 15 5ZM4.104 11.181C4.079 10.904 4.112 10.625 4.2 10.362C4.289 10.098 4.432 9.856 4.619 9.651C4.806 9.446 5.035 9.282 5.289 9.17C5.543 9.058 5.818 9 6.096 9H9.906C10.184 9 10.459 9.058 10.713 9.17C10.967 9.282 11.195 9.446 11.383 9.651C11.57 9.856 11.713 10.098 11.802 10.362C11.89 10.625 11.923 10.904 11.898 11.181L10.997 21.091C10.974 21.34 10.86 21.57 10.675 21.739C10.491 21.907 10.25 22 10 22H6C5.751 22 5.511 21.907 5.326 21.738C5.142 21.57 5.027 21.339 5.005 21.09L4.104 11.181ZM6.096 11L6.914 20H9.088L9.906 11H6.096ZM14.821 9C14.359 9 13.91 9.16 13.553 9.453C13.195 9.747 12.95 10.155 12.86 10.608L12.02 14.804C11.991 14.949 11.994 15.099 12.03 15.242C12.066 15.386 12.134 15.52 12.227 15.634C12.321 15.749 12.439 15.841 12.573 15.904C12.707 15.967 12.853 16 13 16V21C13 21.265 13.105 21.52 13.293 21.707C13.48 21.895 13.735 22 14 22H18C18.265 22 18.52 21.895 18.707 21.707C18.895 21.52 19 21.265 19 21V16C19.149 16 19.295 15.967 19.429 15.904C19.562 15.84 19.68 15.748 19.774 15.634C19.868 15.519 19.935 15.386 19.97 15.242C20.006 15.099 20.01 14.949 19.981 14.804L19.143 10.608C19.052 10.154 18.807 9.746 18.45 9.453C18.092 9.16 17.643 9 17.181 9H14.821ZM15 15C15.001 14.772 14.923 14.551 14.78 14.373C14.638 14.196 14.439 14.072 14.216 14.023L14.821 11H17.181L17.786 14.023C17.563 14.072 17.364 14.196 17.221 14.373C17.079 14.551 17.001 14.772 17 15V20H15V15Z" fill="var(--color-abril-standard)"/>
+            </svg>
+            <p [title]="item.areaListDescription ?? item.areaDescription" class="line-clamp-1 text-sm">{{ (item.areaListDescription ?? item.areaDescription)?.replace('ARQUITECTURA', 'ARQ.') }}</p>
+          </div>
+
+          <!-- Clasificación: una fila por cada segmento del path scope_item.
+               El catalog_type_name (Fase / Etapa / Nivel / …) va como title del ícono. -->
+          <div *ngFor="let seg of item.classificationSegments" class="flex items-center gap-2" [title]="seg.catalogTypeName">
+            <svg class="min-w-5 min-h-5 w-5 h-5 shrink-0" viewBox="0 0 20 20" fill="none">
+              <path d="M12 6H13C13.265 6 13.52 5.895 13.707 5.707C13.895 5.52 14 5.265 14 5C14 4.735 13.895 4.48 13.707 4.293C13.52 4.105 13.265 4 13 4H12C11.735 4 11.48 4.105 11.293 4.293C11.105 4.48 11 4.735 11 5C11 5.265 11.105 5.52 11.293 5.707C11.48 5.895 11.735 6 12 6ZM12 10H13C13.265 10 13.52 9.895 13.707 9.707C13.895 9.52 14 9.265 14 9C14 8.735 13.895 8.48 13.707 8.293C13.52 8.105 13.265 8 13 8H12C11.735 8 11.48 8.105 11.293 8.293C11.105 8.48 11 8.735 11 9C11 9.265 11.105 9.52 11.293 9.707C11.48 9.895 11.735 10 12 10ZM7 6H8C8.265 6 8.52 5.895 8.707 5.707C8.895 5.52 9 5.265 9 5C9 4.735 8.895 4.48 8.707 4.293C8.52 4.105 8.265 4 8 4H7C6.735 4 6.48 4.105 6.293 4.293C6.105 4.48 6 4.735 6 5C6 5.265 6.105 5.52 6.293 5.707C6.48 5.895 6.735 6 7 6ZM7 10H8C8.265 10 8.52 9.895 8.707 9.707C8.895 9.52 9 9.265 9 9C9 8.735 8.895 8.48 8.707 8.293C8.52 8.105 8.265 8 8 8H7C6.735 8 6.48 8.105 6.293 8.293C6.105 8.48 6 8.735 6 9C6 9.265 6.105 9.52 6.293 9.707C6.48 9.895 6.735 10 7 10ZM19 18H18V1C18 .735 17.895.48 17.707.293C17.52.105 17.265 0 17 0H3C2.735 0 2.48.105 2.293.293C2.105.48 2 .735 2 1V18H1C.735 18 .48 18.105.293 18.293C.105 18.48 0 18.735 0 19C0 19.265.105 19.52.293 19.707C.48 19.895.735 20 1 20H19C19.265 20 19.52 19.895 19.707 19.707C19.895 19.52 20 19.265 20 19C20 18.735 19.895 18.48 19.707 18.293C19.52 18.105 19.265 18 19 18ZM11 18H9V14H11V18ZM16 18H13V13C13 12.735 12.895 12.48 12.707 12.293C12.52 12.105 12.265 12 12 12H8C7.735 12 7.48 12.105 7.293 12.293C7.105 12.48 7 12.735 7 13V18H4V2H16V18Z" fill="var(--color-abril-standard)"/>
+            </svg>
+            <p [title]="seg.catalogTypeName + ': ' + seg.catalogItemDescription" class="line-clamp-1 text-sm">{{ seg.catalogItemDescription }}</p>
+          </div>
+
+        </td>
+
+        <!-- Descripcion -->
+        <td class="px-2 py-2 text-center w-[200px]">
+          <span [title]="item.problemDescription" class="block line-clamp-8 text-ellipsis overflow-hidden text-sm text-gray-700">{{ item.problemDescription }}</span>
+        </td>
+
+        <!-- Causas -->
+        <td class="px-2 py-2 text-center w-[200px]">
+          <span [title]="item.reasonDescription" class="block line-clamp-8 text-ellipsis overflow-hidden text-sm text-gray-700">{{ item.reasonDescription }}</span>
+        </td>
+
+        <!-- Leccion aprendida -->
+        <td class="px-2 py-2 text-center w-[200px]">
+          <span [title]="item.lessonDescription" class="block line-clamp-8 text-ellipsis overflow-hidden text-sm text-gray-700">{{ item.lessonDescription }}</span>
+        </td>
+
+        <!-- Impacto -->
+        <td class="px-2 py-2 text-center w-[200px]">
+          <span [title]="item.impactDescription" class="block line-clamp-8 text-ellipsis overflow-hidden text-sm text-gray-700">{{ item.impactDescription }}</span>
+        </td>
+
+        <!-- Oportunidad -->
+        <td class="px-2 py-2 text-center cursor-pointer w-[150px]" (click)="openDetail(item.lessonId, $event, 'images')">
+          <ng-container *ngIf="getOpportunityImages(item.images) as imgs">
+            <ng-container *ngIf="imgs.length > 0; else sinImgOp">
+              <img [src]="imgs[0].imageUrl.startsWith('http') ? imgs[0].imageUrl : apiUrl + imgs[0].imageUrl"
+                class="w-[130px] h-[130px] object-contain rounded mx-auto" />
+            </ng-container>
+          </ng-container>
+          <ng-template #sinImgOp>
+            <span class="text-xs text-gray-400 italic">Sin imagen</span>
+          </ng-template>
+        </td>
+
+        <!-- Mejora -->
+        <td class="px-2 py-2 text-center cursor-pointer w-[150px]" (click)="openDetail(item.lessonId, $event, 'images')">
+          <ng-container *ngIf="getImprovementImages(item.images) as imgs">
+            <ng-container *ngIf="imgs.length > 0; else sinImgMej">
+              <img [src]="imgs[0].imageUrl.startsWith('http') ? imgs[0].imageUrl : apiUrl + imgs[0].imageUrl"
+                class="w-[130px] h-[130px] object-contain rounded mx-auto" />
+            </ng-container>
+          </ng-container>
+          <ng-template #sinImgMej>
+            <span class="text-xs text-gray-400 italic">Sin imagen</span>
+          </ng-template>
+        </td>
+
+      </tr>
+    </tbody>
+  </table>
+</div>

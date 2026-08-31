@@ -1,0 +1,38 @@
+<app-abril-page-header
+  badge="SEGURIDAD"
+  titulo="Roles"
+  subtitulo="Administración de roles y permisos del sistema."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: 'Nuevo Rol', icono: 'ti-plus' }"
+  (primaryClick)="showCreateModal = true">
+</app-abril-page-header>
+
+<div class="flex-1 bg-white rounded-lg p-[20px]">
+  <div class="flex flex-col justify-center items-center">
+    <app-role-list
+      class="w-full"
+      (pagedData)="updatePagination($event)"
+      (editRole)="openEditModal($event)"
+    ></app-role-list>
+    <app-paginator
+      class="w-full"
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)"
+    ></app-paginator>
+  </div>
+</div>
+
+<app-role-create
+  *ngIf="showCreateModal"
+  (closeModal)="showCreateModal = false"
+  (roleCreated)="reloadRoles()"
+></app-role-create>
+
+<app-role-edit
+  *ngIf="selectedRoleForEdit"
+  [role]="selectedRoleForEdit"
+  (closeModal)="selectedRoleForEdit = null"
+  (roleUpdated)="reloadRoles()"
+></app-role-edit>

@@ -1,0 +1,45 @@
+<div *ngIf="otrosTemas.length === 0 && misTemasLista.length === 0 && agenda.items.length === 0" class="text-sm text-gray-400">
+  Nadie cargó todavía sus temas a tratar.
+</div>
+
+<div *ngIf="otrosTemas.length > 0" class="flex flex-col gap-2">
+  <div *ngFor="let grupo of otrosTemas" class="flex flex-col gap-0.5">
+    <p class="text-sm font-medium text-gray-800">
+      {{ grupo.workerNombre }}
+      <span *ngIf="grupo.subareaDescripcion" class="text-xs font-normal text-gray-400">({{ grupo.subareaDescripcion }})</span>
+    </p>
+    <ul class="text-sm text-gray-700 flex flex-col gap-0.5 pl-3 list-disc list-inside">
+      <li *ngFor="let tema of grupo.temas">{{ tema }}</li>
+    </ul>
+  </div>
+</div>
+
+<p *ngIf="agenda.participantesPendientes.length > 0" class="text-xs text-gray-400 border-t border-[#E5EAF0] pt-2">
+  Aún no cargan sus temas: {{ agenda.participantesPendientes.join(', ') }}
+</p>
+
+<div *ngIf="agenda.workerIdActual != null" class="border-t border-[#E5EAF0] pt-3 flex flex-col gap-2">
+  <label class="text-sm font-medium text-gray-700">Mis temas a tratar</label>
+
+  <ul *ngIf="misTemasLista.length > 0" class="flex flex-col gap-1.5">
+    <li *ngFor="let tema of misTemasLista; let i = index"
+      class="flex items-center gap-2 px-3 py-1.5 border border-[#E5EAF0] rounded-lg text-sm text-gray-700 bg-[#F5F8FA]">
+      <input type="text" [value]="tema" maxlength="300"
+        (blur)="actualizarTema(i, $any($event.target).value)"
+        (keydown.enter)="$any($event.target).blur()"
+        class="flex-1 min-w-0 bg-transparent focus:outline-none" />
+      <button type="button" (click)="removerTema(i)" class="text-red-400 hover:text-red-600 cursor-pointer shrink-0">
+        <span class="ti ti-x text-sm"></span>
+      </button>
+    </li>
+  </ul>
+
+  <input type="text" [(ngModel)]="nuevoTema" maxlength="300"
+    (keydown.enter)="$any($event.target).blur()" (blur)="confirmarNuevoTema()"
+    class="h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+    placeholder="Ej. Avance de la semana" />
+
+  <p *ngIf="guardado" class="text-sm text-[var(--color-abril-primary)] flex items-center gap-1.5">
+    <span class="ti ti-circle-check text-base"></span> Guardado.
+  </p>
+</div>

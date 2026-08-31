@@ -1,0 +1,228 @@
+<app-abril-page-header
+  [badge]="'ARQ. COMERCIAL · ' + anioActual"
+  titulo="Plantilla de Actividades"
+  subtitulo="Configuración de la plantilla base de actividades por etapa."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: 'Nueva actividad', icono: 'ti-plus' }"
+  (primaryClick)="openModal()">
+
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
+
+  <div class="abril-table-wrap">
+    <table class="abril-table">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th class="w-16">Orden</th>
+          <th class="min-w-[260px]">Nombre</th>
+          <th>Tipo</th>
+          <th>Etapa</th>
+          <th>Categoría</th>
+          <th>Especialidad</th>
+          <th class="text-center">Activa</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="pagedPlantilla.length === 0">
+          <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ filtrosActivos ? 'Sin resultados.' : 'No hay actividades de plantilla registradas.' }}
+          </td>
+        </tr>
+
+        <tr *ngFor="let p of pagedPlantilla; trackBy: trackByRow" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+          <td>
+            <input type="number"
+                   [value]="p.orden ?? ''"
+                   (blur)="onOrdenBlur(p, $event)"
+                   class="w-14 text-[12px] border border-[#D1D5DB] rounded-[6px] px-2 py-1" />
+          </td>
+          <td class="text-gray-800">
+            <input type="text"
+                   [value]="p.nombre"
+                   (blur)="onNombreBlur(p, $event)"
+                   class="w-full text-[12px] border border-transparent hover:border-[#D1D5DB] focus:border-[var(--color-abril-standard)] rounded-[6px] px-2 py-1 bg-transparent focus:bg-white" />
+          </td>
+          <td>
+            <span [class]="'inline-block px-3 py-1 rounded-full text-xs font-semibold border ' + tipoClass(p.tipo)">
+              {{ p.tipo || '—' }}
+            </span>
+          </td>
+          <td>
+            <span [class]="'inline-block px-3 py-1 rounded-full text-xs font-semibold border ' + etapaClass(p.etapaNombre)">
+              {{ p.etapaNombre || '—' }}
+            </span>
+          </td>
+          <td class="text-gray-700 truncate" [title]="p.categoriaNombre || ''">
+            {{ p.categoriaNombre || '—' }}
+          </td>
+          <td class="text-gray-700 truncate" [title]="p.especialidadNombre || ''">
+            {{ p.especialidadNombre || '—' }}
+          </td>
+          <td class="text-center">
+            <button (click)="onActivoToggle(p)"
+                    [class]="p.activo ? 'inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-[#D1FAE5] text-[#065F46] border-[#A7F3D0]' : 'inline-block px-3 py-1 rounded-full text-xs font-semibold bg-[#E5E7EB] text-[#6B7280]'">
+              {{ p.activo ? 'SÍ' : 'NO' }}
+            </button>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredPlantilla.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<app-base-modal *ngIf="showModal" [title]="'NUEVA ACTIVIDAD DE PLANTILLA'" width="w-[480px]" (closeModal)="closeModal()">
+
+  <div class="flex flex-col gap-[16px] mt-[20px]">
+
+    <div class="flex flex-col gap-[4px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Nombre</label>
+      <input type="text" [(ngModel)]="form.nombre"
+             class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <app-search-select
+        label="Tipo"
+        placeholder="Selecciona tipo"
+        [options]="tipoOptions"
+        valueField="value"
+        displayField="label"
+        [value]="form.tipo"
+        [allowClear]="true"
+        [sortAlpha]="false"
+        (valueChange)="form.tipo = $event">
+      </app-search-select>
+
+      <div class="flex flex-col gap-[4px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Orden</label>
+        <input type="number" [(ngModel)]="form.orden"
+               class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
+      </div>
+    </div>
+
+    <app-search-select
+      label="Etapa"
+      placeholder="Selecciona etapa"
+      [options]="etapas"
+      valueField="id"
+      displayField="nombre"
+      [value]="form.etapaId"
+      [allowClear]="true"
+      (valueChange)="form.etapaId = $event">
+    </app-search-select>
+
+    <app-search-select
+      label="Categoría"
+      placeholder="Selecciona categoría"
+      [options]="categorias"
+      valueField="id"
+      displayField="nombre"
+      [value]="form.categoriaId"
+      [allowClear]="true"
+      (valueChange)="form.categoriaId = $event">
+    </app-search-select>
+
+    <app-search-select
+      label="Especialidad"
+      placeholder="Selecciona especialidad"
+      [options]="especialidades"
+      valueField="id"
+      displayField="nombre"
+      [value]="form.especialidadId"
+      [allowClear]="true"
+      (valueChange)="form.especialidadId = $event">
+    </app-search-select>
+
+    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+      <input type="checkbox" [(ngModel)]="form.activo" class="rounded border-gray-300" />
+      Activa
+    </label>
+
+    <div class="flex justify-center mt-[4px]">
+      <button
+        (click)="submitForm()"
+        class="w-[160px] py-[8px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-standard)">
+        <p class="text-white text-base font-medium text-center">Crear</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>
+
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por nombre..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <div class="flex gap-1.5 flex-wrap">
+      <button (click)="setTipo('')"
+              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === '' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+              [style.background]="tipoFiltro === '' ? 'var(--color-abril-standard)' : null">
+        Todos
+      </button>
+      <button (click)="setTipo('HITO')"
+              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'HITO' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+              [style.background]="tipoFiltro === 'HITO' ? 'var(--color-abril-standard)' : null">
+        Hito
+      </button>
+      <button (click)="setTipo('ENTREGABLE')"
+              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'ENTREGABLE' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+              [style.background]="tipoFiltro === 'ENTREGABLE' ? 'var(--color-abril-standard)' : null">
+        Entregable
+      </button>
+      <button (click)="setTipo('CONSULTA')"
+              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'CONSULTA' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+              [style.background]="tipoFiltro === 'CONSULTA' ? 'var(--color-abril-standard)' : null">
+        Consulta
+      </button>
+    </div>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Etapa"
+      placeholder="Todas las etapas"
+      [options]="etapas"
+      valueField="id"
+      displayField="nombre"
+      [value]="etapaIdFiltro"
+      [allowClear]="true"
+      (valueChange)="etapaIdFiltro = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      placeholder="Selecciona estado"
+      [options]="activoFiltroOptions"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      [value]="activoFiltro"
+      (valueChange)="activoFiltro = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

@@ -1,0 +1,72 @@
+<app-base-modal *ngIf="open" [title]="'Emails SSOMA'" width="w-full sm:w-[640px]" (closeModal)="close()">
+
+  <div class="flex flex-col gap-[12px] mt-2">
+
+    <p class="text-sm text-gray-500">
+      Proyecto: <span class="font-semibold text-gray-800">{{ projectDescription }}</span>
+    </p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[16px] gap-y-[12px]">
+
+      <!-- El residente se elige de la lista de trabajadores: su correo sale de la ficha
+           del trabajador, así no queda una copia acá que se desactualice. -->
+      <div class="flex flex-col sm:col-span-2">
+        <p class="text-[#64BC04]">Residente</p>
+        <app-search-select
+          [options]="residentes"
+          valueField="workerId"
+          displayField="nombreCompleto"
+          [value]="model.residenteWorkersId ?? null"
+          placeholder="Buscar por nombre o DNI..."
+          (valueChange)="model.residenteWorkersId = $event">
+        </app-search-select>
+        <p class="text-xs text-gray-500 mt-[4px]" *ngIf="residenteEmail; else sinResidente">
+          Se le escribirá a <span class="font-semibold text-gray-700">{{ residenteEmail }}</span>
+        </p>
+        <ng-template #sinResidente>
+          <p class="text-xs text-amber-600 mt-[4px]">
+            Sin residente asignado: no se le notificará a nadie por ese rol.
+          </p>
+        </ng-template>
+      </div>
+
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Email Responsable</p>
+        <input type="email" [(ngModel)]="model.emailResponsable"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Email RRHH</p>
+        <input type="email" [(ngModel)]="model.emailRrhh"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Email Coord. SSOMA</p>
+        <input type="email" [(ngModel)]="model.emailCoordSsoma"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+
+      <div class="flex flex-col sm:col-span-2">
+        <p class="text-[#64BC04]">Email Coord. Admin</p>
+        <input type="email" [(ngModel)]="model.emailCoordAdmin"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+
+    </div>
+
+    <div class="flex justify-end gap-[8px] mt-2 pt-3 border-t border-gray-100">
+      <button type="button" (click)="close()"
+        class="px-[16px] py-[8px] text-gray-600 font-semibold cursor-pointer hover:text-gray-800">
+        Cancelar
+      </button>
+      <button type="button" (click)="submit()" [disabled]="saving"
+        class="px-[20px] py-[8px] bg-[#64BC04] text-white font-semibold rounded-lg cursor-pointer disabled:opacity-50">
+        {{ saving ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

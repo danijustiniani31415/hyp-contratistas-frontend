@@ -1,0 +1,26 @@
+<app-base-modal [title]="'EDITAR LUGAR FIJO'" width="w-[420px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[16px] mt-[20px]">
+
+    <div class="flex flex-col gap-[4px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Nombre del lugar</label>
+      <input
+        type="text"
+        [(ngModel)]="nombre"
+        placeholder="Ej. Oficina Central"
+        class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
+      <p *ngIf="submitted && !nombre.trim()" class="text-xs text-red-500">Campo requerido</p>
+    </div>
+
+    <div class="flex justify-center mt-[4px]">
+      <button
+        (click)="save()"
+        class="w-[160px] py-[8px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-primary)">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

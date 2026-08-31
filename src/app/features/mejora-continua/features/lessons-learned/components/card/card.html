@@ -1,0 +1,103 @@
+<div
+  (click)="cardClick.emit(item.lessonId)"
+  class="flex flex-col rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md hover:border-[var(--color-abril-standard)]/40 transition-all duration-200 cursor-pointer overflow-hidden">
+
+  <!-- ── Cabecera con datos generales ──────────────────────────── -->
+  <div class="bg-[var(--color-abril-standard-light)] border-b border-[var(--color-abril-standard-border)] px-4 py-3 flex flex-col gap-1">
+
+    <!-- Estado de aprobación -->
+    <span class="self-start inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full"
+      [ngClass]="{
+        'bg-amber-100 text-amber-700': item.approvalStatus === 'PENDIENTE',
+        'bg-[var(--color-status-success-light)] text-[var(--color-status-success)]': item.approvalStatus === 'APROBADA',
+        'bg-red-100 text-red-700': item.approvalStatus === 'RECHAZADA'
+      }">{{ item.approvalStatus }}</span>
+
+    <!-- Proyecto -->
+    <p class="text-xs font-semibold text-[var(--color-abril-standard)] line-clamp-1" [title]="item.projectDescription">
+      {{ item.projectDescription ?? '—' }}
+    </p>
+
+    <!-- Fila: Area · Periodo -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="text-[11px] text-gray-600 font-medium">{{ (item.areaListDescription ?? item.areaDescription)?.replace('ARQUITECTURA', 'ARQ.') }}</span>
+      <span class="text-gray-300 text-xs">·</span>
+      <span class="text-[11px] text-gray-500">{{ item.period | periodLabel }}</span>
+    </div>
+
+    <!-- Clasificación: un pill por cada segmento (Fase / Etapa / Nivel / …). -->
+    <div *ngIf="item.classificationSegments?.length" class="flex flex-wrap gap-1 mt-0.5">
+      <span *ngFor="let seg of item.classificationSegments"
+        class="inline-block bg-white/70 text-[var(--color-abril-standard)] text-[10px] font-medium px-2 py-0.5 rounded-full"
+        [title]="seg.catalogTypeName + ': ' + seg.catalogItemDescription">
+        {{ seg.catalogItemDescription }}
+      </span>
+    </div>
+
+  </div>
+
+  <!-- ── Cuerpo: textos largos ─────────────────────────────────── -->
+  <div class="flex flex-col gap-3 px-4 py-3 flex-1">
+
+    <!-- Descripcion -->
+    <div *ngIf="item.problemDescription">
+      <p class="text-[11px] font-semibold text-[var(--color-abril-standard)] uppercase tracking-wide mb-1">Descripcion</p>
+      <p class="text-xs text-gray-700 line-clamp-3 leading-relaxed" [title]="item.problemDescription">
+        {{ item.problemDescription }}
+      </p>
+    </div>
+
+    <!-- Causas -->
+    <div *ngIf="item.reasonDescription">
+      <p class="text-[11px] font-semibold text-[var(--color-abril-standard)] uppercase tracking-wide mb-1">Causas</p>
+      <p class="text-xs text-gray-700 line-clamp-3 leading-relaxed" [title]="item.reasonDescription">
+        {{ item.reasonDescription }}
+      </p>
+    </div>
+
+    <!-- Leccion aprendida -->
+    <div *ngIf="item.lessonDescription">
+      <p class="text-[11px] font-semibold text-[var(--color-abril-standard)] uppercase tracking-wide mb-1">Leccion aprendida</p>
+      <p class="text-xs text-gray-700 line-clamp-3 leading-relaxed" [title]="item.lessonDescription">
+        {{ item.lessonDescription }}
+      </p>
+    </div>
+
+    <!-- Impacto en obra -->
+    <div *ngIf="item.impactDescription">
+      <p class="text-[11px] font-semibold text-[var(--color-abril-standard)] uppercase tracking-wide mb-1">Impacto en obra</p>
+      <p class="text-xs text-gray-700 line-clamp-3 leading-relaxed" [title]="item.impactDescription">
+        {{ item.impactDescription }}
+      </p>
+    </div>
+
+  </div>
+
+  <!-- ── Pie: imágenes Oportunidad / Mejora ────────────────────── -->
+  <ng-container *ngIf="getOpportunityImage(item.images) || getImprovementImage(item.images)">
+    <div class="border-t border-gray-100 px-4 py-3 flex gap-3">
+
+      <!-- Oportunidad -->
+      <div *ngIf="getOpportunityImage(item.images) as opImg" class="flex flex-col items-center gap-1 flex-1">
+        <p class="text-[10px] text-gray-400 font-medium">Oportunidad</p>
+        <img [src]="imageUrl(opImg.imageUrl)"
+          class="w-full max-h-[90px] object-contain rounded-lg border border-gray-100" />
+      </div>
+
+      <!-- Mejora -->
+      <div *ngIf="getImprovementImage(item.images) as mejImg" class="flex flex-col items-center gap-1 flex-1">
+        <p class="text-[10px] text-gray-400 font-medium">Mejora</p>
+        <img [src]="imageUrl(mejImg.imageUrl)"
+          class="w-full max-h-[90px] object-contain rounded-lg border border-gray-100" />
+      </div>
+
+    </div>
+  </ng-container>
+
+  <!-- ── Footer: creado por ─────────────────────────────────────── -->
+  <div class="border-t border-gray-100 bg-gray-50 px-4 py-2 flex items-center justify-between">
+    <span class="text-[10px] text-gray-400">{{ item.createdUserFullName }}</span>
+    <span class="text-[10px] text-gray-400">{{ item.createdDateTime | date:'dd-MM-yyyy' }}</span>
+  </div>
+
+</div>

@@ -1,0 +1,480 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.page-wrapper {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: #f0f4f8;
+  min-height: 100%;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ── Error banner ────────────────────────────────────────────── */
+.error-banner {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.btn-retry {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 6px 12px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+/* ── KPI Grid (4 columnas, DESIGN-VICTOR.md §4) ─────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.kpi-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  border-top-width: 4px;
+  border-top-style: solid;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s ease;
+}
+
+.kpi-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kpi-label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+}
+
+.kpi-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.kpi-value {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.kpi-value--text {
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.kpi-subtext {
+  font-size: 11.5px;
+  color: #64748b;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fase-chip {
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Table Card ──────────────────────────────────────────────── */
+.table-card {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.table-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.table-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.table-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.badge-count {
+  background: #f1f5f9;
+  color: #1e3a5f;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 10px;
+  border: 1px solid #cbd5e1;
+}
+
+.proyectos-table {
+  width: 100%;
+}
+
+.table-row:hover {
+  background: #f8fafc;
+}
+
+.col-num {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  width: 36px;
+}
+
+.col-proyecto {
+  font-weight: 700;
+  color: #1e3a5f;
+  min-width: 180px;
+  cursor: pointer;
+}
+
+.col-proyecto:hover {
+  text-decoration: underline;
+}
+
+.col-registros {
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.acts-culminadas {
+  color: #1b6b3a;
+  font-weight: 700;
+}
+
+.acts-sin {
+  color: #94a3b8;
+}
+
+/* ── Avance bar (DESIGN-VICTOR.md §6.5) ─────────────────────────── */
+.avance-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 180px;
+}
+
+.avance-track {
+  flex: 1;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 80px;
+  max-width: 160px;
+}
+
+.avance-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.avance-pct {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+  min-width: 34px;
+}
+
+/* ── Semáforo (DESIGN-VICTOR.md §6.4) ───────────────────────────── */
+.col-semaforo {
+  width: 70px;
+  text-align: center;
+}
+
+.semaforo-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+/* ── Acciones ────────────────────────────────────────────────── */
+.col-acciones {
+  width: 90px;
+}
+
+.acciones-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-icon-udp {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #1e3a5f;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-icon-udp:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.btn-icon-udp:focus-visible {
+  outline: 2px solid #2e6db4;
+  outline-offset: 2px;
+}
+
+.btn-icon-udp:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.ti-loader-2 {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ── Empty row ───────────────────────────────────────────────── */
+.empty-row {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+  padding: 48px 12px;
+}
+
+.empty-icon {
+  display: block;
+  font-size: 48px;
+  margin-bottom: 8px;
+  color: #94a3b8;
+}
+
+/* ── Skeleton (DESIGN-VICTOR.md §7) ─────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -400% 0; }
+  100% { background-position: 400% 0; }
+}
+
+.skeleton-line {
+  background: linear-gradient(90deg, #dde5ef 25%, #eaeff6 50%, #dde5ef 75%);
+  background-size: 400% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 4px;
+}
+
+.skeleton-card {
+  min-height: 96px;
+}
+
+.sk-label {
+  height: 11px;
+  width: 72%;
+}
+
+.sk-value {
+  height: 32px;
+  width: 38%;
+  margin-top: 6px;
+}
+
+.skeleton-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sk-row {
+  height: 46px;
+  border-radius: 6px;
+}
+
+.paginator-row {
+  margin-top: 16px;
+}
+
+/* ── Popover: fecha para exportar PDF ───────────────────────────── */
+.export-popover-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+
+.export-popover {
+  position: fixed;
+  z-index: 1001;
+  width: 240px;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.export-popover-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin-bottom: 2px;
+}
+
+.export-popover-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.export-popover .date-select {
+  width: 100%;
+}
+
+.export-popover-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-popover-cancel {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-popover-cancel:hover {
+  background: #f1f5f9;
+}
+
+.btn-popover-confirm {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background: #1e3a5f;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-popover-confirm:hover:not(:disabled) {
+  background: #16304d;
+}
+
+.btn-popover-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Duplicado a propósito (mismo criterio que dashboard.ts/carga-diaria.ts de este
+   módulo: cada página define su propia copia local, sin token global compartido). */
+.bim-input {
+  height: 38px;
+  padding: 0 12px;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #1e293b;
+  background: #ffffff;
+  outline: none;
+}
+
+.bim-input:focus {
+  border-color: #1e3a5f;
+}
+
+.date-select {
+  height: 38px;
+  font-weight: 600;
+  color: #1e3a5f;
+  border-color: #cbd5e1;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-wrapper {
+    padding: 1rem;
+  }
+}

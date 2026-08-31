@@ -1,0 +1,208 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Evaluar Supervisor de Contratista"
+  subtitulo="Califica el desempeño SSOMA del supervisor de campo del contratista en tu proyecto."
+  [tabGroups]="[
+    { label: 'Residentes',   icono: 'ti-user-check', tabs: [
+      { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
+      { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
+      { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
+      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' },
+      { label: 'Asignaciones',  icono: 'ti-users',            route: '/evaluaciones/asignaciones',   featureKey: 'evaluaciones.asignaciones' }
+    ]},
+    { label: 'Contratistas', icono: 'ti-building', tabs: [
+      { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
+      { label: 'Evaluar',          icono: 'ti-pencil',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
+      { label: 'Ver evaluaciones', icono: 'ti-list',      route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' }
+    ]},
+    { label: 'Superv. Contratista', icono: 'ti-shield-check', tabs: [
+      { label: 'Evaluar supervisor', icono: 'ti-pencil', route: '/evaluaciones/evaluar-supervisor-contratista', featureKey: 'evaluaciones.evaluar-supervisor-contratista' },
+      { label: 'Ver evaluaciones',   icono: 'ti-list',   route: '/evaluaciones/ver-supervisores-contratista',   featureKey: 'evaluaciones.ver-supervisores-contratista' }
+    ]},
+    { label: 'Jefe SSOMA', icono: 'ti-user-shield', tabs: [
+      { label: 'Evaluar Jefe SSOMA', icono: 'ti-pencil', route: '/evaluaciones/evaluar-jefe-ssoma', featureKey: 'evaluaciones.evaluar-jefe-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-jefe-ssoma', featureKey: 'evaluaciones.resultados-jefe-ssoma' }
+    ]},
+    { label: 'Prevencionistas', icono: 'ti-vest', tabs: [
+      { label: 'Mi perfil', icono: 'ti-user', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
+      { label: 'Dashboard', icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' }
+    ]},
+    { label: 'Gestión SSOMA', icono: 'ti-users-group', tabs: [
+      { label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-gestion-ssoma', featureKey: 'evaluaciones.resultados-gestion-ssoma' }
+    ]}
+  ]">
+</app-abril-page-header>
+
+<div class="ec-root">
+
+  <!-- LOADING -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <span>Cargando...</span>
+  </div>
+
+  <!-- SIN PERÍODO ACTIVO -->
+  <div class="empty-state" *ngIf="!loading && !inicio?.periodo">
+    <i class="ti ti-calendar-off"></i>
+    <h3>Sin período activo</h3>
+    <p>No hay un período de evaluación abierto en este momento.</p>
+  </div>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div class="ec-content" *ngIf="!loading && inicio?.periodo">
+
+    <!-- PANEL IZQUIERDO: lista de supervisores -->
+    <div class="panel-left">
+      <div class="panel-header">
+        <div class="panel-title">Supervisores a evaluar</div>
+      </div>
+      <div class="period-info" *ngIf="inicio?.periodo">
+        <i class="ti ti-calendar"></i>
+        {{ inicio!.periodo!.nombreMes }} {{ inicio!.periodo!.anio }} ·
+        {{ inicio!.periodo!.diasRestantes }} días restantes
+      </div>
+
+      <div class="filtros-panel" *ngIf="inicio?.supervisoresAEvaluar?.length">
+        <div class="proyecto-filtro" *ngIf="proyectos.length > 1">
+          <label for="esc-proyecto-filtro">Proyecto</label>
+          <select id="esc-proyecto-filtro" [(ngModel)]="proyectoFiltroId" (ngModelChange)="markForCheck()">
+            <option [ngValue]="null">Todos los proyectos</option>
+            <option *ngFor="let p of proyectos" [ngValue]="p.id">{{ p.nombre }}</option>
+          </select>
+        </div>
+
+        <div class="proyecto-filtro" *ngIf="empresas.length > 1">
+          <label for="esc-empresa-filtro">Empresa</label>
+          <select id="esc-empresa-filtro" [(ngModel)]="empresaFiltroId" (ngModelChange)="markForCheck()">
+            <option [ngValue]="null">Todas las empresas</option>
+            <option *ngFor="let e of empresas" [ngValue]="e.id">{{ e.nombre }}</option>
+          </select>
+        </div>
+
+        <div class="proyecto-filtro">
+          <label for="esc-busqueda">Buscar</label>
+          <input id="esc-busqueda" type="text" [(ngModel)]="busqueda" (ngModelChange)="markForCheck()"
+            placeholder="Nombre del supervisor..." />
+        </div>
+      </div>
+
+      <!-- Sin supervisores -->
+      <div class="empty-list" *ngIf="!inicio?.supervisoresAEvaluar?.length && !inicio?.yaMarcoNoAplica">
+        <i class="ti ti-users-group"></i>
+        <p>No hay supervisores de contratista activos en tu proyecto este mes.</p>
+        <button class="btn-no-aplica" (click)="marcarNoAplica()" [disabled]="marcandoNoAplica">
+          {{ marcandoNoAplica ? 'Guardando...' : 'No corresponde evaluar este período' }}
+        </button>
+      </div>
+
+      <!-- Ya marcó que no aplica -->
+      <div class="empty-list" *ngIf="!inicio?.supervisoresAEvaluar?.length && inicio?.yaMarcoNoAplica">
+        <i class="ti ti-check"></i>
+        <p>Ya registraste que no te corresponde evaluar supervisores este período.</p>
+      </div>
+
+      <!-- Lista de supervisores -->
+      <div class="contractor-list" *ngIf="inicio?.supervisoresAEvaluar?.length">
+        <div class="contractor-card"
+          *ngFor="let s of supervisoresFiltrados"
+          [class.active]="supervisorSeleccionado?.supervisorSsContratistaUsuarioId === s.supervisorSsContratistaUsuarioId"
+          [class.evaluated]="s.yaEvalue"
+          (click)="seleccionarSupervisor(s)">
+          <div class="cc-header">
+            <div class="cc-avatar">{{ s.supervisorNombre.charAt(0) }}</div>
+            <div class="cc-info">
+              <div class="cc-name">{{ s.supervisorNombre }}</div>
+              <div class="cc-ruc">{{ s.contributorNombre }}</div>
+              <div class="cc-project"><i class="ti ti-building"></i> {{ s.proyectoNombre }}</div>
+            </div>
+          </div>
+          <div class="cc-footer">
+            <span *ngIf="s.yaEvalue" class="cc-nota" [ngClass]="estadoClase(s.notaPrevia)">
+              <i class="ti ti-check"></i> {{ s.notaPrevia }} — {{ estadoLabel(s.notaPrevia) }}
+            </span>
+            <span *ngIf="!s.yaEvalue" class="cc-pendiente">Pendiente</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL DERECHO: formulario de evaluación -->
+    <div class="panel-right">
+      <!-- Sin selección -->
+      <div class="empty-form" *ngIf="!supervisorSeleccionado">
+        <i class="ti ti-arrow-left"></i>
+        <p>Selecciona un supervisor para evaluarlo</p>
+      </div>
+
+      <!-- Formulario activo -->
+      <div class="eval-form" *ngIf="supervisorSeleccionado">
+        <div class="ef-header">
+          <div>
+            <div class="ef-title">{{ supervisorSeleccionado.supervisorNombre }}</div>
+            <div class="ef-sub">{{ supervisorSeleccionado.contributorNombre }} · {{ supervisorSeleccionado.proyectoNombre }}</div>
+          </div>
+          <div class="ef-header-actions">
+            <button class="btn-no-aplica" (click)="marcarNoAplicaSupervisor()" [disabled]="marcandoNoAplica">
+              No corresponde este mes
+            </button>
+            <button class="btn-cambiar" (click)="cambiarSupervisor()">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Escala de referencia -->
+        <div class="scale-ref">
+          <span *ngFor="let p of puntajes" class="scale-chip" [ngClass]="'scale-' + p">
+            {{ p }}: {{ puntajeLabel[p] }}
+          </span>
+        </div>
+
+        <!-- Criterios -->
+        <div class="criteria-list">
+          <div class="criterion-row" *ngFor="let d of detalles; let i = index" [class.criterion-na]="d.esNa">
+            <div class="cr-num">{{ i + 1 }}</div>
+            <div class="cr-text">{{ d.criterio }}</div>
+            <div class="cr-puntaje">
+              <button *ngFor="let p of puntajes"
+                class="puntaje-btn"
+                [class.selected]="d.puntaje === p"
+                [ngClass]="d.puntaje === p ? 'puntaje-' + p : ''"
+                (click)="setPuntaje(i, p)">
+                {{ p }}
+              </button>
+              <button
+                class="puntaje-btn puntaje-na"
+                [class.selected]="d.esNa"
+                (click)="setNa(i)">
+                N/A
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comentario + Guardar -->
+        <div class="bottom-bar">
+          <div class="bottom-comentario">
+            <label class="cmt-label">Comentario (opcional)</label>
+            <textarea class="cmt-input" rows="2" [(ngModel)]="comentario"
+              placeholder="Observaciones adicionales sobre el desempeño..."></textarea>
+          </div>
+          <div class="bottom-actions">
+            <div class="nota-preview" *ngIf="notaCalculada > 0">
+              <span class="np-label">Nota:</span>
+              <span class="np-num" [ngClass]="estadoClase(notaCalculada)">{{ notaCalculada }}</span>
+              <span class="np-estado" [ngClass]="estadoClase(notaCalculada)">{{ estadoLabel(notaCalculada) }}</span>
+            </div>
+            <button class="btn-guardar" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
+              <i class="ti ti-device-floppy"></i>
+              {{ guardando ? 'Guardando...' : (supervisorSeleccionado?.yaEvalue ? 'Actualizar evaluación' : 'Registrar evaluación') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

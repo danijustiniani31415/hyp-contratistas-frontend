@@ -1,0 +1,249 @@
+<app-abril-page-header
+  [badge]="'MEJORA CONTINUA · ' + anioActual"
+  titulo="Lecciones Aprendidas"
+  subtitulo="Registro y gestión de lecciones aprendidas por proyecto."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: 'Nuevo registro', icono: 'ti-plus' }"
+  [botonPrimarioDeshabilitado]="!canUpload"
+  [botonPrimarioTooltip]="canUpload ? '' : uploadBlockedMessage"
+  (primaryClick)="onNuevoRegistro()">
+</app-abril-page-header>
+
+<div class="bg-white rounded-lg flex flex-col flex-1 min-h-0 overflow-y-auto p-5 gap-4">
+
+  <!-- Acciones superiores -->
+  <div class="flex justify-between items-center">
+    <!-- Enlace al video-guía -->
+    <a [href]="guia.url" target="_blank" rel="noopener noreferrer"
+      class="group flex items-center gap-2 rounded-full border border-[#c7d2fe] bg-[#eef2ff] py-[5px] px-4 text-sm text-[#4f46e5] cursor-pointer hover:bg-[#e0e7ff] transition-colors">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M8 5v14l11-7z" />
+      </svg>
+      <span class="group-hover:underline">Click para ver guía</span>
+    </a>
+
+    <div class="flex items-center gap-3">
+      <app-view-toggle [modes]="viewModes" [(value)]="viewMode"
+        activeColor="var(--color-abril-standard)"
+        activeBackground="var(--color-abril-standard-light)"></app-view-toggle>
+      <button class="group flex items-center cursor-pointer gap-1.5" (click)="downloadExcel()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 16L16 11H13V4H11V11H8L12 16Z" fill="var(--color-abril-standard)"/>
+          <path d="M20 18H4V11H2V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V11H20V18Z" fill="var(--color-abril-standard)"/>
+        </svg>
+        <span class="text-[var(--color-abril-standard)] group-hover:underline text-sm">Exportar a excel</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex flex-col">
+    <div class="flex flex-wrap gap-4 py-3 items-end">
+
+      <!-- Área en cascada (recuadro verde para destacar). Mantiene padding vertical
+           (py-2); el margen inferior negativo cancela ese padding inferior más el
+           borde (8px + 1px = 9px) para que, con items-end, los controles queden
+           alineados con el resto. El borde existe porque el fondo del verde
+           estándar (standard-light) es mucho más tenue que el lima anterior y sin
+           él el recuadro no se distinguía del blanco de la página. -->
+      <div class="bg-[var(--color-abril-standard-light)] border border-[var(--color-abril-standard-border)] rounded-lg px-3 py-2 -mb-[9px] flex flex-wrap items-end gap-3 w-full sm:w-auto">
+        <ng-container *ngFor="let level of areaLevels; let i = index">
+          <div class="w-full sm:w-[200px]">
+            <app-search-select
+              [label]="i === 0 ? 'Área' : 'Subárea'"
+              [options]="level"
+              valueField="id"
+              displayField="name"
+              [value]="selectedAreaNodes[i]?.id"
+              (valueChange)="onAreaNodeChange(i, $event)"
+              [fullText]="true"
+              [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'">
+            </app-search-select>
+          </div>
+        </ng-container>
+
+        <!-- Obra / Oficina: ya no es un nivel más del árbol de áreas sino un
+             desplegable propio alimentado por workers_obra_oficina_staff. -->
+        <div class="w-full sm:w-[200px]">
+          <app-search-select
+            label="Obra / Oficina"
+            [options]="obraOficinaOptions"
+            valueField="obraOficinaStaffId"
+            displayField="name"
+            [value]="filtersTable.obraOficinaStaffId"
+            [fullText]="true"
+            [sortAlpha]="false"
+            (valueChange)="filtersTable.obraOficinaStaffId = $event"
+            placeholder="Todos">
+          </app-search-select>
+        </div>
+      </div>
+
+      <div class="w-full sm:w-[220px]">
+        <app-search-select
+          label="Proyecto"
+          [options]="projectOptions"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="filtersTable.projectId"
+          [fullText]="true"
+          (valueChange)="filtersTable.projectId = $event">
+        </app-search-select>
+      </div>
+
+      <div class="w-full sm:w-[200px]">
+        <app-search-select
+          label="Estado"
+          [options]="approvalStatusOptions"
+          valueField="value"
+          displayField="label"
+          [value]="filtersTable.approvalStatus"
+          [fullText]="true"
+          (valueChange)="filtersTable.approvalStatus = $event">
+        </app-search-select>
+      </div>
+
+      <!-- Advanced filters -->
+      <ng-container *ngIf="showFilters">
+
+        <!-- Revisor (jefe asignado al autor de la lección) -->
+        <div class="w-full sm:w-[220px]">
+          <app-search-select
+            label="Revisor"
+            [options]="reviewerOptions"
+            valueField="workerId"
+            displayField="fullName"
+            [value]="filtersTable.reviewerWorkerId"
+            [fullText]="true"
+            placeholder="Todos los revisores"
+            (valueChange)="filtersTable.reviewerWorkerId = $event">
+          </app-search-select>
+        </div>
+
+        <!-- Un dropdown por cada catalog_type activo en scope_item -->
+        <div *ngFor="let cat of categoryOptions" class="w-full sm:w-[220px]">
+          <app-search-select
+            [label]="cat.group.catalogTypeName"
+            [options]="cat.options"
+            valueField="catalogItemId"
+            displayField="catalogItemDescription"
+            [value]="getCatalogSelection(cat.group.catalogTypeId)"
+            [fullText]="true"
+            (valueChange)="onCatalogSelectionChange(cat.group.catalogTypeId, $event)">
+          </app-search-select>
+        </div>
+
+        <div class="w-full sm:w-[220px]">
+          <app-search-select
+            label="Periodo"
+            [options]="periodOptions"
+            valueField="periodDate"
+            displayField="periodLabel"
+            [value]="filtersTable.periodDate"
+            [fullText]="true"
+            (valueChange)="filtersTable.periodDate = $event">
+          </app-search-select>
+        </div>
+
+        <div class="w-full sm:w-[220px]">
+          <app-search-select
+            label="Usuario"
+            [options]="userOptions"
+            valueField="userId"
+            displayField="fullName"
+            [value]="filtersTable.userId"
+            [fullText]="true"
+            (valueChange)="filtersTable.userId = $event">
+          </app-search-select>
+        </div>
+
+      </ng-container>
+
+      <button type="button" (click)="toggleMyPendingReview()"
+        class="w-full sm:w-auto justify-center h-[38px] px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 border"
+        [ngClass]="filtersTable.onlyMyPendingReview
+          ? 'bg-[var(--color-abril-standard)] text-white border-[var(--color-abril-standard)]'
+          : 'bg-white text-[var(--color-abril-standard)] border-[var(--color-abril-standard)] hover:bg-[var(--color-abril-standard-light)]'">
+        Pendientes de mi revisión
+      </button>
+
+      <button type="button" (click)="showFilters = !showFilters"
+        class="w-full sm:w-auto justify-center h-[38px] px-4 border border-[var(--color-abril-standard-border)] bg-[var(--color-abril-standard-light)] rounded-lg text-[var(--color-abril-standard)] text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-standard)]/10 transition-colors flex items-center gap-2">
+        <svg class="w-4 h-4" viewBox="0 0 15 15" fill="none">
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M6.417 0v9.167H5.5V11H6.417v3.667H8.25V11h.917V9.167H8.25V0H6.417ZM.917 0v3.668H0V5.5h.917v9.167H2.75V5.5h.917V3.668H2.75V0H.917ZM11.916.0002V5.5h-.917v1.833h.917v7.334h1.834V7.333h.917V5.5h-.917V0l-1.834.0002Z"
+            fill="var(--color-abril-standard)"/>
+        </svg>
+        {{ showFilters ? 'Ocultar filtros' : 'Busqueda avanzada' }}
+      </button>
+
+      <button type="button" (click)="onSearch()"
+        class="w-full sm:w-auto justify-center h-[38px] px-5 bg-[var(--color-abril-standard)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-standard-hover)] transition-colors flex items-center gap-2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
+        </svg>
+        Buscar
+      </button>
+    </div>
+
+    <!-- Tabla -->
+    <app-lesson-list
+      *ngIf="viewMode === 'table'"
+      [lessons]="lessons"
+      [apiUrl]="apiUrl"
+      (viewDetail)="onViewDetail($event)">
+    </app-lesson-list>
+
+    <!-- Cards -->
+    <div *ngIf="viewMode === 'card'" class="flex-1 min-h-0 overflow-y-auto">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pb-1">
+        <app-lesson-card
+          *ngFor="let item of lessons"
+          [item]="item"
+          [apiUrl]="apiUrl"
+          (cardClick)="onCardClick($event)">
+        </app-lesson-card>
+
+        <p *ngIf="lessons.length === 0"
+          class="sm:col-span-2 xl:col-span-3 text-center text-sm text-gray-400 italic py-10">
+          No hay lecciones aprendidas registradas.
+        </p>
+      </div>
+    </div>
+
+    <!-- Paginator -->
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="loadLessons($event)">
+    </app-paginator>
+  </div>
+</div>
+
+<!-- Modals -->
+<app-create-lesson
+  *ngIf="showCreateModal"
+  [filtersData]="filtersData"
+  (closeModal)="showCreateModal = false"
+  (saved)="loadLessons(currentPage)">
+</app-create-lesson>
+
+<app-detail-lesson
+  *ngIf="selectedLessonId"
+  [lessonId]="selectedLessonId"
+  [currentUserId]="currentUserId"
+  [defaultTab]="selectedLessonTab"
+  (closeModal)="selectedLessonId = null"
+  (deleted)="loadLessons(currentPage)"
+  (edit)="onEditLesson($event)"
+  (reviewed)="onReviewed()">
+</app-detail-lesson>
+
+<app-edit-lesson
+  *ngIf="editLessonId"
+  [lessonId]="editLessonId"
+  [filtersData]="filtersData"
+  (closeModal)="editLessonId = null"
+  (saved)="onEditSaved()">
+</app-edit-lesson>

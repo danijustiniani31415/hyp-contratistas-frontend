@@ -1,0 +1,74 @@
+<app-base-modal *ngIf="open && emo" [title]="modalTitle" width="w-[560px]" (closeModal)="close()">
+  <div class="worker-header">
+    <p class="wh-name">{{ emo.nombreCompleto }}</p>
+    <p class="wh-meta">DNI {{ emo.dni }}<ng-container *ngIf="emo.empresa"> · {{ emo.empresa }}</ng-container></p>
+  </div>
+
+  <form class="form-body" (ngSubmit)="submit()">
+    <div class="grid-2">
+      <div>
+        <label class="field-label">Fecha EMO *</label>
+        <input type="date" class="field-input" [(ngModel)]="fechaEmo" name="fechaEmo" required />
+      </div>
+
+      <div>
+        <label class="field-label">Tipo EMO *</label>
+        <select class="field-input" [(ngModel)]="tipoEmoId" name="tipoEmoId" required>
+          <option [ngValue]="null" disabled>Seleccionar…</option>
+          <option *ngFor="let t of emoTipos" [ngValue]="t.id">{{ t.nombre }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Aptitud *</label>
+        <select class="field-input" [(ngModel)]="aptitud" name="aptitud" required>
+          <option value="" disabled>Seleccionar…</option>
+          <option *ngFor="let a of aptitudOpciones" [value]="a">{{ a }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Clínica <span class="optional">(opcional)</span></label>
+        <select class="field-input" [(ngModel)]="clinicaId" name="clinicaId" (ngModelChange)="onClinicaChange()">
+          <option [ngValue]="null">Sin especificar</option>
+          <option *ngFor="let c of clinicas" [ngValue]="c.id">{{ c.nombre }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Médico <span class="optional">(opcional)</span></label>
+        <select class="field-input" [(ngModel)]="medicoId" name="medicoId">
+          <option [ngValue]="null">Sin especificar</option>
+          <option *ngFor="let m of medicosFiltrados" [ngValue]="m.id">{{ m.apellidoNombre }}</option>
+        </select>
+      </div>
+
+      <div class="col-span-2">
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="requiereLecturaAbril" name="requiereLecturaAbril" />
+          <span>Será leído por el médico de Abril Grupo Inmobiliario</span>
+        </label>
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Notas <span class="optional">(opcional)</span></label>
+        <textarea
+          class="field-input field-textarea"
+          [(ngModel)]="notas"
+          name="notas"
+          rows="3"
+          placeholder="Observaciones…"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <button type="button" class="btn-secondary" (click)="close()" [disabled]="saving">
+        Cancelar
+      </button>
+      <button type="submit" class="btn-primary" [disabled]="!canSubmit">
+        {{ saving ? 'Guardando…' : 'Guardar cambios' }}
+      </button>
+    </div>
+  </form>
+</app-base-modal>

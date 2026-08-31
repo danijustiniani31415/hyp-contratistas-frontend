@@ -1,0 +1,98 @@
+<div class="cu-shell">
+
+  <!-- Header -->
+  <div class="cu-header">
+    <div class="cu-header-left">
+      <span class="cu-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </span>
+      <div>
+        <p class="cu-section-label">Usuarios del sistema</p>
+        <p class="cu-section-sub">
+          {{ loading ? '…' : usuarios.length + ' usuario' + (usuarios.length !== 1 ? 's' : '') + ' registrado' + (usuarios.length !== 1 ? 's' : '') }}
+        </p>
+      </div>
+    </div>
+    <button *ngIf="esOwner" class="cu-btn-invite" (click)="abrirModalInvitar()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Invitar usuario
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div class="cu-skeleton-list" *ngIf="loading">
+    <div class="cu-skeleton-row" *ngFor="let _ of [1,2,3]"></div>
+  </div>
+
+  <!-- Empty -->
+  <div class="cu-empty" *ngIf="!loading && usuarios.length === 0">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1"
+      stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    <p>No hay usuarios registrados</p>
+  </div>
+
+  <!-- Table -->
+  <div class="cu-table-wrapper" *ngIf="!loading && usuarios.length > 0">
+    <table class="cu-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Scope</th>
+          <th>Estado</th>
+          <th *ngIf="esOwner">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let u of usuarios" class="cu-row">
+          <td class="cu-td-name">{{ u.nombreCompleto || '—' }}</td>
+          <td class="cu-td-email">{{ u.email }}</td>
+          <td>
+            <span class="cu-rol-badge" [class.cu-rol-badge--owner]="u.rolNombre === 'OWNER'"
+              [class.cu-rol-badge--admin]="u.rolNombre === 'ADMIN'"
+              [class.cu-rol-badge--gestor]="u.rolNombre === 'GESTOR'">
+              {{ u.rolNombre }}
+            </span>
+          </td>
+          <td class="cu-td-scope">
+            {{ u.scope === 'POR_PROYECTO' ? 'Por proyecto' : 'Todos' }}
+          </td>
+          <td>
+            <span class="cu-status-badge" [class.cu-status--active]="u.activo"
+              [class.cu-status--inactive]="!u.activo">
+              {{ u.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td *ngIf="esOwner">
+            <div class="cu-actions" *ngIf="u.rolNombre !== 'OWNER'">
+              <button class="cu-btn-edit" (click)="abrirModalEditar(u)">Editar</button>
+              <button class="cu-btn-toggle"
+                [class.cu-btn-toggle--deactivate]="u.activo"
+                [class.cu-btn-toggle--activate]="!u.activo"
+                (click)="toggleActivar(u)">
+                {{ u.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+            </div>
+            <span *ngIf="u.rolNombre === 'OWNER'" class="cu-td-email">—</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

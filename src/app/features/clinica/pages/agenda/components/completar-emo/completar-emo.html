@@ -1,0 +1,173 @@
+<app-base-modal *ngIf="open" [title]="'Registrar Resultado EMO'" width="w-[640px]" (closeModal)="close()">
+  <div class="form-wrapper">
+
+    <!-- Worker info -->
+    <div class="worker-info-box" *ngIf="programacion">
+      <span class="worker-name">{{ programacion.workerNombre }}</span>
+      <span class="worker-dni">{{ programacion.workerDni }}</span>
+      <span class="badge">{{ programacion.tipoEmo }}</span>
+    </div>
+
+    <!-- ── Sección 1: Resultado ──────────────────────────────── -->
+    <div class="emo-section">
+      <div class="emo-section-title">Resultado</div>
+      <div class="emo-section-body">
+        <div class="field-group">
+          <label class="field-label">Aptitud <span class="req">*</span></label>
+          <app-search-select
+            [options]="aptitudOptions"
+            valueField="id"
+            displayField="nombre"
+            placeholder="Selecciona la aptitud"
+            [sortAlpha]="false"
+            [value]="aptitud || null"
+            (valueChange)="aptitud = $event || ''">
+          </app-search-select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Fecha del EMO <span class="req">*</span></label>
+          <app-date-picker
+            [showLabel]="false"
+            [dense]="true"
+            [max]="hoy"
+            [value]="fechaEmo"
+            (valueChange)="fechaEmo = $event || ''">
+          </app-date-picker>
+          <p class="field-error" *ngIf="!fechaEmo">La fecha del EMO es obligatoria</p>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Notas</label>
+          <input type="text" class="field-input" [(ngModel)]="notas" placeholder="Observaciones opcionales..." />
+        </div>
+      </div>
+    </div>
+
+    <!-- Alertas de aptitud -->
+    <div class="alert-box alert-red" *ngIf="aptitud === 'No Apto'">
+      ⚠ Este trabajador quedará como No Apto y será bloqueado en habilitación automáticamente.
+    </div>
+    <div class="alert-box alert-orange" *ngIf="aptitud === 'Observado'">
+      ⚠ Estado Observado — hay que derivar al trabajador a interconsulta para definir su aptitud final.
+    </div>
+
+    <!-- ── Sección 2: Lectura del EMO ───────────────────────── -->
+    <div class="emo-section emo-section-lectura" *ngIf="requiereDocumentos">
+      <div class="emo-section-title">Lectura del EMO</div>
+      <div class="emo-section-body">
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="lecturaRealizada" (change)="onLecturaChange()" />
+          <span class="checkbox-label">Se realizó lectura del EMO</span>
+        </label>
+
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="requiereLecturaAbril" (change)="onRequiereLecturaAbrilChange()" />
+          <span class="checkbox-label">Será leído por el médico de Abril Grupo Inmobiliario</span>
+        </label>
+
+        <ng-container *ngIf="lecturaRealizada">
+          <div class="field-group lectura-fields">
+            <label class="field-label">Fecha de lectura <span class="req">*</span></label>
+            <app-date-picker
+              [showLabel]="false"
+              [dense]="true"
+              [value]="fechaLectura"
+              (valueChange)="fechaLectura = $event || ''">
+            </app-date-picker>
+            <p class="field-error" *ngIf="!fechaLectura">La fecha de lectura es obligatoria</p>
+          </div>
+
+          <div class="field-group lectura-fields">
+            <label class="field-label">Informe de lectura <span class="req">*</span></label>
+            <label class="file-zone" [class.file-zone-filled]="!!archivoLectura">
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="file-hidden"
+                (change)="onArchivoLectura($event)" />
+              <span class="file-zone-icon">📎</span>
+              <span *ngIf="!archivoLectura" class="file-zone-hint">PDF, JPG o PNG — clic para seleccionar</span>
+              <span *ngIf="archivoLectura" class="file-zone-name">✓ {{ archivoLectura.name }}</span>
+            </label>
+            <p class="field-error" *ngIf="!archivoLectura">Debes adjuntar el informe de lectura</p>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- ── Sección 3: Documentos ────────────────────────────── -->
+    <div class="emo-section" *ngIf="requiereDocumentos">
+      <div class="emo-section-title">Documentos <span class="req">*</span></div>
+      <div class="emo-section-body docs-grid">
+
+        <div class="upload-card">
+          <div class="upload-card-label">Constancia de Aptitud <span class="req">*</span></div>
+          <label class="file-zone" [class.file-zone-filled]="!!archivoAptitud">
+            <input type="file" accept=".pdf" class="file-hidden" (change)="onArchivoAptitud($event)" />
+            <span class="file-zone-icon">📄</span>
+            <span *ngIf="!archivoAptitud" class="file-zone-hint">Seleccionar PDF</span>
+            <span *ngIf="archivoAptitud" class="file-zone-name">✓ {{ archivoAptitud.name }}</span>
+          </label>
+        </div>
+
+        <div class="upload-card">
+          <div class="upload-card-label">EMO Completo <span class="req">*</span></div>
+          <label class="file-zone" [class.file-zone-filled]="!!archivoEmo">
+            <input type="file" accept=".pdf" class="file-hidden" (change)="onArchivoEmo($event)" />
+            <span class="file-zone-icon">📋</span>
+            <span *ngIf="!archivoEmo" class="file-zone-hint">Seleccionar PDF</span>
+            <span *ngIf="archivoEmo" class="file-zone-name">✓ {{ archivoEmo.name }}</span>
+          </label>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Sección 4: Restricciones ─────────────────────────── -->
+    <div class="emo-section" *ngIf="requiereRestriccion">
+      <div class="emo-section-title">Restricciones <span class="req">*</span></div>
+      <div class="emo-section-body">
+        <div class="restriccion-row">
+          <input type="text" class="field-input" [(ngModel)]="nuevaRestriccion"
+            placeholder="Ej: No trabajo en altura" (keyup.enter)="agregarRestriccion()" />
+          <button type="button" class="btn-ghost" (click)="agregarRestriccion()">+ Agregar</button>
+        </div>
+        <p *ngIf="restricciones.length === 0" class="field-hint">
+          Debes agregar al menos una restricción.
+        </p>
+        <div *ngIf="restricciones.length > 0" class="restriccion-list">
+          <div class="restriccion-item" *ngFor="let r of restricciones; let i = index">
+            <span>{{ r.descripcionLibre }}</span>
+            <button type="button" class="btn-remove" (click)="quitarRestriccion(i)">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Sección 5: Interconsulta ──────────────────────────── -->
+    <div class="emo-section" *ngIf="requiereInterconsulta">
+      <div class="emo-section-title">Interconsulta</div>
+      <div class="emo-section-body">
+        <div class="field-group">
+          <label class="field-label">Especialidad <span class="req">*</span></label>
+          <input type="text" class="field-input" [(ngModel)]="icEspecialidad"
+            placeholder="Ej: Cardiología, Traumatología..." />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Diagnóstico</label>
+          <textarea class="field-input" rows="2" [(ngModel)]="icDiagnostico"
+            placeholder="Descripción del diagnóstico..."></textarea>
+        </div>
+        <label class="checkbox-row" style="margin-top:0.5rem">
+          <input type="checkbox" [(ngModel)]="icRequiereSeguimiento" />
+          <span class="checkbox-label">Requiere seguimiento</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="form-footer">
+      <button class="btn-ghost" (click)="close()">Cancelar</button>
+      <button class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando...' : 'Registrar resultado' }}
+      </button>
+    </footer>
+
+  </div>
+</app-base-modal>

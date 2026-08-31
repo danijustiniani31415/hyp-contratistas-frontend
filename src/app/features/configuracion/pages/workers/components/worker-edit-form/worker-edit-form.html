@@ -1,0 +1,129 @@
+<app-base-modal *ngIf="open" [title]="'Editar trabajador'" width="w-[560px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <div class="grid-2">
+      <div class="col-span-2">
+        <label class="field-label">Nombre completo *</label>
+        <input type="text" class="field-input" [(ngModel)]="model.nombreCompleto" />
+      </div>
+
+      <div>
+        <label class="field-label">Tipo de documento</label>
+        <select class="field-input" [(ngModel)]="model.documentIdentityTypeId">
+          <option [ngValue]="null">—</option>
+          <option *ngFor="let t of documentTypes" [ngValue]="t.id">
+            {{ t.abreviatura }}{{ t.descripcion ? ' — ' + t.descripcion : '' }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Número de documento</label>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="model.numeroDocumento"
+          maxlength="15"
+          [disabled]="!puedeEditarDni"
+          [title]="!puedeEditarDni ? 'Solo un Administrador de Obra puede corregir el número de documento' : ''"
+        />
+      </div>
+
+      <div>
+        <label class="field-label">Cumpleaños</label>
+        <app-date-picker
+          [showLabel]="false"
+          [value]="model.cumpleanos || null"
+          (valueChange)="model.cumpleanos = $event ?? ''"
+        />
+      </div>
+
+      <div>
+        <label class="field-label">Correo corporativo</label>
+        <input
+          type="email"
+          class="field-input"
+          [class.field-invalid]="!!emailError || faltaCorreo"
+          [(ngModel)]="model.emailCorporativo"
+          (ngModelChange)="onEmailCorporativoInput()"
+          (blur)="onEmailCorporativoBlur()"
+          placeholder="usuario@abril.pe"
+        />
+        <span *ngIf="verificandoEmail" class="field-status checking">
+          Verificando en el directorio de Abril…
+        </span>
+        <span *ngIf="!verificandoEmail && emailVerificadoNombre" class="field-status verified">
+          ✓ {{ emailVerificadoNombre }}
+        </span>
+        <span *ngIf="!verificandoEmail && emailError" class="field-error">{{ emailError }}</span>
+      </div>
+
+      <div>
+        <label class="field-label">Correo personal</label>
+        <input
+          type="email"
+          class="field-input"
+          [class.field-invalid]="faltaCorreo"
+          [(ngModel)]="model.emailPersonal"
+          placeholder="usuario@gmail.com"
+        />
+      </div>
+
+      <p class="field-error col-span-2" *ngIf="faltaCorreo">
+        El trabajador debe conservar al menos un correo: el corporativo o el personal.
+      </p>
+
+      <div>
+        <label class="field-label">Categoría</label>
+        <app-search-select
+          [options]="categorias"
+          valueField="id"
+          displayField="nombre"
+          [value]="model.categoriaId"
+          [showLabel]="false"
+          placeholder="Todas las categorías"
+          [allowClear]="true"
+          (valueChange)="onCategoriaChange($event)"
+        />
+        <span class="field-hint">Solo filtra los puestos. La categoría real la define el puesto.</span>
+      </div>
+
+      <div>
+        <label class="field-label">Puesto</label>
+        <app-search-select
+          [options]="puestosFiltrados"
+          valueField="id"
+          displayField="nombre"
+          [value]="model.puestoId"
+          [showLabel]="false"
+          placeholder="Selecciona puesto"
+          [allowClear]="true"
+          (valueChange)="onPuestoChange($event)"
+        />
+        <span class="field-hint">Es el cargo que se muestra, y de él salen los entregables, permisos y filtros internos.</span>
+      </div>
+
+      <div class="col-span-2" *ngFor="let level of areaLevels; let i = index">
+        <label class="field-label">{{ i === 0 ? 'Área' : 'Área (nivel ' + (i + 1) + ')' }}</label>
+        <app-search-select
+          [options]="level.options"
+          valueField="areaScopeId"
+          displayField="areaItemName"
+          [value]="level.selected"
+          [showLabel]="false"
+          [sortAlpha]="false"
+          placeholder="Selecciona área"
+          [allowClear]="true"
+          (valueChange)="onAreaLevelChange(i, $event)"
+        />
+      </div>
+
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

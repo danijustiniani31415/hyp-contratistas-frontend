@@ -1,0 +1,21 @@
+<div class="guides-panel">
+  <div class="guides-heading" [style.color]="accentColor">
+    <svg width="14" height="14" viewBox="0 0 24 24" [attr.fill]="accentColor"><path d="M8 5v14l11-7z"/></svg>
+    <span>{{ titulo }}</span>
+  </div>
+
+  <div class="guides-list" [class.guides-grid]="layout === 'grid'">
+    <a *ngFor="let g of guias" [href]="g.url" target="_blank" rel="noopener noreferrer" class="guide-card">
+      <div class="guide-thumb" [style.background]="g.img ? null : accentColor + '14'">
+        <img *ngIf="g.img" [src]="g.img" [alt]="g.titulo" loading="lazy" />
+        <span class="guide-play" *ngIf="showPlayIcon" [style.background]="accentColor">
+          <svg width="12" height="12" fill="#ffffff" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </span>
+      </div>
+      <div class="guide-info">
+        <span class="guide-title">{{ g.titulo }}</span>
+        <span class="guide-link" [style.color]="accentColor">{{ linkLabel }}</span>
+      </div>
+    </a>
+  </div>
+</div>

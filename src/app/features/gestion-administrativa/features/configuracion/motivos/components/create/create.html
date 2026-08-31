@@ -1,0 +1,59 @@
+<app-base-modal [title]="'NUEVO MOTIVO DE SALIDA'" width="w-[420px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[16px] mt-[20px]">
+
+    <div class="flex flex-col gap-[4px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Descripción</label>
+      <input
+        type="text"
+        [(ngModel)]="descripcion"
+        placeholder="Ej. Trámite bancario"
+        class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
+      <p *ngIf="submitted && !descripcion.trim()" class="text-xs text-red-500">Campo requerido</p>
+    </div>
+
+    <label class="flex items-start gap-[8px] cursor-pointer select-none w-fit">
+      <input
+        type="checkbox"
+        class="w-4 h-4 mt-[2px] cursor-pointer"
+        style="accent-color:var(--color-abril-primary)"
+        [(ngModel)]="requiereAdjunto" />
+      <span class="text-sm text-gray-700">Requiere documento adjunto</span>
+    </label>
+
+    <label class="flex items-start gap-[8px] cursor-pointer select-none w-fit">
+      <input
+        type="checkbox"
+        class="w-4 h-4 mt-[2px] cursor-pointer"
+        style="accent-color:var(--color-abril-primary)"
+        [(ngModel)]="esHoraEstimada" />
+      <span class="flex flex-col">
+        <span class="text-sm text-gray-700">Es hora estimada</span>
+        <span class="text-xs text-gray-400">Las horas declaradas con este motivo son estimadas: recepción no registrará la hora real de salida/retorno y no se mostrará el recordatorio de recuperación de horas en el formulario ni en los correos.</span>
+      </span>
+    </label>
+
+    <label class="flex items-start gap-[8px] cursor-pointer select-none w-fit">
+      <input
+        type="checkbox"
+        class="w-4 h-4 mt-[2px] cursor-pointer"
+        style="accent-color:var(--color-abril-primary)"
+        [(ngModel)]="requiereMotivoAdicional" />
+      <span class="flex flex-col">
+        <span class="text-sm text-gray-700">Requiere motivo adicional</span>
+        <span class="text-xs text-gray-400">Al elegir este motivo, el trabajador deberá escribir un detalle obligatorio que explique la salida.</span>
+      </span>
+    </label>
+
+    <div class="flex justify-center mt-[4px]">
+      <button
+        (click)="save()"
+        class="w-[160px] py-[8px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-primary)">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

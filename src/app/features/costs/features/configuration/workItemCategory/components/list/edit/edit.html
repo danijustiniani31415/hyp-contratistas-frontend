@@ -1,0 +1,319 @@
+<app-base-modal [title]="'EDITAR PARTIDA DE CONTROL'" width="w-[860px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-5 mt-5">
+
+    <!-- Descripción + Especialidad + Estado -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Descripción</label>
+        <input
+          type="text"
+          [(ngModel)]="dto.workItemCategoryDescription"
+          placeholder="Ingresa la descripción..."
+          class="border rounded-lg px-3 py-2.5 text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <app-search-select
+          label="Especialidad"
+          [options]="specialties"
+          valueField="workSpecialtyId"
+          displayField="workSpecialtyDescription"
+          placeholder="Selecciona la especialidad"
+          [fullText]="true"
+          [(value)]="dto.workSpecialtyId" />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <app-search-select
+          label="Estado"
+          [options]="estadoOptions"
+          valueField="value"
+          displayField="label"
+          [allowClear]="false"
+          [(value)]="dto.active" />
+      </div>
+    </div>
+
+    <!-- ── Secciones mayores: tipos de contrato ───────────────────────── -->
+    <div class="flex flex-col gap-3">
+      <div class="flex gap-1 border-b border-[#E2E2E2]">
+        <button type="button" (click)="setSection('suministro')"
+          class="px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer"
+          [ngClass]="activeSection === 'suministro'
+            ? 'border-[var(--color-abril-primary)] text-[var(--color-abril-primary)]'
+            : 'border-transparent text-gray-400 hover:text-gray-600'">
+          Suministro
+        </button>
+        <button type="button" (click)="setSection('instalacion')"
+          class="px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer"
+          [ngClass]="activeSection === 'instalacion'
+            ? 'border-[var(--color-abril-primary)] text-[var(--color-abril-primary)]'
+            : 'border-transparent text-gray-400 hover:text-gray-600'">
+          Instalación
+        </button>
+        <button type="button" (click)="setSection('suministroInstalacion')"
+          class="px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer"
+          [ngClass]="activeSection === 'suministroInstalacion'
+            ? 'border-[var(--color-abril-primary)] text-[var(--color-abril-primary)]'
+            : 'border-transparent text-gray-400 hover:text-gray-600'">
+          Suministro e Instalación
+        </button>
+      </div>
+
+      <!-- ── Sección: Suministro (con mini-secciones) ── -->
+      <div *ngIf="activeSection === 'suministro'" class="flex flex-col gap-3">
+        <div class="flex gap-1">
+          <button type="button" (click)="setSuministroSub('clausulas')"
+            class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer"
+            [ngClass]="suministroSub === 'clausulas'
+              ? 'bg-[var(--color-abril-primary-light)] text-[var(--color-abril-primary)] border border-[var(--color-abril-primary)]'
+              : 'bg-gray-50 text-gray-400 border border-transparent hover:text-gray-600'">
+            Cláusulas 7.x
+          </button>
+          <button type="button" (click)="setSuministroSub('anexo3')"
+            class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer"
+            [ngClass]="suministroSub === 'anexo3'
+              ? 'bg-[var(--color-abril-primary-light)] text-[var(--color-abril-primary)] border border-[var(--color-abril-primary)]'
+              : 'bg-gray-50 text-gray-400 border border-transparent hover:text-gray-600'">
+            Anexo 3
+          </button>
+          <button type="button" (click)="setSuministroSub('anexo4')"
+            class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer"
+            [ngClass]="suministroSub === 'anexo4'
+              ? 'bg-[var(--color-abril-primary-light)] text-[var(--color-abril-primary)] border border-[var(--color-abril-primary)]'
+              : 'bg-gray-50 text-gray-400 border border-transparent hover:text-gray-600'">
+            Anexo 4
+          </button>
+        </div>
+
+        <!-- Mini-sección: cláusulas 7.x de Suministro -->
+        <ng-container *ngIf="suministroSub === 'clausulas'">
+          <ng-container
+            *ngTemplateOutlet="clauseBlock; context: {
+              section: 'suministro',
+              hint: 'Cláusulas 7.x que aplican a contratos de Suministro.'
+            }">
+          </ng-container>
+        </ng-container>
+
+        <!-- Mini-sección: Anexo 3 (solo Suministro) -->
+        <div *ngIf="suministroSub === 'anexo3'" class="flex flex-col gap-3">
+          <p class="text-xs text-gray-400">
+            Cláusulas de Anexo 3 de "Suministro".
+          </p>
+
+          <div *ngIf="anexo3Clauses.length > 0" class="flex flex-col gap-2">
+            <div
+              *ngFor="let clause of anexo3Clauses; let i = index"
+              class="flex items-start gap-2 bg-[#f8f9fa] border border-[#E2E2E2] rounded-lg p-3">
+
+              <span class="text-xs font-bold text-gray-400 mt-[3px] w-5 shrink-0 text-right">{{ i + 1 }}.</span>
+
+              <textarea
+                [(ngModel)]="clause.clauseText"
+                rows="2"
+                class="flex-1 text-sm bg-transparent border-none outline-none resize-y leading-relaxed min-h-[48px]">
+              </textarea>
+
+              <div class="flex flex-col gap-1 shrink-0">
+                <button type="button" (click)="moveAnexo3ClauseUp(i)" [disabled]="i === 0"
+                  class="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  title="Subir">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/>
+                  </svg>
+                </button>
+                <button type="button" (click)="moveAnexo3ClauseDown(i)" [disabled]="i === anexo3Clauses.length - 1"
+                  class="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  title="Bajar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </button>
+                <button type="button" (click)="removeAnexo3Clause(i)"
+                  class="p-1 rounded hover:bg-red-100 text-red-400 transition-colors"
+                  title="Eliminar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <p *ngIf="anexo3Clauses.length === 0" class="text-xs text-gray-400 italic">
+            Sin cláusulas de Anexo 3. Agrega la primera abajo.
+          </p>
+
+          <div class="flex gap-2 items-end">
+            <textarea
+              [(ngModel)]="newAnexo3ClauseText"
+              rows="3"
+              placeholder="Escribe una cláusula de Anexo 3 y presiona Agregar..."
+              class="flex-1 border rounded-lg px-3 py-2.5 text-sm focus:outline-none resize-y min-h-[72px]" style="border-color:var(--color-abril-border)">
+            </textarea>
+            <button type="button" (click)="addAnexo3Clause()"
+              class="h-[42px] px-4 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors shrink-0" style="background:var(--color-abril-primary)">
+              Agregar
+            </button>
+          </div>
+        </div>
+
+        <!-- Mini-sección: Anexo 4 (solo Suministro) -->
+        <div *ngIf="suministroSub === 'anexo4'" class="flex flex-col gap-3">
+          <p class="text-xs text-gray-400">
+            Cláusulas de Anexo 4 de "Suministro".
+          </p>
+
+          <div *ngIf="anexo4Clauses.length > 0" class="flex flex-col gap-2">
+            <div
+              *ngFor="let clause of anexo4Clauses; let i = index"
+              class="flex items-start gap-2 bg-[#f8f9fa] border border-[#E2E2E2] rounded-lg p-3">
+
+              <span class="text-xs font-bold text-gray-400 mt-[3px] w-5 shrink-0 text-right">{{ i + 1 }}.</span>
+
+              <textarea
+                [(ngModel)]="clause.clauseText"
+                rows="2"
+                class="flex-1 text-sm bg-transparent border-none outline-none resize-y leading-relaxed min-h-[48px]">
+              </textarea>
+
+              <div class="flex flex-col gap-1 shrink-0">
+                <button type="button" (click)="moveAnexo4ClauseUp(i)" [disabled]="i === 0"
+                  class="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  title="Subir">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/>
+                  </svg>
+                </button>
+                <button type="button" (click)="moveAnexo4ClauseDown(i)" [disabled]="i === anexo4Clauses.length - 1"
+                  class="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  title="Bajar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </button>
+                <button type="button" (click)="removeAnexo4Clause(i)"
+                  class="p-1 rounded hover:bg-red-100 text-red-400 transition-colors"
+                  title="Eliminar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <p *ngIf="anexo4Clauses.length === 0" class="text-xs text-gray-400 italic">
+            Sin cláusulas de Anexo 4. Agrega la primera abajo.
+          </p>
+
+          <div class="flex gap-2 items-end">
+            <textarea
+              [(ngModel)]="newAnexo4ClauseText"
+              rows="3"
+              placeholder="Escribe una cláusula de Anexo 4 y presiona Agregar..."
+              class="flex-1 border rounded-lg px-3 py-2.5 text-sm focus:outline-none resize-y min-h-[72px]" style="border-color:var(--color-abril-border)">
+            </textarea>
+            <button type="button" (click)="addAnexo4Clause()"
+              class="h-[42px] px-4 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors shrink-0" style="background:var(--color-abril-primary)">
+              Agregar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Sección: Instalación ── -->
+      <ng-container *ngIf="activeSection === 'instalacion'">
+        <ng-container
+          *ngTemplateOutlet="clauseBlock; context: {
+            section: 'instalacion',
+            hint: 'Cláusulas 9.x que aplican a contratos de Instalación.'
+          }">
+        </ng-container>
+      </ng-container>
+
+      <!-- ── Sección: Suministro e Instalación ── -->
+      <ng-container *ngIf="activeSection === 'suministroInstalacion'">
+        <ng-container
+          *ngTemplateOutlet="clauseBlock; context: {
+            section: 'suministroInstalacion',
+            hint: 'Cláusulas 9.x que aplican a contratos de Suministro e Instalación.'
+          }">
+        </ng-container>
+      </ng-container>
+    </div>
+
+    <!-- Botón guardar -->
+    <div class="flex justify-center pt-1">
+      <button (click)="save()"
+        class="w-[140px] py-2 rounded-lg cursor-pointer transition-colors" style="background:var(--color-abril-primary)">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+</app-base-modal>
+
+<!-- ── Bloque reutilizable: lista de cláusulas de un tipo de contrato ── -->
+<ng-template #clauseBlock let-section="section" let-hint="hint">
+  <div class="flex flex-col gap-3">
+    <p class="text-xs text-gray-400">{{ hint }}</p>
+
+    <div *ngIf="clausesFor(section).length > 0" class="flex flex-col gap-2">
+      <div
+        *ngFor="let clause of clausesFor(section); let i = index"
+        class="flex items-start gap-2 bg-[#f8f9fa] border border-[#E2E2E2] rounded-lg p-3">
+
+        <span class="text-xs font-bold text-gray-400 mt-[3px] w-5 shrink-0 text-right">{{ i + 1 }}.</span>
+
+        <textarea
+          [(ngModel)]="clause.clauseText"
+          rows="2"
+          class="flex-1 text-sm bg-transparent border-none outline-none resize-y leading-relaxed min-h-[48px]">
+        </textarea>
+
+        <div class="flex flex-col gap-1 shrink-0">
+          <button type="button" (click)="moveClauseUp(section, i)" [disabled]="i === 0"
+            class="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            title="Subir">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/>
+            </svg>
+          </button>
+          <button type="button" (click)="moveClauseDown(section, i)" [disabled]="i === clausesFor(section).length - 1"
+            class="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            title="Bajar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <button type="button" (click)="removeClause(section, clause)"
+            class="p-1 rounded hover:bg-red-100 text-red-400 transition-colors"
+            title="Eliminar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <p *ngIf="clausesFor(section).length === 0" class="text-xs text-gray-400 italic">
+      Sin cláusulas para este tipo de contrato. Agrega la primera abajo.
+    </p>
+
+    <div class="flex gap-2 items-end">
+      <textarea
+        [(ngModel)]="newClauseText[section]"
+        rows="3"
+        placeholder="Escribe una cláusula y presiona Agregar..."
+        class="flex-1 border rounded-lg px-3 py-2.5 text-sm focus:outline-none resize-y min-h-[72px]" style="border-color:var(--color-abril-border)">
+      </textarea>
+      <button type="button" (click)="addClause(section)"
+        class="h-[42px] px-4 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors shrink-0" style="background:var(--color-abril-primary)">
+        Agregar
+      </button>
+    </div>
+  </div>
+</ng-template>

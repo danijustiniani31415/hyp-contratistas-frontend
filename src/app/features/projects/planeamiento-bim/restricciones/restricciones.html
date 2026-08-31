@@ -1,0 +1,317 @@
+<div class="bim-restricciones-page">
+  <!-- Encabezado Estándar Abril -->
+  <app-abril-page-header
+    titulo="PLANEAMIENTO"
+    subtitulo="Identificación, seguimiento y levantamiento de restricciones operacionales por proyecto"
+    [tabs]="tabs"
+    [botonPrimario]="btnCrearHeader"
+    [botonPrimarioDeshabilitado]="loadingProjects || !selectedProjectId"
+    (primaryClick)="openCreateModal()"
+  ></app-abril-page-header>
+
+  <!-- Sub-navegación Secundaria de Planeamiento BIM -->
+  <app-planeamiento-bim-subnav></app-planeamiento-bim-subnav>
+
+  <div class="bim-container">
+    <!-- Bar de Filtros y Selección de Proyecto -->
+    <div class="bim-card selector-card">
+      <div class="project-selector-wrapper">
+        <label class="project-label" for="projectSelect">PROYECTO SELECCIONADO:</label>
+        <select
+          id="projectSelect"
+          class="bim-select project-select"
+          [ngModel]="selectedProjectId"
+          (ngModelChange)="onProjectChange($event)"
+          [disabled]="loadingProjects || loadingRestricciones || savingRestriccion"
+        >
+          <option [ngValue]="null" disabled>-- Seleccione un proyecto --</option>
+          <option *ngFor="let p of projects" [ngValue]="p.projectId">
+            {{ p.projectDescription }}
+          </option>
+        </select>
+      </div>
+
+      <div class="header-filters" *ngIf="selectedProjectId">
+        <label class="toggle-switch">
+          <input
+            type="checkbox"
+            [checked]="soloActivos"
+            (change)="toggleSoloActivos()"
+            [disabled]="loadingRestricciones"
+          />
+          <span class="slider"></span>
+          <span class="toggle-label">Mostrar solo restricciones activas</span>
+        </label>
+
+        <button
+          type="button"
+          class="btn-primary-udp"
+          (click)="openCreateModal()"
+          [disabled]="loadingRestricciones"
+        >
+          <i class="ti ti-plus"></i> NUEVA RESTRICCIÓN
+        </button>
+      </div>
+    </div>
+
+    <!-- Error al Cargar (F9) -->
+    <div *ngIf="loadError" class="bim-alert bim-alert--danger">
+      <i class="ti ti-alert-triangle-filled alert-icon"></i>
+      <div class="alert-content">
+        <strong>Error:</strong> {{ loadError }}
+      </div>
+      <button type="button" class="btn-retry" (click)="cargarRestricciones()">
+        <i class="ti ti-refresh"></i> Reintentar
+      </button>
+    </div>
+
+    <!-- Mensaje cuando aún no se ha seleccionado proyecto -->
+    <div *ngIf="!selectedProjectId && !loadingRestricciones && !loadError" class="empty-state">
+      <i class="ti ti-click empty-icon"></i>
+      <p class="empty-title">Selección de Proyecto Requerida</p>
+      <p class="empty-sub">Por favor, seleccione un proyecto en el menú desplegable para gestionar sus restricciones.</p>
+    </div>
+
+    <!-- Skeleton Loading (F8) -->
+    <div *ngIf="loadingRestricciones && !loadError" class="skeleton-wrapper">
+      <div class="bim-card skeleton-card skeleton-pulse">
+        <div class="skeleton-line skeleton-line--title"></div>
+        <div class="skeleton-table">
+          <div class="skeleton-line" *ngFor="let i of [1,2,3,4]"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla Principal de Restricciones -->
+    <div *ngIf="!loadingRestricciones && selectedProjectId && !loadError" class="bim-card">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">
+            <i class="ti ti-barrier-block title-icon"></i> REGISTRO DE RESTRICCIONES
+          </h3>
+          <p class="card-subtitle">Listado de restricciones registradas y su estado actual</p>
+        </div>
+        <span class="card-badge">
+          {{ restricciones.length }} {{ soloActivos ? 'RESTRICCIONES ACTIVAS' : 'RESTRICCIONES TOTALES' }}
+        </span>
+      </div>
+
+      <div class="card-body">
+        <div *ngIf="restricciones.length === 0" class="empty-state">
+          <i class="ti ti-circle-check-filled empty-icon empty-icon--success"></i>
+          <p class="empty-title">Sin Restricciones Registradas</p>
+          <p class="empty-sub">
+            {{ soloActivos ? 'No hay restricciones activas pendientes en este momento.' : 'No existen restricciones registradas para este proyecto. Use "Nueva Restricción" para registrar la primera.' }}
+          </p>
+        </div>
+
+        <div *ngIf="restricciones.length > 0" class="table-responsive">
+          <table class="bim-table">
+            <thead>
+              <tr>
+                <th style="width: 60px;">ID</th>
+                <th>DESCRIPCIÓN DE LA RESTRICCIÓN</th>
+                <th style="width: 170px;">UBICACIÓN</th>
+                <th style="width: 130px;">ESTADO</th>
+                <th style="width: 150px;">FECHA CREACIÓN</th>
+                <th style="width: 150px;">LEVANT. PREVISTA</th>
+                <th style="width: 150px;">FECHA CIERRE</th>
+                <th style="width: 130px;" class="text-center">ACCIONES</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of restricciones">
+                <td class="text-center font-bold text-navy">#{{ r.id }}</td>
+                <td class="desc-cell">
+                  <span class="desc-text">{{ r.descripcion }}</span>
+                </td>
+                <td class="date-cell">
+                  <span *ngIf="r.zonaNombre || r.nivelNombre || r.sectorNombre || r.actividadNombre">
+                    {{ [r.zonaNombre, r.nivelNombre, r.sectorNombre, r.actividadNombre].join(' / ') }}
+                  </span>
+                  <span *ngIf="!r.zonaNombre && !r.nivelNombre && !r.sectorNombre && !r.actividadNombre" class="text-active-dash">—</span>
+                </td>
+                <td>
+                  <!-- REGLA ESENCIAL: Activo se evalúa por fechaCierre === null -->
+                  <ng-container *ngIf="esActivo(r)">
+                    <span *ngIf="r.estado === 'ABIERTO'" class="status-pill status-pill--danger">
+                      <i class="ti ti-circle-filled"></i> ABIERTO
+                    </span>
+                    <span *ngIf="r.estado === 'EN_GESTION'" class="status-pill status-pill--warning">
+                      <i class="ti ti-clock"></i> EN GESTIÓN
+                    </span>
+                  </ng-container>
+                  <ng-container *ngIf="!esActivo(r)">
+                    <span class="status-pill status-pill--closed">
+                      <i class="ti ti-check"></i> CERRADO
+                    </span>
+                  </ng-container>
+                </td>
+                <td class="date-cell">
+                  {{ r.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}
+                </td>
+                <td class="date-cell">
+                  <span *ngIf="r.fechaLevantamientoPrevista">{{ r.fechaLevantamientoPrevista | date:'dd/MM/yyyy' }}</span>
+                  <span *ngIf="!r.fechaLevantamientoPrevista" class="text-active-dash">—</span>
+                </td>
+                <td class="date-cell">
+                  <span *ngIf="r.fechaCierre" class="text-closed-date">
+                    {{ r.fechaCierre | date:'dd/MM/yyyy HH:mm' }}
+                  </span>
+                  <span *ngIf="!r.fechaCierre" class="text-active-dash">—</span>
+                </td>
+                <td class="text-center actions-cell">
+                  <!-- Editar: solo activo -->
+                  <button
+                    type="button"
+                    class="btn-action btn-action--edit"
+                    title="Editar Restricción"
+                    (click)="openEditModal(r)"
+                    [disabled]="!esActivo(r)"
+                  >
+                    <i class="ti ti-edit"></i>
+                  </button>
+
+                  <!-- Cerrar: solo activo -->
+                  <button
+                    type="button"
+                    class="btn-action btn-action--close"
+                    title="Cerrar Restricción"
+                    (click)="cerrarRestriccion(r)"
+                    [disabled]="!esActivo(r)"
+                  >
+                    <i class="ti ti-lock"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal Base UDP para Crear / Editar Restricción -->
+  <app-base-modal
+    *ngIf="showModal"
+    [title]="modalMode === 'CREATE' ? 'Nueva Restricción' : 'Editar Restricción #' + editingId"
+    width="w-[620px]"
+    (closeModal)="closeModal()"
+  >
+    <div class="modal-form-body">
+      <div class="bim-field">
+        <label class="bim-field-label" for="descInput">DESCRIPCIÓN DE LA RESTRICCIÓN *</label>
+        <textarea
+          id="descInput"
+          class="bim-textarea"
+          rows="3"
+          placeholder="Describa de forma clara la restricción que impide el avance normal..."
+          [(ngModel)]="formDescripcion"
+          [disabled]="savingRestriccion"
+        ></textarea>
+      </div>
+
+      <div class="modal-form-row">
+        <div class="bim-field">
+          <label class="bim-field-label" for="estadoSelect">ESTADO *</label>
+          <select
+            id="estadoSelect"
+            class="bim-select"
+            [(ngModel)]="formEstado"
+            [disabled]="savingRestriccion"
+          >
+            <option value="ABIERTO">ABIERTO</option>
+            <option value="EN_GESTION">EN GESTIÓN</option>
+          </select>
+          <span class="field-hint">Nota: El estado "CERRADO" solo se asigna mediante la acción de Cierre definitivo.</span>
+        </div>
+
+        <div class="bim-field">
+          <label class="bim-field-label" for="fechaLevantInput">FECHA DE LEVANTAMIENTO PREVISTA</label>
+          <input
+            id="fechaLevantInput"
+            type="date"
+            class="bim-input"
+            [(ngModel)]="formFechaLevantamientoPrevista"
+            [disabled]="savingRestriccion"
+          />
+          <span class="field-hint">Fecha estimada de solución (distinta de la fecha de cierre real).</span>
+        </div>
+      </div>
+
+      <div class="modal-section-title">
+        <i class="ti ti-map-pin"></i> Ubicación afectada <span class="field-hint">(opcional)</span>
+      </div>
+
+      <div *ngIf="catalogoError" class="bim-alert bim-alert--warning modal-catalogo-error">
+        <i class="ti ti-alert-triangle-filled alert-icon"></i>
+        <div class="alert-content">{{ catalogoError }}</div>
+      </div>
+
+      <div class="modal-form-grid-4">
+        <app-search-select
+          label="Zona"
+          placeholder="Selecciona zona"
+          [options]="zonasCatalogo"
+          valueField="id"
+          displayField="nombre"
+          [value]="formZonaId"
+          (valueChange)="onFormZonaChange($event)"
+          [disabled]="savingRestriccion || loadingCatalogos"
+        ></app-search-select>
+
+        <app-search-select
+          label="Nivel"
+          placeholder="Selecciona nivel"
+          [options]="nivelesDisponibles"
+          valueField="id"
+          displayField="nombre"
+          [value]="formNivelId"
+          (valueChange)="onFormNivelChange($event)"
+          [disabled]="savingRestriccion || loadingCatalogos || !formZonaId"
+        ></app-search-select>
+
+        <app-search-select
+          label="Sector"
+          placeholder="Selecciona sector"
+          [options]="sectoresDisponibles"
+          valueField="id"
+          displayField="nombre"
+          [(value)]="formSectorId"
+          [disabled]="savingRestriccion || loadingCatalogos || !formNivelId"
+        ></app-search-select>
+
+        <app-search-select
+          label="Actividad"
+          placeholder="Selecciona actividad"
+          [options]="actividadesCatalogo"
+          valueField="id"
+          displayField="nombre"
+          [(value)]="formActividadId"
+          [disabled]="savingRestriccion || loadingCatalogos"
+        ></app-search-select>
+      </div>
+    </div>
+
+    <div class="modal-form-footer">
+      <button
+        type="button"
+        class="btn-secondary-udp"
+        (click)="closeModal()"
+        [disabled]="savingRestriccion"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="btn-primary-udp"
+        (click)="saveModal()"
+        [disabled]="savingRestriccion"
+      >
+        <i class="ti ti-device-floppy"></i>
+        <span>{{ savingRestriccion ? 'Guardando...' : (modalMode === 'CREATE' ? 'Crear Restricción' : 'Guardar Cambios') }}</span>
+      </button>
+    </div>
+  </app-base-modal>
+</div>

@@ -1,0 +1,325 @@
+<app-abril-page-header
+  badge="CLÍNICA"
+  titulo="Interconsultas"
+  subtitulo="Derivaciones médicas pendientes de atención."
+  [tabs]="tabs">
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="inter-root">
+
+  <!-- ── Table zone ────────────────────────────────────── -->
+  <div class="table-zone">
+    <div class="table-card">
+
+      <!-- Loading -->
+      <div class="state-row" *ngIf="loading">
+        <div class="loading-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- Vacío -->
+      <div class="state-row empty-state" *ngIf="!loading && items.length === 0">
+        <span class="empty-icon">🔗</span>
+        <p class="empty-text">Sin interconsultas en este estado</p>
+      </div>
+
+      <!-- Tabla -->
+      <table class="inter-table" *ngIf="!loading && items.length > 0">
+        <colgroup>
+          <col style="width:16%">
+          <col style="width:13%">
+          <col style="width:11%">
+          <col style="width:17%">
+          <col style="width:9%">
+          <col style="width:7%">
+          <col style="width:9%">
+          <col style="width:18%">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Trabajador</th>
+            <th>Proyecto / Razón Social</th>
+            <th>Especialidad</th>
+            <th>Diagnóstico</th>
+            <th>F. Derivación</th>
+            <th>Días pend.</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items">
+            <td>
+              <div class="worker-cell">
+                <span class="worker-name">{{ item.workerNombre }}</span>
+                <span class="worker-dni">{{ item.workerDni }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="worker-cell">
+                <span class="worker-name">{{ item.proyectoNombre || '—' }}</span>
+                <span class="worker-dni">{{ item.razonSocial || '—' }}</span>
+              </div>
+            </td>
+            <td class="td-cell">{{ item.especialidad }}</td>
+            <td class="td-cell td-muted" [title]="item.diagnostico">{{ item.diagnostico || '—' }}</td>
+            <td class="td-cell td-muted">{{ item.fechaDerivacion | date:'dd/MM/yyyy' }}</td>
+            <td>
+              <span class="dias-badge" [ngClass]="diasClass(item.diasPendiente, item.estado)">
+                {{ item.estado === 'Pendiente' ? item.diasPendiente + 'd' : '—' }}
+              </span>
+            </td>
+            <td>
+              <span class="estado-badge" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+            </td>
+            <td class="td-action">
+              <button class="btn-editar" (click)="abrirEditar(item)" title="Editar especialidad y diagnóstico">
+                ✎ Editar
+              </button>
+              <button class="btn-resolver" *ngIf="item.estado === 'Pendiente'"
+                (click)="abrirResolver(item)">
+                Gestionar
+              </button>
+              <button class="btn-ver" *ngIf="item.estado !== 'Pendiente'"
+                (click)="abrirVer(item)">
+                Ver
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Modal de filtros ─────────────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Nombre o DNI..."
+      [value]="filtroSearch"
+      (valueChange)="onSearchChange($event)"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtroEstado"
+      placeholder="Todos"
+      (valueChange)="filtroEstado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>
+
+<!-- ═══════════════════════════════════════════════════════════
+     Modal — Levantar interconsulta
+     ═══════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" *ngIf="interconsultaActiva" (click)="cancelarResolucion()"></div>
+<div class="dark-modal" *ngIf="interconsultaActiva" (click)="$event.stopPropagation()">
+
+  <div class="dm-header">
+    <div>
+      <div class="dm-step-badge">Levantar interconsulta</div>
+      <h3 class="dm-title">{{ interconsultaActiva.workerNombre }}</h3>
+      <p class="dm-worker">
+        {{ interconsultaActiva.workerDni }}
+        <span class="dm-dni">· {{ interconsultaActiva.especialidad }} · {{ interconsultaActiva.fechaDerivacion | date:'dd/MM/yyyy' }}</span>
+      </p>
+    </div>
+    <button class="dm-close" (click)="cancelarResolucion()">✕</button>
+  </div>
+
+  <div class="dm-body">
+    <div class="dm-field-grid">
+
+      <div class="dm-field">
+        <label class="dm-label">Fecha de atención *</label>
+        <input type="date" class="dm-input"
+          [(ngModel)]="levantamiento.fechaAtencion"
+          (ngModelChange)="levantamiento.fechaError = ''" />
+        <p class="dm-error" *ngIf="levantamiento.fechaError">{{ levantamiento.fechaError }}</p>
+      </div>
+
+      <div class="dm-field">
+        <label class="dm-label">Resultado</label>
+        <input type="text" class="dm-input" [(ngModel)]="levantamiento.resultado"
+          placeholder="Alta médica, Continúa tratamiento..." />
+      </div>
+
+      <div class="dm-field dm-full">
+        <label class="dm-label">Diagnóstico</label>
+        <textarea class="dm-input dm-textarea" rows="2" [(ngModel)]="levantamiento.diagnostico"
+          placeholder="Descripción del diagnóstico..."></textarea>
+      </div>
+
+      <div class="dm-field dm-full">
+        <label class="dm-label">Evidencia — informe de interconsulta *</label>
+        <label class="file-drop-zone" [class.has-file]="!!levantamiento.archivo">
+          <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="file-hidden"
+            (change)="onArchivoLevantamiento($event)" />
+          <ng-container *ngIf="!levantamiento.archivo">
+            <span class="file-icon">📎</span>
+            <span class="file-hint">Adjuntar informe de interconsulta</span>
+          </ng-container>
+          <ng-container *ngIf="levantamiento.archivo">
+            <span class="file-icon">✅</span>
+            <div class="file-info">
+              <span class="file-name">{{ levantamiento.archivoNombre }}</span>
+              <span class="file-size">{{ levantamiento.archivoTamano }}</span>
+            </div>
+          </ng-container>
+        </label>
+        <p class="dm-error" *ngIf="levantamiento.archivoError">{{ levantamiento.archivoError }}</p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="dm-footer">
+    <button class="btn-ghost-dark" (click)="cancelarResolucion()">Cancelar</button>
+    <button class="btn-guardar" [disabled]="levantarDeshabilitado" (click)="confirmarLevantamiento()">
+      {{ levantamiento.cargando ? 'Guardando...' : 'Levantar interconsulta' }}
+    </button>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     Modal — Editar especialidad / diagnóstico de derivación
+     ═══════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" *ngIf="editando" (click)="cerrarEditar()"></div>
+<div class="dark-modal" *ngIf="editando" (click)="$event.stopPropagation()">
+
+  <div class="dm-header">
+    <div>
+      <div class="dm-step-badge">Editar derivación</div>
+      <h3 class="dm-title">Especialidad y diagnóstico</h3>
+    </div>
+    <button class="dm-close" (click)="cerrarEditar()">✕</button>
+  </div>
+
+  <div class="dm-body">
+    <div class="dm-field-grid">
+
+      <div class="dm-field dm-full">
+        <label class="dm-label">Especialidad *</label>
+        <input type="text" class="dm-input" [(ngModel)]="editando.especialidad"
+          (ngModelChange)="editando.especialidadError = ''"
+          placeholder="Cardiología, Traumatología..." />
+        <p class="dm-error" *ngIf="editando.especialidadError">{{ editando.especialidadError }}</p>
+      </div>
+
+      <div class="dm-field dm-full">
+        <label class="dm-label">Diagnóstico</label>
+        <textarea class="dm-input dm-textarea" rows="3" [(ngModel)]="editando.diagnostico"
+          placeholder="Descripción del diagnóstico..."></textarea>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="dm-footer">
+    <button class="btn-ghost-dark" (click)="cerrarEditar()">Cancelar</button>
+    <button class="btn-guardar" [disabled]="editando.cargando" (click)="guardarEdicion()">
+      {{ editando.cargando ? 'Guardando...' : 'Guardar cambios' }}
+    </button>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     Modal Ver / Editar (interconsultas ya resueltas)
+     ═══════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" *ngIf="viendo" (click)="cerrarVer()"></div>
+<div class="dark-modal dm-ver" *ngIf="viendo" (click)="$event.stopPropagation()">
+
+  <div class="dm-header">
+    <div>
+      <h3 class="dm-title">{{ viendo.workerNombre }}</h3>
+      <p class="dm-worker">
+        {{ viendo.workerDni }}
+        <span class="dm-dni">· {{ viendo.especialidad }}</span>
+        <span class="estado-badge" [ngClass]="estadoClass(viendo.estado)" style="margin-left:8px;">
+          {{ viendo.estado }}
+        </span>
+      </p>
+    </div>
+    <button class="dm-close" (click)="cerrarVer()">✕</button>
+  </div>
+
+  <div class="dm-body">
+    <div class="dm-field-grid">
+
+      <div class="dm-field">
+        <label class="dm-label">Estado</label>
+        <select class="dm-input" [(ngModel)]="form.estado">
+          <option value="Pendiente">Pendiente</option>
+          <option value="Atendida">Atendida</option>
+          <option value="Cancelada">Cancelada</option>
+        </select>
+      </div>
+
+      <div class="dm-field">
+        <label class="dm-label">Fecha atención</label>
+        <input type="date" class="dm-input" [(ngModel)]="form.fechaAtencion" />
+      </div>
+
+      <div class="dm-field">
+        <label class="dm-label">CIE-10</label>
+        <input type="text" class="dm-input" [(ngModel)]="form.cie10" placeholder="Ej: M54.5" />
+      </div>
+
+      <div class="dm-field">
+        <label class="dm-label">Informe de interconsulta</label>
+        <button *ngIf="form.urlInforme" type="button" class="btn-ver"
+          (click)="verDocumento(form.urlInforme, 'Informe Interconsulta')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Ver
+        </button>
+        <span *ngIf="!form.urlInforme" class="dm-sub-missing">Sin archivo</span>
+      </div>
+
+      <div class="dm-field dm-full">
+        <label class="dm-label">Diagnóstico</label>
+        <input type="text" class="dm-input" [(ngModel)]="form.diagnostico"
+          placeholder="Descripción del diagnóstico..." />
+      </div>
+
+      <div class="dm-field dm-full">
+        <label class="dm-label">Resultado</label>
+        <textarea class="dm-input dm-textarea" rows="2" [(ngModel)]="form.resultado"
+          placeholder="Resultado de la interconsulta..."></textarea>
+      </div>
+
+      <div class="dm-field dm-full">
+        <label class="dm-label">Notas</label>
+        <input type="text" class="dm-input" [(ngModel)]="form.notas"
+          placeholder="Observaciones adicionales..." />
+      </div>
+
+    </div>
+  </div>
+
+  <div class="dm-footer">
+    <button class="btn-ghost-dark" (click)="cerrarVer()">Cancelar</button>
+    <button class="btn-guardar" [disabled]="saving" (click)="guardar()">
+      {{ saving ? 'Guardando...' : 'Guardar cambios' }}
+    </button>
+  </div>
+
+</div>
+
+<app-document-viewer
+  [archivoUrl]="visorUrl"
+  [nombre]="visorNombre"
+  (closed)="onVisorClosed()">
+</app-document-viewer>

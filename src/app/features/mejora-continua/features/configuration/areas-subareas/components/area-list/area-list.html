@@ -1,0 +1,65 @@
+<div class="w-full rounded-lg overflow-auto border-t border-x border-[#D6DEE5]">
+  <table class="w-full table-fixed">
+    <thead class="bg-[#E5F7D1]">
+      <tr class="text-[#64BC04]">
+        <th class="w-[90px]"></th>
+        <th class="w-[150px]">Descripción</th>
+        <th class="w-[150px]">Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of areas.data" class="border-b border-[#D6DEE5] h-[30px]">
+        <td class="text-center">
+          <div class="flex items-center justify-center gap-1">
+
+            <!-- Editar -->
+            <button class="cursor-pointer" title="Editar" (click)="openEditModal(item, $event)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14.06 9L15 9.94L5.92 19H5V18.08L14.06 9ZM17.66 3C17.41 3 17.15 3.1 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04C21.1 6.65 21.1 6 20.71 5.63L18.37 3.29C18.17 3.09 17.92 3 17.66 3ZM14.06 6.19L3 17.25V21H6.75L17.81 9.94L14.06 6.19Z" fill="#64BC04" />
+              </svg>
+            </button>
+
+            <!-- Configurar relaciones -->
+            <button class="cursor-pointer" title="Configurar relaciones" (click)="openScopeModal(item, $event)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64BC04" stroke-width="1.8" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+            </button>
+
+            <!-- Eliminar -->
+            <button class="cursor-pointer" title="Eliminar" (click)="deleteArea(item.areaId, $event)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z" fill="#64BC04" />
+              </svg>
+            </button>
+
+          </div>
+        </td>
+
+        <td><span [title]="item.areaDescription"
+            class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.areaDescription }}</span></td>
+
+        <td class="text-center">
+          <span class="inline-block rounded-lg px-[8px] py-[2px] my-[4px]" [ngClass]="{
+              'bg-[#D7FAF4] text-[#009C87]': item.active == true,
+              'bg-[#FAD5D4] text-[#D30000]': item.active == false }">
+            {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-area-edit [editDto]="editDto" [showEditModal]="showEditModal"
+  (closeEditModal)="showEditModal = false" (loadAreas)="loadAreas()">
+</app-area-edit>
+
+<app-psss-scope-edit
+  *ngIf="showScopeModal && scopeAreaId"
+  [lessonAreaId]="scopeAreaId"
+  [entityName]="scopeEntityName"
+  (closeModal)="showScopeModal = false"
+  (saved)="showScopeModal = false"
+/>

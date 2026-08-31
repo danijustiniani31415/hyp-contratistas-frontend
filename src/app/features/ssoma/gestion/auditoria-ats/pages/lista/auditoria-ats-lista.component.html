@@ -1,0 +1,149 @@
+<div class="lista-page">
+
+  <app-abril-page-header
+    badge="SSOMA"
+    titulo="Auditoría de ATS"
+    subtitulo="Registro y evaluación de calidad de ATS"
+    [hasExtra]="true">
+
+    <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <!-- Tabla -->
+  <div class="tabla-wrap abril-table-wrap">
+    @if (loading) {
+      <div class="loading-row">
+        <i class="ti ti-loader-2 spin"></i> Cargando...
+      </div>
+    } @else if (items.length === 0) {
+      <div class="empty-row">
+        <i class="ti ti-clipboard-x"></i>
+        <span>No se encontraron auditorías con los filtros aplicados.</span>
+      </div>
+    } @else {
+      <table class="abril-table tabla">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>#</th>
+            <th>Fecha</th>
+            <th>Auditado</th>
+            <th>Auditor</th>
+            <th>Proyecto</th>
+            <th>Actividad</th>
+            <th>Resultado</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items; track item.id) {
+            <tr class="tabla-row" (click)="verDetalle(item.id)">
+              <td class="col-id">{{ item.id }}</td>
+              <td class="col-fecha">{{ item.fecha | date:'dd/MM/yy' }}</td>
+              <td class="col-nombre">
+                {{ item.auditadoNombre | titleCase }}
+                @if (item.auditadoEmpresaNombre || item.auditadoCategoria) {
+                  <span class="col-nombre-sub">{{ item.auditadoEmpresaNombre }}{{ item.auditadoEmpresaNombre && item.auditadoCategoria ? ' · ' : '' }}{{ item.auditadoCategoria }}</span>
+                }
+              </td>
+              <td class="col-nombre col-auditor">
+                {{ item.auditorNombre | titleCase }}
+                @if (item.auditorEmpresaNombre || item.auditorCategoria) {
+                  <span class="col-nombre-sub">{{ item.auditorEmpresaNombre }}{{ item.auditorEmpresaNombre && item.auditorCategoria ? ' · ' : '' }}{{ item.auditorCategoria }}</span>
+                }
+              </td>
+              <td class="col-proyecto">{{ (item.proyectoNombre | titleCase) || '—' }}</td>
+              <td class="col-actividad">{{ item.actividad ?? '—' }}</td>
+              <td class="col-nivel">
+                @if (item.nivel && nivelConfig(item.nivel); as nc) {
+                  <span class="nivel-badge" [style.background]="nc.color" [style.color]="nc.textColor">
+                    {{ item.puntajePromedio | number:'1.1-1' }} · {{ nc.label }}
+                  </span>
+                } @else {
+                  <span class="nivel-badge nivel-badge--pending">Sin evaluar</span>
+                }
+              </td>
+              <td class="col-estado">
+                <span class="estado-badge" [class.estado-badge--ok]="item.estado === 'Evaluado'">
+                  {{ item.estado }}
+                </span>
+              </td>
+              <td class="col-acc">
+                <button type="button" class="abril-action-btn" (click)="$event.stopPropagation(); verDetalle(item.id)">
+                  <i class="ti ti-eye"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
+  @if (!loading && items.length > 0) {
+    <div class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="total"
+        [currentPage]="page"
+        [totalPages]="totalPaginas"
+        (pageChange)="irPagina($event)">
+      </app-paginator>
+    </div>
+  }
+
+  <app-fab label="Nueva auditoría" (clicked)="nueva()"></app-fab>
+</div>
+
+@if (nuevaAbierta) {
+  <app-auditoria-ats-nueva (closeModal)="cerrarNueva()" />
+}
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Trabajador auditado"
+      [options]="workers"
+      valueField="workerId"
+      displayField="apellidoNombre"
+      placeholder="Todos..."
+      [value]="filtroAuditadoId"
+      (valueChange)="filtroAuditadoId = $event; buscar()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      valueField="projectId"
+      displayField="projectDescription"
+      placeholder="Todos..."
+      [value]="filtroProyectoId"
+      (valueChange)="filtroProyectoId = $event; buscar()">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Fecha desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaDesde" (change)="buscar()" />
+    </div>
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Fecha hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaHasta" (change)="buscar()" />
+    </div>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="[{ value: '', label: 'Todos' }, { value: 'Evaluado', label: 'Evaluado' }, { value: 'Borrador', label: 'Borrador' }]"
+      valueField="value"
+      displayField="label"
+      [value]="filtroEstado"
+      (valueChange)="filtroEstado = $event; buscar()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

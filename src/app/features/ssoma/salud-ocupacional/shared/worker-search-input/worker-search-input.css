@@ -1,0 +1,120 @@
+.ws-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ws-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #d6dee5;
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0.75rem;
+  color: #9ca3af;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.ws-input:focus-within {
+  border-color: var(--ws-accent, var(--color-abril-standard));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ws-accent, var(--color-abril-standard)) 18%, transparent);
+}
+
+.ws-input input {
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #111827;
+  font-size: 0.9rem;
+}
+
+.ws-hint {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  padding: 0.25rem 0;
+}
+
+.ws-results {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.ws-results li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.ws-results li:last-child {
+  border-bottom: 0;
+}
+
+.ws-results li:hover {
+  background: color-mix(in srgb, var(--ws-accent, var(--color-abril-standard)) 10%, white);
+}
+
+.ws-name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.9rem;
+}
+
+.ws-meta {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.ws-action {
+  font-size: 0.78rem;
+  color: var(--ws-accent, var(--color-abril-standard));
+  font-weight: 600;
+}
+
+.ws-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--ws-accent, var(--color-abril-standard));
+  background: color-mix(in srgb, var(--ws-accent, var(--color-abril-standard)) 8%, white);
+  border-radius: 10px;
+}
+
+.ws-sel-name {
+  font-weight: 700;
+  color: #111827;
+}
+
+.ws-sel-meta {
+  font-size: 0.8rem;
+  color: var(--ws-accent, var(--color-abril-standard));
+}
+
+.ws-clear {
+  padding: 0.4rem 0.85rem;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d6dee5;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ws-clear:hover {
+  background: #f9fafb;
+}

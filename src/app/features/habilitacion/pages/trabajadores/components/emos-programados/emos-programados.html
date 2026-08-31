@@ -1,0 +1,69 @@
+<div class="modal-overlay" (click)="closed.emit()">
+  <div class="modal-panel" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h2 class="modal-title">EMOs Programados</h2>
+      <button class="btn-close" (click)="closed.emit()">✕</button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filtros-row">
+      <select [(ngModel)]="filtroEstado" (change)="cargar()">
+        <option value="">Todos los estados</option>
+        <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
+      </select>
+
+      <select [(ngModel)]="filtroProyectoId" (change)="cargar()">
+        <option [ngValue]="null">Todos los proyectos</option>
+        <option *ngFor="let p of proyectos" [ngValue]="p.projectId">{{ p.projectDescription }}</option>
+      </select>
+
+      <input type="date" [(ngModel)]="filtroFecha" (change)="cargar()" placeholder="Fecha" />
+
+      <label class="check-label">
+        <input type="checkbox" [(ngModel)]="soloNoNotificados" (change)="cargar()" />
+        Solo no notificados
+      </label>
+
+      <button class="btn-limpiar" (click)="limpiarFiltros()">Limpiar</button>
+    </div>
+
+    <!-- Tabla -->
+    <div class="tabla-wrap">
+      <div *ngIf="loading" class="loading-msg">Cargando…</div>
+      <table *ngIf="!loading" class="tabla-emos">
+        <thead>
+          <tr>
+            <th>Trabajador</th>
+            <th>Proyecto</th>
+            <th>Razón Social</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Notificado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of programaciones">
+            <td>
+              <div class="worker-name">{{ item.trabajador }}</div>
+              <div class="worker-dni">{{ item.dni }}</div>
+            </td>
+            <td>{{ item.proyecto }}</td>
+            <td>{{ item.razonSocial }}</td>
+            <td><span class="badge" [ngClass]="badgeClass(item.estado)">{{ item.estado }}</span></td>
+            <td>{{ item.fechaProgramada | date:'dd/MM/yyyy' }}</td>
+            <td>{{ item.hora ?? '—' }}</td>
+            <td class="td-check">
+              <input type="checkbox" [checked]="item.notificado" (change)="toggleNotificado(item)" />
+            </td>
+          </tr>
+          <tr *ngIf="programaciones.length === 0">
+            <td colspan="7" class="empty-msg">No hay programaciones activas</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>

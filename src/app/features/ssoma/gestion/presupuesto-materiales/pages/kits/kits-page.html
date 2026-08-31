@@ -1,0 +1,145 @@
+<div class="page-root">
+  <app-abril-page-header
+    badge="SSOMA · Materiales"
+    titulo="Kits / BOM"
+    subtitulo="Botiquín, Estación de Emergencia y otros equipos que se compran completos: define cuántos kits necesitas y calcula la cantidad inicial de cada material."
+    [tabs]="headerTabs"
+    [botonPrimario]="{ label: mostrarFormCrear ? 'Cancelar' : 'Crear kit', icono: mostrarFormCrear ? 'ti-x' : 'ti-plus' }"
+    (primaryClick)="toggleFormCrear()">
+  </app-abril-page-header>
+
+  <div class="page-body">
+    <!-- Formulario crear kit -->
+    <div *ngIf="mostrarFormCrear" class="crear-kit-card">
+      <h3 class="form-titulo">Nuevo kit</h3>
+      <div class="form-fields">
+        <label>Nombre del kit
+          <input type="text" [(ngModel)]="nuevoKitNombre" placeholder="Ej. Botiquín tipo A" />
+        </label>
+        <label>Tipo de material
+          <app-search-select
+            [options]="tipos"
+            valueField="id"
+            displayField="nombre"
+            [value]="nuevoKitTipoId"
+            [compact]="true"
+            [showLabel]="false"
+            placeholder="Selecciona tipo"
+            (valueChange)="nuevoKitTipoId = $event">
+          </app-search-select>
+        </label>
+      </div>
+
+      <h4 class="items-titulo">Materiales del kit (BOM)</h4>
+      <div class="item-row" *ngFor="let item of nuevoKitItems; let i = index">
+        <app-search-select
+          class="item-familia"
+          [options]="familias"
+          valueField="id"
+          displayField="nombre"
+          [value]="item.familiaId"
+          [compact]="true"
+          [showLabel]="false"
+          placeholder="Selecciona material"
+          (valueChange)="item.familiaId = $event">
+        </app-search-select>
+        <input type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidadPorKit" placeholder="Cantidad" class="item-cantidad" />
+        <label class="item-consumible">
+          <input type="checkbox" [(ngModel)]="item.esConsumible" /> Consumible
+        </label>
+        <button class="btn-icon-danger" (click)="quitarItem(i)" [disabled]="nuevoKitItems.length === 1" title="Quitar">
+          <i class="ti ti-trash"></i>
+        </button>
+      </div>
+      <button class="btn-outline btn-sm" style="width: fit-content;" (click)="agregarItem()">
+        <i class="ti ti-plus"></i> Agregar material
+      </button>
+
+      <div class="form-actions">
+        <button class="btn-primary" (click)="guardarKit()" [disabled]="!formCrearValido || guardandoKit">
+          <i class="ti ti-device-floppy"></i>
+          {{ guardandoKit ? 'Guardando...' : 'Guardar kit' }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="loading-msg">Cargando kits...</div>
+
+    <div *ngIf="!loading" class="form-row">
+      <label>Kit
+        <app-search-select
+          [options]="kitsOpts"
+          valueField="id"
+          displayField="_label"
+          [value]="kitSeleccionadoId"
+          [compact]="true"
+          [showLabel]="false"
+          placeholder="Selecciona kit"
+          (valueChange)="kitSeleccionadoId = $event; onSeleccionarKit()">
+        </app-search-select>
+      </label>
+
+      <label *ngIf="kitDetalle">Cantidad de kits
+        <input type="number" min="1" [(ngModel)]="cantidadKits" placeholder="Ej. 3" />
+      </label>
+
+      <button *ngIf="kitDetalle" class="btn-primary" (click)="calcular()" [disabled]="!cantidadKits || cantidadKits <= 0">
+        <i class="ti ti-calculator"></i> Calcular
+      </button>
+    </div>
+
+    <!-- BOM del kit seleccionado (receta) -->
+    <div *ngIf="kitDetalle && resultado.length === 0" class="bom-card">
+      <h3 class="bom-titulo">Receta de "{{ kitDetalle.nombre }}" (por 1 kit)</h3>
+      <table class="abril-table tabla-bom">
+        <thead>
+          <tr><th>Material</th><th>Cantidad por kit</th><th>Tipo</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of kitDetalle.items">
+            <td>{{ item.nombreFamilia }}</td>
+            <td>{{ item.cantidadPorKit }}</td>
+            <td>
+              <span class="badge" [ngClass]="item.esConsumible ? 'badge-consumible' : 'badge-durable'">
+                {{ item.esConsumible ? 'Consumible' : 'Equipo durable' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Resultado calculado -->
+    <div *ngIf="resultado.length > 0" class="resultado-grid">
+      <div class="resultado-col">
+        <h3 class="resultado-titulo">Equipo durable — se compra 1 sola vez</h3>
+        <table class="abril-table tabla-bom">
+          <thead><tr><th>Material</th><th>Cantidad inicial</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let l of durables">
+              <td>{{ l.nombreFamilia }}</td>
+              <td class="total-cell">{{ l.cantidadTotal | number:'1.0-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="resultado-col">
+        <h3 class="resultado-titulo">Consumibles — cantidad inicial (más reposición aparte)</h3>
+        <table class="abril-table tabla-bom">
+          <thead><tr><th>Material</th><th>Cantidad inicial</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let l of consumibles">
+              <td>{{ l.nombreFamilia }}</td>
+              <td class="total-cell">{{ l.cantidadTotal | number:'1.0-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="nota-reposicion">
+          <i class="ti ti-info-circle"></i>
+          Estos consumibles además deben reponerse periódicamente durante la obra — ese ratio de
+          reposición (por HH o trabajadores) se calcula aparte, igual que con los EPP.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

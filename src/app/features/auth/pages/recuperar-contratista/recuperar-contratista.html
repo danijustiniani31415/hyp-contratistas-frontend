@@ -1,0 +1,33 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <img src="/images/abril-logo-verde-letra-blanca.png" alt="Abril" class="auth-logo" />
+      <h2>Recuperar acceso</h2>
+      <p>Ingresa tu correo y te enviaremos un enlace.</p>
+    </div>
+
+    <div *ngIf="enviado" class="alert-ok">
+      {{ mensajeFinal }}
+    </div>
+
+    <form *ngIf="!enviado" (ngSubmit)="submit()" class="auth-form">
+      <div class="field">
+        <label class="field-label">Email *</label>
+        <input
+          class="field-input"
+          type="email"
+          [(ngModel)]="email"
+          name="email"
+          placeholder="tu@empresa.com"
+          autocomplete="email"
+        />
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="!canSubmit">
+        {{ saving ? 'Enviando…' : 'Enviar enlace' }}
+      </button>
+    </form>
+
+    <a routerLink="/auth/login" class="btn-link center">Volver al inicio</a>
+  </div>
+</div>

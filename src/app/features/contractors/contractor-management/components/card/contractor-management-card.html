@@ -1,0 +1,62 @@
+<div
+  (click)="cardClick.emit(item)"
+  class="bg-white rounded-lg border border-gray-200 p-4 cursor-pointer hover:shadow-md hover:border-[#64BC04]/50 transition-all flex flex-col gap-3">
+
+  <!-- Encabezado: estado + fecha -->
+  <div class="flex items-start justify-between gap-2">
+    <span
+      class="inline-block rounded-full px-3 py-0.5 text-[11px] font-semibold border"
+      [ngClass]="{
+        'bg-[#FEF3C7] text-[#92400E] border-[#92400E]/30': item.contractorStateDescription === 'EN ESPERA',
+        'bg-[#D7FAF4] text-[#009C87] border-[#009C87]/30': item.contractorStateDescription === 'APROBADO',
+        'bg-[#FAD5D4] text-[#D30000] border-[#D30000]/30': item.contractorStateDescription === 'NO APROBADO',
+        'bg-[#FFE6CC] text-[#B45309] border-[#B45309]/30': item.contractorStateDescription === 'APROBADO - ACTUALIZACIÓN PENDIENTE'
+      }">
+      {{ item.contractorStateDescription }}
+    </span>
+    <span class="text-[11px] text-gray-400 shrink-0">
+      {{ item.createdDateTime | date:'dd/MM/yyyy' }}
+    </span>
+  </div>
+
+  <!-- Nombre y RUC -->
+  <div>
+    <p class="text-sm font-semibold text-gray-800 leading-tight">{{ item.contributorName }}</p>
+    <p class="text-xs text-gray-400 mt-0.5">RUC {{ item.contributorRuc }}</p>
+  </div>
+
+  <!-- Actividad económica -->
+  <div *ngIf="item.contributorEconomicActivityDescription" class="flex items-start gap-1.5">
+    <svg class="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/>
+    </svg>
+    <span class="text-xs text-gray-500 line-clamp-2">{{ item.contributorEconomicActivityDescription }}</span>
+  </div>
+
+  <!-- Dirección -->
+  <div *ngIf="item.contributorAddress" class="flex items-start gap-1.5">
+    <svg class="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+    </svg>
+    <span class="text-xs text-gray-500 line-clamp-2">{{ item.contributorAddress }}</span>
+  </div>
+
+  <!-- Separador + correos -->
+  <div class="border-t border-gray-100 pt-2 flex items-center gap-1.5">
+    <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+    </svg>
+    <span *ngIf="item.emails && item.emails.length > 0" class="text-xs text-gray-500 truncate">
+      {{ item.emails[0] }}
+      <span *ngIf="item.emails.length > 1" class="text-gray-400">+{{ item.emails.length - 1 }} más</span>
+    </span>
+    <span *ngIf="!item.emails || item.emails.length === 0" class="text-xs text-gray-400 italic">
+      Sin correos
+    </span>
+  </div>
+
+</div>

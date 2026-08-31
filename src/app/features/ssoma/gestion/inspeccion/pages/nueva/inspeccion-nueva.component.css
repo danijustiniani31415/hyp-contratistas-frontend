@@ -1,0 +1,730 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── LOADING ─────────────────────────────────────────────── */
+.loading-catalogos {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 40px;
+  justify-content: center;
+  color: #8a8880;
+  font-size: 14px;
+}
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── BLOQUEO: sin worker vinculado ──────────────────────────── */
+.bloqueo-sin-worker {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 16px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.bloqueo-sin-worker i {
+  font-size: 20px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.bloqueo-sin-worker__titulo {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.bloqueo-sin-worker__texto {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ── OBSERVADOR/INSPECTOR FIJO (no editable) ────────────────── */
+.observador-fijo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-standard);
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.observador-fijo i {
+  font-size: 18px;
+  color: var(--color-abril-logo-blue);
+}
+
+.observador-fijo__nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.observador-fijo__cargo {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ── STEPPER ──────────────────────────────────────────── */
+.stepper {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 0.5px solid #e8e5df;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.step-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #d4d0c8;
+  background: #fff;
+  color: #a8a59e;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.step--active .step-circle {
+  border-color: var(--color-abril-logo-blue);
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+}
+
+.step--done .step-circle {
+  border-color: var(--color-abril-logo-blue);
+  background: var(--color-abril-logo-blue-light);
+  color: var(--color-abril-logo-blue);
+}
+
+.step-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: #a8a59e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.step--active .step-label { color: var(--color-abril-logo-blue); }
+.step--done .step-label   { color: var(--color-abril-logo-blue); }
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: #e8e5df;
+  margin: 0 4px;
+  margin-bottom: 12px;
+}
+
+.step-line--done { background: var(--color-abril-logo-blue); }
+
+/* ── BODY ─────────────────────────────────────────────── */
+.wizard-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── FORM ─────────────────────────────────────────────── */
+/* .abril-form-section / .abril-section-title son globales (src/styles.css)
+   — no reimplementar la caja/título de sección aquí. */
+
+/* .abril-field / .abril-field-label / .abril-field-input son globales
+   (src/styles.css) — no reimplementar el label flotante aquí. */
+
+.required { color: #b83030; }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Toggle */
+.toggle-row {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--color-abril-border-strong, #D1D5DB);
+  border-radius: var(--radius-standard, 7px);
+  overflow: hidden;
+  background: #fff;
+}
+
+.toggle-opt {
+  flex: 1;
+  padding: 9px;
+  border: none;
+  border-right: 1px solid #e8e5df;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5a5850;
+  cursor: pointer;
+  text-align: center;
+}
+.toggle-opt:last-child { border-right: none; }
+
+.toggle-opt--active {
+  border-color: var(--color-abril-logo-blue);
+  background: var(--color-abril-logo-blue-light);
+  color: var(--color-abril-logo-blue);
+}
+
+/* ── CHECKLIST ─────────────────────────────────────────── */
+.checklist-loading,
+.checklist-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 48px 16px;
+  color: #a8a59e;
+  font-size: 13px;
+}
+
+/* Score sticky header */
+.checklist-score-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fff;
+  border-bottom: 2px solid #e8e5df;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.score-counts { display: flex; gap: 8px; flex-shrink: 0; }
+
+.score-cnt {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.score-cnt--verde    { background: #d1fae5; color: #065f46; }
+.score-cnt--rojo     { background: #fee2e2; color: #991b1b; }
+.score-cnt--gris     { background: #f0ede8; color: #8a8880; }
+
+.score-progress-wrap {
+  flex: 1;
+  height: 4px;
+  background: #f0ede8;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.score-progress-bar {
+  height: 100%;
+  background: var(--color-abril-logo-blue);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.score-tasa {
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.score-verde    { color: var(--color-abril-standard); }
+.score-amarillo { color: #d97706; }
+.score-rojo     { color: #b83030; }
+
+/* Categoría header */
+.checklist-categoria {
+  padding: 6px 12px;
+  background: var(--color-abril-page-bg, #f5f3ef);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8a8880;
+  position: sticky;
+  top: 45px;
+  z-index: 1;
+  border-bottom: 0.5px solid #e8e5df;
+}
+
+/* Checklist item */
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 0.5px solid #f0ede8;
+  background: #fff;
+}
+
+.checklist-item--nocumple { background: #fff8f8; }
+
+.checklist-pregunta {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #1a1a18;
+}
+
+.checklist-acciones {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.btn-resultado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid #e8e5df;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-resultado--cumple:hover   { border-color: #6ee7b7; }
+.btn-resultado--nocumple:hover { border-color: #fca5a5; }
+.btn-resultado--na:hover       { border-color: #d4d0c8; }
+
+.btn-resultado--cumple.active   { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+.btn-resultado--nocumple.active { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.btn-resultado--na.active       { background: #f0ede8; color: #8a8880; border-color: #d4d0c8; }
+
+/* Observación slide */
+.obs-slide {
+  padding: 6px 12px 10px 12px;
+  background: #fff8f8;
+  border-bottom: 0.5px solid #fca5a5;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; max-height: 0; }
+  to   { opacity: 1; max-height: 120px; }
+}
+
+.obs-textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border: 0.5px solid #fca5a5;
+  border-radius: 7px;
+  font-size: 12px;
+  color: #1a1a18;
+  background: #fff;
+  resize: vertical;
+}
+
+/* ── HALLAZGOS ─────────────────────────────────────────── */
+.hallazgos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-agregar-hallazgo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 12px;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hallazgo-form {
+  border: 0.5px solid #e8e5df;
+  border-radius: 12px;
+  padding: 14px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hallazgo-form__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-abril-logo-blue);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tipo-btns { display: flex; gap: 8px; }
+
+.btn-tipo {
+  flex: 1;
+  padding: 7px;
+  border-radius: 8px;
+  border: 1px solid #e8e5df;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.btn-tipo--active { opacity: 1; }
+
+.badge-critico { background: #fee2e2; color: #991b1b; }
+.badge-mayor   { background: #fef3c7; color: #92400e; }
+.badge-menor   { background: #fefce8; color: #713f12; }
+
+.btn-foto-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 0.5px dashed #e8e5df;
+  border-radius: 9px;
+  font-size: 12px;
+  color: #5a5850;
+  cursor: pointer;
+  background: none;
+}
+
+.fotos-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+.foto-thumb {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 0.5px solid #e8e5df;
+}
+
+.foto-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.foto-del {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  border: none;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hallazgo-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn-cancelar-hallazgo {
+  padding: 8px 14px;
+  border: 0.5px solid #e8e5df;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  color: #5a5850;
+}
+
+.btn-confirmar-hallazgo {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hallazgos-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px;
+  color: #a8a59e;
+  font-size: 13px;
+}
+
+.hallazgos-empty i { font-size: 28px; }
+
+.hallazgo-item {
+  border: 0.5px solid #e8e5df;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hallazgo-item--critico { border-color: #fca5a5; background: #fff8f8; }
+
+.hallazgo-item__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.badge-tipo {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.hallazgo-desc {
+  flex: 1;
+  font-size: 12px;
+  color: #1a1a18;
+}
+
+.btn-del-hallazgo {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: none;
+  background: none;
+  color: #b83030;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hallazgo-item__meta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: #8a8880;
+}
+
+.fotos-grid-sm { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.foto-thumb-sm {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 0.5px solid #e8e5df;
+}
+
+/* ── CANVAS ────────────────────────────────────────────── */
+.canvas-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+canvas {
+  border: 0.5px solid #e8e5df;
+  border-radius: 9px;
+  background: #f9f8f6;
+  cursor: crosshair;
+  touch-action: none;
+  width: 100%;
+  max-width: 360px;
+}
+
+.btn-clear-canvas {
+  align-self: flex-end;
+  padding: 5px 12px;
+  border: 0.5px solid #e8e5df;
+  border-radius: 7px;
+  background: #fff;
+  font-size: 11px;
+  cursor: pointer;
+  color: #5a5850;
+}
+
+/* ── FOTOS ÁREA ─────────────────────────────────────────── */
+.fotos-counter {
+  font-size: 12px;
+  font-weight: 500;
+  color: #dc2626;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: #fef2f2;
+  border-radius: 99px;
+}
+.fotos-counter.fotos-ok { color: #16a34a; background: #f0fdf4; }
+.fotos-hint { font-size: 12px; color: #78716c; margin: 0 0 12px; }
+
+.fotos-area-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.foto-area-thumb {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 0.5px solid #e8e5df;
+}
+.foto-area-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.foto-remove {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  border: none;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.foto-area-add {
+  width: 90px;
+  height: 90px;
+  border-radius: 10px;
+  border: 1.5px dashed #d6d3cd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #78716c;
+  background: #faf9f7;
+  transition: border-color .15s;
+}
+.foto-area-add:hover { border-color: var(--color-abril-standard); color: #3f7500; }
+.foto-area-add i { font-size: 22px; }
+
+/* ── FOOTER ────────────────────────────────────────────── */
+/* El chrome del footer vive en el shared shell app-abril-modal-panel — esto
+   solo reparte Cancelar a la izquierda y Anterior/Siguiente a la derecha. */
+.btn-cancelar {
+  padding: 10px 14px;
+  border: 0.5px solid #e8e5df;
+  border-radius: 9px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  color: #5a5850;
+}
+
+.btn-anterior {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 16px;
+  border: 0.5px solid #e8e5df;
+  border-radius: 9px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #1a1a18;
+}
+
+.btn-siguiente {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 9px;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-guardar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 9px;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-guardar:disabled  { opacity: 0.6; cursor: default; }
+.btn-siguiente:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── SPIN ──────────────────────────────────────────────── */
+.spin {
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── RESPONSIVE ≥768px ─────────────────────────────────── */
+@media (min-width: 768px) {
+  .wizard-body  { padding: 20px 24px; max-width: 720px; margin: 0 auto; width: 100%; }
+  .form-row     { grid-template-columns: 1fr 1fr 1fr; }
+  .stepper      { padding: 14px 24px; max-width: 720px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+}
+
+/* ── MOBILE 375px adjustments ──────────────────────────── */
+@media (max-width: 480px) {
+  .checklist-acciones { flex-direction: column; gap: 2px; }
+  .btn-resultado { width: 36px; height: 36px; font-size: 11px; }
+  .step-label { display: none; }
+}

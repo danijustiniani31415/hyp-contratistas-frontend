@@ -1,0 +1,27 @@
+/* .abril-field / .abril-field-label son globales (src/styles.css) — no redefinirlas aquí. */
+.abril-field {
+  margin-bottom: 14px;
+  /* Borde de los chips: el acento (--da-color, inyectado desde la plantilla) rebajado, un paso
+     mas marcado que el fondo para que el chip siga leyendose como una caja. */
+  --da-border: color-mix(in srgb, var(--da-color) 22%, #ffffff);
+}
+
+/* Los chips toman el mismo tinte que el recuadro de subida (--da-bg): dejarlos en el gris
+   neutro de antes repetia, en chico, el desajuste de color que tenia el recuadro. Los
+   fallbacks son los grises originales, por si algun dia se usan fuera de esta plantilla. */
+.file-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: .5rem .75rem; margin-top: 8px;
+  background: var(--da-bg, #f9fafb);
+  border: 1px solid var(--da-border, #e5e7eb);
+  border-radius: 8px;
+}
+.file-chip__name {
+  flex: 1; font-size: .82rem; color: #374151;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.file-chip__remove {
+  flex-shrink: 0; font-size: .85rem; color: #9ca3af;
+  background: none; border: 0; cursor: pointer; transition: color .12s;
+}
+.file-chip__remove:hover { color: #dc2626; }

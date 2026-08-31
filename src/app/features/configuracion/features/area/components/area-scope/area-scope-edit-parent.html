@@ -1,0 +1,37 @@
+<app-base-modal [title]="'EDITAR NODO PADRE'" width="w-[560px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-4 mt-4">
+
+    <!-- Nodo a mover -->
+    <div class="flex flex-col gap-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+      <p class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Nodo a mover</p>
+      <p class="text-gray-700 font-semibold truncate">{{ areaNombre }}</p>
+      <p *ngIf="rutaRama" class="text-[0.72rem] text-gray-400 truncate" [title]="rutaRama">{{ rutaRama }}</p>
+    </div>
+
+    <p class="text-[0.7rem] text-gray-400 leading-tight">
+      El nodo se moverá junto con <b>todos sus hijos</b> bajo el nuevo padre seleccionado.
+      No se puede mover bajo sí mismo ni bajo uno de sus descendientes.
+    </p>
+
+    <!-- Selector de nuevo padre -->
+    <app-search-select
+      label="Nuevo nodo padre"
+      placeholder="Buscar nodo..."
+      [options]="options"
+      valueField="areaScopeId"
+      displayField="label"
+      [sortAlpha]="false"
+      [allowClear]="false"
+      [fullText]="true"
+      color="#64BC04"
+      [(value)]="selectedParentId">
+    </app-search-select>
+  </div>
+
+  <div class="flex justify-center mt-5">
+    <button type="button" (click)="save()"
+      class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
+      <p class="text-white text-lg">Guardar</p>
+    </button>
+  </div>
+</app-base-modal>

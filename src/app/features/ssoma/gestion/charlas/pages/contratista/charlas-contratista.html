@@ -1,0 +1,157 @@
+<div class="charla-contratista">
+  <div class="header">
+    <h2>Charla diaria obligatoria</h2>
+    <p class="subtitle">
+      Cuando control de acceso tarea a tu empresa en un proyecto, debes subir evidencia de la
+      charla dictada ese día.
+    </p>
+  </div>
+
+  <!-- Pendientes de hoy -->
+  <section class="card">
+    <h3>Hoy</h3>
+
+    <div *ngIf="loadingPendientes" class="loading">Cargando...</div>
+
+    <div *ngIf="!loadingPendientes && pendientes.length === 0" class="empty">
+      Tu empresa no ha sido tareada hoy en ningún proyecto.
+    </div>
+
+    <div *ngFor="let p of pendientesSinSubir" class="pendiente-row pendiente-alerta">
+      <div class="info">
+        <span class="badge badge-pendiente">Pendiente</span>
+        <strong>{{ p.proyectoNombre }}</strong>
+        <span class="meta">{{ p.fecha | date:'dd/MM/yyyy' }} · {{ p.cantidadPersonasTareadas }} trabajador(es) tareados</span>
+      </div>
+      <button class="btn-primary" (click)="abrirFormulario(p)">Subir charla</button>
+    </div>
+
+    <div *ngFor="let p of pendientesSubidas" class="pendiente-row">
+      <div class="info">
+        <span class="badge badge-ok">Charla subida</span>
+        <strong>{{ p.proyectoNombre }}</strong>
+        <span class="meta">{{ p.fecha | date:'dd/MM/yyyy' }} · {{ p.cantidadPersonasTareadas }} trabajador(es) tareados</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Días faltantes (anteriores a hoy, tareados y sin charla subida) -->
+  <section class="card" *ngIf="loadingDiasFaltantes || diasFaltantes.length > 0">
+    <h3>Días faltantes</h3>
+
+    <div *ngIf="loadingDiasFaltantes" class="loading">Cargando...</div>
+
+    <div *ngIf="!loadingDiasFaltantes && diasFaltantes.length === 0" class="empty">
+      No tienes días pendientes de subir.
+    </div>
+
+    <div *ngFor="let p of diasFaltantes" class="pendiente-row pendiente-alerta">
+      <div class="info">
+        <span class="badge badge-pendiente">Falta</span>
+        <strong>{{ p.proyectoNombre }}</strong>
+        <span class="meta">{{ p.fecha }} · {{ p.cantidadPersonasTareadas }} trabajador(es) tareados</span>
+      </div>
+      <button class="btn-primary" (click)="abrirFormulario(p)">Subir charla</button>
+    </div>
+  </section>
+
+  <!-- Formulario (modal estándar SSOMA) -->
+  @if (proyectoSeleccionado) {
+    <app-abril-modal-panel
+      titulo="Registrar charla"
+      [subtitulo]="proyectoSeleccionado.proyectoNombre + ' · ' + proyectoSeleccionado.fecha"
+      icono="ti-message-circle"
+      variant="blue"
+      (closeModal)="cerrarFormulario()">
+
+      <label class="field-label">Tema de la charla *</label>
+      <input type="text" class="field-input" [(ngModel)]="tema" placeholder="Ej. Trabajos en altura" />
+
+      <label class="field-label">Observaciones</label>
+      <textarea class="field-input" rows="3" [(ngModel)]="descripcion" placeholder="Opcional"></textarea>
+
+      <label class="field-label">Evidencia (foto/PDF)</label>
+      <app-file-selector
+        *ngIf="!archivo"
+        accept=".png,.jpg,.jpeg,.pdf"
+        hint="PNG, JPG o PDF"
+        (fileSelected)="onArchivoSeleccionado($event)"
+      ></app-file-selector>
+      <div *ngIf="archivo" class="archivo-preview">
+        <span>{{ archivo.file.name }}</span>
+        <button type="button" class="btn-link" (click)="quitarArchivo()">Quitar</button>
+      </div>
+
+      <div modalFooter>
+        <button class="btn-secondary" (click)="cerrarFormulario()" [disabled]="guardando">Cancelar</button>
+        <button class="btn-primary" (click)="guardar()" [disabled]="guardando">
+          {{ guardando ? 'Guardando...' : 'Guardar charla' }}
+        </button>
+      </div>
+    </app-abril-modal-panel>
+  }
+
+  <!-- Historial -->
+  <section class="card">
+    <h3>Historial</h3>
+    <div *ngIf="loadingHistorial" class="loading">Cargando...</div>
+
+    <div *ngIf="!loadingHistorial && historial.length > 0" class="historial-filter">
+      <app-search-input
+        placeholder="Buscar por proyecto o tema..."
+        [(value)]="historialSearchText"
+        (valueChange)="onHistorialFilterChange()"
+        width="280px">
+      </app-search-input>
+    </div>
+
+    <table class="abril-table historial-table" *ngIf="!loadingHistorial && historial.length > 0">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Proyecto</th>
+          <th>Tema</th>
+          <th>Evidencia</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let h of historialPaged">
+          <td>{{ h.fecha }}</td>
+          <td>{{ h.proyectoNombre }}</td>
+          <td>{{ h.tema }}</td>
+          <td>
+            <a *ngIf="h.evidenciaUrl" [href]="h.evidenciaUrl" target="_blank">Ver</a>
+            <span *ngIf="!h.evidenciaUrl">—</span>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="{
+              'badge-enviado': h.estado === 'Enviado',
+              'badge-ok': h.estado === 'Aprobado',
+              'badge-rechazado': h.estado === 'Rechazado'
+            }">{{ h.estado }}</span>
+            <div *ngIf="h.estado === 'Rechazado' && h.motivoRechazo" class="meta motivo-rechazo">
+              {{ h.motivoRechazo }}
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="historialFiltrado.length === 0">
+          <td colspan="5" class="empty">Sin resultados.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="!loadingHistorial && historial.length > 0" class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="historialFiltrado.length"
+        [currentPage]="historialCurrentPage"
+        [totalPages]="historialTotalPages"
+        (pageChange)="changeHistorialPage($event)">
+      </app-paginator>
+    </div>
+
+    <div *ngIf="!loadingHistorial && historial.length === 0" class="empty">
+      Aún no has registrado charlas.
+    </div>
+  </section>
+</div>

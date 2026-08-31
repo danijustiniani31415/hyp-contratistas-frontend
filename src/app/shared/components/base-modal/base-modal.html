@@ -1,0 +1,59 @@
+<!--
+  Un solo <ng-content> en todo el componente, reutilizado por ambas ramas vía
+  ngTemplateOutlet. Tener dos <ng-content> (uno por rama @if/@else) hacía que
+  Angular proyectara el contenido de forma no confiable — a veces el título
+  aparecía pero el resto del formulario quedaba completamente fuera del DOM.
+-->
+<ng-template #projectedContent>
+  <ng-content></ng-content>
+</ng-template>
+
+@if (fullScreen) {
+  <div class="fixed inset-0 z-[50] bg-white overflow-y-auto">
+    <div class="px-5 pt-4 pb-10"
+         (input)="markDirty()" (change)="markDirty()" (modalfieldchange)="markDirty()">
+      <h1 class="text-lg font-bold text-center mb-3 pr-6" style="color:var(--color-abril-standard)">{{ title }}</h1>
+      <ng-container *ngTemplateOutlet="projectedContent"></ng-container>
+    </div>
+
+    <button class="fixed top-4 right-5 cursor-pointer" (click)="close()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 20L4 4M20 4L4 20" [attr.stroke]="closeColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+    </button>
+  </div>
+} @else {
+<div
+  class="fixed inset-0 bg-black/40 z-[50]"
+  [class.overflow-y-auto]="!height"
+  [class.overflow-hidden]="!!height"
+  [class.flex]="!!height"
+  [class.items-center]="!!height"
+  [class.justify-center]="!!height"
+  (mousedown)="onBackdropMousedown()"
+  (click)="onBackdropClick()">
+
+  <div [class]="height ? '' : 'min-h-screen flex items-center justify-center py-10'">
+    <div
+      [class]="'base-modal-card ' + (height ? '' : 'm-5 ') + 'bg-white rounded-lg shadow-xl relative z-[1001] ' + width + (height ? ' ' + height + ' flex flex-col overflow-hidden' : '')"
+      (mousedown)="$event.stopPropagation()"
+      (click)="$event.stopPropagation()">
+
+      <div
+        [class]="height ? 'px-5 pt-3 pb-0 flex flex-col flex-1 min-h-0 overflow-hidden' : 'p-[20px] flex flex-col'"
+        (input)="markDirty()"
+        (change)="markDirty()"
+        (modalfieldchange)="markDirty()">
+        <h1 [class]="(height ? 'text-base mb-2' : 'text-lg mb-3') + ' font-bold text-center flex-shrink-0 pr-6'" style="color:var(--color-abril-standard)">{{ title }}</h1>
+        <ng-container *ngTemplateOutlet="projectedContent"></ng-container>
+      </div>
+
+      <button class="absolute top-3 right-4 cursor-pointer" (click)="close()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 20L4 4M20 4L4 20" [attr.stroke]="closeColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+}

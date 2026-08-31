@@ -1,0 +1,257 @@
+<div class="bim-carga-page">
+  <!-- Encabezado Estándar Abril -->
+  <app-abril-page-header
+    titulo="PLANEAMIENTO"
+    subtitulo="Registro diario de cumplimiento de actividades por zonas, niveles y sectores"
+    [tabs]="tabs"
+    [botonPrimario]="btnGuardarHeader"
+    [botonPrimarioDeshabilitado]="savingCarga || loadingCarga || !selectedProjectId || !cargaDiariaData?.esEditable"
+    (primaryClick)="onGuardar()"
+  ></app-abril-page-header>
+
+  <!-- Sub-navegación Secundaria de Planeamiento BIM -->
+  <app-planeamiento-bim-subnav></app-planeamiento-bim-subnav>
+
+  <div class="bim-container">
+    <!-- Bar de Filtros: Proyecto + Fecha -->
+    <div class="bim-card selector-card">
+      <div class="filters-grid">
+        <div class="filter-item">
+          <label class="project-label" for="projectSelect">PROYECTO SELECCIONADO:</label>
+          <select
+            id="projectSelect"
+            class="bim-select project-select"
+            [ngModel]="selectedProjectId"
+            (ngModelChange)="onProjectChange($event)"
+            [disabled]="loadingProjects || loadingCarga || savingCarga"
+          >
+            <option [ngValue]="null" disabled>-- Seleccione un proyecto --</option>
+            <option *ngFor="let p of projects" [ngValue]="p.projectId">
+              {{ p.projectDescription }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-item" *ngIf="selectedProjectId">
+          <label class="project-label" for="fechaInput">FECHA DE REGISTRO:</label>
+          <input
+            id="fechaInput"
+            type="date"
+            class="bim-input date-select"
+            [ngModel]="fechaSeleccionada"
+            (ngModelChange)="onFechaChange($event)"
+            [disabled]="loadingCarga || savingCarga"
+          />
+        </div>
+      </div>
+
+      <div class="header-actions" *ngIf="selectedProjectId && cargaDiariaData">
+        <span *ngIf="cargaDiariaData.esEditable" class="status-pill status-pill--editable">
+          <i class="ti ti-edit"></i> REGISTRO EDITABLE
+        </span>
+        <span *ngIf="!cargaDiariaData.esEditable" class="status-pill status-pill--readonly">
+          <i class="ti ti-lock"></i> DÍA HISTÓRICO (LÓGICA SOLO LECTURA)
+        </span>
+        <button
+          type="button"
+          class="btn-save-inline"
+          (click)="onGuardar()"
+          [disabled]="savingCarga || loadingCarga || !cargaDiariaData.esEditable"
+        >
+          <i class="ti ti-device-floppy"></i>
+          <span>{{ savingCarga ? 'Guardando...' : 'Guardar Carga' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Error al Cargar (F9) -->
+    <div *ngIf="loadError" class="bim-alert bim-alert--danger">
+      <i class="ti ti-alert-triangle-filled alert-icon"></i>
+      <div class="alert-content">
+        <strong>Error de Carga:</strong> {{ loadError }}
+      </div>
+      <button type="button" class="btn-retry" (click)="cargarCargaDiaria()">
+        <i class="ti ti-refresh"></i> Reintentar
+      </button>
+    </div>
+
+    <!-- Mensaje cuando aún no se ha seleccionado proyecto -->
+    <div *ngIf="!selectedProjectId && !loadingCarga && !loadError" class="empty-state">
+      <i class="ti ti-click empty-icon"></i>
+      <p class="empty-title">Selección de Proyecto Requerida</p>
+      <p class="empty-sub">Por favor, seleccione un proyecto en el menú desplegable para registrar su avance diario.</p>
+    </div>
+
+    <!-- Skeleton Loading (F8) -->
+    <div *ngIf="loadingCarga && !loadError" class="skeleton-wrapper">
+      <div class="bim-card skeleton-card skeleton-pulse">
+        <div class="skeleton-line skeleton-line--title"></div>
+        <div class="skeleton-table">
+          <div class="skeleton-line" *ngFor="let i of [1,2,3,4,5]"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenido de Carga Diaria -->
+    <ng-container *ngIf="!loadingCarga && selectedProjectId && cargaDiariaData && !loadError">
+      
+      <!-- Resumen de Restricciones Activas -->
+      <div *ngIf="cargaDiariaData.restriccionesActivas && cargaDiariaData.restriccionesActivas.length > 0" class="bim-alert bim-alert--warning">
+        <i class="ti ti-barrier-block alert-icon"></i>
+        <div class="alert-content">
+          <strong>Restricciones Activas en Proyecto ({{ cargaDiariaData.restriccionesActivas.length }}):</strong>
+          <span *ngFor="let r of cargaDiariaData.restriccionesActivas" class="bloqueo-inline-tag">
+            #{{ r.id }} - {{ r.descripcion }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Estado Vacío cuando el Proyecto NO tiene Zonas configuradas -->
+      <div *ngIf="zonas.length === 0" class="empty-state">
+        <i class="ti ti-folder-off empty-icon"></i>
+        <p class="empty-title">Sin zonas configuradas en el proyecto</p>
+        <p class="empty-sub">
+          Este proyecto no tiene zonas espaciales configuradas aún. 
+          Por favor, diríjase a la pestaña <strong>"Configuración Inicial"</strong> para definir las zonas, niveles y sectores del proyecto.
+        </p>
+      </div>
+
+      <!-- Matrix Grilla de Zonas y Actividades (los sectores cuelgan de cada Nivel, no de la Zona) -->
+      <div *ngFor="let zona of zonas" class="bim-card zona-grid-card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="ti ti-layout-grid title-icon"></i> {{ zona.nombre }}
+          </h3>
+          <span class="card-badge">
+            {{ zona.niveles.length }} NIVELES × {{ totalSectoresZona(zona) }} REGISTROS DE SECTOR
+          </span>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="zona.niveles.length === 0" class="empty-sub-list">
+            Sin niveles definidos para esta zona. (Configúrela en "Configuración Inicial").
+          </div>
+
+          <div *ngIf="zona.niveles.length > 0" class="table-responsive">
+            <table class="bim-grid-table">
+              <thead>
+                <tr>
+                  <th style="width: 120px;">NIVEL</th>
+                  <th style="width: 120px;">SECTOR</th>
+                  <th *ngFor="let act of actividades" class="act-col-header">
+                    <span class="macro-tag">{{ act.macroActividadNombre }}</span>
+                    <span class="act-name">{{ act.nombre }}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngFor="let nivel of zona.niveles">
+                  <tr *ngIf="nivel.sectores.length === 0">
+                    <td class="nivel-cell font-bold text-navy">{{ nivel.nombre }}</td>
+                    <td class="sector-cell sector-cell--empty" [attr.colspan]="1 + actividades.length">
+                      Sin sectores configurados para este nivel.
+                    </td>
+                  </tr>
+                  <tr *ngFor="let sector of nivel.sectores; let sIdx = index">
+                    <td *ngIf="sIdx === 0" [attr.rowspan]="nivel.sectores.length" class="nivel-cell font-bold text-navy">
+                      {{ nivel.nombre }}
+                    </td>
+                    <td class="sector-cell">
+                      {{ sector.nombre }}
+                    </td>
+
+                    <!-- Celdas Interactivas de Avance (Evaluación directa sin *let custom) -->
+                    <td *ngFor="let act of actividades" class="cell-td">
+                      <button
+                        type="button"
+                        class="grid-cell-btn"
+                        [class.grid-cell-btn--cumplida]="getCelda(zona.id!, nivel.id!, sector.id!, act.id)?.cumplida"
+                        [class.grid-cell-btn--incumplida]="getCelda(zona.id!, nivel.id!, sector.id!, act.id) && !getCelda(zona.id!, nivel.id!, sector.id!, act.id)!.cumplida"
+                        [class.grid-cell-btn--vacia]="!getCelda(zona.id!, nivel.id!, sector.id!, act.id)"
+                        [disabled]="!cargaDiariaData.esEditable || savingCarga"
+                        (click)="toggleCumplimiento(zona.id!, nivel.id!, sector.id!, act.id)"
+                        [title]="getCellTitle(zona.id!, nivel.id!, sector.id!, act.id)"
+                      >
+                        <i *ngIf="getCelda(zona.id!, nivel.id!, sector.id!, act.id)?.cumplida" class="ti ti-check cell-icon"></i>
+                        <i *ngIf="getCelda(zona.id!, nivel.id!, sector.id!, act.id) && !getCelda(zona.id!, nivel.id!, sector.id!, act.id)!.cumplida" class="ti ti-x cell-icon"></i>
+                        <span *ngIf="!getCelda(zona.id!, nivel.id!, sector.id!, act.id)" class="cell-dash">—</span>
+                      </button>
+
+                      <div *ngIf="getCelda(zona.id!, nivel.id!, sector.id!, act.id) && !getCelda(zona.id!, nivel.id!, sector.id!, act.id)!.cumplida && getCelda(zona.id!, nivel.id!, sector.id!, act.id)!.causaNombre" class="causa-subtext">
+                        {{ getCelda(zona.id!, nivel.id!, sector.id!, act.id)!.causaNombre }}
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección de Fotos Evidencias (avance ejecutado del día) -->
+      <app-planeamiento-bim-evidencia-galeria
+        titulo="EVIDENCIAS FOTOGRÁFICAS DEL DÍA"
+        subtitulo="Fotografías adjuntas que respaldan el cumplimiento diario"
+        icono="ti ti-photo"
+        [evidencias]="cargaDiariaData.evidencias"
+        [editable]="cargaDiariaData.esEditable"
+        [uploading]="uploadingFotos"
+        (filesSelected)="onFilesSelected($event)"
+      ></app-planeamiento-bim-evidencia-galeria>
+
+    </ng-container>
+  </div>
+
+  <!-- Modal Base UDP para Especificar Causa de Incumplimiento -->
+  <app-base-modal
+    *ngIf="showCausaModal"
+    title="Causa de Incumplimiento"
+    width="w-[500px]"
+    (closeModal)="closeCausaModal()"
+  >
+    <div class="modal-form-body">
+      <div class="bim-field">
+        <label class="bim-field-label" for="causaSelect">TIPO DE CAUSA *</label>
+        <select
+          id="causaSelect"
+          class="bim-select"
+          [(ngModel)]="modalCausaId"
+        >
+          <option [ngValue]="null">-- Seleccione la Causa --</option>
+          <option *ngFor="let c of causasCatalogo" [ngValue]="c.id">
+            {{ c.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <div class="bim-field">
+        <label class="bim-field-label" for="causaDetalleInput">OBSERVACIÓN / DETALLE ADICIONAL</label>
+        <textarea
+          id="causaDetalleInput"
+          class="bim-textarea"
+          rows="3"
+          placeholder="Ingrese detalles específicos del problema u observación..."
+          [(ngModel)]="modalCausaDetalle"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="modal-form-footer">
+      <button
+        type="button"
+        class="btn-secondary-udp"
+        (click)="closeCausaModal()"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="btn-primary-udp"
+        (click)="saveCausaModal()"
+      >
+        Confirmar Causa
+      </button>
+    </div>
+  </app-base-modal>
+</div>

@@ -1,0 +1,35 @@
+<app-base-modal [title]="'Adjuntar documento'" width="w-[560px]" [preventCloseWhenDirty]="true" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-4 mt-2">
+
+    <div class="text-sm">
+      <div class="font-semibold text-gray-800">{{ invoice.invoiceNumber }}</div>
+      <div class="text-gray-500">{{ invoice.contributorName }}</div>
+    </div>
+
+    @if (!fileName) {
+      <app-file-selector
+        accept=".pdf,.png,.jpg,.jpeg,.webp"
+        hint="Arrastra el documento aquí o haz clic (PDF, PNG, JPG, WEBP)"
+        color="var(--color-abril-primary)"
+        (fileSelected)="onFileSelected($event)">
+      </app-file-selector>
+    } @else {
+      <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+        <span class="truncate text-gray-700">{{ fileName }}</span>
+        <button type="button" (click)="removeFile()" class="ml-3 cursor-pointer text-red-500 hover:underline">Quitar</button>
+      </div>
+    }
+
+    <div class="flex justify-end gap-3 pt-1">
+      <button type="button" (click)="closeModal.emit()"
+        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50">
+        Cancelar
+      </button>
+      <button type="button" (click)="save()" [disabled]="!file"
+        class="rounded-lg px-5 py-2 text-sm font-medium text-white cursor-pointer hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed" style="background:var(--color-abril-primary)">
+        Guardar documento
+      </button>
+    </div>
+
+  </div>
+</app-base-modal>

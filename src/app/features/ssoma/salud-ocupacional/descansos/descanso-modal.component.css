@@ -1,0 +1,162 @@
+.loading-row { padding: 2rem; text-align: center; color: #6b7280; font-size: .9rem; }
+
+.section {
+  padding: 14px 0 10px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.section.no-border { border-bottom: 0; }
+.paso-title { font-size: 14px; font-weight: 700; color: #1a1a18; margin: 0 0 10px; display: flex; align-items: center; gap: 6px; }
+.paso-title i { color: var(--color-abril-logo-blue); }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem 1rem; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .75rem 1rem; }
+@media (max-width: 640px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+/* El date-picker es un componente, no un .abril-field: hay que darle ancho propio
+   para que ocupe su celda de la grilla igual que un input. */
+app-date-picker { display: block; }
+.mt-1 { margin-top: .25rem; }
+.mt-2 { margin-top: .5rem; }
+.ml-1 { margin-left: .25rem; }
+.text-right { text-align: right; }
+
+/* .abril-field / .abril-field-label / .abril-field-input son globales
+   (src/styles.css) — no reimplementar el label flotante aquí. */
+
+.hint { font-size: .78rem; color: #9ca3af; }
+
+/* ── Worker header (detalle) ─────────────────────────────────────────────── */
+.worker-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+  padding: 12px 0 12px;
+  border-bottom: 2px solid #f3f4f6;
+}
+.wh-left { display: flex; flex-direction: column; gap: .25rem; }
+.wh-name  { font-size: 1rem; font-weight: 700; color: #111827; }
+.wh-meta  { font-size: .8rem; color: #6b7280; }
+.wh-dates { font-size: .85rem; color: #374151; }
+.wh-right { display: flex; align-items: center; flex-shrink: 0; }
+
+/* ── Badges ──────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; padding: .2rem .6rem;
+  border-radius: 20px; font-size: .75rem; font-weight: 700;
+}
+.badge-amber  { background: #fef3c7; color: #92400e; }
+.badge-green  { background: #dcfce7; color: #166534; }
+.badge-red    { background: #fee2e2; color: #991b1b; }
+.badge-blue   { background: #dbeafe; color: #1e40af; }
+.badge-gray   { background: #f3f4f6; color: #374151; }
+
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+.tab-bar {
+  display: flex; border-bottom: 2px solid #e5e7eb; margin: 6px 0 0;
+}
+.tab-btn {
+  padding: .55rem 1.1rem; font-size: .88rem; font-weight: 600; color: #6b7280;
+  border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color .15s;
+}
+.tab-btn:hover { color: #111827; }
+.tab-btn--active { color: var(--color-abril-logo-blue); border-bottom-color: var(--color-abril-logo-blue); }
+
+.tab-content { padding-top: 4px; }
+
+/* ── Info grid (modo detalle) ────────────────────────────────────────────── */
+.info-grid { display: flex; flex-direction: column; gap: .35rem; }
+.info-row { display: flex; gap: .75rem; font-size: .88rem; color: #374151; }
+.info-label { min-width: 160px; font-weight: 600; color: #6b7280; }
+.link-value { color: #2563eb; font-weight: 600; }
+.info-obs { font-size: .85rem; color: #4b5563; }
+.rejection-note { font-size: .88rem; color: #dc2626; background: #fef2f2; border-left: 3px solid #dc2626; padding: .6rem .85rem; border-radius: 0 6px 6px 0; }
+
+.doc-list { display: flex; flex-direction: column; gap: .3rem; align-items: flex-start; }
+/* Es un <button> (el archivo lo pide al backend, no es un enlace) pero se ve como link. */
+.doc-link {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .85rem; font-weight: 600; color: #2563eb; text-decoration: none;
+  background: none; border: 0; padding: 0; cursor: pointer; text-align: left;
+}
+.doc-link:hover { text-decoration: underline; }
+.doc-link:disabled { opacity: .55; cursor: default; text-decoration: none; }
+
+/* Mismo badge de días que el formulario de Mi Salud. */
+.dias-badge {
+  display: inline-flex; align-items: center; padding: .3rem .8rem;
+  background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 999px;
+  font-size: .82rem; font-weight: 600; color: #16a34a;
+}
+
+/* ── Action cards ────────────────────────────────────────────────────────── */
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 640px) { .action-grid { grid-template-columns: 1fr; } }
+
+.action-card {
+  padding: 1rem; border-radius: 10px; border: 1.5px solid;
+  display: flex; flex-direction: column;
+}
+.action-card--green { border-color: #86efac; background: #f0fdf4; }
+.action-card--red   { border-color: #fca5a5; background: #fef2f2; }
+
+.action-card-title { font-weight: 700; font-size: .9rem; margin: 0 0 .2rem; }
+.action-card-hint  { font-size: .8rem; color: #6b7280; margin: 0 0 .35rem; }
+
+.btn-green {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .5rem 1rem; background: #16a34a; color: #fff;
+  border-radius: 8px; font-weight: 600; font-size: .88rem; transition: background .15s;
+}
+.btn-green:hover:not(:disabled) { background: #15803d; }
+.btn-green:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-red {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .5rem 1rem; background: #dc2626; color: #fff;
+  border-radius: 8px; font-weight: 600; font-size: .88rem; transition: background .15s;
+}
+.btn-red:hover:not(:disabled) { background: #b91c1c; }
+.btn-red:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-blue {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .55rem 1.1rem; background: #2563eb; color: #fff;
+  border-radius: 8px; font-weight: 600; font-size: .88rem; transition: background .15s;
+}
+.btn-blue:hover:not(:disabled) { background: #1d4ed8; }
+.btn-blue:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Timeline (seguimientos) ─────────────────────────────────────────────── */
+.timeline { display: flex; flex-direction: column; gap: .1rem; }
+.timeline-item { display: flex; gap: .85rem; }
+.tl-dot {
+  width: 10px; height: 10px; border-radius: 50%; background: var(--color-abril-logo-blue);
+  flex-shrink: 0; margin-top: .4rem;
+}
+.tl-content {
+  flex: 1; padding: .6rem .85rem;
+  background: #f9fafb; border-radius: 8px; margin-bottom: .5rem;
+}
+.tl-header { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .3rem; }
+.tl-date { font-size: .75rem; color: #6b7280; }
+.tl-role { font-size: .75rem; color: #9ca3af; }
+.tl-nota { font-size: .88rem; color: #374151; margin: 0 0 .2rem; white-space: pre-wrap; }
+.tl-cita { display: flex; align-items: center; gap: .3rem; font-size: .78rem; color: #2563eb; margin: 0; }
+
+.empty-row { text-align: center; color: #9ca3af; font-size: .88rem; padding: 1.5rem 0; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn-ghost { padding: 9px 14px; border-radius: 9px; border: 0.5px solid #d4d0c8; background: transparent; color: #8a8880; font-size: 13px; cursor: pointer; }
+.btn-ghost:hover { color: #111827; background: #f9fafb; }
+.btn-ghost-sm { font-size: .8rem; color: #6b7280; font-weight: 600; padding: .25rem .6rem; border: 1px solid #d6dee5; border-radius: 6px; background: #fff; cursor: pointer; }
+.check-inline { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: #4b5563; cursor: pointer; }
+.check-inline input[type='checkbox'] { width: 14px; height: 14px; accent-color: var(--color-abril-logo-blue, #005D9D); cursor: pointer; }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px; background: var(--color-abril-logo-blue); color: #fff;
+  border: none; border-radius: 9px; font-weight: 600; font-size: 13px;
+  cursor: pointer; transition: background .15s;
+}
+.btn-primary:hover:not(:disabled) { background: var(--color-abril-logo-blue-hover); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

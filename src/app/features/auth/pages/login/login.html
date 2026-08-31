@@ -1,0 +1,183 @@
+<!-- Misma estructura EXACTA que la portada del boletín (boletin.html): sección a pantalla
+     completa, grid-cols-[0.85fr_1fr], perro+línea a la derecha con h-full (escala con la
+     pantalla). Solo cambia el contenido de la columna izquierda: la tarjeta de login en vez
+     del texto de bienvenida. -->
+<section class="fixed inset-0 z-10 bg-white flex items-center justify-center overflow-hidden">
+  <div class="grid grid-cols-[0.85fr_1fr] items-center w-full h-full px-[9%] box-border max-[900px]:grid-cols-1 max-[900px]:p-6 max-[900px]:gap-2.5 max-[900px]:overflow-y-auto">
+
+    <!-- Tarjeta de login: si su contenido no cabe en la altura disponible, hace scroll ella
+         sola (no la página completa), así el perro nunca se mueve de su sitio. -->
+    <div class="login-anim-left relative z-[2] max-h-full overflow-y-auto flex justify-center max-[900px]:justify-center" style="--d:0ms">
+      <div class="login-anim-up w-full max-w-[420px] bg-white rounded-[28px] shadow-[0_20px_50px_rgba(0,70,140,0.14)] px-7 py-6 sm:px-9 sm:py-7 my-4">
+
+        <div class="flex flex-col items-center gap-0.5 mb-4">
+            <img class="h-9 w-auto mb-1.5" src="/images/inicio/logo-abril-trim.webp" alt="Abril Grupo Inmobiliario" />
+            <h2 class="text-[#00529b] text-xl font-bold text-center m-0">Bienvenido a Abril One</h2>
+            <p class="text-[#7d93a8] text-xs text-center m-0">Inicia sesión para continuar</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="login-tabs">
+            <button type="button" class="login-tab" [class.active]="activeTab === 'abril'"
+                (click)="setTab('abril')">
+                Abril
+            </button>
+            <button type="button" class="login-tab" [class.active]="activeTab === 'contratistas'"
+                (click)="setTab('contratistas')">
+                Contratistas
+            </button>
+            <button type="button" class="login-tab" [class.active]="activeTab === 'clinica'"
+                (click)="setTab('clinica')">
+                Clínica
+            </button>
+        </div>
+
+        <!-- Tab Abril -->
+        <div *ngIf="activeTab === 'abril'" class="flex justify-center">
+            <button type="button" (click)="submitMicrosoft()"
+                class="flex items-center justify-center gap-3 w-full border border-[#E2E2E2] bg-white py-[12px] rounded-2xl cursor-pointer hover:bg-gray-50 hover:-translate-y-0.5 transition-[transform,background] shadow-[0_4px_12px_rgba(0,0,0,0.04)]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 21 21">
+                    <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                    <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                    <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                    <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+                </svg>
+                <span class="text-sm text-gray-700 font-semibold">Iniciar sesión con Microsoft</span>
+            </button>
+        </div>
+
+        <!-- Tab Contratistas -->
+        <form *ngIf="activeTab === 'contratistas'" class="flex flex-col gap-2"
+            [formGroup]="contratistaForm" (ngSubmit)="submitContratista()">
+            <div class="flex flex-col gap-0.5">
+                <label class="text-[11px] font-medium text-[#39536b]">Email</label>
+                <input placeholder="tu@empresa.com"
+                    class="border border-[#dbe6ef] rounded-lg px-2.5 py-1.5 w-full text-[13px] focus:outline-none focus:ring-2 focus:ring-[#8bc53f]/40 focus:border-[#8bc53f]"
+                    type="email" formControlName="email" autocomplete="email" />
+            </div>
+
+            <div class="flex flex-col gap-0.5">
+                <label class="text-[11px] font-medium text-[#39536b]">Contraseña</label>
+                <div class="password-wrapper">
+                    <input placeholder="Tu contraseña"
+                        class="border border-[#dbe6ef] rounded-lg px-2.5 py-1.5 w-full pr-16 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#8bc53f]/40 focus:border-[#8bc53f]"
+                        [type]="showContratistaPassword ? 'text' : 'password'"
+                        formControlName="password" autocomplete="current-password" />
+                    <button type="button" class="password-toggle" (click)="toggleContratistaPassword()">
+                        {{ showContratistaPassword ? 'Ocultar' : 'Mostrar' }}
+                    </button>
+                </div>
+            </div>
+
+            <button class="text-[#005d9d] w-full bg-[#8bc53f] font-bold text-sm tracking-[0.03em] py-2 rounded-lg cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 mt-0.5"
+                type="submit" [disabled]="contratistaForm.invalid">
+                INGRESAR
+            </button>
+
+            <div class="text-center flex flex-col gap-0.5">
+                <a routerLink="/auth/recuperar-contratista" class="text-[11px] text-[#00529b] font-medium hover:underline">
+                    ¿Olvidaste tu contraseña?
+                </a>
+                <a routerLink="/contractors/registro" class="text-[11px] text-[#00529b] font-medium hover:underline">
+                    ¿Nueva empresa? Regístrate aquí
+                </a>
+                <p class="text-[11px] text-gray-600 m-0">
+                    ¿Primera vez?
+                    <a routerLink="/auth/activar-empresa" class="text-[#00529b] font-medium hover:underline">
+                        Activa tu cuenta aquí
+                    </a>
+                </p>
+            </div>
+        </form>
+
+        <!-- Tab Clínica -->
+        <div *ngIf="activeTab === 'clinica'" class="flex flex-col gap-2">
+            <div class="flex flex-col gap-0.5">
+                <label class="text-[11px] font-medium text-[#39536b]">Email</label>
+                <input type="email" placeholder="correo@clinica.com"
+                    class="border border-[#dbe6ef] rounded-lg px-2.5 py-1.5 w-full text-[13px] focus:outline-none focus:ring-2 focus:ring-[#8bc53f]/40 focus:border-[#8bc53f]"
+                    [(ngModel)]="clinicaForm.email" autocomplete="email" />
+            </div>
+
+            <div class="flex flex-col gap-0.5">
+                <label class="text-[11px] font-medium text-[#39536b]">Contraseña</label>
+                <input type="password" placeholder="Tu contraseña"
+                    class="border border-[#dbe6ef] rounded-lg px-2.5 py-1.5 w-full text-[13px] focus:outline-none focus:ring-2 focus:ring-[#8bc53f]/40 focus:border-[#8bc53f]"
+                    [(ngModel)]="clinicaForm.password" autocomplete="current-password" />
+            </div>
+
+            <div *ngIf="clinicaError" class="text-[11px] text-red-600 text-center">{{ clinicaError }}</div>
+
+            <button type="button"
+                class="text-[#005d9d] w-full bg-[#8bc53f] font-bold text-sm tracking-[0.03em] py-2 rounded-lg cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 mt-0.5"
+                [disabled]="clinicaLoading || !clinicaForm.email || !clinicaForm.password"
+                (click)="submitClinica()">
+                {{ clinicaLoading ? 'Ingresando...' : 'INGRESAR' }}
+            </button>
+        </div>
+
+        <!-- Videos tutoriales: enlace compacto que abre un modal (no empuja el layout).
+             Siempre visible; los videos se traen recién al abrir el modal. -->
+        <div class="mt-3 pt-2.5 border-t border-[#eef3f8] text-center">
+            <button type="button" class="tutoriales-toggle" (click)="toggleTutoriales()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#8bc53f" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                Videos tutoriales
+            </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Perro + línea azul: EXACTAMENTE igual que en boletin.html — h-full hace que escale
+         de verdad con el alto real de la pantalla (grande = perro grande). -->
+    <div class="relative h-full overflow-hidden max-[900px]:min-h-[280px]">
+      <svg class="login-linea absolute top-[-2%] left-0 right-[-12%] h-[106%] z-0 pointer-events-none"
+           viewBox="0 0 100 100" fill="none" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M 18 100 V 38 Q 18 26 25 25 L 100 20" stroke="#1f74c4" stroke-width="3"
+              stroke-linecap="round" vector-effect="non-scaling-stroke" pathLength="1" />
+      </svg>
+      <img class="login-anim-right absolute inset-0 z-[1] w-full h-full object-contain object-[right_bottom]"
+           src="/images/inicio/perro-saludando-trim.webp" alt="Mascota Abril saludando" />
+    </div>
+
+  </div>
+</section>
+
+<!-- Modal de videos tutoriales -->
+<div *ngIf="mostrarTutoriales" class="fixed inset-0 z-[999] flex items-center justify-center px-4"
+     (click)="toggleTutoriales()">
+    <div class="absolute inset-0 bg-[#00335e]/40"></div>
+    <div class="relative z-10 w-full max-w-[560px] max-h-[80vh] overflow-y-auto bg-white rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.25)] p-6 sm:p-8"
+         (click)="$event.stopPropagation()">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-[#00529b] text-lg font-bold m-0">Videos tutoriales</h3>
+            <button type="button" class="text-[#7d93a8] hover:text-[#00529b] cursor-pointer border-0 bg-transparent p-1" (click)="toggleTutoriales()" aria-label="Cerrar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="tutorial-scroll">
+            <a *ngFor="let v of tutorialVideos"
+               [href]="v.url" target="_blank" rel="noopener noreferrer"
+               class="tutorial-card">
+                <div class="tutorial-play">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                </div>
+                <div class="tutorial-info">
+                    <p class="tutorial-title">{{ v.titulo }}</p>
+                    <span class="tutorial-link">Ver tutorial →</span>
+                </div>
+            </a>
+            <!-- Ya se cargaron los videos y no hay ninguno configurado. -->
+            <p *ngIf="!tutorialVideos.length" class="text-sm text-[#7d93a8] text-center m-0 py-4">
+                No hay videos tutoriales disponibles por ahora.
+            </p>
+        </div>
+    </div>
+</div>

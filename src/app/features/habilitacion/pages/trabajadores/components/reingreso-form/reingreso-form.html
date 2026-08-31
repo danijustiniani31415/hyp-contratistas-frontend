@@ -1,0 +1,81 @@
+<app-base-modal *ngIf="open" title="Reingreso de trabajador" width="w-[580px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <div class="grid-2">
+
+      <div class="col-span-2">
+        <label class="field-label">Trabajador</label>
+        <input
+          type="text"
+          class="field-input field-readonly"
+          [value]="initial?.apellidoNombre ?? ''"
+          readonly
+        />
+      </div>
+
+      <div>
+        <label class="field-label">Proyecto actual</label>
+        <input
+          type="text"
+          class="field-input field-readonly"
+          [value]="initial?.proyectoActual ?? 'Sin asignar'"
+          readonly
+        />
+      </div>
+
+      <div>
+        <label class="field-label">Razón social</label>
+        <input
+          type="text"
+          class="field-input field-readonly"
+          [value]="initial?.empresaNombre ?? 'Sin asignar'"
+          readonly
+        />
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Fecha de reingreso</label>
+        <input type="date" class="field-input" [(ngModel)]="model.fechaReingreso" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">
+          Nuevo proyecto <span class="field-opt">(opcional — mantiene el actual si no se selecciona)</span>
+        </label>
+        <app-search-select
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="model.nuevoProyectoId"
+          [showLabel]="false"
+          [placeholder]="initial?.proyectoActual ? 'Mantener: ' + initial?.proyectoActual : 'Sin proyecto asignado'"
+          [allowClear]="true"
+          (valueChange)="model.nuevoProyectoId = $event"
+        />
+      </div>
+
+      <div class="col-span-2" *ngIf="esCasa">
+        <label class="field-label">
+          Nueva razón social <span class="field-opt">(opcional)</span>
+        </label>
+        <app-search-select
+          [options]="empresas"
+          valueField="id"
+          displayField="nombre"
+          [value]="model.nuevaEmpresaId"
+          [showLabel]="false"
+          [placeholder]="initial?.empresaNombre ? 'Mantener: ' + initial?.empresaNombre : 'Sin razón social asignada'"
+          [allowClear]="true"
+          (valueChange)="model.nuevaEmpresaId = $event"
+        />
+      </div>
+
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Reingresar' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

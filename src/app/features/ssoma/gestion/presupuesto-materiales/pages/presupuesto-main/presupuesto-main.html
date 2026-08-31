@@ -1,0 +1,324 @@
+<app-abril-page-header
+  badge="SSOMA · Gestión"
+  titulo="Presupuesto de Materiales SSOMA"
+  subtitulo="Importa Kardex de materiales y Excel de Horas Hombre, estandariza y aprueba consumos"
+  [tabs]="headerTabs">
+</app-abril-page-header>
+
+<div class="pres-wrap">
+
+  <!-- Selector de proyecto -->
+  <div class="pres-toolbar">
+    <div class="pres-field">
+      <label class="pres-label">Proyecto</label>
+      <app-search-select
+        class="pres-select"
+        [options]="proyectos"
+        valueField="projectId"
+        displayField="projectDescription"
+        [value]="proyectoId"
+        [showLabel]="false"
+        placeholder="Buscar proyecto..."
+        (valueChange)="proyectoId = $event; onProyectoChange()">
+      </app-search-select>
+    </div>
+  </div>
+
+  @if (!proyectoId) {
+    <div class="empty-state">
+      <i class="ti ti-file-spreadsheet" style="font-size:48px;color:#d1d5db"></i>
+      <p>Selecciona un proyecto para gestionar materiales.</p>
+    </div>
+  } @else {
+
+      <!-- Guía del orden para armar el presupuesto -->
+      <div class="pres-guia">
+        <div class="pres-guia-titulo"><i class="ti ti-route"></i> Orden para armar el presupuesto de este proyecto</div>
+        <ol class="pres-guia-pasos">
+          <li><strong>Cargas</strong> (acá) — sube el Kardex de materiales y el Excel de Horas Hombre.</li>
+          <li><strong>Catálogo → Sin estandarizar</strong> — revisa y asigna cada material pendiente; hasta que no quede ninguno, no cuenta para el ratio.</li>
+          <li><strong>Datos Base</strong> — confirma Área Techada, HH Total y Trabajadores del proyecto.</li>
+          <li><strong>Ratios</strong> — calcula el ratio de consumo por família y revisa qué proyectos incluir o marcar como outlier.</li>
+          <li><strong>Generar presupuesto</strong> — desde la ficha del proyecto (botón "Ir" en Datos Base), con los ratios y datos base ya listos.</li>
+        </ol>
+      </div>
+
+      <!-- Materiales (subir + historial) y Horas Hombre (subir + historial), en columnas lado a lado -->
+      <div class="pres-upload-grid">
+      <div class="pres-col">
+      <div class="pres-card">
+        <h3 class="pres-card-title"><i class="ti ti-upload"></i> Subir Kardex de materiales</h3>
+        <p class="pres-card-sub">Kardex con columnas Movimiento/Nro. Guía/Partida de Control (.xlsx / .xls), máximo 20 MB. Sube el acumulado completo del proyecto en cada subida — el sistema se queda solo con los egresos de Seguridad y Salud Ocupacional y compara contra lo ya cargado.</p>
+        <div class="pres-upload-row">
+          <input type="file" accept=".xlsx,.xls" class="pres-file-input" (change)="onArchivoChange($event)" #fileInput />
+          <label class="pres-file-label" (click)="fileInput.click()">
+            <i class="ti ti-file-spreadsheet"></i>
+            {{ archivoSeleccionado ? archivoSeleccionado.name : 'Elegir archivo' }}
+          </label>
+          <button class="pres-btn-primary"
+            [disabled]="!archivoSeleccionado || subiendoArchivo"
+            (click)="subirS10()">
+            @if (subiendoArchivo) {
+              <i class="ti ti-loader-2 spin"></i> Procesando...
+            } @else {
+              <i class="ti ti-upload"></i> Importar
+            }
+          </button>
+        </div>
+
+        @if (subiendoArchivo) {
+          <div class="pres-progreso-aviso">
+            <i class="ti ti-alert-triangle"></i>
+            <div>
+              <strong>No cierres ni recargues esta pantalla.</strong> Con Kardex grandes (miles de líneas) esto puede
+              tardar varios minutos — si sales de acá antes de que termine, el proceso queda a medias.
+            </div>
+          </div>
+        }
+
+        @if (uploadResult) {
+          <div class="pres-result" [class.pres-result--ok]="uploadResult.lineasPendientes === 0">
+            <div class="pres-result-grid">
+              <div class="pres-result-item">
+                <span class="pres-result-val">{{ uploadResult.lineasNuevas }}</span>
+                <span class="pres-result-lbl">Nuevas</span>
+              </div>
+              <div class="pres-result-item">
+                <span class="pres-result-val">{{ uploadResult.lineasActualizadas }}</span>
+                <span class="pres-result-lbl">Actualizadas</span>
+              </div>
+              <div class="pres-result-item pres-result-danger">
+                <span class="pres-result-val">{{ uploadResult.lineasEliminadas }}</span>
+                <span class="pres-result-lbl">Dadas de baja</span>
+              </div>
+              <div class="pres-result-item">
+                <span class="pres-result-val">{{ uploadResult.lineasSinCambio }}</span>
+                <span class="pres-result-lbl">Sin cambio</span>
+              </div>
+            </div>
+            <div class="pres-result-grid">
+              <div class="pres-result-item pres-result-ok">
+                <span class="pres-result-val">{{ uploadResult.lineasEstandarizadas }}</span>
+                <span class="pres-result-lbl">Estandarizadas</span>
+              </div>
+              <div class="pres-result-item">
+                <span class="pres-result-val">{{ uploadResult.lineasAutoRechazadas }}</span>
+                <span class="pres-result-lbl">Auto-rechazadas</span>
+              </div>
+              <div class="pres-result-item pres-result-warn">
+                <span class="pres-result-val">{{ uploadResult.lineasPendientes }}</span>
+                <span class="pres-result-lbl">Pendientes</span>
+              </div>
+              <div class="pres-result-item pres-result-danger">
+                <span class="pres-result-val">{{ uploadResult.lineasSinMatch }}</span>
+                <span class="pres-result-lbl">Sin match</span>
+              </div>
+            </div>
+            @if (uploadResult.advertencias.length > 0) {
+              <ul class="pres-warns">
+                @for (w of uploadResult.advertencias; track w) {
+                  <li><i class="ti ti-alert-triangle"></i> {{ w }}</li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Historial de cargas de materiales -->
+      <div class="pres-card">
+        <div class="pres-card-header-row">
+          <h3 class="pres-card-title"><i class="ti ti-history"></i> Historial de cargas de materiales</h3>
+          <button class="pres-btn-icon" (click)="loadCargas()" title="Refrescar">
+            <i class="ti ti-refresh"></i>
+          </button>
+        </div>
+
+        @if (loadingCargas) {
+          <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando...</div>
+        } @else if (cargas.length === 0) {
+          <div class="loading-state">No hay cargas para este proyecto.</div>
+        } @else {
+          <div class="pres-table-wrap">
+            <table class="abril-table pres-table">
+              <thead>
+                <tr>
+                  <th>Archivo</th>
+                  <th>Período</th>
+                  <th>Nuevas</th>
+                  <th>Actualiz.</th>
+                  <th>Bajas</th>
+                  <th>Pendientes</th>
+                  <th>% Avance</th>
+                  <th>Estado</th>
+                  <th>Fecha carga</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of cargas; track c.id) {
+                  <tr>
+                    <td class="pres-td-file">{{ c.nombreArchivo }}</td>
+                    <td>{{ c.fechaMin }} / {{ c.fechaMax }}</td>
+                    <td class="pres-td-num">{{ c.lineasNuevas }}</td>
+                    <td class="pres-td-num">{{ c.lineasActualizadas }}</td>
+                    <td class="pres-td-num" [style.color]="c.lineasEliminadas > 0 ? '#dc2626' : '#9ca3af'">
+                      {{ c.lineasEliminadas }}
+                    </td>
+                    <td class="pres-td-num" [style.color]="c.lineasPendientes > 0 ? '#d97706' : '#16a34a'">
+                      {{ c.lineasPendientes }}
+                    </td>
+                    <td>
+                      <div class="pres-mini-progress">
+                        <div class="pres-mini-fill" [style.width.%]="c.porcentajeEstandarizado"></div>
+                      </div>
+                      <span class="pres-mini-pct">{{ c.porcentajeEstandarizado | number:'1.0-1' }}%</span>
+                    </td>
+                    <td>
+                      <span class="pres-badge" [ngClass]="estadoCargaClass(c.estado)">{{ c.estado }}</span>
+                    </td>
+                    <td class="pres-td-date">{{ c.creadoEn | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>
+                      <button class="pres-btn-xs"
+                        [disabled]="estandarizandoId === c.id"
+                        title="Vuelve a intentar estandarizar las líneas de esta carga que sigan sin ítem asignado (útil tras agregar alias o corregir el catálogo)."
+                        (click)="estandarizar(c.id)">
+                        @if (estandarizandoId === c.id) {
+                          <i class="ti ti-loader-2 spin"></i>
+                        } @else {
+                          <i class="ti ti-refresh"></i> Re-estandarizar
+                        }
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        @if (estandarizandoId !== null) {
+          <div class="pres-progreso-aviso">
+            <i class="ti ti-alert-triangle"></i>
+            <div>
+              <strong>No cierres ni recargues esta pantalla</strong> — la estandarización sigue corriendo en el servidor,
+              pero si sales de acá antes de que termine, el navegador corta la conexión y el proceso queda a medias.
+              @if (progresoEstandarizacion) {
+                <div class="pres-progreso-barra">
+                  <div class="pres-progreso-fill" [style.width.%]="(progresoEstandarizacion.procesadas / progresoEstandarizacion.total) * 100"></div>
+                </div>
+                <span>{{ progresoEstandarizacion.procesadas | number }} de {{ progresoEstandarizacion.total | number }} líneas procesadas</span>
+              } @else {
+                <span>Calculando progreso...</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      </div>
+
+      <div class="pres-col">
+      <!-- Upload Horas Hombre -->
+      <div class="pres-card">
+        <h3 class="pres-card-title"><i class="ti ti-clock-hour-4"></i> Subir Excel de Horas Hombre</h3>
+        <p class="pres-card-sub">Excel de planilla/Tareo semanal (Año, Periodo Semanal, Apellidos y Nombres, Horas laboradas), máximo 20 MB. Complementa al HH del Tareo de Control de Acceso — sube el acumulado completo en cada subida.</p>
+        <div class="pres-upload-row">
+          <input type="file" accept=".xlsx,.xls" class="pres-file-input" (change)="onArchivoChangeHh($event)" #fileInputHh />
+          <label class="pres-file-label" (click)="fileInputHh.click()">
+            <i class="ti ti-file-spreadsheet"></i>
+            {{ archivoSeleccionadoHh ? archivoSeleccionadoHh.name : 'Elegir archivo' }}
+          </label>
+          <button class="pres-btn-primary"
+            [disabled]="!archivoSeleccionadoHh || subiendoArchivoHh"
+            (click)="subirHh()">
+            @if (subiendoArchivoHh) {
+              <i class="ti ti-loader-2 spin"></i> Procesando...
+            } @else {
+              <i class="ti ti-upload"></i> Importar
+            }
+          </button>
+        </div>
+
+        @if (uploadResultHh) {
+          <div class="pres-result">
+            <div class="pres-result-grid">
+              <div class="pres-result-item">
+                <span class="pres-result-val">{{ uploadResultHh.lineasNuevas }}</span>
+                <span class="pres-result-lbl">Nuevas</span>
+              </div>
+              <div class="pres-result-item">
+                <span class="pres-result-val">{{ uploadResultHh.lineasActualizadas }}</span>
+                <span class="pres-result-lbl">Actualizadas</span>
+              </div>
+              <div class="pres-result-item pres-result-danger">
+                <span class="pres-result-val">{{ uploadResultHh.lineasEliminadas }}</span>
+                <span class="pres-result-lbl">Dadas de baja</span>
+              </div>
+              <div class="pres-result-item pres-result-ok">
+                <span class="pres-result-val">{{ uploadResultHh.horasLaboradasTotales | number:'1.0-1' }}</span>
+                <span class="pres-result-lbl">HH totales del proyecto</span>
+              </div>
+            </div>
+            @if (uploadResultHh.advertencias.length > 0) {
+              <ul class="pres-warns">
+                @for (w of uploadResultHh.advertencias; track w) {
+                  <li><i class="ti ti-alert-triangle"></i> {{ w }}</li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Historial de cargas de Horas Hombre -->
+      <div class="pres-card">
+        <div class="pres-card-header-row">
+          <h3 class="pres-card-title"><i class="ti ti-history"></i> Historial de cargas de Horas Hombre</h3>
+          <button class="pres-btn-icon" (click)="loadCargasHh()" title="Refrescar">
+            <i class="ti ti-refresh"></i>
+          </button>
+        </div>
+
+        @if (loadingCargasHh) {
+          <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando...</div>
+        } @else if (cargasHh.length === 0) {
+          <div class="loading-state">No hay cargas de Horas Hombre para este proyecto.</div>
+        } @else {
+          <div class="pres-table-wrap">
+            <table class="abril-table pres-table">
+              <thead>
+                <tr>
+                  <th>Archivo</th>
+                  <th>Período</th>
+                  <th>Nuevas</th>
+                  <th>Actualiz.</th>
+                  <th>Bajas</th>
+                  <th>Estado</th>
+                  <th>Fecha carga</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of cargasHh; track c.id) {
+                  <tr>
+                    <td class="pres-td-file">{{ c.nombreArchivo }}</td>
+                    <td>Sem. {{ c.semanaMin }}/{{ c.anioMin }} — Sem. {{ c.semanaMax }}/{{ c.anioMax }}</td>
+                    <td class="pres-td-num">{{ c.lineasNuevas }}</td>
+                    <td class="pres-td-num">{{ c.lineasActualizadas }}</td>
+                    <td class="pres-td-num" [style.color]="c.lineasEliminadas > 0 ? '#dc2626' : '#9ca3af'">
+                      {{ c.lineasEliminadas }}
+                    </td>
+                    <td>
+                      <span class="pres-badge" [ngClass]="estadoCargaClass(c.estado)">{{ c.estado }}</span>
+                    </td>
+                    <td class="pres-td-date">{{ c.creadoEn | date:'dd/MM/yyyy HH:mm' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+      </div>
+      </div>
+  }
+</div>

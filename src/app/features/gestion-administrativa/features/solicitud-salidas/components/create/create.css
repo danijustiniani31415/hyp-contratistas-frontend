@@ -1,0 +1,23 @@
+/* ── El label de las horas nunca parte en dos líneas ──────────────────────
+   El label del retorno depende del motivo: "Hora de retorno" pasa a "Hora de
+   retorno estimada" o "exacta". Con el texto largo el label envolvía en dos
+   líneas y empujaba SU propio campo ~20px hacia abajo, con lo que la hora de
+   retorno quedaba desalineada respecto a la hora de salida (se notaba al elegir
+   un motivo que pide documento adjunto, que son justo los de hora estimada).
+   app-time-picker es compartido, así que el nowrap se limita a este formulario:
+   las columnas de la fila (130px / 200px) están dimensionadas para que el texto
+   más largo entre en una sola línea, y en móvil cada hora va a ancho completo. */
+:host ::ng-deep .horas-row app-time-picker label {
+  white-space: nowrap;
+}
+
+/* ── Campo obligatorio sin llenar tras intentar enviar ────────────────────
+   Pinta el borde en rojo tanto si el campo es el desplegable
+   (app-search-select) como si es el input de texto de "Otro motivo" / "Otro
+   lugar", para que la obligatoriedad se vea idéntica en las dos vías. Al no ser
+   una utilidad de Tailwind (que van en @layer utilities) le gana al color de
+   borde en reposo que trae el componente. */
+:host ::ng-deep .campo-error .ss-trigger,
+:host ::ng-deep .campo-error input[type='text'] {
+  border-color: #EF4444;
+}

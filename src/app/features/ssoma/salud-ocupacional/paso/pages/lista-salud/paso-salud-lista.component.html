@@ -1,0 +1,155 @@
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="PASO Salud"
+  subtitulo="Actividades de salud ocupacional (campañas, capacitaciones, EMOs, etc.) de todos los proyectos, desde el inicio del programa hasta el mes actual."
+  [tabs]="tabs"
+></app-abril-page-header>
+
+<div class="paso-salud-page">
+  <div class="filtros-bar">
+    <app-search-select
+      label="Proyecto"
+      placeholder="Todos los proyectos"
+      [options]="proyectos"
+      valueField="projectId"
+      displayField="projectDescription"
+      [(value)]="filtroProyectoId"
+      (valueChange)="onFiltroChange()"
+      [compact]="true"
+    ></app-search-select>
+
+    <app-search-select
+      label="Categoría"
+      placeholder="Todas"
+      [options]="categorias"
+      valueField="id"
+      displayField="nombre"
+      [(value)]="filtroCategoriaId"
+      (valueChange)="onFiltroChange()"
+      [compact]="true"
+    ></app-search-select>
+
+    <app-search-select
+      label="Año"
+      placeholder="Todos los años"
+      [options]="aniosOpts"
+      valueField="id"
+      displayField="label"
+      [(value)]="filtroAnio"
+      (valueChange)="onFiltroChange()"
+      [compact]="true"
+      [sortAlpha]="false"
+    ></app-search-select>
+
+    <app-search-select
+      label="Mes"
+      placeholder="Todos los meses"
+      [options]="meses"
+      valueField="id"
+      displayField="nombre"
+      [(value)]="filtroMes"
+      (valueChange)="onFiltroChange()"
+      [compact]="true"
+      [sortAlpha]="false"
+    ></app-search-select>
+
+    <div class="filtro-field filtro-field--tabs">
+      <label>Estado</label>
+      <div class="estado-tabs">
+        <button type="button" [class.active]="filtroCumplida === 'todas'" (click)="filtroCumplida = 'todas'; onFiltroChange()">Todas</button>
+        <button type="button" [class.active]="filtroCumplida === 'cumplidas'" (click)="filtroCumplida = 'cumplidas'; onFiltroChange()">Cumplidas</button>
+        <button type="button" [class.active]="filtroCumplida === 'nocumplidas'" (click)="filtroCumplida = 'nocumplidas'; onFiltroChange()">No cumplidas</button>
+      </div>
+    </div>
+
+    <button type="button" class="btn-limpiar" (click)="limpiarFiltros()">
+      <i class="ti ti-filter-x"></i> Limpiar
+    </button>
+  </div>
+
+  <div class="resultados-info" *ngIf="!loading">
+    {{ total }} actividad{{ total === 1 ? '' : 'es' }} encontrada{{ total === 1 ? '' : 's' }}
+  </div>
+
+  <div class="tabla-wrapper">
+    <table class="tabla-paso-salud">
+      <thead>
+        <tr>
+          <th>Proyecto</th>
+          <th>Categoría</th>
+          <th>Actividad</th>
+          <th>Frecuencia</th>
+          <th>Fecha programada</th>
+          <th>Fecha ejecutada</th>
+          <th>Estado</th>
+          <th>Responsable</th>
+          <th>Evidencia</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of items">
+          <td>{{ item.proyectoNombre }}</td>
+          <td>
+            <span class="categoria-cell">
+              <i class="ti" [ngClass]="item.categoriaIcono ?? 'ti-heart-pulse'"></i>
+              {{ item.categoriaNombre }}
+            </span>
+          </td>
+          <td>{{ item.actividadNombre }}</td>
+          <td>{{ item.frecuencia }}</td>
+          <td>{{ item.fechaProgramada | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ item.fechaEjecutada ? (item.fechaEjecutada | date: 'dd/MM/yyyy') : '—' }}</td>
+          <td><span [ngClass]="estadoBadgeClass(item.estado)">{{ item.estado }}</span></td>
+          <td>{{ item.responsableNombre ?? '—' }}</td>
+          <td>
+            <button type="button" class="btn-evidencia" *ngIf="item.evidenciaUrl" (click)="verEvidencia(item.evidenciaUrl!)">
+              <i class="ti ti-paperclip"></i> Ver
+            </button>
+            <span *ngIf="!item.evidenciaUrl">—</span>
+          </td>
+          <td>
+            <button type="button" class="btn-accion" (click)="abrirAccion(item)">
+              {{ item.cumplida ? 'Editar' : 'Marcar cumplida' }}
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && items.length === 0">
+          <td colspan="10" class="sin-datos">No hay actividades para los filtros seleccionados.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginator
+    *ngIf="totalPages > 1"
+    [totalRecords]="total"
+    [currentPage]="page"
+    [totalPages]="totalPages"
+    (pageChange)="onPageChange($event)"
+  ></app-paginator>
+</div>
+
+<app-base-modal *ngIf="accionActividad" title="Registrar cumplimiento" width="w-[520px]" (closeModal)="cerrarAccion()">
+  <div class="accion-modal">
+    <p class="accion-modal__actividad">{{ accionActividad.actividadNombre }}</p>
+    <p class="accion-modal__proyecto">{{ accionActividad.proyectoNombre }} · {{ accionActividad.categoriaNombre }}</p>
+
+    <label>Fecha ejecutada</label>
+    <input type="date" [(ngModel)]="fechaEjecutada" />
+
+    <label>Observaciones</label>
+    <textarea rows="3" [(ngModel)]="observaciones" placeholder="Opcional"></textarea>
+
+    <label>Evidencia</label>
+    <input type="file" (change)="onFileSelect($event)" />
+    <span class="accion-modal__file" *ngIf="evidenciaFile">{{ evidenciaFile.name }}</span>
+
+    <div class="accion-modal__actions">
+      <button type="button" class="btn-secundario" (click)="cerrarAccion()">Cancelar</button>
+      <button type="button" class="btn-primario" [disabled]="!fechaEjecutada || guardandoAccion" (click)="guardarAccion()">
+        {{ guardandoAccion ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+</app-base-modal>

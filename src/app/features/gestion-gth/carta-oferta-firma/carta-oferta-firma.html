@@ -1,0 +1,200 @@
+<div class="co-page">
+  <div class="co-shell">
+
+    <!-- ── Cargando ─────────────────────────────────────────────────────── -->
+    @if (cargando) {
+      <div class="co-card co-state">
+        <div class="co-spinner"></div>
+        <p class="co-state-text">Cargando tu carta oferta…</p>
+      </div>
+    }
+
+    <!-- ── Error / token inválido ───────────────────────────────────────── -->
+    @else if (errorCarga) {
+      <div class="co-card co-state">
+        <i class="ti ti-alert-circle co-state-icon" style="color:#B91C1C"></i>
+        <h2 class="co-state-title">No pudimos abrir tu carta oferta</h2>
+        <p class="co-state-text">{{ mensajeError }}</p>
+      </div>
+    }
+
+    @else if (data) {
+      <!-- ── Encabezado de marca ────────────────────────────────────────── -->
+      <div class="co-card co-header">
+        <h1 class="co-title">Carta oferta</h1>
+        <p class="co-brand">ABRIL GRUPO INMOBILIARIO</p>
+
+        @if (aprobada) {
+          <p class="co-intro">
+            Estimado(a) <b>{{ data.nombre }}</b>, tu carta oferta firmada ya fue revisada y aprobada por
+            Gestión del Talento Humano. Abajo puedes consultarla y descargarla cuando lo necesites.
+          </p>
+        } @else if (yaFirmada) {
+          <p class="co-intro">
+            Estimado(a) <b>{{ data.nombre }}</b>, ya firmaste tu carta oferta. El equipo de Gestión del
+            Talento Humano la está revisando y se pondrá en contacto contigo para los siguientes pasos.
+          </p>
+        } @else {
+          <p class="co-intro">
+            Estimado(a) <b>{{ data.nombre }}</b>, nos complace informarte que fuiste seleccionado(a) para
+            la posición de <b>{{ data.puesto }}</b>. Lee tu carta oferta, registra tu firma y fírmala
+            desde esta misma página: no necesitas imprimir ni escanear nada.
+          </p>
+        }
+      </div>
+
+      <!-- ── Resumen de la propuesta ────────────────────────────────────── -->
+      <div class="co-card">
+        <h2 class="co-section-title">Detalle de la posición</h2>
+        <div class="co-grid">
+          @if (data.puesto) {
+            <div class="co-field"><span class="co-label">Puesto</span><span class="co-value">{{ data.puesto }}</span></div>
+          }
+          @if (data.area) {
+            <div class="co-field"><span class="co-label">Área</span><span class="co-value">{{ data.area }}</span></div>
+          }
+          @if (data.empresa) {
+            <div class="co-field"><span class="co-label">Empresa</span><span class="co-value">{{ data.empresa }}</span></div>
+          }
+          @if (data.proyectoObra) {
+            <div class="co-field"><span class="co-label">Proyecto / obra</span><span class="co-value">{{ data.proyectoObra }}</span></div>
+          }
+          @if (data.jefeDirecto) {
+            <div class="co-field"><span class="co-label">Jefe directo</span><span class="co-value">{{ data.jefeDirecto }}</span></div>
+          }
+          @if (data.fechaIngreso) {
+            <div class="co-field"><span class="co-label">Fecha de ingreso</span><span class="co-value">{{ data.fechaIngreso | date:'dd/MM/yyyy' }}</span></div>
+          }
+        </div>
+      </div>
+
+      <!-- ── Visor de la carta ──────────────────────────────────────────── -->
+      <div class="co-card">
+        <div class="co-section-head">
+          <h2 class="co-section-title">
+            {{ yaFirmada ? 'Tu carta oferta firmada' : 'Tu carta oferta' }}
+          </h2>
+          @if (documentoUrl) {
+            <button type="button" class="co-btn-link" (click)="abrirEnPestana()">
+              <i class="ti ti-external-link"></i> Abrir en otra pestaña
+            </button>
+          }
+        </div>
+
+        @if (documentoCargando) {
+          <div class="co-viewer co-viewer-state">
+            <div class="co-spinner"></div>
+            <p class="co-state-text">Cargando el documento…</p>
+          </div>
+        } @else if (documentoError) {
+          <div class="co-viewer co-viewer-state">
+            <i class="ti ti-file-alert co-state-icon" style="color:#B91C1C"></i>
+            <p class="co-state-text">{{ documentoError }}</p>
+          </div>
+        } @else if (documentoUrl) {
+          <!-- El PDF llega como blob desde el backend: el postulante nunca ve la URL de SharePoint. -->
+          <iframe class="co-viewer" [src]="documentoUrl" title="Carta oferta"></iframe>
+          <p class="co-hint">
+            Si el documento no se ve en tu dispositivo, usa <b>Abrir en otra pestaña</b>.
+          </p>
+        }
+      </div>
+
+      <!-- ── Firma ──────────────────────────────────────────────────────── -->
+      <div class="co-card">
+        <h2 class="co-section-title">Tu firma</h2>
+
+        <!-- Firma ya registrada en su ficha: es la que se estampa. -->
+        @if (tieneFirmaRegistrada) {
+          <div class="co-firma-actual">
+            <div class="co-firma-actual-head">
+              <span class="co-badge co-badge-ok">FIRMA REGISTRADA</span>
+              @if (data.firmaActualizadaEn) {
+                <span class="co-hint">Registrada el {{ data.firmaActualizadaEn | date:'dd/MM/yyyy HH:mm' }}</span>
+              }
+            </div>
+            <img [src]="firmaDataUrl" alt="Tu firma registrada" class="co-firma-img" />
+          </div>
+        } @else {
+          <p class="co-hint">
+            Todavía no has registrado tu firma. Dibújala en el recuadro y presiona
+            <b>Guardar firma</b>.
+          </p>
+        }
+
+        <!-- Lienzo: se oculta cuando el proceso ya está cerrado (aprobado por GTH). -->
+        @if (puedeRegistrarFirma) {
+          <div class="co-firma-pad">
+            <label class="co-label-block">
+              {{ tieneFirmaRegistrada ? 'Dibujar una firma nueva (reemplaza la actual)' : 'Dibuja tu firma' }}
+            </label>
+
+            <div class="co-pad-wrap">
+              <app-signature-pad #pad (drawingChange)="hayTrazo = $event" />
+            </div>
+
+            <div class="co-firma-acciones">
+              <button type="button" class="co-btn co-btn-ghost" (click)="limpiarTrazo()" [disabled]="!hayTrazo">
+                Limpiar
+              </button>
+              <button type="button" class="co-btn co-btn-secondary"
+                (click)="guardarFirma()" [disabled]="!hayTrazo || guardandoFirma">
+                {{ guardandoFirma ? 'Guardando…' : 'Guardar firma' }}
+              </button>
+              <span class="co-hint">Dibuja con el mouse o con el dedo si estás en un celular.</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- ── Firmar el documento ────────────────────────────────────────── -->
+      <div class="co-card co-firmar">
+        @if (yaFirmada) {
+          <div class="co-firmado">
+            <i class="ti ti-circle-check co-state-icon" style="color:#15803D"></i>
+            <div>
+              <h2 class="co-section-title">
+                {{ aprobada ? 'Carta oferta firmada y aprobada' : 'Carta oferta firmada' }}
+              </h2>
+              <p class="co-state-text">
+                @if (data.firmadaEn) {
+                  Firmada el {{ data.firmadaEn | date:'dd/MM/yyyy HH:mm' }}.
+                }
+                @if (aprobada) {
+                  Gestión del Talento Humano ya la revisó y aprobó.
+                } @else {
+                  Gestión del Talento Humano la revisará y se pondrá en contacto contigo.
+                }
+              </p>
+            </div>
+          </div>
+        }
+
+        @if (!aprobada) {
+          <div class="co-firmar-accion">
+            <button type="button" class="co-btn co-btn-primary"
+              (click)="firmar()" [disabled]="!puedeFirmar" [title]="motivoBloqueo ?? ''">
+              <i class="ti ti-writing-sign"></i>
+              {{ firmando ? 'Firmando…' : (yaFirmada ? 'Volver a firmar' : 'Firmar') }}
+            </button>
+
+            @if (motivoBloqueo) {
+              <p class="co-bloqueo">{{ motivoBloqueo }}</p>
+            } @else if (!yaFirmada) {
+              <p class="co-hint">
+                Al firmar, tu firma registrada se estampa en tu carta oferta y el documento se envía a
+                Gestión del Talento Humano.
+              </p>
+            }
+          </div>
+        }
+      </div>
+
+      <p class="co-pie">
+        Este enlace es personal. Si tienes dudas sobre la propuesta, responde el correo con el que lo
+        recibiste y el equipo de Gestión del Talento Humano te apoyará.
+      </p>
+    }
+
+  </div>
+</div>

@@ -1,0 +1,92 @@
+<app-abril-modal-panel
+  titulo="Agregar hallazgo"
+  icono="ti-alert-triangle"
+  variant="blue"
+  width="620px"
+  (closeModal)="cancelar()">
+
+  <div class="abril-form-section">
+    <div class="abril-field">
+      <label class="abril-field-label">Descripción <span class="required">*</span></label>
+      <textarea class="abril-field-input" [(ngModel)]="descripcion" rows="3" placeholder="Describe el hallazgo..."></textarea>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Criticidad</label>
+      <div class="tipo-btns">
+        @for (t of ['Critico', 'Mayor', 'Menor']; track t) {
+          <button type="button" class="btn-tipo" [ngClass]="tipoClass(t)"
+            [class.btn-tipo--active]="tipo === t"
+            (click)="setTipo($any(t))">
+            {{ t }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="abril-field">
+        <label class="abril-field-label">Área</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="area" />
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Fecha propuesta de levantamiento</label>
+        <input type="date" class="abril-field-input" [(ngModel)]="fechaLimite" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="abril-field">
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Responsable"
+          [options]="workers"
+          valueField="workerId"
+          displayField="apellidoNombre"
+          placeholder="Buscar por nombre o DNI..."
+          [value]="responsableId"
+          (valueChange)="onResponsableChange($event)">
+        </app-search-select>
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Cargo</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="responsableCargo" placeholder="Cargo" />
+      </div>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Recomendación / acción propuesta</label>
+      <textarea class="abril-field-input" [(ngModel)]="accionCorrectiva" rows="2" placeholder="Qué se recomienda hacer..."></textarea>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Fotos <span class="required">*</span> (máx. 5)</label>
+      @if (fotosBase64.length < 5) {
+        <label class="btn-foto-add">
+          <i class="ti ti-camera"></i> Agregar foto
+          <input type="file" accept="image/*" multiple (change)="onFotoChange($event)" style="display:none" />
+        </label>
+      }
+      @if (fotosPreview.length) {
+        <div class="fotos-grid">
+          @for (url of fotosPreview; track $index) {
+            <div class="foto-thumb">
+              <img [src]="url" />
+              <button type="button" class="foto-del" (click)="quitarFoto($index)">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-cancelar" (click)="cancelar()">Cerrar</button>
+    <button type="button" class="btn-confirmar" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
+      @if (guardando) { <i class="ti ti-loader-2 spin"></i> } @else { Agregar hallazgo }
+    </button>
+  </div>
+
+</app-abril-modal-panel>

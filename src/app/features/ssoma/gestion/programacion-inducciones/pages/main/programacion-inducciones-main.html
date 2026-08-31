@@ -1,0 +1,297 @@
+<app-abril-page-header
+  badge="SSOMA · Gestión"
+  titulo="Programación de Inducciones"
+  subtitulo="Rotación de proyectos y calendario de inducciones (lunes, miércoles y viernes)">
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[14px] bg-white flex-1 min-h-0 overflow-hidden">
+  <div class="pi-tabs">
+    <button class="pi-tab" [class.pi-tab--active]="vista === 'calendario'" (click)="cambiarVista('calendario')">
+      Calendario
+    </button>
+    <button class="pi-tab" [class.pi-tab--active]="vista === 'rotacion'" (click)="cambiarVista('rotacion')">
+      Rotación de proyectos
+    </button>
+  </div>
+
+  <!-- ══════════════════════════ CALENDARIO ══════════════════════════ -->
+  @if (vista === 'calendario') {
+    <div class="flex items-end gap-[12px] flex-wrap">
+      <div class="abril-field" style="max-width:180px">
+        <label class="abril-field-label">Desde</label>
+        <input type="date" class="abril-field-input" [(ngModel)]="rangoDesde" />
+      </div>
+      <div class="abril-field" style="max-width:180px">
+        <label class="abril-field-label">Hasta</label>
+        <input type="date" class="abril-field-input" [(ngModel)]="rangoHasta" />
+      </div>
+      <button class="btn btn-primary" (click)="cargarCalendario()">Actualizar</button>
+    </div>
+
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Fecha</th>
+            <th>Proyecto</th>
+            <th>Responsable</th>
+            <th class="text-center">Estado</th>
+            <th class="text-center">Aviso</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of calendario; track item.id) {
+            <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+              <td class="whitespace-nowrap">
+                {{ item.fecha }}
+                @if (item.esManual) {
+                  <span class="pi-badge-manual" title="Modificado manualmente">manual</span>
+                }
+              </td>
+              <td class="text-gray-700">{{ item.proyectoNombre | titleCase }}</td>
+              <td class="text-gray-500">
+                @if (item.estado === 'Programada') {
+                  <button class="pi-link" (click)="abrirCambiarResponsableCalendario(item)">
+                    {{ item.responsableNombre || 'Sin asignar' }}
+                  </button>
+                } @else {
+                  {{ item.responsableNombre || '—' }}
+                }
+              </td>
+              <td class="text-center">
+                <span
+                  class="pi-estado"
+                  [class.pi-estado--programada]="item.estado === 'Programada'"
+                  [class.pi-estado--cancelada]="item.estado === 'Cancelada'"
+                  [class.pi-estado--realizada]="item.estado === 'Realizada'">
+                  {{ item.estado }}
+                </span>
+              </td>
+              <td class="text-center text-xs text-gray-500">
+                {{ item.avisoEnviado ? 'Enviado' : '—' }}
+              </td>
+              <td class="text-center whitespace-nowrap">
+                @if (item.estado === 'Programada') {
+                  <button class="pi-link" (click)="abrirReasignar(item)">Reasignar</button>
+                  <button class="pi-link" (click)="abrirReprogramar(item)">Reprogramar</button>
+                  <button class="pi-link pi-link--danger" (click)="cancelar(item)">Cancelar</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">
+                No hay fechas generadas en este rango.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ══════════════════════════ ROTACIÓN ══════════════════════════ -->
+  @if (vista === 'rotacion') {
+    <p class="text-sm text-gray-500">
+      Define el orden en que los proyectos activos reciben su turno de inducción. Cada fecha
+      hábil (L/M/V, sin feriados) se asigna automáticamente al siguiente turno activo de esta
+      lista. Un mismo proyecto puede tener más de un turno (ej. "Oficina Central" cubierto por
+      dos personas que se alternan) — agrega el proyecto de nuevo con otro responsable.
+    </p>
+
+    <div class="flex items-end gap-[12px] flex-wrap">
+      <div style="min-width:280px">
+        <app-search-select
+          label="Agregar proyecto a la rotación"
+          [options]="proyectosDisponibles"
+          valueField="proyectoId"
+          displayField="nombre"
+          [value]="proyectoNuevoId"
+          placeholder="Buscar proyecto..."
+          (valueChange)="onProyectoNuevoChange($event)">
+        </app-search-select>
+      </div>
+      <div style="min-width:280px">
+        <app-search-select
+          label="Responsable (opcional)"
+          [options]="responsablesNuevo"
+          valueField="workerId"
+          displayField="nombre"
+          [value]="responsableNuevoId"
+          [allowClear]="true"
+          placeholder="Coordinador SSOMA / Prevencionista..."
+          (valueChange)="responsableNuevoId = $event">
+        </app-search-select>
+      </div>
+      <button class="btn btn-primary" [disabled]="!proyectoNuevoId" (click)="agregarProyecto()">
+        Agregar
+      </button>
+    </div>
+
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th class="text-center" style="width:60px">Orden</th>
+            <th>Proyecto</th>
+            <th>Responsable</th>
+            <th class="text-center">Activo en la rotación</th>
+            <th class="text-center" style="width:100px">Mover</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of rotacion; track item.id; let i = $index) {
+            <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+              <td class="text-center">{{ item.orden }}</td>
+              <td class="text-gray-700">{{ item.proyectoNombre | titleCase }}</td>
+              <td class="text-gray-500">
+                <button class="pi-link" (click)="abrirCambiarResponsable(item)">
+                  {{ item.responsableNombre || 'Sin asignar' }}
+                </button>
+              </td>
+              <td class="text-center">
+                <button
+                  class="ph-switch"
+                  [class.ph-switch--on]="item.activo"
+                  (click)="toggleActivo(item)">
+                  <span class="ph-switch-knob"></span>
+                </button>
+              </td>
+              <td class="text-center whitespace-nowrap">
+                <button class="pi-link" [disabled]="i === 0" (click)="mover(item, -1)">↑</button>
+                <button class="pi-link" [disabled]="i === rotacion.length - 1" (click)="mover(item, 1)">↓</button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="text-center py-[40px] text-gray-400 text-sm">
+                Todavía no hay proyectos en la rotación.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<!-- ── Modal: reasignar / reprogramar una fecha ─────────────────────── -->
+@if (editando && modoEdicion) {
+  <app-abril-modal-panel
+    [titulo]="modoEdicion === 'reasignar' ? 'Reasignar inducción' : 'Reprogramar inducción'"
+    icono="ti-calendar-event"
+    variant="blue"
+    (closeModal)="cerrarModalEdicion()">
+
+    <p class="text-sm text-gray-500" style="margin-bottom:14px">
+      {{ editando.proyectoNombre }} — {{ editando.fecha }}
+    </p>
+
+    @if (modoEdicion === 'reasignar') {
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Nuevo proyecto"
+        [options]="todosLosProyectos"
+        valueField="proyectoId"
+        displayField="nombre"
+        [value]="formProyectoId"
+        placeholder="Buscar proyecto..."
+        (valueChange)="formProyectoId = $event">
+      </app-search-select>
+    } @else {
+      <div class="abril-field">
+        <label class="abril-field-label">Nueva fecha</label>
+        <input type="date" class="abril-field-input" [(ngModel)]="formFecha" />
+      </div>
+    }
+
+    <div class="abril-field">
+      <label class="abril-field-label">Motivo (opcional)</label>
+      <textarea class="abril-field-input" rows="3" [(ngModel)]="formMotivo"></textarea>
+    </div>
+
+    <div modalFooter class="modal-footer-row">
+      <button class="btn btn-secondary" (click)="cerrarModalEdicion()" [disabled]="guardandoEdicion">
+        Cancelar
+      </button>
+      <button class="btn btn-primary" (click)="confirmarEdicion()" [disabled]="guardandoEdicion">
+        @if (guardandoEdicion) { Guardando… } @else { Guardar }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}
+
+<!-- ── Modal: cambiar responsable de un turno de la rotación ────────── -->
+@if (rotEditando) {
+  <app-abril-modal-panel
+    titulo="Responsable del turno"
+    icono="ti-user"
+    variant="blue"
+    (closeModal)="cerrarModalResponsable()">
+
+    <p class="text-sm text-gray-500" style="margin-bottom:14px">
+      {{ rotEditando.proyectoNombre }} — turno #{{ rotEditando.orden }}
+    </p>
+
+    <div style="min-height:260px">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Responsable"
+        [options]="rotResponsables"
+        valueField="workerId"
+        displayField="nombre"
+        [value]="rotFormResponsableId"
+        [allowClear]="true"
+        placeholder="Coordinador SSOMA / Prevencionista..."
+        (valueChange)="rotFormResponsableId = $event">
+      </app-search-select>
+    </div>
+
+    <div modalFooter class="modal-footer-row">
+      <button class="btn btn-secondary" (click)="cerrarModalResponsable()" [disabled]="rotGuardando">
+        Cancelar
+      </button>
+      <button class="btn btn-primary" (click)="confirmarCambiarResponsable()" [disabled]="rotGuardando">
+        @if (rotGuardando) { Guardando… } @else { Guardar }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}
+
+<!-- ── Modal: cambiar responsable de una fecha puntual del calendario ─ -->
+@if (progEditando) {
+  <app-abril-modal-panel
+    titulo="Responsable de la inducción"
+    icono="ti-user"
+    variant="blue"
+    (closeModal)="cerrarModalResponsableCalendario()">
+
+    <p class="text-sm text-gray-500" style="margin-bottom:14px">
+      {{ progEditando.proyectoNombre }} — {{ progEditando.fecha }}
+    </p>
+
+    <div style="min-height:260px">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Responsable"
+        [options]="progResponsables"
+        valueField="workerId"
+        displayField="nombre"
+        [value]="progFormResponsableId"
+        [allowClear]="true"
+        placeholder="Coordinador SSOMA / Prevencionista..."
+        (valueChange)="progFormResponsableId = $event">
+      </app-search-select>
+    </div>
+
+    <div modalFooter class="modal-footer-row">
+      <button class="btn btn-secondary" (click)="cerrarModalResponsableCalendario()" [disabled]="progGuardando">
+        Cancelar
+      </button>
+      <button class="btn btn-primary" (click)="confirmarCambiarResponsableCalendario()" [disabled]="progGuardando">
+        @if (progGuardando) { Guardando… } @else { Guardar }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}

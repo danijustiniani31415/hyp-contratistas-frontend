@@ -1,0 +1,90 @@
+<div class="bg-white rounded-lg border border-stone-200 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm border-collapse">
+      <thead>
+        <tr class="border-b border-stone-100">
+          <th class="text-left px-5 py-3 text-[10px] font-mono font-medium uppercase tracking-widest text-stone-400 w-56">Residente</th>
+          <th class="text-center px-4 py-3 text-[10px] font-mono font-medium uppercase tracking-widest text-stone-400">Cronograma</th>
+          <th class="text-center px-4 py-3 text-[10px] font-mono font-medium uppercase tracking-widest text-stone-400">IVTs</th>
+          <th class="text-center px-4 py-3 text-[10px] font-mono font-medium uppercase tracking-widest text-stone-400">Cuaderno</th>
+          <th class="text-center px-4 py-3 text-[10px] font-mono font-medium uppercase tracking-widest text-stone-400">Informes</th>
+          <th class="text-center px-4 py-3 text-[10px] font-mono font-medium uppercase tracking-widest text-stone-400">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of data; track item.projectId) {
+          <tr class="tbl-row border-b border-stone-100 transition-colors last:border-b-0">
+
+            <!-- Residente -->
+            <td class="px-5 py-3.5">
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center text-[10px] font-semibold flex-shrink-0">
+                  {{ getInitials(item.residentFullName) }}
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-stone-800">{{ item.residentFullName }}</p>
+                  <p class="text-[11px] text-stone-400">{{ item.projectDescription }}</p>
+                </div>
+              </div>
+            </td>
+
+            <!-- Cronograma -->
+            <td class="text-center px-4 py-3.5">
+              @if (item.isAllPeriods) {
+              <span
+                [class]="(item.schedule.completed ? 'pill-green' : item.schedule.reported > 0 ? 'pill-amber' : 'pill-red') + ' text-[11px] font-semibold px-2 py-0.5 rounded-full'">
+                {{ item.schedule.reported }}/{{ item.schedule.expected }}
+              </span>
+              }
+              @if (!item.isAllPeriods) {
+              <span *ngIf="item.schedule.completed"
+                class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-700 text-xs font-bold">✓</span>
+              <span *ngIf="!item.schedule.completed"
+                class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-600 text-xs font-bold">✕</span>
+              }
+            </td>
+
+            <!-- IVTs -->
+            <td class="text-center px-4 py-3.5">
+              <div class="flex flex-col items-center gap-1">
+                <span class="text-xs text-stone-600">{{ item.ivts.uploaded }}/{{ item.ivts.expected }}</span>
+                <span [class]="getFilePillClass(item.ivts.uploaded, item.ivts.expected) + ' text-[10px] font-semibold px-1.5 py-0.5 rounded-full'">
+                  {{ getFilePercentage(item.ivts.uploaded, item.ivts.expected) }}%
+                </span>
+              </div>
+            </td>
+            
+            <!-- Cuaderno -->
+            <td class="text-center px-4 py-3.5">
+              <div class="flex flex-col items-center gap-1">
+                <span class="text-xs text-stone-600">{{ item.constructionLog.uploaded }}/{{ item.constructionLog.expected }}</span>
+                <span [class]="getFilePillClass(item.constructionLog.uploaded, item.constructionLog.expected) + ' text-[10px] font-semibold px-1.5 py-0.5 rounded-full'">
+                  {{ getFilePercentage(item.constructionLog.uploaded, item.constructionLog.expected) }}%
+                </span>
+              </div>
+            </td>
+
+            <!-- Informes -->
+            <td class="text-center px-4 py-3.5">
+              <span *ngIf="item.incidences.noPending" class="text-[11px] text-stone-400">sin pendientes</span>
+              <div *ngIf="!item.incidences.noPending" class="flex flex-col items-center gap-1">
+                <span class="text-xs text-stone-600">{{ item.incidences.answered }}/{{ item.incidences.total }}</span>
+                <span [class]="getIncidencePillClass(item.incidences.answered, item.incidences.total) + ' text-[10px] font-semibold px-1.5 py-0.5 rounded-full'">
+                  {{ item.incidences.total > 0 ? Math.round((item.incidences.answered / item.incidences.total) * 100) : 0 }}%
+                </span>
+              </div>
+            </td>
+
+            <!-- Total -->
+            <td class="text-center px-4 py-3.5">
+              <span [class]="getTotalPillClass(item.compliancePercentage) + ' text-xs font-semibold px-2.5 py-1 rounded-full'">
+                {{ item.compliancePercentage }}%
+              </span>
+            </td>
+
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

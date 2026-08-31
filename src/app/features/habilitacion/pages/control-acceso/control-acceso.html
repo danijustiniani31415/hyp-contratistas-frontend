@@ -1,0 +1,251 @@
+<app-abril-page-header
+  badge="HABILITACIÓN"
+  titulo="Control de Acceso"
+  subtitulo="Consulta de habilitación y control de ingreso por proyecto.">
+</app-abril-page-header>
+
+<div class="ca-root">
+
+  <!-- ── Header ───────────────────────────────────────────── -->
+  <header class="ca-header">
+    <app-search-select
+      class="ca-proyecto-search"
+      [options]="proyectos"
+      valueField="projectId"
+      displayField="projectDescription"
+      [value]="selectedProyectoId"
+      placeholder="— Proyecto —"
+      [showLabel]="false"
+      (valueChange)="onProyectoChange($event)"
+    />
+  </header>
+
+  <!-- ── Tabs ─────────────────────────────────────────────── -->
+  <nav class="tabs ca-tabs-nav">
+    <button [class.active]="activeTab === 'consulta'"       (click)="setTab('consulta')">Consulta</button>
+    <button [class.active]="activeTab === 'induccion'"      (click)="setTab('induccion')">Inducción</button>
+    <button [class.active]="activeTab === 'no-autorizados'" (click)="setTab('no-autorizados')">No Autorizados</button>
+    <button [class.active]="activeTab === 'tareo'"          (click)="setTab('tareo')">Tareo</button>
+  </nav>
+
+  <!-- ── Contenido ─────────────────────────────────────────── -->
+  <div class="ca-content">
+
+    <!-- Sin proyecto -->
+    <div *ngIf="!selectedProyectoId && activeTab !== 'induccion'" class="ca-empty">
+      Selecciona un proyecto para continuar
+    </div>
+
+    <!-- ══ Tab Consulta ══════════════════════════════════════ -->
+    <ng-container *ngIf="selectedProyectoId && activeTab === 'consulta'">
+
+      <!-- Búsqueda -->
+      <div class="ca-search-row">
+        <input
+          type="text"
+          class="field-input"
+          placeholder="DNI o nombre del trabajador"
+          [(ngModel)]="searchQuery"
+          (keydown)="onSearchKey($event)"
+          autocomplete="off"
+        />
+        <button class="btn-primary" [disabled]="searching || !searchQuery.trim()" (click)="buscar()">
+          {{ searching ? 'Buscando…' : 'Buscar' }}
+        </button>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="searchError" class="ca-error-msg">{{ searchError }}</div>
+
+      <!-- Sin resultados -->
+      <div *ngIf="searched && !searching && searchResults.length === 0 && !searchError" class="ca-empty-tab">
+        Sin resultados para "{{ searchQuery }}"
+      </div>
+
+      <!-- Lista múltiple -->
+      <ng-container *ngIf="!activeResult && searchResults.length > 1">
+        <p class="section-sub ca-list-hint">{{ searchResults.length }} trabajadores encontrados</p>
+        <div class="ca-list">
+          <div *ngFor="let r of searchResults" class="ca-list-item" (click)="selectedResult = r">
+            <div class="ca-list-dot"
+                 [class.ca-list-dot--verde]="r.estadoHabilitacion === 'AUTORIZADO'"
+                 [class.ca-list-dot--rojo]="r.estadoHabilitacion === 'NO_AUTORIZADO'"
+                 [class.ca-list-dot--amarillo]="r.estadoHabilitacion === 'POR_VENCER'">
+            </div>
+            <div style="flex: 1">
+              <div class="ca-list-nombre">{{ r.apellidoNombre }}</div>
+              <div class="ca-list-sub">DNI {{ r.dni }}</div>
+            </div>
+            <svg class="ca-list-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Detalle -->
+      <ng-container *ngIf="activeResult as r">
+
+        <button *ngIf="searchResults.length > 1" class="btn-ghost" (click)="selectedResult = null">
+          ← Volver a la lista
+        </button>
+
+        <div class="ca-result-card">
+          <!-- Banner de estado -->
+          <div [class]="r.estadoHabilitacion === 'Habilitado' ? 'ca-status-habilitado' : 'ca-status-no-autorizado'">
+            {{ estadoLabel(r.estadoHabilitacion) }}
+          </div>
+          <div *ngIf="!r.empresaHabilitada" class="ca-motivo-empresa">
+            {{ r.motivoNoAutorizado || 'Empresa no habilitada (SSOMA)' }} — no depende de la documentación propia del trabajador.
+          </div>
+
+          <!-- Datos -->
+          <div class="ca-result-body">
+            <div class="ca-result-nombre">{{ r.apellidoNombre }}</div>
+            <div class="ca-result-meta">
+              <span class="ca-result-empresa">{{ r.empresaNombre }}</span>
+              <span class="ca-result-dni">DNI {{ r.dni }}</span>
+            </div>
+
+            <!-- Documentos faltantes -->
+            <div *ngIf="r.documentosFaltantes?.length" class="ca-docs">
+              <div class="ca-docs-title">Documentos faltantes</div>
+              <ul class="ca-docs-list">
+                <li *ngFor="let d of (r.documentosFaltantes || [])">
+                  <span class="ca-doc-x">✗</span>{{ d }}
+                </li>
+              </ul>
+            </div>
+
+            <!-- Documentos por vencer -->
+            <div *ngIf="r.documentosPorVencer?.length" class="ca-docs">
+              <div class="ca-docs-title ca-docs-title--warn">Por vencer</div>
+              <ul class="ca-docs-list">
+                <li *ngFor="let d of (r.documentosPorVencer || [])">
+                  <span class="ca-doc-warn">⚠</span>
+                  <span>{{ d.nombre }}</span>
+                  <span class="ca-doc-fecha">{{ d.vigencia | date:'dd/MM/yyyy' }}</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Entregables (solo proyectos que no son Oficina Central) -->
+            <ng-container *ngIf="selectedProyectoId !== oficinaId && r.entregables?.length">
+              <div class="ca-docs">
+                <div class="ca-docs-title ca-docs-title--neutral">Entregables</div>
+                <div class="ca-ent-card">
+                <div class="ca-ent-list">
+                  <ng-container *ngFor="let e of entregablesVigentes(r.entregables)">
+                    <ng-container *ngIf="entregableIcono(e) as icon">
+                      <div class="ca-ent-row">
+                        <span class="ca-ent-icon" [style.color]="icon.color">{{ icon.icono }}</span>
+                        <span class="ca-ent-nombre">{{ e.nombre }}</span>
+                        <span *ngIf="e.vigencia" class="ca-doc-fecha">{{ e.vigencia | date:'dd/MM/yyyy' }}</span>
+                      </div>
+                    </ng-container>
+                  </ng-container>
+                </div>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+
+      </ng-container>
+
+    </ng-container>
+
+    <!-- ══ Tab Inducción ══════════════════════════════════════ -->
+    <ng-container *ngIf="activeTab === 'induccion'">
+
+      <div class="section-bar ca-section-hdr">
+        <div>
+          <span class="section-title">Inducciones hoy</span>
+          <span class="section-sub" style="margin-left: 0.5rem">{{ fechaHoyDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <span class="badge chip-green">{{ confirmadosCount }} / {{ inducciones.length }}</span>
+      </div>
+
+      <div *ngIf="loadingInducciones" class="ca-loading">Cargando…</div>
+      <div *ngIf="!loadingInducciones && inducciones.length === 0" class="ca-empty-tab">
+        No hay inducciones programadas para hoy.
+      </div>
+
+      <div class="ca-list">
+        <div *ngFor="let ind of inducciones"
+             class="ca-list-item ca-induccion-item"
+             [class.ca-induccion-item--ok]="ind.ingresoConfirmado">
+          <div style="flex: 1">
+            <div class="ca-list-nombre">{{ ind.apellidoNombre }}</div>
+            <div class="ca-list-sub">{{ ind.empresaNombre }} · DNI {{ ind.dni }}</div>
+            <div class="ca-list-sub">
+              {{ ind.fechaProgramada | date:'dd/MM/yyyy' }}
+              <span *ngIf="ind.trabajoAltura"> · Altura</span>
+              <span *ngIf="ind.equipoElectrico"> · Eq. eléctrico</span>
+            </div>
+          </div>
+          <button *ngIf="ind.ingresoConfirmado" class="btn-chip chip-green" disabled>✓ Confirmado</button>
+          <button *ngIf="!ind.ingresoConfirmado" class="btn-primary ca-btn-confirmar" (click)="confirmarIngreso(ind)">
+            Confirmar
+          </button>
+        </div>
+      </div>
+
+    </ng-container>
+
+    <!-- ══ Tab No Autorizados ════════════════════════════════ -->
+    <ng-container *ngIf="selectedProyectoId && activeTab === 'no-autorizados'">
+
+      <div class="section-bar ca-section-hdr">
+        <span class="section-title">{{ noAutorizadosTitulo }}</span>
+        <span class="ca-noauth-count" [class.ca-noauth-count--green]="filtroEstadoNA === 'autorizados'" [class.ca-noauth-count--gray]="filtroEstadoNA === 'todos'">
+          {{ noAutorizadosFiltrados.length }}
+        </span>
+      </div>
+
+      <!-- Filtro estado -->
+      <div class="ca-noauth-filter">
+        <div class="ca-estado-pills">
+          <button class="ca-estado-pill" [class.ca-estado-pill--on]="filtroEstadoNA === 'no-autorizados'" (click)="onFiltroEstadoNAChange('no-autorizados')">No autorizados</button>
+          <button class="ca-estado-pill" [class.ca-estado-pill--on]="filtroEstadoNA === 'autorizados'"    (click)="onFiltroEstadoNAChange('autorizados')">Autorizados</button>
+          <button class="ca-estado-pill" [class.ca-estado-pill--on]="filtroEstadoNA === 'todos'"          (click)="onFiltroEstadoNAChange('todos')">Todos</button>
+        </div>
+      </div>
+
+      <!-- Filtro por empresa -->
+      <div *ngIf="empresasNA.length > 0" class="ca-noauth-filter">
+        <select class="ca-select" [(ngModel)]="filtroEmpresaNA">
+          <option value="">Todas las empresas</option>
+          <option *ngFor="let e of empresasNA" [value]="e">{{ e }}</option>
+        </select>
+      </div>
+
+      <div *ngIf="loadingNoAutorizados" class="ca-loading">Cargando…</div>
+      <div *ngIf="!loadingNoAutorizados && noAutorizados.length === 0" class="ca-empty-tab">
+        No hay trabajadores no autorizados.
+      </div>
+
+      <div *ngIf="noAutorizadosFiltrados.length > 0" class="ca-noauth-list">
+        <div *ngFor="let w of noAutorizadosFiltrados" class="ca-noauth-row">
+          <div style="flex: 1; min-width: 0">
+            <div class="ca-list-nombre">{{ w.apellidoNombre }}</div>
+            <div class="ca-list-sub">
+              {{ w.empresaNombre }}<ng-container *ngIf="w.dni"> · DNI {{ w.dni }}</ng-container>
+            </div>
+            <div *ngIf="!w.empresaHabilitada" class="ca-noauth-motivo">Empresa no habilitada (SSOMA)</div>
+          </div>
+          <span class="ca-noauth-badge" [class.ca-noauth-badge--green]="w.estadoHabilitacion === 'Habilitado'">
+            {{ w.estadoHabilitacion }}
+          </span>
+        </div>
+      </div>
+
+    </ng-container>
+
+    <!-- ══ Tab Tareo ════════════════════════════════════════ -->
+    <ng-container *ngIf="selectedProyectoId && activeTab === 'tareo'">
+      <app-control-acceso-tareo [proyectoId]="selectedProyectoId!" />
+    </ng-container>
+
+  </div>
+</div>

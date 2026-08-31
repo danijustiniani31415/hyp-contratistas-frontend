@@ -1,0 +1,294 @@
+<app-abril-page-header
+  [badge]="'PROYECTOS · ' + anioActual"
+  titulo="Dashboard UDP"
+  subtitulo="Unidad de Proyectos"
+  [tabs]="[
+    { label: 'Dashboard de Proyectos', icono: 'ti-layout-dashboard', route: '/projects/projects-dashboard' },
+    { label: 'Cronograma Actividades', icono: 'ti-calendar',         route: '/projects/cronograma-actividades' },
+    { label: 'Dashboard UDP',          icono: 'ti-chart-bar',        route: '/projects/cronograma-dashboard' },
+    { label: 'Actas de Reunión',       icono: 'ti-file-description', route: '/projects/actas-reunion' },
+    { label: 'Control de IVTs',        icono: 'ti-clipboard',        route: '/projects/technical-inspection-visit' },
+    { label: 'Cuaderno de Obra',       icono: 'ti-notebook',         route: '/projects/construction-logbook' },
+    { label: 'Respuesta de Informes',  icono: 'ti-file-report',      route: '/projects/report-response-control' },
+    { label: 'Residentes',             icono: 'ti-users',            route: '/projects/resident-monitoring-measurement' },
+    { label: 'Configuraciones',        icono: 'ti-settings',         route: '/projects/configuration/milestones' }
+  ]"
+  [botonSecundario]="{ label: 'Ir al Cronograma', icono: 'ti-calendar' }"
+  (secondaryClick)="irAlCronograma()">
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-wrapper flex-1 overflow-y-auto">
+
+  <!-- TOOLBAR (fecha) -->
+  <div class="toolbar-row">
+    <div class="fecha-badge">
+      <i class="ti ti-calendar-event mr-1.5 opacity-70"></i>
+      <span>{{ fechaActual | date:"EEEE, d 'de' MMMM 'de' yyyy" }}</span>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div *ngIf="errorMsg" class="error-banner">
+    <i class="ti ti-alert-triangle mr-2"></i> {{ errorMsg }}
+  </div>
+
+  <!-- KPI SKELETON -->
+  <div class="kpi-grid" *ngIf="loading">
+    <div class="kpi-card skeleton-card" *ngFor="let i of [1,2,3,4,5,6,7,8,9]">
+      <div class="skeleton-line sk-label"></div>
+      <div class="skeleton-line sk-value"></div>
+    </div>
+  </div>
+
+  <!-- KPI DATA -->
+  <div class="kpi-grid" *ngIf="!loading && kpis">
+    <!-- TOTAL PROYECTOS -->
+    <div class="kpi-card" style="border-top-color: #1E3A5F">
+      <div class="kpi-header">
+        <span class="kpi-label">TOTAL PROYECTOS</span>
+        <div class="kpi-icon-box" style="background: rgba(30, 58, 95, 0.08); color: #1E3A5F">
+          <i class="ti ti-building-community"></i>
+        </div>
+      </div>
+      <span class="kpi-value" style="color: #1E3A5F">{{ kpis.totalProyectos }}</span>
+    </div>
+
+    <!-- AVANCE PROMEDIO -->
+    <div class="kpi-card" style="border-top-color: #2E6DB4">
+      <div class="kpi-header">
+        <span class="kpi-label">AVANCE PROMEDIO</span>
+        <div class="kpi-icon-box" style="background: rgba(46, 109, 180, 0.08); color: #2E6DB4">
+          <i class="ti ti-chart-line"></i>
+        </div>
+      </div>
+      <span class="kpi-value" style="color: #2E6DB4">{{ kpis.porcentajeAvancePromedio }}%</span>
+    </div>
+
+    <!-- PROYECTOS AL DÍA -->
+    <div class="kpi-card" style="border-top-color: #1B6B3A">
+      <div class="kpi-header">
+        <span class="kpi-label">PROYECTOS AL DÍA</span>
+        <div class="kpi-icon-box" style="background: rgba(27, 107, 58, 0.08); color: #1B6B3A">
+          <i class="ti ti-circle-check"></i>
+        </div>
+      </div>
+      <span class="kpi-value" style="color: #1B6B3A">{{ kpis.proyectosAlDia }}</span>
+    </div>
+
+    <!-- CON RETRASO -->
+    <div class="kpi-card" style="border-top-color: #C0392B">
+      <div class="kpi-header">
+        <span class="kpi-label">CON RETRASO</span>
+        <div class="kpi-icon-box" style="background: rgba(192, 57, 43, 0.08); color: #C0392B">
+          <i class="ti ti-alert-triangle"></i>
+        </div>
+      </div>
+      <span class="kpi-value" style="color: #C0392B">{{ kpis.proyectosConRetraso }}</span>
+    </div>
+
+    <!-- SIN ACTIVIDADES -->
+    <div class="kpi-card" style="border-top-color: #D97706">
+      <div class="kpi-header">
+        <span class="kpi-label">SIN ACTIVIDADES</span>
+        <div class="kpi-icon-box" style="background: rgba(217, 119, 6, 0.08); color: #D97706">
+          <i class="ti ti-folder-off"></i>
+        </div>
+      </div>
+      <span class="kpi-value" style="color: #D97706">{{ kpis.proyectosSinActividades }}</span>
+    </div>
+
+    <!-- ACTIVIDADES VENCIDAS -->
+    <div class="kpi-card" style="border-top-color: #C0392B">
+      <div class="kpi-header">
+        <span class="kpi-label">ACTIVIDADES VENCIDAS</span>
+        <div class="kpi-icon-box" style="background: rgba(192, 57, 43, 0.08); color: #C0392B">
+          <i class="ti ti-clock-exclamation"></i>
+        </div>
+      </div>
+      <span class="kpi-value" style="color: #C0392B">{{ kpis.actividadesVencidas }}</span>
+    </div>
+
+    <!-- CULMINADAS ESTA SEMANA -->
+    <div class="kpi-card" style="border-top-color: #1B6B3A">
+      <div class="kpi-header">
+        <span class="kpi-label">CULMINADAS ESTA SEMANA</span>
+        <div class="kpi-icon-box" style="background: rgba(27, 107, 58, 0.08); color: #1B6B3A">
+          <i class="ti ti-calendar-check"></i>
+        </div>
+      </div>
+      <span class="kpi-value" style="color: #1B6B3A">{{ kpis.actividadesCulminadasEstaSemana }}</span>
+    </div>
+
+    <!-- CULMINADAS ESTE MES -->
+    <div class="kpi-card" style="border-top-color: #2E6DB4">
+      <div class="kpi-header">
+        <span class="kpi-label">CULMINADAS ESTE MES</span>
+        <div class="kpi-icon-box" style="background: rgba(46, 109, 180, 0.08); color: #2E6DB4">
+          <i class="ti ti-calendar-month"></i>
+        </div>
+      </div>
+      <span class="kpi-value" style="color: #2E6DB4">{{ kpis.actividadesCulminadasEsteMes }}</span>
+    </div>
+
+    <!-- SPI PROMEDIO -->
+    <div class="kpi-card" [style.border-top-color]="spiColor(spiPromedio, '')">
+      <div class="kpi-header">
+        <span class="kpi-label">SPI PROMEDIO</span>
+        <div class="kpi-icon-box" [style.background]="spiColor(spiPromedio, '') + '14'" [style.color]="spiColor(spiPromedio, '')">
+          <i class="ti ti-gauge"></i>
+        </div>
+      </div>
+      <span class="kpi-value" [style.color]="spiColor(spiPromedio, '')">{{ spiPromedio | number:'1.2-2' }}</span>
+    </div>
+  </div>
+
+  <!-- TABLE SKELETON -->
+  <div class="table-card" *ngIf="loading">
+    <div class="skeleton-line sk-title" style="margin-bottom: 20px"></div>
+    <div class="skeleton-line sk-row" *ngFor="let i of [1,2,3,4,5]"></div>
+  </div>
+
+  <!-- TABLE DATA -->
+  <div class="table-card" *ngIf="!loading && kpis">
+    <div class="table-header-row">
+      <div class="table-header-left">
+        <span class="table-title">Proyectos</span>
+        <span class="badge-count">{{ proyectos.length }}</span>
+      </div>
+      <span class="table-header-legend">ACTIVIDADES: TOTAL / CULMINADAS / VENCIDAS</span>
+    </div>
+
+    <div class="abril-table-wrap">
+      <table class="abril-table proyectos-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>PROYECTO</th>
+            <th>RESPONSABLE</th>
+            <th>ACTIVIDADES</th>
+            <th>AVANCE</th>
+            <th>SPI</th>
+            <th>ESTADO</th>
+            <th>SEMÁFORO</th>
+            <th class="w-10"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let p of pagedProyectos; let i = index"
+            class="table-row group"
+            [class.row-retraso]="p.estado === 'CON_RETRASO'"
+            (click)="irAProyecto(p.projectId)"
+          >
+            <td class="col-num">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+            <td class="col-proyecto">{{ p.projectDescription }}</td>
+            <td class="col-responsable">{{ p.responsableUdp }}</td>
+            <td class="col-actividades">
+              <ng-container *ngIf="p.estado !== 'SIN_ACTIVIDADES'; else sinActs">
+                {{ p.totalActividades }} /
+                <span class="acts-culminadas">{{ p.culminadas }}</span> /
+                <span class="acts-vencidas">{{ p.vencidas }}</span>
+              </ng-container>
+              <ng-template #sinActs>
+                <span class="acts-sin">— / — / —</span>
+              </ng-template>
+            </td>
+            <td class="col-avance">
+              <div class="avance-container">
+                <div class="avance-track">
+                  <div
+                    class="avance-fill"
+                    [style.width.%]="p.estado === 'SIN_ACTIVIDADES' ? 0 : p.porcentajeAvance"
+                    [style.background-color]="avanceBarColor(p.porcentajeAvance, p.estado)"
+                  ></div>
+                </div>
+                <span class="avance-pct" *ngIf="p.estado !== 'SIN_ACTIVIDADES'">{{ p.porcentajeAvance }}%</span>
+                <span class="avance-pct acts-sin" *ngIf="p.estado === 'SIN_ACTIVIDADES'">—</span>
+              </div>
+            </td>
+            <td class="col-spi">
+              <span class="spi-badge"
+                [style.color]="spiColor(p.spi, p.estado)"
+                [style.background-color]="spiColor(p.spi, p.estado) + '18'">
+                {{ spiLabel(p.spi, p.estado) }}
+              </span>
+            </td>
+            <td class="col-estado">
+              <span
+                class="badge-estado"
+                [class.estado-al-dia]="p.estado === 'AL_DIA'"
+                [class.estado-retraso]="p.estado === 'CON_RETRASO'"
+                [class.estado-sin-acts]="p.estado === 'SIN_ACTIVIDADES'"
+              >
+                <ng-container *ngIf="p.estado === 'AL_DIA'">AL DÍA</ng-container>
+                <ng-container *ngIf="p.estado === 'CON_RETRASO'">CON RETRASO</ng-container>
+                <ng-container *ngIf="p.estado === 'SIN_ACTIVIDADES'">SIN ACTIVIDADES</ng-container>
+              </span>
+            </td>
+            <td class="col-semaforo">
+              <span
+                class="semaforo-dot"
+                role="img"
+                [attr.aria-label]="semaforoLabel(p.semaforo, p.estado)"
+                [title]="semaforoLabel(p.semaforo, p.estado)"
+                [style.background-color]="
+                  p.semaforo === 'VERDE' ? '#1B6B3A' :
+                  p.semaforo === 'AMARILLO' ? '#D97706' :
+                  p.semaforo === 'ROJO' ? '#C0392B' : '#94A3B8'
+                "
+              ></span>
+            </td>
+            <td class="col-nav-arrow">
+              <i class="ti ti-chevron-right row-arrow"></i>
+            </td>
+          </tr>
+          <tr *ngIf="proyectos.length === 0">
+            <td colspan="9" class="empty-row">
+              <i class="ti ti-search-off empty-icon"></i>
+              No hay proyectos para los filtros seleccionados.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="paginator-row" *ngIf="proyectos.length > 0">
+      <app-paginator
+        [totalRecords]="proyectos.length"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="changePage($event)">
+      </app-paginator>
+    </div>
+  </div>
+
+</div>
+
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Responsable"
+      [options]="responsableOptions"
+      valueField="userId"
+      displayField="nombreCompleto"
+      placeholder="Buscar por nombre o DNI..."
+      [value]="selectedResponsableId"
+      (valueChange)="selectedResponsableId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      placeholder="Selecciona estado"
+      [value]="selectedEstado"
+      (valueChange)="selectedEstado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>
+

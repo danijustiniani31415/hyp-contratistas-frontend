@@ -1,0 +1,276 @@
+/* ── HOST ──────────────────────────────────────────────────────────────── */
+:host { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+
+.seg-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: #ffffff;
+}
+
+/* ── TOOLBAR ───────────────────────────────────────────────────────────── */
+.seg-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  background: #fff;
+  border-bottom: 1px solid #e2e6ea;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+.toolbar-left .ti { font-size: 0.85rem; color: #0f4c75; }
+.toolbar-periodo { font-weight: 700; color: #0f172a; }
+.toolbar-sep     { opacity: 0.35; }
+.toolbar-count   { font-size: 0.7rem; }
+
+.toolbar-right { display: flex; align-items: center; gap: 0.4rem; }
+.tb-select {
+  height: 1.9rem;
+  border: 1px solid #dde1e9;
+  border-radius: 6px;
+  padding: 0 0.55rem;
+  font-size: 0.78rem;
+  color: #1e293b;
+  background: #fff;
+  outline: none;
+  min-width: 90px;
+}
+.tb-select:focus { border-color: #0f4c75; }
+.tb-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 1.9rem;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #0f4c75;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tb-btn:hover { opacity: 0.88; }
+
+/* ── BODY ──────────────────────────────────────────────────────────────── */
+.seg-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+  gap: 0.75rem;
+}
+
+/* ── SEMÁFORO (estilo DS) ──────────────────────────────────────────────── */
+.c-verde    { color: #15803d; }
+.c-amarillo { color: #b45309; }
+.c-naranja  { color: #c2410c; }
+.c-rojo     { color: #b91c1c; }
+.c-na       { color: #9ca3af; }
+
+/* ── COMP SECTION ──────────────────────────────────────────────────────── */
+.comp-section { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.comp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+/* ── PROYECTO CARD ─────────────────────────────────────────────────────── */
+.proy-card {
+  background: #fff;
+  border: 1px solid #e2e6ea;
+  border-radius: 10px;
+  border-left-width: 3px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+  overflow: hidden;
+}
+.proy-card:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,.08);
+  transform: translateY(-1px);
+}
+.proy-card--completo { border-left-color: #22c55e; }
+.proy-card--cerca    { border-left-color: #f59e0b; }
+.proy-card--riesgo   { border-left-color: #ef4444; }
+.proy-card--selected { box-shadow: 0 0 0 2px rgba(15,76,117,0.18), 0 4px 20px rgba(0,0,0,.08); }
+
+/* Header */
+.pc-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem 0.5rem;
+}
+.pc-info    { flex: 1; min-width: 0; }
+.pc-nombre  {
+  font-size: 0.84rem; font-weight: 700; color: #0f172a;
+  margin: 0 0 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pc-empresas { font-size: 0.63rem; color: #94a3b8; }
+.pc-general  { font-size: 1.5rem; font-weight: 900; line-height: 1; flex-shrink: 0; letter-spacing: -0.02em; }
+
+/* Indicadores */
+.pc-indicadores { display: flex; flex-direction: column; flex: 1; padding: 0.3rem 0; }
+
+.pc-ind-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  column-gap: 0.5rem;
+  align-items: center;
+  padding: 0.32rem 0.9rem;
+}
+.pc-ind-label {
+  font-size: 0.72rem; font-weight: 600; color: #334155;
+  grid-column: 1; grid-row: 1;
+}
+.pc-ind-vals {
+  font-size: 0.63rem; color: #94a3b8;
+  white-space: nowrap;
+  grid-column: 2; grid-row: 1;
+}
+.pc-ind-vals strong { font-size: 0.78rem; font-weight: 800; color: #0f172a; }
+.pc-ind-pct {
+  font-size: 0.72rem; font-weight: 800;
+  white-space: nowrap; min-width: 34px; text-align: right;
+  grid-column: 3; grid-row: 1;
+}
+
+/* Footer */
+.pc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.5rem 0.9rem;
+  border-top: 1px solid #f1f5f9;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #94a3b8;
+  background: #fafbfc;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: background 0.15s, color 0.15s;
+}
+.pc-footer:hover               { background: #eff6ff; color: #1d4ed8; }
+.proy-card--selected .pc-footer { background: #eff6ff; color: #1d4ed8; }
+
+/* ── PANEL DETALLE POR EMPRESA ─────────────────────────────────────────── */
+.det-panel {
+  background: #fff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.det-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: #eff6ff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  border-bottom: 1px solid #bfdbfe;
+}
+.det-emp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+/* Empresa card */
+.emp-card {
+  position: relative;
+  background: #fafbfc;
+  border: 1px solid #e2e6ea;
+  border-left: 3px solid #e2e6ea;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+.emp-card:hover          { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.emp-card--inactiva      { opacity: 0.5; }
+.emp-card--oculta        { opacity: 0.55; }
+
+.emp-ocultar-btn {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  z-index: 2;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  color: #64748b;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
+}
+.emp-ocultar-btn:hover { background: #fff; color: #0f172a; }
+.emp-ocultar-btn .ti   { font-size: 0.8rem; }
+
+.tb-check {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: #475569;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.emp-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  background: #fff;
+}
+.emp-card-header .ti { font-size: 0.85rem; color: #94a3b8; flex-shrink: 0; }
+.emp-info   { flex: 1; min-width: 0; }
+.emp-nombre {
+  font-size: 0.72rem; font-weight: 700; color: #0f172a;
+  display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.emp-sub    { font-size: 0.6rem; color: #94a3b8; }
+.emp-general { font-size: 1.1rem; font-weight: 900; flex-shrink: 0; }
+
+.emp-indicadores { padding: 0.25rem 0; }
+
+/* ── CHIP INACTIVA ─────────────────────────────────────────────────────── */
+.chip-inactivo {
+  font-size: 0.55rem; font-weight: 700;
+  padding: 1px 5px; border-radius: 999px;
+  background: #fee2e2; color: #dc2626;
+  text-transform: uppercase; flex-shrink: 0;
+}
+
+/* ── EMPTY STATE ───────────────────────────────────────────────────────── */
+.empty-state {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.75rem;
+  padding: 4rem 1.25rem;
+  color: #94a3b8; text-align: center;
+}
+.empty-state__icon { font-size: 3rem; opacity: 0.3; }
+.empty-state__text { font-size: 0.875rem; }

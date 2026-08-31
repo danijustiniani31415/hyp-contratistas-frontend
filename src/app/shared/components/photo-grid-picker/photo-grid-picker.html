@@ -1,0 +1,24 @@
+<div class="pgp-grid">
+  @for (preview of previews; track $index) {
+    <div class="pgp-thumb">
+      <img [src]="preview" alt="Adjunto {{ $index + 1 }}" />
+      <button type="button" class="pgp-remove" (click)="removeAt($index)">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+  }
+  @if (previews.length < max) {
+    <label class="pgp-add" [style.--pgp-accent]="color">
+      <i class="ti" [ngClass]="addIcon"></i>
+      <span>{{ addLabel }}</span>
+      <input type="file" [accept]="accept" [attr.capture]="capture" [multiple]="multiple" style="display:none" (change)="onFilesSelected($event)" />
+    </label>
+    @if (showCameraButton && !capture) {
+      <label class="pgp-add" [style.--pgp-accent]="color">
+        <i class="ti ti-camera"></i>
+        <span>Tomar foto</span>
+        <input type="file" [accept]="accept" capture="environment" style="display:none" (change)="onFilesSelected($event)" />
+      </label>
+    }
+  }
+</div>

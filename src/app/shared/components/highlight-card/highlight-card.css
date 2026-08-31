@@ -1,0 +1,141 @@
+/* container-type: la tarjeta se dimensiona contra su propio ancho y no contra
+   el del viewport. Según las columnas que le toquen puede medir ~200px (4
+   columnas en escritorio) o ~340px (1 columna en móvil), y el mismo perro de
+   150px que en la ancha se ve bien, en la angosta se come la tarjeta entera. */
+:host {
+  display: block;
+  height: 100%;
+  container-type: inline-size;
+  container-name: highlight;
+}
+
+.highlight-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(0, 70, 140, 0.1);
+}
+
+.highlight-dog {
+  position: absolute;
+  left: 50%;
+  top: -46px;
+  transform: translateX(-50%);
+  height: 150px;
+  width: auto;
+  max-width: none;
+  object-fit: contain;
+  z-index: 10;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.18));
+}
+
+.highlight-top {
+  height: 116px;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(180deg, #eaf1f8 0%, #dde9f4 100%);
+}
+
+.highlight-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  padding: 18px 20px 40px;
+  background: #00529b;
+  border-radius: 0 0 16px 16px;
+  text-align: center;
+}
+
+.highlight-body h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.highlight-body p {
+  margin: 0;
+  color: #d8e6f4;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.highlight-body p ::ng-deep strong {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.highlight-cta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
+  bottom: -16px;
+  z-index: 10;
+  border: 0;
+  background: #8bc53f;
+  color: #005d9d;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  padding: 9px 22px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+/* Solo con puntero real: en táctil el :hover se queda "pegado" después de
+   tocar y la tarjeta queda con el botón agrandado hasta que tocas otra cosa. */
+@media (hover: hover) {
+  .highlight-cta:hover {
+    transform: scale(1.08);
+  }
+}
+
+.highlight-cta:active {
+  transform: scale(0.96);
+}
+
+/* ── Tarjeta angosta ─────────────────────────────────────────────────────
+   Se activa en las 4 columnas de escritorio y en las 2 columnas de tablet,
+   donde la tarjeta baja de ~250px. Se encoge el perro (y con él lo que
+   sobresale por arriba, que el panel ya tiene reservado de sobra), la franja
+   celeste y la tipografía, para que la proporción sea la misma que en la
+   tarjeta ancha en vez de un perro gigante sobre un texto apretado. */
+@container highlight (max-width: 250px) {
+  .highlight-dog {
+    height: 124px;
+    top: -38px;
+  }
+
+  .highlight-top {
+    height: 94px;
+  }
+
+  .highlight-body {
+    padding: 14px 12px 36px;
+    gap: 6px;
+  }
+
+  .highlight-body h3 {
+    font-size: 15px;
+  }
+
+  .highlight-body p {
+    font-size: 12px;
+  }
+
+  .highlight-cta {
+    font-size: 11px;
+    padding: 8px 16px;
+  }
+}

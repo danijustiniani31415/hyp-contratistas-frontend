@@ -1,0 +1,398 @@
+<app-abril-modal-panel
+  [titulo]="title"
+  icono="ti-bed"
+  variant="blue"
+  width="860px"
+  (closeModal)="close()">
+
+    <!-- ── Loading ── -->
+    <div *ngIf="loading" class="loading-row">
+      <span>Cargando…</span>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MODO CREACIÓN
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <ng-container *ngIf="!loading && isNuevo">
+
+      <!-- Trabajador -->
+      <div class="section">
+        <h2 class="paso-title"><i class="ti ti-user"></i> Trabajador</h2>
+        <app-worker-search-input
+          color="var(--color-abril-logo-blue)"
+          [selected]="workerSelected"
+          (selectedChange)="onWorkerSelectedChange($event)">
+        </app-worker-search-input>
+      </div>
+
+      <!-- Datos -->
+      <div class="section">
+        <h2 class="paso-title">Datos del descanso</h2>
+        <div class="grid-3">
+          <app-date-picker
+            label="Fecha inicio *"
+            color="var(--color-abril-logo-blue)"
+            [floatingLabel]="true"
+            [allowClear]="false"
+            [value]="cFechaInicio"
+            (valueChange)="onFechaInicioChange($event)">
+          </app-date-picker>
+          <app-date-picker
+            label="Fecha fin *"
+            color="var(--color-abril-logo-blue)"
+            [floatingLabel]="true"
+            [allowClear]="false"
+            [min]="cFechaInicio"
+            [value]="cFechaFin"
+            (valueChange)="onFechaFinChange($event)">
+          </app-date-picker>
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Tipo *"
+              [options]="tipos"
+              valueField="id"
+              displayField="nombre"
+              [sortAlpha]="false"
+              [value]="cTipoId"
+              placeholder="Selecciona tipo"
+              [allowClear]="false"
+              (valueChange)="cTipoId = $event">
+            </app-search-select>
+          </div>
+        </div>
+
+        <div class="dias-badge mt-2" *ngIf="diasCalculados > 0">
+          <span>{{ diasCalculados }} día{{ diasCalculados !== 1 ? 's' : '' }} de descanso</span>
+        </div>
+
+        <div class="abril-field mt-2">
+          <label class="abril-field-label">Diagnóstico</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="cDiagnostico" placeholder="Diagnóstico médico" />
+        </div>
+
+        <app-descanso-adjuntos
+          color="var(--color-abril-logo-blue)"
+          [archivos]="cDocumentos"
+          (archivosChange)="onDocumentosChange($event)">
+        </app-descanso-adjuntos>
+      </div>
+
+      <div modalFooter>
+        <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+        <button type="button" class="btn-primary" [disabled]="!canCreate" (click)="crear()">
+          <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
+          {{ saving ? 'Guardando…' : 'Registrar Descanso' }}
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MODO DETALLE / GESTIÓN
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <ng-container *ngIf="!loading && !isNuevo && detalle">
+
+      <!-- Header del trabajador + estado -->
+      <div class="worker-header">
+        <div class="wh-left">
+          <div class="wh-name">{{ detalle.workerNombre ?? '—' }}</div>
+          <div class="wh-meta">DNI {{ detalle.workerDni }} · {{ detalle.empresaNombre }}</div>
+          <div class="wh-dates">
+            {{ detalle.fechaInicio | date:'dd/MM/yyyy' }} → {{ detalle.fechaFin | date:'dd/MM/yyyy' }}
+            <strong> ({{ detalle.dias }} días)</strong>
+          </div>
+        </div>
+        <div class="wh-right">
+          <span class="badge" [ngClass]="estadoBadgeClass(detalle.estado)">{{ detalle.estado }}</span>
+          <span *ngIf="detalle.tipo" class="badge badge-gray ml-1">{{ detalle.tipo }}</span>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn" [class.tab-btn--active]="tab === 'detalle'" (click)="setTab('detalle')">
+          Detalle
+        </button>
+        <button class="tab-btn" [class.tab-btn--active]="tab === 'seguimientos'" (click)="setTab('seguimientos')">
+          Seguimientos
+        </button>
+      </div>
+
+      <!-- ── Tab: Detalle ── -->
+      <div *ngIf="tab === 'detalle'" class="tab-content">
+
+        <!-- Caso clínico: agrupa este descanso con cada "más descanso" que lo extiende, hasta
+             que se cierra con el alta. -->
+        <div class="section" *ngIf="caso">
+          <h2 class="paso-title">
+            Caso <span class="badge" [ngClass]="casoAbierto ? 'badge-green' : 'badge-gray'">{{ caso.estado }}</span>
+          </h2>
+          <div class="info-grid">
+            <div class="info-row"><span class="info-label">Abierto desde</span><span>{{ caso.fechaApertura | date:'dd/MM/yyyy' }}</span></div>
+            <div class="info-row" *ngIf="caso.fechaCierre"><span class="info-label">Cerrado (alta)</span><span>{{ caso.fechaCierre | date:'dd/MM/yyyy' }}</span></div>
+            <div class="info-row" *ngIf="caso.altaObservaciones"><span class="info-label">Observaciones del alta</span><span>{{ caso.altaObservaciones }}</span></div>
+            <div class="info-row" *ngIf="caso.fechaReapertura"><span class="info-label">Reabierto el</span><span>{{ caso.fechaReapertura | date:'dd/MM/yyyy' }}</span></div>
+          </div>
+
+          <div class="doc-list mt-2">
+            <div *ngFor="let d of caso.descansos" class="info-row">
+              <span class="info-label">#{{ d.id }}{{ d.id === descansoId ? ' (este)' : '' }}</span>
+              <span>
+                {{ d.fechaInicio | date:'dd/MM/yyyy' }} → {{ d.fechaFin | date:'dd/MM/yyyy' }}
+                <span class="badge badge-gray ml-1">{{ d.estado }}</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="mt-2" *ngIf="!casoAbierto">
+            <button type="button" class="btn-ghost-sm" [disabled]="reabriendo" (click)="reabrirCaso()">
+              {{ reabriendo ? 'Reabriendo…' : '↺ Reabrir caso' }}
+            </button>
+          </div>
+
+          <div class="rejection-note mt-2" *ngIf="faltaDescansoTrasReapertura">
+            ⚠ Este caso fue reabierto — registra un nuevo descanso médico antes de poder volver a dar el alta.
+          </div>
+
+          <!-- Este descanso llegó suelto (lo subió el trabajador desde Mi Salud) y el trabajador
+               tiene otros casos abiertos: puede ser continuación de uno de ellos. -->
+          <div class="action-card mt-2" *ngIf="esCasoSuelto">
+            <p class="action-card-title">¿Es continuación de un caso ya abierto?</p>
+            <p class="action-card-hint">El trabajador solo sube el descanso, no puede elegir a qué caso pertenece — si esto es la misma dolencia de un caso en curso, vincúlalo acá.</p>
+            <div class="abril-field mt-1">
+              <app-search-select
+                color="var(--color-abril-logo-blue)"
+                [options]="casosCandidatosOpts"
+                valueField="id"
+                displayField="label"
+                [fullText]="true"
+                [value]="casoDestinoId"
+                placeholder="Selecciona el caso al que pertenece"
+                [allowClear]="true"
+                (valueChange)="casoDestinoId = $event">
+              </app-search-select>
+            </div>
+            <button class="btn-blue mt-2" [disabled]="!casoDestinoId || vinculando" (click)="vincularCaso()">
+              {{ vinculando ? 'Vinculando…' : 'Vincular a ese caso' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Info médica -->
+        <div class="section">
+          <h2 class="paso-title">Información médica</h2>
+          <div class="info-grid">
+            <div class="info-row"><span class="info-label">Tipo</span><span>{{ detalle.tipo }}</span></div>
+            <div class="info-row"><span class="info-label">Diagnóstico</span><span>{{ detalle.diagnostico ?? '—' }}</span></div>
+            <div class="info-row" *ngIf="detalle.topicoOrigenId">
+              <span class="info-label">Tópico de origen</span>
+              <span class="link-value">#{{ detalle.topicoOrigenId }}</span>
+            </div>
+            <div class="info-row" *ngIf="detalle.prorrogaDelId">
+              <span class="info-label">Extiende al descanso</span>
+              <span class="link-value">#{{ detalle.prorrogaDelId }}</span>
+            </div>
+          </div>
+          <div *ngIf="detalle.observaciones" class="info-obs mt-2">
+            <span class="info-label">Observaciones:</span> {{ detalle.observaciones }}
+          </div>
+
+          <!-- CIE-10: solo lo asigna el médico al revisar — nunca lo llena el trabajador,
+               y a diferencia del resto del descanso se puede editar en cualquier estado. -->
+          <div class="abril-field mt-2">
+            <label class="abril-field-label">Diagnóstico CIE-10 (solo médico)</label>
+            <app-cie10-select
+              [value]="dCie10Codigo"
+              [valueLabel]="detalle.diagnosticoCie10Descripcion ?? null"
+              (valueChange)="dCie10Codigo = $event">
+            </app-cie10-select>
+          </div>
+          <div class="mt-1 text-right" *ngIf="dCie10Codigo !== (detalle.diagnosticoCie10Codigo ?? null)">
+            <button type="button" class="btn-ghost-sm" [disabled]="saving" (click)="guardarCie10()">
+              Guardar diagnóstico CIE-10
+            </button>
+          </div>
+
+          <!-- Certificados médicos. Los sirve el backend desde la carpeta de SharePoint
+               configurada: el webUrl directo solo abre para quien tiene sesión de M365. -->
+          <div *ngIf="certificados.length > 0" class="doc-list mt-2">
+            <button *ngFor="let doc of certificados" type="button" class="doc-link"
+                    [disabled]="descargandoId !== null" (click)="verCertificado(doc)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/>
+              </svg>
+              {{ doc.nombre ?? 'Ver certificado médico' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Alta (si completado) -->
+        <div *ngIf="detalle.fechaAlta" class="section">
+          <h2 class="paso-title">Alta médica</h2>
+          <div class="info-grid">
+            <div class="info-row"><span class="info-label">Fecha de alta</span><span>{{ detalle.fechaAlta | date:'dd/MM/yyyy' }}</span></div>
+            <div class="info-row" *ngIf="detalle.altaObservaciones"><span class="info-label">Observaciones</span><span>{{ detalle.altaObservaciones }}</span></div>
+          </div>
+        </div>
+
+        <!-- Rechazo (si rechazado) -->
+        <div *ngIf="detalle.estado === 'Rechazado' && detalle.motivoRechazo" class="section">
+          <h2 class="paso-title">Motivo de rechazo</h2>
+          <p class="rejection-note">{{ detalle.motivoRechazo }}</p>
+        </div>
+
+        <!-- Acciones según estado -->
+        <div *ngIf="isPendiente" class="section">
+          <h2 class="paso-title">Acción</h2>
+          <div class="action-grid">
+            <!-- Aprobar -->
+            <div class="action-card action-card--green">
+              <p class="action-card-title">Aprobar</p>
+              <p class="action-card-hint">El trabajador será bloqueado automáticamente en Control de Acceso.</p>
+              <textarea class="abril-field-input mt-1" rows="2" [(ngModel)]="aprobarObs" placeholder="Observaciones (opcional)"></textarea>
+              <button class="btn-green mt-2" [disabled]="saving" (click)="aprobar()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Aprobar descanso
+              </button>
+            </div>
+            <!-- Rechazar -->
+            <div class="action-card action-card--red">
+              <p class="action-card-title">Rechazar</p>
+              <p class="action-card-hint">Indique el motivo del rechazo.</p>
+              <textarea class="abril-field-input mt-1" rows="2" [(ngModel)]="rechazarMotivo" placeholder="Motivo de rechazo *"></textarea>
+              <button class="btn-red mt-2" [disabled]="saving || !rechazarMotivo.trim()" (click)="rechazar()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                Rechazar descanso
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alta (si aprobado, caso abierto y sin pendientes por reapertura) -->
+        <div *ngIf="canAlta" class="section">
+          <h2 class="paso-title">Dar de alta</h2>
+          <p class="action-card-hint">Al dar de alta se cierra el caso: todos sus descansos aprobados pasan a Completado y el trabajador es desbloqueado en Control de Acceso.</p>
+          <textarea class="abril-field-input mt-1" rows="2" [(ngModel)]="altaObs" placeholder="Observaciones del alta (opcional)"></textarea>
+          <button class="btn-blue mt-2" [disabled]="saving" (click)="darAlta()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            Dar alta médica
+          </button>
+        </div>
+
+        <!-- Añadir más descanso (si aprobado o completado, caso abierto) -->
+        <div *ngIf="canProrroga && !prorrogaMode" class="section no-border">
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn-ghost-sm" (click)="iniciarProrroga()">+ Añadir más descanso</button>
+          </div>
+        </div>
+
+        <!-- Formulario: añadir más descanso -->
+        <div *ngIf="prorrogaMode" class="section">
+          <h2 class="paso-title">Añadir más descanso</h2>
+          <p class="action-card-hint">Se creará un nuevo descanso dentro del mismo caso (#{{ detalle.casoId }}).</p>
+          <div class="grid-2 mt-1">
+            <app-date-picker
+              label="Fecha inicio *"
+              color="var(--color-abril-logo-blue)"
+              [floatingLabel]="true"
+              [allowClear]="false"
+              [value]="pFechaInicio"
+              (valueChange)="onProrrogaInicioChange($event)">
+            </app-date-picker>
+            <app-date-picker
+              label="Fecha fin *"
+              color="var(--color-abril-logo-blue)"
+              [floatingLabel]="true"
+              [allowClear]="false"
+              [min]="pFechaInicio"
+              [value]="pFechaFin"
+              (valueChange)="onProrrogaFinChange($event)">
+            </app-date-picker>
+          </div>
+          <div class="mt-2" style="display:flex;gap:.75rem;justify-content:flex-end">
+            <button type="button" class="btn-ghost" (click)="cancelarProrroga()">Cancelar</button>
+            <button type="button" class="btn-primary" [disabled]="saving || !pFechaInicio || !pFechaFin" (click)="guardarProrroga()">
+              {{ saving ? 'Guardando…' : 'Agregar descanso' }}
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Tab: Seguimientos ── -->
+      <div *ngIf="tab === 'seguimientos'" class="tab-content">
+
+        <!-- Formulario nuevo seguimiento. La vigilancia médica continua: el médico va anotando
+             evolución, citas, diagnóstico — se puede agregar cuantos seguimientos hagan falta. -->
+        <div class="section" *ngIf="!isCompletado">
+          <h2 class="paso-title">Nuevo seguimiento</h2>
+          <div class="grid-2">
+            <app-date-picker
+              label="Próxima cita"
+              color="var(--color-abril-logo-blue)"
+              [floatingLabel]="true"
+              [value]="segProximaCita"
+              (valueChange)="onProximaCitaChange($event)">
+            </app-date-picker>
+          </div>
+          <div class="abril-field mt-2">
+            <label class="abril-field-label">Diagnóstico CIE-10</label>
+            <app-cie10-select [value]="segCie10Codigo" (valueChange)="segCie10Codigo = $event"></app-cie10-select>
+          </div>
+          <div class="abril-field mt-2">
+            <label class="abril-field-label">Nota *</label>
+            <textarea class="abril-field-input" rows="3" [(ngModel)]="segNota" placeholder="Describe la evolución, indicaciones o próximos pasos…"></textarea>
+          </div>
+          <label class="check-inline mt-2">
+            <input type="checkbox" [(ngModel)]="segConfidencial" />
+            Confidencial (el detalle clínico solo lo ve quien tenga permiso médico)
+          </label>
+          <div class="mt-2 text-right">
+            <button type="button" class="btn-primary" [disabled]="segGuardando || !segNota.trim()" (click)="guardarSeguimiento()">
+              {{ segGuardando ? 'Guardando…' : 'Registrar seguimiento' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Historial -->
+        <div class="section no-border">
+          <h2 class="paso-title">Historial</h2>
+          <div *ngIf="seguimientos.length === 0" class="empty-row">Sin seguimientos registrados.</div>
+          <div class="timeline">
+            <div *ngFor="let s of seguimientos" class="timeline-item">
+              <div class="tl-dot"></div>
+              <div class="tl-content">
+                <div class="tl-header">
+                  <span *ngIf="s.tipoNombre ?? s.tipo" class="badge badge-blue">{{ s.tipoNombre ?? s.tipo }}</span>
+                  <span *ngIf="s.confidencial" class="badge badge-gray" title="Confidencial">🔒</span>
+                  <span class="tl-date">{{ s.fechaSeguimiento | date:'dd/MM/yyyy HH:mm' }}</span>
+                  <span *ngIf="s.realizadoPorRol" class="tl-role">{{ s.realizadoPorRol }}</span>
+                </div>
+                <p class="tl-nota">{{ s.nota ?? '(detalle confidencial — sin permiso para verlo)' }}</p>
+                <p *ngIf="s.diagnosticoCie10Descripcion" class="tl-cita">
+                  CIE-10: {{ s.diagnosticoCie10Codigo }} — {{ s.diagnosticoCie10Descripcion }}
+                </p>
+                <p *ngIf="s.puestoTrabajoSnapshot" class="tl-cita">Puesto del trabajador: {{ s.puestoTrabajoSnapshot }}</p>
+                <p *ngIf="s.proximaCita" class="tl-cita">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  Próxima cita: {{ s.proximaCita | date:'dd/MM/yyyy' }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </ng-container>
+
+</app-abril-modal-panel>

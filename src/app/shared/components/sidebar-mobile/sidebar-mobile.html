@@ -1,0 +1,185 @@
+<!-- Backdrop -->
+<div
+  *ngIf="menuOpen"
+  class="fixed inset-0 z-40 bg-black/40"
+  (click)="close()"
+></div>
+
+<!-- Drawer -->
+<div
+  class="fixed top-0 left-0 bottom-0 z-50 flex flex-col w-[260px] transition-transform duration-300 ease-out overflow-hidden"
+  style="background: var(--color-abril-surface);
+         border-right: 1px solid var(--color-abril-border);
+         box-shadow: 4px 0 20px rgba(0,0,0,0.08);"
+  [class.-translate-x-full]="!menuOpen"
+>
+  <div class="flex flex-col h-full px-2 py-3 overflow-hidden box-border">
+
+    <!-- Close row -->
+    <div class="flex justify-end mb-2 flex-shrink-0">
+      <button
+        (click)="close()"
+        class="flex items-center justify-center w-8 h-8 rounded border-0 cursor-pointer transition-colors"
+        style="background: transparent; color: var(--color-abril-muted); border-radius: var(--radius-sm);"
+        title="Cerrar menú"
+      >
+        <i class="ti ti-x text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Logo -->
+    <div class="flex items-center px-2 pb-4 flex-shrink-0">
+      <img src="/images/abril-logo.png" alt="Abril"
+           style="height: 26px; width: auto; object-fit: contain;" />
+    </div>
+
+    <!-- Profile -->
+    <div class="flex items-center gap-2 px-2 py-2 rounded flex-shrink-0 mb-2"
+         style="border-radius: var(--radius-sm); background: var(--color-abril-bg);">
+      <div class="flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0"
+           style="background: var(--color-abril-surface); border: 1px solid var(--color-abril-border);
+                  font-size: 11px; font-weight: 700; color: var(--color-abril-body);">
+        {{ userInitials }}
+      </div>
+      <div class="flex flex-col min-w-0 overflow-hidden flex-1">
+        <span class="font-semibold truncate leading-tight"
+              style="font-size: 12px; color: var(--color-abril-body);">
+          {{ userName || 'Usuario' }}
+        </span>
+        <span class="truncate leading-tight"
+              style="font-size: 10px; color: var(--color-abril-muted);">
+          {{ userRole || '' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Separator -->
+    <div class="flex-shrink-0 mx-1 my-1" style="height: 0; border-top: 1px solid var(--color-abril-border);"></div>
+
+    <!-- Main modules (scrollable) -->
+    <nav class="flex flex-col gap-0.5 overflow-y-auto flex-1 py-1" style="scrollbar-width: none;">
+      <ng-container *ngFor="let module of mainModules; trackBy: trackByModuleKey">
+
+        <!-- Module header -->
+        <div
+          class="relative flex items-center gap-3 px-3 py-2 rounded cursor-pointer flex-shrink-0 transition-colors"
+          [class.font-bold]="isActiveModule(module.baseRoute)"
+          style="border-radius: var(--radius-sm); font-size: 13px;"
+          (click)="onModuleClick(module)"
+        >
+          <!-- Active bar -->
+          <div *ngIf="isActiveModule(module.baseRoute)"
+               class="absolute left-0 top-1/2 -translate-y-1/2"
+               style="width: 3px; height: 55%; background: var(--color-abril-primary); border-radius: 0 2px 2px 0;">
+          </div>
+          <!-- Icon: green when active -->
+          <span [style.color]="isActiveModule(module.baseRoute) ? 'var(--color-abril-primary)' : 'var(--color-abril-muted)'">
+            <app-nav-icon [key]="module.iconKey" [size]="19" />
+          </span>
+          <!-- Label: ink when active -->
+          <span
+            class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
+            style="font-family: inherit;"
+            [style.color]="isActiveModule(module.baseRoute) ? 'var(--color-abril-ink)' : 'var(--color-abril-muted)'"
+          >
+            {{ module.label }}
+          </span>
+          <!-- Accordion chevron -->
+          <i *ngIf="hasAccordion(module)"
+             class="ti ti-chevron-down flex-shrink-0 transition-transform duration-200"
+             style="font-size: 12px; color: var(--color-abril-muted);"
+             [style.transform]="expandedModule === module.key ? 'rotate(180deg)' : 'none'"></i>
+        </div>
+
+        <!-- Accordion panel -->
+        <div *ngIf="expandedModule === module.key" class="flex flex-col gap-0.5 pb-1">
+
+          <!-- Direct items -->
+          <a
+            *ngFor="let item of navService.filterItems(module.items); trackBy: trackByItemRoute"
+            [routerLink]="item.route"
+            (click)="close()"
+            class="block rounded transition-colors"
+            style="padding: 6px 12px 6px 40px; border-radius: var(--radius-sm); font-size: 12px;
+                   text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+            [style.color]="isActiveRoute(item.route) ? 'var(--color-abril-ink)' : 'var(--color-abril-muted)'"
+            [style.fontWeight]="isActiveRoute(item.route) ? '600' : 'normal'"
+          >
+            {{ item.label }}
+          </a>
+
+          <!-- Groups -->
+          <ng-container *ngFor="let group of navService.filterGroups(module.groups); trackBy: trackByGroupLabel">
+            <div
+              class="flex items-center justify-between rounded cursor-pointer transition-colors"
+              style="padding: 5px 12px 5px 40px; border-radius: var(--radius-sm); font-size: 10px;
+                     font-weight: 700; color: var(--color-abril-muted); text-transform: uppercase;
+                     letter-spacing: 0.05em;"
+              (click)="toggleGroup(group.label, $event)"
+            >
+              <span>{{ group.label }}</span>
+              <i class="ti ti-chevron-down transition-transform duration-200"
+                 style="font-size: 11px;"
+                 [style.transform]="expandedGroup === group.label ? 'rotate(180deg)' : 'none'"></i>
+            </div>
+            <div *ngIf="expandedGroup === group.label" class="flex flex-col gap-0.5">
+              <a
+                *ngFor="let item of group.items; trackBy: trackByItemRoute"
+                [routerLink]="item.route"
+                (click)="close()"
+                class="block rounded transition-colors"
+                style="padding: 6px 12px 6px 52px; border-radius: var(--radius-sm); font-size: 12px;
+                       text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                [style.color]="isActiveRoute(item.route) ? 'var(--color-abril-ink)' : 'var(--color-abril-muted)'"
+                [style.fontWeight]="isActiveRoute(item.route) ? '600' : 'normal'"
+              >
+                {{ item.label }}
+              </a>
+            </div>
+          </ng-container>
+
+        </div>
+      </ng-container>
+    </nav>
+
+    <!-- Separator -->
+    <div class="flex-shrink-0 mx-1 my-1" style="height: 0; border-top: 1px solid var(--color-abril-border);"></div>
+
+    <!-- Bottom: configuración + logout -->
+    <div class="flex flex-col gap-0.5 flex-shrink-0 pb-1">
+      <div
+        *ngIf="configModule"
+        class="relative flex items-center gap-3 px-3 py-2 rounded cursor-pointer flex-shrink-0 transition-colors"
+        style="border-radius: var(--radius-sm); font-size: 13px;"
+        (click)="onModuleClick(configModule)"
+      >
+        <div *ngIf="isActiveModule(configModule.baseRoute)"
+             class="absolute left-0 top-1/2 -translate-y-1/2"
+             style="width: 3px; height: 55%; background: var(--color-abril-primary); border-radius: 0 2px 2px 0;">
+        </div>
+        <span [style.color]="isActiveModule(configModule.baseRoute) ? 'var(--color-abril-primary)' : 'var(--color-abril-muted)'">
+          <app-nav-icon [key]="configModule.iconKey" [size]="19" />
+        </span>
+        <span
+          class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
+          style="font-family: inherit;"
+          [style.color]="isActiveModule(configModule.baseRoute) ? 'var(--color-abril-ink)' : 'var(--color-abril-muted)'"
+          [class.font-bold]="isActiveModule(configModule.baseRoute)"
+        >
+          {{ configModule.label }}
+        </span>
+      </div>
+
+      <button
+        (click)="logout()"
+        class="flex items-center gap-3 px-3 py-2 rounded w-full border-0 cursor-pointer transition-colors flex-shrink-0"
+        style="border-radius: var(--radius-sm); background: transparent; color: var(--color-abril-danger);
+               font-size: 13px; font-family: inherit; text-align: left;"
+      >
+        <app-nav-icon key="logout" [size]="19" />
+        <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">Cerrar sesión</span>
+      </button>
+    </div>
+
+  </div>
+</div>

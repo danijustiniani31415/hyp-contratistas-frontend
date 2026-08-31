@@ -1,0 +1,209 @@
+@if (loading) {
+  <div class="sm-skeleton">Cargando seguimiento médico…</div>
+}
+
+@if (!loading && detalle) {
+
+  <!-- Header con estado y acceso directo -->
+  <div class="sm-header">
+    <div class="sm-header__left">
+      <span class="sm-title">Accidente #{{ detalle.id }}</span>
+      <span class="sm-badge"
+        [class.sm-badge--red]="detalle.estado === 'Abierto'"
+        [class.sm-badge--green]="detalle.estado === 'Cerrado'">
+        {{ detalle.estado }}
+      </span>
+      @if (detalle.diasDescansoReales != null) {
+        <span class="sm-badge sm-badge--gray">
+          {{ detalle.diasDescansoReales }} días descanso
+        </span>
+      }
+    </div>
+    <a class="sm-link-ext"
+      [routerLink]="['/ssoma/salud-ocupacional/accidentes']"
+      title="Ir a la vista completa de accidentes">
+      Ver en Accidentes ↗
+    </a>
+  </div>
+
+  <!-- Reinducción -->
+  @if (detalle.requiereReinduccion) {
+    <div class="sm-reinduccion" [class.sm-reinduccion--done]="detalle.reinduccionCompletada">
+      @if (detalle.reinduccionCompletada) {
+        <i class="ti ti-circle-check"></i>
+        <span>Reinducción completada — trabajador autorizado para reintegrarse.</span>
+      } @else {
+        <i class="ti ti-alert-triangle"></i>
+        <span>Reinducción de seguridad pendiente.</span>
+        <button class="sm-btn-reinduccion" (click)="marcarReinduccion()">
+          Confirmar reinducción
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Sub-tabs -->
+  <div class="sm-tabs">
+    <button class="sm-tab" [class.active]="tab === 'descansos'" (click)="tab = 'descansos'">
+      Descansos
+      @if (detalle.descansos.length) {
+        <span class="sm-tab-badge">{{ detalle.descansos.length }}</span>
+      }
+    </button>
+    <button class="sm-tab" [class.active]="tab === 'citas'" (click)="tab = 'citas'">
+      Citas médicas
+      @if (detalle.citas.length) {
+        <span class="sm-tab-badge">{{ detalle.citas.length }}</span>
+      }
+    </button>
+    <button class="sm-tab" [class.active]="tab === 'equipos'" (click)="tab = 'equipos'">
+      Equipos
+      @if (detalle.equipos.length) {
+        <span class="sm-tab-badge">{{ detalle.equipos.length }}</span>
+      }
+    </button>
+    <button class="sm-tab" [class.active]="tab === 'alta'" (click)="tab = 'alta'">
+      Alta médica
+      @if (detalle.tieneAlta) {
+        <span class="sm-tab-badge sm-tab-badge--green">✓</span>
+      }
+    </button>
+  </div>
+
+  <!-- Contenido de cada sub-tab -->
+  <div class="sm-body">
+
+    <!-- Descansos -->
+    @if (tab === 'descansos') {
+      @if (detalle.descansos.length === 0) {
+        <p class="sm-empty">Sin descansos médicos registrados.</p>
+      } @else {
+        <div class="sm-list">
+          @for (d of detalle.descansos; track d.id) {
+            <div class="sm-item">
+              <div class="sm-item__head">
+                <span class="sm-item__title">{{ d.tipo || 'Descanso' }} #{{ d.id }}</span>
+                <span class="sm-badge"
+                  [class.sm-badge--amber]="d.estado === 'Pendiente'"
+                  [class.sm-badge--green]="d.estado === 'Aprobado' || d.estado === 'Completado'"
+                  [class.sm-badge--red]="d.estado === 'Rechazado'"
+                  [class.sm-badge--gray]="d.estado !== 'Pendiente' && d.estado !== 'Aprobado' && d.estado !== 'Completado' && d.estado !== 'Rechazado'">
+                  {{ d.estado }}
+                </span>
+              </div>
+              <div class="sm-item__meta">
+                {{ d.fechaInicio | date:'dd/MM/yyyy':'UTC' }} — {{ d.fechaFin | date:'dd/MM/yyyy':'UTC' }}
+                · <strong>{{ d.dias }}</strong> días
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+
+    <!-- Citas médicas -->
+    @if (tab === 'citas') {
+      @if (detalle.citas.length === 0) {
+        <p class="sm-empty">Sin citas médicas registradas.</p>
+      } @else {
+        <div class="sm-list">
+          @for (c of detalle.citas; track c.id) {
+            <div class="sm-item">
+              <div class="sm-item__head">
+                <span class="sm-item__title">{{ c.tipoNombre || 'Cita' }} #{{ c.id }}</span>
+              </div>
+              <div class="sm-item__meta">
+                {{ c.fechaCita | date:'dd/MM/yyyy':'UTC' }}
+                @if (c.horaCita) { · {{ c.horaCita }} }
+                @if (c.clinica) { · {{ c.clinica }} }
+              </div>
+              @if (c.medico) {
+                <div class="sm-item__meta">Dr./Dra. {{ c.medico }}</div>
+              }
+              @if (c.diagnostico) {
+                <div class="sm-item__meta">{{ c.diagnostico }}</div>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+
+    <!-- Equipos -->
+    @if (tab === 'equipos') {
+      @if (detalle.equipos.length === 0) {
+        <p class="sm-empty">Sin equipos prestados.</p>
+      } @else {
+        <div class="sm-list">
+          @for (eq of detalle.equipos; track eq.id) {
+            <div class="sm-item">
+              <div class="sm-item__head">
+                <span class="sm-item__title">{{ eq.tipoEquipoNombre || 'Equipo' }} #{{ eq.id }}</span>
+                <span class="sm-badge"
+                  [class.sm-badge--green]="eq.devuelto"
+                  [class.sm-badge--amber]="!eq.devuelto">
+                  {{ eq.devuelto ? 'Devuelto' : 'Prestado' }}
+                </span>
+              </div>
+              <div class="sm-item__meta">
+                Cant.: {{ eq.cantidad }} · Préstamo: {{ eq.fechaPrestamo | date:'dd/MM/yyyy':'UTC' }}
+                @if (eq.fechaDevolucion) { · Dev.: {{ eq.fechaDevolucion | date:'dd/MM/yyyy':'UTC' }} }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+
+    <!-- Alta médica -->
+    @if (tab === 'alta') {
+      @if (!detalle.altaMedica) {
+        <p class="sm-empty">Sin alta médica registrada.</p>
+      } @else {
+        <dl class="sm-info-grid">
+          <dt>Tipo de alta</dt>
+          <dd>{{ detalle.altaMedica.tipoNombre || '—' }}</dd>
+
+          <dt>Fecha</dt>
+          <dd>{{ detalle.altaMedica.fechaAlta | date:'dd/MM/yyyy':'UTC' }}</dd>
+
+          @if (detalle.altaMedica.medico) {
+            <dt>Médico</dt>
+            <dd>{{ detalle.altaMedica.medico }}</dd>
+          }
+
+          @if (detalle.altaMedica.diagnosticoFinal) {
+            <dt>Diagnóstico final</dt>
+            <dd>{{ detalle.altaMedica.diagnosticoFinal }}</dd>
+          }
+
+          @if (detalle.altaMedica.tieneRestriccion) {
+            <dt>Restricciones</dt>
+            <dd>
+              {{ detalle.altaMedica.descripcionRestriccion || 'Sí' }}
+              @if (detalle.altaMedica.fechaFinRestriccion) {
+                <span class="sm-sub">Hasta: {{ detalle.altaMedica.fechaFinRestriccion | date:'dd/MM/yyyy':'UTC' }}</span>
+              }
+            </dd>
+          }
+
+          @if (detalle.altaMedica.observaciones) {
+            <dt>Observaciones</dt>
+            <dd>{{ detalle.altaMedica.observaciones }}</dd>
+          }
+        </dl>
+      }
+    }
+
+  </div>
+
+  <!-- Acción: cerrar accidente -->
+  @if (detalle.estado === 'Abierto' && detalle.tieneAlta) {
+    <div class="sm-actions">
+      <button class="sm-btn-cerrar" (click)="cerrarAccidente()">
+        <i class="ti ti-lock"></i> Cerrar accidente
+      </button>
+    </div>
+  }
+
+}

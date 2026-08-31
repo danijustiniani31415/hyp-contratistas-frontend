@@ -1,0 +1,31 @@
+<!-- Los colores van por [style] y no por clase de Tailwind: `color`/`background`/`iconColor` son
+     opcionales y, cuando no se pasan, el binding queda en null y mandan las clases de abajo
+     (bg-white + text-red-500), que son el look histórico. -->
+<div *ngFor="let file of files; let i = index"
+    class="w-full bg-white border rounded-lg p-3 flex items-center justify-between shadow-sm mt-3"
+    [style.borderColor]="color"
+    [style.background]="background">
+
+    <div class="flex items-center gap-3">
+
+        <!-- Icono PDF -->
+        <svg class="min-w-8 min-h-8 w-8 h-8 text-red-500" [style.color]="iconColor"
+            fill="currentColor" viewBox="0 0 24 24">
+            <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" />
+        </svg>
+
+        <div>
+            <p class="text-sm font-semibold text-gray-700">{{ file.name }}</p>
+            <p class="text-xs text-gray-400">{{ file.size }}</p>
+        </div>
+
+    </div>
+
+    <!-- Botón eliminar -->
+    <button type="button"
+        class="text-red-500 cursor-pointer hover:text-red-700 text-sm font-semibold"
+        (click)="removeFile(i)">
+        Quitar
+    </button>
+
+</div>

@@ -1,0 +1,13 @@
+<div class="bim-subnav-bar">
+  <div class="bim-subnav-container">
+    <a
+      *ngFor="let tab of subTabs"
+      [routerLink]="tab.route"
+      routerLinkActive="active"
+      class="bim-subnav-item"
+    >
+      <i [class]="tab.icon"></i>
+      <span>{{ tab.label }}</span>
+    </a>
+  </div>
+</div>

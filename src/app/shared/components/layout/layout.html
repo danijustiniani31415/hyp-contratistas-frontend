@@ -1,0 +1,34 @@
+<div class="flex h-screen" style="background: var(--color-abril-surface);">
+  <app-alerta-login-ssoma></app-alerta-login-ssoma>
+  <app-sidebar class="hidden sm:block shrink-0"></app-sidebar>
+  <app-sidebar-mobile [(menuOpen)]="mobileMenuOpen"></app-sidebar-mobile>
+  <!-- Fallback: solo para páginas SIN app-abril-page-header (que no tienen su
+       propio hamburguesa). En páginas con header, este botón no se monta y así
+       no se solapan dos hamburguesas en móvil. Además se oculta mientras el
+       drawer está abierto: ahí ya está la 'X' del propio drawer para cerrarlo,
+       así no quedan dos controles solapados arriba a la izquierda. -->
+  <button
+    *ngIf="!hasPageHeader && !mobileMenuOpen"
+    type="button"
+    class="layout-mobile-menu-btn sm:hidden"
+    (click)="mobileMenuOpen = true"
+    aria-label="Abrir menú">
+    <i class="ti ti-menu-2"></i>
+  </button>
+  <div class="flex-1 min-w-0 flex flex-col"
+       style="background: var(--color-abril-page-bg); border-radius: 0; overflow: hidden;"
+       [class.rounded-none]="isFullPage">
+    <main class="flex-1 flex flex-col min-h-0 overflow-auto"
+          [class.p-0]="isFullPage"
+          [style.padding]="isFullPage ? '0' : null">
+      <ng-container *ngIf="isFullPage; else normalLayout">
+        <router-outlet></router-outlet>
+      </ng-container>
+      <ng-template #normalLayout>
+        <div class="page-content flex flex-col flex-1 min-h-0 overflow-y-auto">
+          <router-outlet></router-outlet>
+        </div>
+      </ng-template>
+    </main>
+  </div>
+</div>

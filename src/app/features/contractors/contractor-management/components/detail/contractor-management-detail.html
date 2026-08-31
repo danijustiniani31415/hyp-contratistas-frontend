@@ -1,0 +1,355 @@
+<app-base-modal
+  [title]="'DETALLE DE CONTRATISTA'"
+  width="w-full sm:w-[680px]"
+  (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-4 mt-4">
+
+    <!-- Tabs -->
+    <div class="flex border-b border-[#64BC04]">
+      <button (click)="activeTab = 'general'" type="button"
+        class="cursor-pointer px-4 py-2.5 text-sm font-medium rounded-t-lg border transition-colors"
+        [ngClass]="activeTab === 'general'
+          ? 'border-t-[#64BC04] border-x-[#64BC04] border-b-white text-[#64BC04] -mb-px bg-white'
+          : 'border-transparent text-gray-500 hover:text-gray-700'">
+        Información general
+      </button>
+      <button (click)="activeTab = 'users'" type="button"
+        class="cursor-pointer px-4 py-2.5 text-sm font-medium rounded-t-lg border transition-colors"
+        [ngClass]="activeTab === 'users'
+          ? 'border-t-[#64BC04] border-x-[#64BC04] border-b-white text-[#64BC04] -mb-px bg-white'
+          : 'border-transparent text-gray-500 hover:text-gray-700'">
+        Usuarios asociados
+      </button>
+    </div>
+
+    <!-- Tab: Información general -->
+    <div [hidden]="activeTab !== 'general'" class="flex flex-col gap-6">
+
+      <!-- Info principal -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+
+        <div>
+          <p class="text-xs text-gray-400 mb-1">Razón social</p>
+          <p class="text-sm font-semibold text-gray-800">{{ item.contributorName }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-1">RUC</p>
+          <p class="text-sm font-semibold text-gray-800">{{ item.contributorRuc }}</p>
+        </div>
+
+        <div class="sm:col-span-2">
+          <p class="text-xs text-gray-400 mb-1">Dirección</p>
+          <p class="text-sm text-gray-700">{{ item.contributorAddress || '—' }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-1">Distrito</p>
+          <p class="text-sm text-gray-700">{{ item.contributorDistrict || '—' }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-1">Provincia</p>
+          <p class="text-sm text-gray-700">{{ item.contributorProvince || '—' }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-1">Departamento</p>
+          <p class="text-sm text-gray-700">{{ item.contributorDepartment || '—' }}</p>
+        </div>
+
+        <div class="sm:col-span-2">
+          <p class="text-xs text-gray-400 mb-1">Actividad económica</p>
+          <p class="text-sm text-gray-700">{{ item.contributorEconomicActivityDescription || '—' }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-1">Estado</p>
+          <span
+            class="inline-block rounded-lg px-3 py-1 text-xs font-medium"
+            [ngClass]="{
+              'bg-[#FEF3C7] text-[#92400E]': item.contractorStateDescription === 'EN ESPERA',
+              'bg-[#D7FAF4] text-[#009C87]':  item.contractorStateDescription === 'APROBADO',
+              'bg-[#FAD5D4] text-[#D30000]':  item.contractorStateDescription === 'NO APROBADO',
+              'bg-[#FFE6CC] text-[#B45309]':  item.contractorStateDescription === 'APROBADO - ACTUALIZACIÓN PENDIENTE'
+            }">
+            {{ item.contractorStateDescription }}
+          </span>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-1">Fecha de registro</p>
+          <p class="text-sm text-gray-700">{{ item.createdDateTime | date:'dd/MM/yyyy HH:mm' }}</p>
+        </div>
+
+      </div>
+
+      <!-- Representante legal -->
+      <div>
+        <p class="text-xs text-gray-400 mb-3">Representante legal</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+
+          <div>
+            <p class="text-xs text-gray-400 mb-1">DNI</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.legalRepresentativeDni || '—' }}</p>
+          </div>
+
+          <div>
+            <p class="text-xs text-gray-400 mb-1">Nombre completo</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.legalRepresentativeFullName || '—' }}</p>
+          </div>
+
+          <div class="sm:col-span-2">
+            <p class="text-xs text-gray-400 mb-1">N° de partida registral</p>
+            <p class="text-sm text-gray-700">{{ item.legalEntityRegistryNumber || '—' }}</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Documentos -->
+      <div *ngIf="item.brochureFileUrl || item.fichaRucFileUrl || item.referencesListFileUrl">
+        <p class="text-xs text-gray-400 mb-2">Documentos adjuntos</p>
+        <div class="flex flex-col gap-2">
+          <a *ngIf="item.brochureFileUrl" [href]="item.brochureFileUrl" target="_blank"
+            class="flex items-center gap-2 text-sm text-[#64BC04] hover:underline break-all">
+            <svg class="w-4 h-4 shrink-0 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+            </svg>
+            Brochure
+          </a>
+          <a *ngIf="item.fichaRucFileUrl" [href]="item.fichaRucFileUrl" target="_blank"
+            class="flex items-center gap-2 text-sm text-[#64BC04] hover:underline break-all">
+            <svg class="w-4 h-4 shrink-0 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+            </svg>
+            Ficha RUC
+          </a>
+          <a *ngIf="item.referencesListFileUrl" [href]="item.referencesListFileUrl" target="_blank"
+            class="flex items-center gap-2 text-sm text-[#64BC04] hover:underline break-all">
+            <svg class="w-4 h-4 shrink-0 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+            </svg>
+            Lista de referencias
+          </a>
+        </div>
+      </div>
+
+      <!-- Correos -->
+      <div>
+        <p class="text-xs text-gray-400 mb-2">Correos de contacto</p>
+        <div class="flex flex-col gap-1.5">
+          <div
+            *ngFor="let email of item.emailDetails"
+            class="flex items-center gap-2 text-sm"
+            [ngClass]="email.active ? 'text-gray-700' : 'text-gray-400'">
+            <svg class="w-4 h-4 shrink-0" [ngClass]="email.active ? 'text-gray-400' : 'text-gray-300'" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            <span [ngClass]="{ 'line-through': !email.active }">{{ email.email }}</span>
+            <span *ngIf="email.contractorPersonTypeDescription"
+              class="inline-block rounded-full px-2 py-0.5 text-[10px] font-medium bg-[#EBF3FE] text-[#1D5FBF]">
+              {{ email.contractorPersonTypeDescription }}
+            </span>
+            <span
+              class="inline-block rounded-full px-2 py-0.5 text-[10px] font-medium"
+              [ngClass]="email.active ? 'bg-[#E5F7D1] text-[#3a7a00]' : 'bg-gray-100 text-gray-500'">
+              {{ email.active ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+          <p *ngIf="!item.emailDetails || item.emailDetails.length === 0"
+            class="text-sm text-gray-400 italic">
+            Sin correos registrados
+          </p>
+        </div>
+      </div>
+
+      <!-- Solicitud de actualización pendiente (estado 4): comparación lado a lado -->
+      <div *ngIf="item.pendingUpdate" class="rounded-xl border border-[#FFD9B3] bg-[#FFF8F1] p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <svg class="w-5 h-5 text-[#B45309]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+          </svg>
+          <p class="text-sm font-semibold text-[#B45309]">Solicitud de actualización de datos pendiente</p>
+        </div>
+        <p class="text-xs text-gray-500 mb-3">
+          El contratista sigue operando con los datos actuales. Revisa los datos propuestos y apruébalos o recházalos.
+        </p>
+
+        <div class="grid grid-cols-[1fr_1fr] gap-px bg-[#F0E2D2] rounded-lg overflow-hidden text-sm">
+          <div class="bg-[#FBF1E6] px-3 py-2 text-xs font-semibold text-gray-500">Dato actual</div>
+          <div class="bg-[#FBF1E6] px-3 py-2 text-xs font-semibold text-[#B45309]">Dato propuesto</div>
+
+          <ng-container *ngFor="let row of comparisonRows()">
+            <ng-container *ngIf="row.current !== row.proposed">
+              <div class="bg-white px-3 py-2">
+                <p class="text-[10px] uppercase tracking-wide text-gray-400">{{ row.label }}</p>
+                <p class="text-gray-700">{{ row.current || '—' }}</p>
+              </div>
+              <div class="bg-[#FFF4E8] px-3 py-2">
+                <p class="text-[10px] uppercase tracking-wide text-[#B45309]">{{ row.label }}</p>
+                <p class="font-medium text-gray-800">{{ row.proposed || '—' }}</p>
+              </div>
+            </ng-container>
+          </ng-container>
+        </div>
+
+        <p *ngIf="!hasComparisonChanges()" class="text-xs text-gray-400 italic mt-2">
+          Los datos propuestos coinciden con los actuales (puede haber cambios solo en los archivos adjuntos).
+        </p>
+
+        <!-- Archivos propuestos -->
+        <div *ngIf="item.pendingUpdate.brochureFileUrl || item.pendingUpdate.fichaRucFileUrl || item.pendingUpdate.referencesListFileUrl || item.pendingUpdate.logoFileUrl"
+             class="mt-3">
+          <p class="text-xs text-[#B45309] mb-1">Archivos propuestos</p>
+          <div class="flex flex-wrap gap-3">
+            <a *ngIf="item.pendingUpdate.logoFileUrl"          [href]="item.pendingUpdate.logoFileUrl"          target="_blank" class="text-xs text-[#64BC04] hover:underline">Logo</a>
+            <a *ngIf="item.pendingUpdate.brochureFileUrl"      [href]="item.pendingUpdate.brochureFileUrl"      target="_blank" class="text-xs text-[#64BC04] hover:underline">Brochure</a>
+            <a *ngIf="item.pendingUpdate.fichaRucFileUrl"      [href]="item.pendingUpdate.fichaRucFileUrl"      target="_blank" class="text-xs text-[#64BC04] hover:underline">Ficha RUC</a>
+            <a *ngIf="item.pendingUpdate.referencesListFileUrl" [href]="item.pendingUpdate.referencesListFileUrl" target="_blank" class="text-xs text-[#64BC04] hover:underline">Lista de referencias</a>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-end gap-3 mt-4">
+          <button type="button" (click)="rejectUpdate()"
+            class="flex items-center justify-center gap-2 px-6 py-2.5 border border-[#D30000] text-[#D30000] text-sm font-semibold rounded-lg hover:bg-[#FAD5D4] transition-colors cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            Rechazar actualización
+          </button>
+          <button type="button" (click)="approveUpdate()"
+            class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#64BC04] text-white text-sm font-semibold rounded-lg hover:bg-[#57a803] transition-colors cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            Aprobar actualización
+          </button>
+        </div>
+      </div>
+
+      <div class="border-t border-[#F0F0F0]"></div>
+
+      <!-- Editar (siempre disponible) -->
+      <div class="flex justify-start">
+        <button type="button" (click)="openEdit()"
+          class="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#64BC04] text-[#64BC04] text-sm font-semibold rounded-lg hover:bg-[#E5F7D1] transition-colors cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+          Editar
+        </button>
+      </div>
+
+      <!-- Acciones para estado EN ESPERA -->
+      <div *ngIf="item.contractorStateDescription === 'EN ESPERA'" class="flex flex-col sm:flex-row justify-end gap-3">
+
+        <!-- Rechazar -->
+        <button
+          type="button"
+          (click)="reject()"
+          class="flex items-center justify-center gap-2 px-6 py-2.5 border border-[#D30000] text-[#D30000] text-sm font-semibold rounded-lg hover:bg-[#FAD5D4] transition-colors cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Rechazar solicitud
+        </button>
+
+        <!-- Aprobar -->
+        <button
+          type="button"
+          (click)="approve()"
+          class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#64BC04] text-white text-sm font-semibold rounded-lg hover:bg-[#57a803] transition-colors cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+          Aprobar solicitud
+        </button>
+
+      </div>
+
+      <!-- Enviar credenciales (solo para aprobados) -->
+      <div *ngIf="item.contractorStateDescription === 'APROBADO'" class="flex flex-col sm:flex-row justify-between items-center gap-3">
+
+        <div class="flex items-center gap-2">
+          <span *ngIf="item.hasUser"
+            class="inline-flex items-center gap-1.5 text-xs font-medium text-teal-700 bg-teal-50 border border-teal-200 rounded-lg px-3 py-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Tiene cuenta registrada
+          </span>
+          <span *ngIf="!item.hasUser"
+            class="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Sin cuenta aún
+          </span>
+        </div>
+
+        <button
+          type="button"
+          (click)="sendCredentials()"
+          class="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          {{ item.hasUser ? 'Reenviar credenciales' : 'Enviar credenciales' }}
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- Tab: Usuarios asociados -->
+    <div [hidden]="activeTab !== 'users'" class="flex flex-col gap-4">
+
+      <ng-container *ngIf="item.users && item.users.length > 0; else noUsers">
+        <div class="flex flex-col gap-2">
+          <div
+            *ngFor="let user of item.users"
+            class="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+            <div class="flex items-center gap-3">
+              <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-700">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-800">{{ user.email }}</p>
+                <p class="text-xs text-gray-400">Registrado el {{ user.createdDateTime | date:'dd/MM/yyyy' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-template #noUsers>
+        <div class="flex flex-col items-center justify-center py-10 text-center">
+          <svg class="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
+          </svg>
+          <p class="text-sm text-gray-400">Sin usuarios asociados</p>
+        </div>
+      </ng-template>
+
+    </div>
+
+  </div>
+
+</app-base-modal>
+
+<!-- Modal de edición (se abre sobre el detalle) -->
+<app-contractor-management-edit
+  *ngIf="showEditModal"
+  [item]="item"
+  (closeModal)="showEditModal = false"
+  (saved)="onEditSaved()">
+</app-contractor-management-edit>

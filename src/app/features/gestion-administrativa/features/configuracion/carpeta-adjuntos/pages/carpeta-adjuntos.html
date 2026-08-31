@@ -1,0 +1,54 @@
+<!-- Sección embebida en GaConfiguracion: el header vive en el contenedor. -->
+<div class="flex flex-col gap-5 max-w-[760px] overflow-auto">
+
+  <!-- Estado actual -->
+  <div class="rounded-lg border p-4 flex flex-col gap-3" style="border-color:var(--color-abril-border)">
+    <div class="flex items-center gap-2">
+      <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+        [ngClass]="{
+          'bg-[#D7FAF4] text-[#009C87]': folder,
+          'bg-[#FAD5D4] text-[#D30000]': !folder
+        }">
+        {{ folder ? 'CONFIGURADA' : 'SIN CONFIGURAR' }}
+      </span>
+      <span class="text-sm text-gray-500">Carpeta donde se guardan los documentos adjuntos de las solicitudes de salida</span>
+    </div>
+
+    <div *ngIf="folder" class="flex flex-col gap-1 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-gray-500">Carpeta detectada:</span>
+        <b class="text-gray-700">{{ folder.folderName ?? '—' }}</b>
+      </div>
+      <a [href]="folder.webUrl ?? folder.linkUrl" target="_blank" rel="noopener noreferrer"
+        class="hover:underline truncate block" style="color:var(--color-abril-primary)" [title]="folder.linkUrl">
+        {{ folder.webUrl ?? folder.linkUrl }}
+      </a>
+    </div>
+
+    <p *ngIf="!folder" class="text-sm text-gray-400 italic">
+      Aún no se ha configurado una carpeta. Pega un link más abajo para empezar a guardar los adjuntos ahí.
+      Sin carpeta configurada, no se podrán registrar solicitudes con motivos que exijan documento adjunto.
+    </p>
+  </div>
+
+  <!-- Editar link -->
+  <div class="flex flex-col gap-1.5">
+    <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Link de la carpeta (SharePoint / OneDrive)</label>
+    <div class="flex gap-2">
+      <input
+        type="url"
+        [(ngModel)]="linkUrl"
+        placeholder="https://abrilinmob.sharepoint.com/sites/.../Forms/AllItems.aspx"
+        class="flex-1 min-w-0 border rounded-lg px-3 py-2.5 text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      <button type="button" (click)="save()"
+        class="px-5 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors whitespace-nowrap" style="background:var(--color-abril-primary)">
+        Guardar
+      </button>
+    </div>
+    <span class="text-xs text-gray-400">
+      Pega el enlace de la carpeta/biblioteca y pulsa <b>Guardar</b>. El sistema lo detecta y a partir de ahí
+      los documentos adjuntos de las solicitudes de salida se guardarán ahí.
+    </span>
+  </div>
+
+</div>

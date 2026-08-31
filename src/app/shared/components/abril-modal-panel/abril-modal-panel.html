@@ -1,0 +1,27 @@
+<div class="amp-overlay" (mousedown)="onBackdropMousedown()" (click)="onBackdropClick()">
+  <div class="amp-container" [class.amp-container--blue]="variant === 'blue'"
+       [style.width]="width"
+       (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+
+    <div class="amp-header">
+      <div class="amp-title">
+        <i class="ti {{ icono }}"></i>
+        <div class="amp-title-text">
+          <span class="amp-title-main">{{ titulo }}</span>
+          @if (subtitulo) { <span class="amp-title-sub">{{ subtitulo }}</span> }
+        </div>
+      </div>
+      <button type="button" class="amp-close" (click)="closeModal.emit()" title="Cerrar">✕</button>
+    </div>
+
+    <div class="amp-body"
+         (input)="markDirty()" (change)="markDirty()" (modalfieldchange)="markDirty()">
+      <ng-content></ng-content>
+    </div>
+
+    <div class="amp-footer">
+      <ng-content select="[modalFooter]"></ng-content>
+    </div>
+
+  </div>
+</div>

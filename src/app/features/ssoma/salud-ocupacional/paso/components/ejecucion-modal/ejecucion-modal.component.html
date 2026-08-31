@@ -1,0 +1,86 @@
+<app-abril-modal-panel
+  titulo="Registrar Ejecución"
+  icono="ti-clipboard-check"
+  variant="blue"
+  width="700px"
+  (closeModal)="close()">
+
+  <div class="ej-header-info">
+    <div class="ej-header-icon">
+      <i class="ti ti-clipboard-check"></i>
+    </div>
+    <div>
+      <div class="ej-nombre">{{ actividad.nombre }}</div>
+      <div class="ej-freq">{{ actividad.frecuencia }} · Mes {{ actividad.mesInicio }}–{{ actividad.mesFin }}</div>
+    </div>
+  </div>
+
+  <div class="ej-grid">
+    <div class="ej-field">
+      <label class="ej-label">Fecha ejecutada <span style="color:#ef4444">*</span></label>
+      <input type="date" class="ej-input" [(ngModel)]="form.fechaEjecutada" />
+    </div>
+    <div class="ej-field">
+      <label class="ej-label">N° de participantes</label>
+      <input type="number" min="0" class="ej-input" placeholder="0" [(ngModel)]="form.participantesCount" />
+    </div>
+    <div class="ej-field span2">
+      <label class="ej-label">Observaciones</label>
+      <textarea class="ej-textarea" rows="3" placeholder="Detalles de la ejecución…" [(ngModel)]="form.observaciones"></textarea>
+    </div>
+    <div class="ej-field span2">
+      <label class="ej-label">Evidencia</label>
+      <ng-container *ngIf="archivosExistentes.length">
+        <div *ngFor="let arch of archivosExistentes" class="evidencia-existente">
+          <i class="ti ti-paperclip"></i>
+          <span>{{ arch.archivoNombre }}</span>
+          <button type="button" class="btn-ver-evidencia"
+            (click)="abrirVisor(arch.archivoUrl, arch.archivoNombre)">
+            <i class="ti ti-eye"></i> Ver
+          </button>
+        </div>
+      </ng-container>
+      <ng-container *ngIf="!evidenciaFile">
+        <div class="dropzone" [class.over]="isDragOver"
+          (dragover)="onDragOver($event)" (dragleave)="onDragLeave()" (drop)="onDrop($event)"
+          (click)="fileInput.click()">
+          <input #fileInput type="file" class="hidden" (change)="onFileSelect($event)" />
+          <i class="ti ti-cloud-upload dropzone-icon"></i>
+          <span class="dropzone-text">
+            {{ archivosExistentes.length ? 'Agregar otra evidencia' : 'Arrastra un archivo aquí o haz clic para seleccionar' }}
+          </span>
+          <span class="dropzone-hint">PDF, imagen, Excel — máx. 20 MB</span>
+        </div>
+      </ng-container>
+      <ng-container *ngIf="evidenciaFile">
+        <div class="file-preview">
+          <i class="ti ti-file"></i>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ evidenciaFile.name }}</span>
+          <button type="button" class="remove-file" (click)="removeFile()" title="Quitar archivo">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <div *ngIf="uploadProgress" class="upload-status">
+    <i class="ti ti-loader-2 animate-spin"></i>
+    <span>Subiendo evidencia…</span>
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="btn-cancel" (click)="close()">Cancelar</button>
+    <button type="button" class="btn-save" [disabled]="!canSave || saving" (click)="guardar()">
+      <i class="ti" [ngClass]="saving ? 'ti-loader-2 spin' : 'ti-device-floppy'"></i>
+      {{ saving ? 'Guardando…' : 'Guardar ejecución' }}
+    </button>
+  </div>
+
+</app-abril-modal-panel>
+
+<app-document-viewer
+  [archivoUrl]="visorUrl"
+  [nombre]="visorNombre"
+  (closed)="onVisorClosed()"
+/>

@@ -1,0 +1,50 @@
+<app-abril-modal-panel titulo="Levantar observación" icono="ti-check" width="560px" (closeModal)="closeModal.emit()">
+
+  <div class="paso-body">
+
+    <div class="obs-resumen">
+      <p><span class="font-medium">{{ observacion.revisionNombre }}</span> — {{ observacion.proyectoNombre }}</p>
+      <p class="mt-[4px]">{{ observacion.descripcion }}</p>
+    </div>
+
+    <div>
+      <app-search-select
+        label="Quién levanta"
+        [options]="trabajadores"
+        valueField="id"
+        displayField="apellidoNombre"
+        placeholder="Buscar trabajador..."
+        [value]="levantaPorWorkerId"
+        (valueChange)="levantaPorWorkerId = $event">
+      </app-search-select>
+      <p *ngIf="submitted && !levantaPorWorkerId" class="text-xs text-red-600 mt-[4px]">Selecciona quién levanta la observación.</p>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Comentario del levantamiento</label>
+      <textarea class="abril-field-input" rows="3" [(ngModel)]="comentario" name="comentario"></textarea>
+    </div>
+
+    <div>
+      <h3 class="foto-label"><i class="ti ti-camera"></i> Foto de levantamiento</h3>
+      <app-photo-grid-picker
+        [previews]="fotoPreview"
+        [max]="1"
+        [multiple]="false"
+        addLabel="Adjuntar foto"
+        (filesSelected)="onFotoSeleccionada($event)"
+        (remove)="quitarFoto()">
+      </app-photo-grid-picker>
+    </div>
+
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="btn-ghost" (click)="closeModal.emit()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="guardando" (click)="save()">
+      <i class="ti ti-device-floppy"></i>
+      {{ guardando ? 'Guardando…' : 'Confirmar levantamiento' }}
+    </button>
+  </div>
+
+</app-abril-modal-panel>

@@ -1,0 +1,29 @@
+<app-base-modal [title]="'EDITAR ESPECIALIDAD'" width="w-[420px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-5 mt-5">
+
+    <div class="flex flex-col gap-1.5">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Descripción</label>
+      <input
+        type="text"
+        [(ngModel)]="dto.workSpecialtyDescription"
+        placeholder="Ingresa la descripción..."
+        class="border rounded-lg px-3 py-2.5 text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+    </div>
+
+    <app-search-select
+      label="Estado"
+      [options]="statusOptions"
+      valueField="value"
+      displayField="label"
+      [allowClear]="false"
+      [(value)]="dto.active" />
+
+    <div class="flex justify-center pt-1">
+      <button (click)="save()"
+        class="w-[140px] py-2 rounded-lg cursor-pointer transition-colors" style="background:var(--color-abril-primary)">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+</app-base-modal>

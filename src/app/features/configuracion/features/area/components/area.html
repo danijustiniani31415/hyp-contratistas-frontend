@@ -1,0 +1,107 @@
+<app-abril-page-header
+  badge="CONFIGURACIÓN"
+  titulo="Áreas"
+  subtitulo="Gestión de áreas, jerarquías y tipos de área."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="flex-1 min-h-0 bg-white rounded-lg p-[20px] flex flex-col gap-5">
+
+  <!-- Tabs de sección -->
+  <app-section-tabs
+    [tabs]="sectionTabs"
+    [value]="activeSection"
+    (valueChange)="onSectionChange($event)">
+  </app-section-tabs>
+
+  <!-- SECCIÓN: Áreas (vocabulario plano) -->
+  <div *ngIf="activeSection === 'items'" class="flex flex-col gap-3">
+    <app-area-item-list (pagedData)="onItemPaged($event)">
+      <button
+        area-item-actions
+        (click)="openCreateItem($event)"
+        class="bg-[#E5F7D1] h-[34px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer">
+        <div class="flex items-center gap-[10px]">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+              fill="#64BC04"
+            />
+          </svg>
+          <p>Nueva área</p>
+        </div>
+      </button>
+    </app-area-item-list>
+
+    <app-paginator
+      [totalRecords]="itemTotalRecords"
+      [currentPage]="itemPage"
+      [totalPages]="itemTotalPages"
+      (pageChange)="changeItemPage($event)"
+    ></app-paginator>
+  </div>
+
+  <!-- SECCIÓN: Estructura jerárquica (area_scope) -->
+  <div *ngIf="activeSection === 'scope'" class="flex flex-col gap-3">
+    <div class="flex items-center justify-end">
+      <button
+        (click)="openCreateScope($event)"
+        class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer">
+        <div class="flex items-center gap-[10px]">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+              fill="#64BC04"
+            />
+          </svg>
+          <p>Nueva relación</p>
+        </div>
+      </button>
+    </div>
+
+    <app-area-scope-list></app-area-scope-list>
+  </div>
+
+  <!-- SECCIÓN: Tipos de Área -->
+  <div *ngIf="activeSection === 'types'" class="flex flex-col gap-3">
+    <div class="flex items-center justify-end">
+      <button
+        (click)="openCreateType($event)"
+        class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer">
+        <div class="flex items-center gap-[10px]">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+              fill="#64BC04"
+            />
+          </svg>
+          <p>Nuevo tipo</p>
+        </div>
+      </button>
+    </div>
+
+    <app-area-type-list
+      (pagedData)="onTypePaged($event)"
+      (changed)="onTypesChanged()"
+    ></app-area-type-list>
+
+    <app-paginator
+      [totalRecords]="typeTotalRecords"
+      [currentPage]="typePage"
+      [totalPages]="typeTotalPages"
+      (pageChange)="changeTypePage($event)"
+    ></app-paginator>
+  </div>
+</div>
+
+<app-area-type-create
+  *ngIf="showCreateTypeModal"
+  (closeModal)="showCreateTypeModal = false"
+  (saved)="onTypeCreated()"
+></app-area-type-create>
+
+<app-area-item-create
+  *ngIf="showCreateItemModal"
+  (closeModal)="showCreateItemModal = false"
+  (saved)="onItemCreated()"
+></app-area-item-create>

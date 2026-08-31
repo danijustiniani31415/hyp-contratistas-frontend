@@ -1,0 +1,201 @@
+<div class="config-stack">
+
+  <!-- Una pestaña por cada uno de los 4 correos de EMO -->
+  <app-section-tabs
+    *ngIf="eventos.length"
+    [tabs]="sectionTabs"
+    [value]="eventoActivoCodigo"
+    color="var(--color-abril-standard)"
+    (valueChange)="onSectionChange($event)">
+  </app-section-tabs>
+
+  <ng-container *ngIf="eventoActivo as evento">
+    <div class="config-card">
+      <div class="config-card__head config-card__head--row">
+        <div>
+          <h3 class="config-card__title">
+            <i class="ti ti-mail"></i>
+            {{ evento.nombre }}
+          </h3>
+          <p class="config-card__sub" *ngIf="evento.descripcion">{{ evento.descripcion }}</p>
+        </div>
+        <button type="button" class="btn-add" (click)="abrirAlta()">
+          <i class="ti ti-plus"></i> Agregar correo adicional
+        </button>
+      </div>
+
+      <p class="config-warn" *ngIf="sinDestinatariosActivos">
+        <i class="ti ti-alert-triangle"></i>
+        Este correo <strong>no se envía</strong>: no hay ningún destinatario activo en ningún perfil.
+      </p>
+
+      <p class="config-warn" *ngFor="let f of filasSinCorreo">
+        <i class="ti ti-alert-triangle"></i>
+        <strong>{{ f.nombre }}</strong> está activo pero no tiene un correo cargado, así que no le
+        llega nada. Edítalo para completarlo.
+      </p>
+
+      <p class="config-card__sub matriz-hint">
+        Marca quién recibe este correo según el tipo de trabajador al que corresponde el EMO.
+      </p>
+
+      <div class="matriz-wrap">
+        <table class="matriz">
+          <thead>
+            <tr>
+              <th class="matriz__dest">Destinatario</th>
+              <th
+                class="matriz__perfil"
+                *ngFor="let p of perfiles; trackBy: trackPerfil"
+                [title]="p.descripcion || p.nombre">
+                {{ p.nombre }}
+              </th>
+              <th class="matriz__acciones"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let fila of evento.destinatarios; trackBy: trackFila">
+              <td class="matriz__dest">
+                <div class="dest">
+                  <span class="dest__name">
+                    {{ fila.nombre || fila.email || '—' }}
+                    <span class="dest__tag dest__tag--cc" *ngIf="fila.tipo === 'COPIA'">CC</span>
+                    <span class="dest__tag" *ngIf="fila.eliminable">Adicional</span>
+                  </span>
+
+                  <span class="dest__email" *ngIf="fila.email">{{ fila.email }}</span>
+                  <span class="dest__email dest__email--warn" *ngIf="fila.sinCorreo">
+                    <i class="ti ti-alert-circle"></i> Sin correo cargado
+                  </span>
+                  <span class="dest__email dest__email--auto" *ngIf="!fila.email && !fila.editable">
+                    <i class="ti ti-wand"></i> Se resuelve al enviar
+                  </span>
+
+                  <span class="dest__desc" *ngIf="fila.descripcion">{{ fila.descripcion }}</span>
+                  <span class="dest__cond" *ngIf="fila.requiereArqCom">
+                    <i class="ti ti-info-circle"></i>
+                    Solo si el proyecto tiene arquitectura comercial
+                  </span>
+                </div>
+              </td>
+
+              <td class="matriz__perfil" *ngFor="let p of perfiles; trackBy: trackPerfil">
+                <ng-container *ngIf="celdaDe(fila, p) as celda">
+                  <button
+                    type="button"
+                    class="switch"
+                    role="switch"
+                    [attr.aria-checked]="celda.active"
+                    [attr.aria-label]="
+                      (celda.active ? 'Desactivar' : 'Activar') +
+                      ' ' + (fila.nombre || fila.email) + ' para ' + p.nombre
+                    "
+                    [class.switch--on]="celda.active"
+                    [disabled]="savingReglaId !== null"
+                    (click)="toggle(celda)">
+                    <span class="switch__knob"></span>
+                  </button>
+                </ng-container>
+              </td>
+
+              <td class="matriz__acciones">
+                <button
+                  type="button"
+                  class="btn-icon"
+                  *ngIf="fila.editable"
+                  [disabled]="savingDestinatarioId === fila.destinatarioId"
+                  title="Editar correo"
+                  (click)="abrirEdicion(fila)">
+                  <i class="ti ti-pencil"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn-icon btn-icon--danger"
+                  *ngIf="fila.eliminable"
+                  [disabled]="savingDestinatarioId === fila.destinatarioId"
+                  title="Eliminar"
+                  (click)="eliminar(fila)">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="correo-empty" *ngIf="!evento.destinatarios.length && !loading">
+        No hay destinatarios configurados para este correo.
+      </p>
+    </div>
+  </ng-container>
+</div>
+
+<!-- ── Modal de alta/edición ── -->
+<app-abril-modal-panel
+  *ngIf="formOpen"
+  [titulo]="formTitulo"
+  icono="ti-mail-plus"
+  variant="blue"
+  width="520px"
+  (closeModal)="cerrarForm()">
+
+  <div class="form-row">
+    <div class="abril-field">
+      <label class="abril-field-label">Correo *</label>
+      <input
+        type="email"
+        class="abril-field-input"
+        name="email"
+        placeholder="correo@ejemplo.com"
+        [(ngModel)]="formEmail" />
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="abril-field">
+      <label class="abril-field-label">Nombre o referencia</label>
+      <input
+        type="text"
+        class="abril-field-input"
+        name="nombre"
+        placeholder="Opcional (ej. Jefatura de obra)"
+        [(ngModel)]="formNombre" />
+    </div>
+  </div>
+
+  <div class="form-row" *ngIf="!formEsBuzonArea">
+    <div>
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Recibe como"
+        [options]="tipoOptions"
+        valueField="id"
+        displayField="label"
+        [value]="formTipo"
+        [allowClear]="false"
+        [sortAlpha]="false"
+        placeholder="Selecciona tipo"
+        (valueChange)="formTipo = $event"
+      ></app-search-select>
+    </div>
+  </div>
+
+  <p class="form-hint" *ngIf="formId === null">
+    <i class="ti ti-info-circle"></i>
+    Se agrega activo en los 4 perfiles de <strong>{{ eventoActivo?.nombre }}</strong>. En los otros
+    correos queda disponible pero apagado.
+  </p>
+
+  <p class="form-error" *ngIf="formError">
+    <i class="ti ti-alert-circle"></i> {{ formError }}
+  </p>
+
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-ghost" (click)="cerrarForm()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="!formValido || saving" (click)="guardarForm()">
+      <i class="ti ti-loader-2 spin" *ngIf="saving"></i>
+      <i class="ti ti-check" *ngIf="!saving"></i>
+      {{ saving ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</app-abril-modal-panel>

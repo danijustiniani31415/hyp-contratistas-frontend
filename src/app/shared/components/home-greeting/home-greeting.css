@@ -1,0 +1,123 @@
+/* container-type: el banner ocupa todo el ancho de la página, y ese ancho no
+   depende solo del viewport sino del sidebar (240px expandido, 64px colapsado
+   y oculto por completo en móvil). Con media queries de viewport, una ventana
+   de 768px con el sidebar abierto dejaba un banner de ~480px pero seguía
+   dibujando la mascota a tamaño de escritorio, y en cambio a 700px sin
+   sidebar la escondía teniendo sitio de sobra. */
+:host {
+  display: block;
+  container-type: inline-size;
+  container-name: greeting;
+}
+
+.greeting-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 1.5rem 1.8rem;
+  background: linear-gradient(120deg, #eaf1f8 0%, #e4f3cd 100%);
+  border: 1px solid #e3edf5;
+}
+
+/* min-width: 0 para que el texto pueda encogerse dentro del flex en vez de
+   empujar a la mascota fuera del banner cuando el nombre o el puesto son
+   largos (los nombres y cargos vienen de Entra ID y hay de todo). */
+.greeting-text {
+  z-index: 1;
+  min-width: 0;
+}
+
+.greeting-text h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #00335e;
+  letter-spacing: -0.005em;
+  overflow-wrap: break-word;
+}
+
+.greeting-sub-inline {
+  font-weight: 500;
+  color: #29527a;
+}
+
+.greeting-text p {
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: #5b7692;
+  font-weight: 500;
+  overflow-wrap: break-word;
+}
+
+.greeting-dog-wrap {
+  position: relative;
+  align-self: flex-end;
+  height: 100%;
+  width: 130px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.greeting-dog {
+  position: absolute;
+  bottom: -14px;
+  right: 6px;
+  height: 150px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 10px rgba(0, 70, 140, 0.14));
+}
+
+/* ── Banner intermedio (tablet, o escritorio con poco ancho útil) ─────────
+   Antes este rango no existía: se pasaba de la mascota a tamaño completo
+   directamente a esconderla. La mascota se queda, más chica, porque el sitio
+   da; lo que no daba era el tamaño de escritorio. */
+@container greeting (max-width: 599px) {
+  .greeting-banner {
+    gap: 0.85rem;
+    padding: 1.2rem 1.3rem;
+  }
+
+  .greeting-text h1 {
+    font-size: 19px;
+  }
+
+  .greeting-dog-wrap {
+    width: 96px;
+  }
+
+  .greeting-dog {
+    height: 112px;
+    bottom: -10px;
+    right: 0;
+  }
+}
+
+/* ── Banner compacto (móvil) ─────────────────────────────────────────────
+   Debajo de ~460px el saludo y el subtítulo ya necesitan dos líneas cada uno:
+   la mascota se va del todo para no dejar el texto en una columna de 150px. */
+@container greeting (max-width: 459px) {
+  .greeting-banner {
+    padding: 1rem 1.1rem;
+  }
+
+  .greeting-text h1 {
+    font-size: 17px;
+  }
+
+  .greeting-sub-inline {
+    display: block;
+  }
+
+  .greeting-text p {
+    font-size: 12px;
+  }
+
+  .greeting-dog-wrap {
+    display: none;
+  }
+}

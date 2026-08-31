@@ -1,0 +1,165 @@
+<div class="dossier-root">
+
+  <!-- BARRA SUPERIOR FILTROS -->
+  <div class="dossier-topbar">
+
+    @if (!isContratista()) {
+      <app-search-select
+        [options]="empresas"
+        valueField="id"
+        displayField="razonSocial"
+        [value]="empresaId"
+        placeholder="Seleccionar empresa…"
+        [allowClear]="true"
+        (valueChange)="onEmpresaChange($event)"
+      />
+    }
+
+    @if (proyectos.length > 0) {
+      <app-search-select
+        [options]="proyectos"
+        valueField="id"
+        displayField="nombre"
+        [value]="proyectoId"
+        placeholder="Seleccionar proyecto…"
+        [allowClear]="true"
+        (valueChange)="onProyectoChange($event)"
+      />
+    }
+
+    @if (loadingProyectos) {
+      <span class="loading-label"><i class="ti ti-loader-2 spin"></i> Cargando proyectos…</span>
+    }
+
+    @if (!isContratista()) {
+      <input
+        type="number"
+        min="1"
+        max="53"
+        class="input-semana"
+        placeholder="N° semana"
+        [(ngModel)]="filtroSemana"
+        (ngModelChange)="onFiltroSemanaChange()"
+      />
+    }
+
+    @if (isContratista() && proyectoId) {
+      <button type="button" class="btn-primary" (click)="abrirNuevaSemana()">
+        <i class="ti ti-plus"></i> Nueva semana
+      </button>
+    }
+  </div>
+
+  <!-- RESUMEN -->
+  @if (!isContratista() && puedeVerLista && !loadingSemanas && semanas.length > 0) {
+    <div class="dossier-resumen">
+      <span class="resumen-chip chip-orange"><i class="ti ti-clock"></i> {{ totalPorRevisar }} Por revisar</span>
+      <span class="resumen-chip chip-green"><i class="ti ti-check"></i> {{ totalRevisados }} Revisados</span>
+      <span class="resumen-chip chip-gray">{{ semanasFiltradas.length }} Total</span>
+      <span class="dossier-leyenda" title="Borrador: la contratista aún no envía la semana. Enviado: ya la envió, está pendiente de que la revises documento por documento (ícono del ojo). Con observaciones: observaste al menos un documento; la contratista debe corregirlo y reenviar. Rechazado: rechazaste toda la semana. Aprobado: todos los documentos aplicables quedaron aprobados.">
+        <i class="ti ti-info-circle"></i> ¿Qué significa cada estado?
+      </span>
+    </div>
+  }
+
+  <!-- EMPTY STATES -->
+  @if (!puedeVerLista) {
+    <div class="dossier-empty">
+      <i class="ti ti-folder-open"></i>
+      <p>Selecciona un proyecto para ver el dossier semanal.</p>
+    </div>
+  }
+
+  @if (puedeVerLista && loadingSemanas) {
+    <div class="dossier-loading"><i class="ti ti-loader-2 spin"></i> Cargando semanas…</div>
+  }
+
+  @if (puedeVerLista && !loadingSemanas && semanasFiltradas.length === 0) {
+    <div class="dossier-empty">
+      <i class="ti ti-calendar-off"></i>
+      <p>No hay semanas de dossier registradas{{ isContratista() ? ' para este proyecto' : '' }}.</p>
+    </div>
+  }
+
+  <!-- VISTA CONTRATISTA — TARJETAS -->
+  @if (isContratista() && !loadingSemanas && semanasFiltradas.length > 0) {
+    <div class="semanas-grid">
+      @for (s of semanasFiltradas; track s.id) {
+        <div class="semana-card" [class.semana-card--aprobado]="s.estado === 'Aprobado'" [class.semana-card--rechazado]="s.estado === 'Rechazado' || s.estado === 'Observado'">
+          <div class="semana-card__header">
+            <span class="semana-num">Sem {{ s.numeroSemana }}</span>
+            <span class="chip" [ngClass]="chipSemana(s.estado)">{{ labelSemana(s.estado) }}</span>
+          </div>
+          <div class="semana-fechas">{{ s.fechaInicio | date:'dd/MM' }} — {{ s.fechaFin | date:'dd/MM/yyyy' }}</div>
+
+          @if (s.obsRevisor) {
+            <div class="semana-obs"><i class="ti ti-message-circle"></i> {{ s.obsRevisor }}</div>
+          }
+
+          <div class="semana-card__footer">
+            <button type="button" class="btn-primary btn-sm" (click)="abrirUpload(s)">
+              <i class="ti ti-upload"></i> Documentos
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- VISTA ADMIN — TABLA -->
+  @if (!isContratista() && !loadingSemanas && semanasFiltradas.length > 0) {
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            @if (!empresaId) { <th>Empresa</th> }
+            @if (!proyectoId) { <th>Proyecto</th> }
+            <th>Semana</th>
+            <th>Período</th>
+            <th>Estado</th>
+            <th>Docs</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of semanasFiltradas; track s.id) {
+            <tr [class.row-rechazado]="s.estado === 'Rechazado' || s.estado === 'Observado'" [class.row-aprobado]="s.estado === 'Aprobado'">
+              @if (!empresaId) { <td>{{ s.empresaNombre }}</td> }
+              @if (!proyectoId) { <td>{{ s.proyectoNombre }}</td> }
+              <td><strong>Semana {{ s.numeroSemana }}</strong></td>
+              <td>{{ s.fechaInicio | date:'dd/MM/yy' }} — {{ s.fechaFin | date:'dd/MM/yy' }}</td>
+              <td><span class="chip" [ngClass]="chipSemana(s.estado)">{{ labelSemana(s.estado) }}</span></td>
+              <td>
+                <div class="docs-cell">
+                  <span>{{ s.docsSubidos }}/{{ s.totalDocs }} subidos</span>
+                  <span class="docs-aprobados">{{ s.docsAprobados }}/{{ s.totalDocs }} aprobados</span>
+                </div>
+              </td>
+              <td class="td-actions">
+                <button type="button" class="btn-ghost-sm" title="Ver / Revisar" (click)="abrirRevisar(s)">
+                  <i class="ti ti-eye"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+</div>
+
+<!-- MODALES -->
+@if (uploadModalSemanaId !== null) {
+  <app-dossier-upload-modal
+    [semanaId]="uploadModalSemanaId"
+    (closed)="onUploadClosed($event)">
+  </app-dossier-upload-modal>
+}
+
+@if (revisarModalSemanaId !== null) {
+  <app-dossier-revisar-modal
+    [semanaId]="revisarModalSemanaId"
+    (closed)="onRevisarClosed($event)">
+  </app-dossier-revisar-modal>
+}

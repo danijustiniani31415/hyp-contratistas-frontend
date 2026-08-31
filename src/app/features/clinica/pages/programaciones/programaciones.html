@@ -1,0 +1,108 @@
+<app-abril-page-header
+  badge="CLÍNICA"
+  titulo="Programaciones"
+  subtitulo="Historial de programaciones de la clínica."
+  [tabs]="tabs">
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="prog-root">
+
+  <!-- ── Table zone ────────────────────────────────────── -->
+  <div class="table-zone">
+    <div class="table-card">
+
+      <!-- Loading -->
+      <div class="state-row" *ngIf="loading">
+        <div class="loading-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- Vacío -->
+      <div class="state-row empty-state" *ngIf="!loading && items.length === 0">
+        <span class="empty-icon">📋</span>
+        <p class="empty-text">Sin programaciones en este rango</p>
+      </div>
+
+      <!-- Tabla -->
+      <table class="prog-table" *ngIf="!loading && items.length > 0">
+        <colgroup>
+          <col style="width:26%">
+          <col style="width:10%">
+          <col style="width:22%">
+          <col style="width:11%">
+          <col style="width:9%">
+          <col style="width:9%">
+          <col style="width:8%">
+          <col style="width:5%">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Trabajador</th>
+            <th>Tipo EMO</th>
+            <th>Empresa</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Médico</th>
+            <th>Estado</th>
+            <th>Check-in</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items">
+            <td>
+              <div class="worker-cell">
+                <span class="worker-name">{{ item.workerNombre }}</span>
+                <span class="worker-dni">{{ item.workerDni }}</span>
+              </div>
+            </td>
+            <td class="td-cell">{{ item.tipoEmo }}</td>
+            <td class="td-cell">{{ item.empresa }}</td>
+            <td class="td-cell">{{ item.fechaProgramada | date:'dd/MM/yyyy' }}</td>
+            <td class="td-cell">{{ item.horaProgramada ?? '—' }}</td>
+            <td class="td-cell" [class.td-empty-val]="!item.medico">
+              {{ item.medico ?? '—' }}
+            </td>
+            <td>
+              <span class="estado-badge" [ngClass]="estadoClass(item.estado)">
+                <ng-container *ngIf="item.estado === 'Completado'">✓ </ng-container>
+                {{ item.estado }}
+              </span>
+            </td>
+            <td class="td-cell td-checkin">{{ item.checkInHora ?? '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Modal de filtros ─────────────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full abril-field">
+    <input type="date" id="prog-desde" class="abril-field-input" placeholder=" "
+      [(ngModel)]="filtroDesde" (ngModelChange)="load()" />
+    <label class="abril-field-label" for="prog-desde">Desde</label>
+  </div>
+
+  <div class="w-full abril-field">
+    <input type="date" id="prog-hasta" class="abril-field-input" placeholder=" "
+      [(ngModel)]="filtroHasta" (ngModelChange)="load()" />
+    <label class="abril-field-label" for="prog-hasta">Hasta</label>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtroEstado"
+      placeholder="Todos"
+      (valueChange)="filtroEstado = $event; load()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

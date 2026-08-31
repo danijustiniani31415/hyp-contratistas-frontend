@@ -1,0 +1,913 @@
+<div class="page-wrapper">
+
+  <app-abril-page-header
+    badge="SSOMA"
+    titulo="Amonestaciones y Suspensiones"
+    subtitulo="Registro y seguimiento de amonestaciones e inhabilitaciones"
+    [tabs]="headerTabs"
+    [hasExtra]="tab === 'lista'"
+    (tabClick)="onTabClick($event)">
+    @if (tab === 'lista') {
+      <app-filter-trigger tabsExtra [count]="filtrosListaActivos" (open)="filtrosListaAbiertos = true" />
+    }
+  </app-abril-page-header>
+
+  <div class="page-body">
+  <!-- ── TAB DASHBOARD ─────────────────────────────────────────── -->
+  @if (tab === 'dashboard') {
+    @if (loadingDashboard) {
+      <div class="loading-state">Cargando dashboard…</div>
+    } @else if (dashboard) {
+
+      <!-- KPI Cards — fila compacta -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon"><i class="ti ti-clipboard-list"></i></div>
+          <div class="kpi-value">{{ dashboard.totalAmonestaciones }}</div>
+          <div class="kpi-label">Total amonestaciones</div>
+        </div>
+        <div class="kpi-card kpi-warning">
+          <div class="kpi-icon"><i class="ti ti-calendar-month"></i></div>
+          <div class="kpi-value">{{ dashboard.amonestacionesMesActual }}</div>
+          <div class="kpi-label">Este mes</div>
+        </div>
+        <div class="kpi-card kpi-orange">
+          <div class="kpi-icon"><i class="ti ti-alert-triangle"></i></div>
+          <div class="kpi-value">{{ dashboard.trabajadoresConMas5Puntos }}</div>
+          <div class="kpi-label">Trabajadores &gt;5 puntos</div>
+        </div>
+        <div class="kpi-card kpi-danger">
+          <div class="kpi-icon"><i class="ti ti-ban"></i></div>
+          <div class="kpi-value">{{ dashboard.trabajadoresInhabilitados }}</div>
+          <div class="kpi-label">Inhabilitados</div>
+        </div>
+        <div class="kpi-card kpi-warning">
+          <div class="kpi-icon"><i class="ti ti-file-pencil"></i></div>
+          <div class="kpi-value">{{ dashboard.borradorPendientes }}</div>
+          <div class="kpi-label">Borradores pendientes</div>
+        </div>
+        <div class="kpi-card kpi-orange">
+          <div class="kpi-icon"><i class="ti ti-signature"></i></div>
+          <div class="kpi-value">{{ dashboard.pendientesCierre }}</div>
+          <div class="kpi-label">Pendientes de firma</div>
+        </div>
+        <div class="kpi-card kpi-blue">
+          <div class="kpi-icon"><i class="ti ti-clipboard-check"></i></div>
+          <div class="kpi-value">{{ dashboard.amonestacionesRegistradas }}</div>
+          <div class="kpi-label">Registradas</div>
+        </div>
+        <div class="kpi-card kpi-green">
+          <div class="kpi-icon"><i class="ti ti-circle-check"></i></div>
+          <div class="kpi-value">{{ dashboard.amonestacionesCerradas }}</div>
+          <div class="kpi-label">Cerradas (firma recibida)</div>
+        </div>
+      </div>
+
+      <!-- Panel principal: Matriz + Tendencia -->
+      <div class="dash-main">
+
+        <!-- Matriz proyecto × tipo -->
+        <div class="chart-card dash-matriz">
+          <div class="chart-title">Amonestaciones por proyecto y tipo</div>
+
+          <!-- Leyenda de tipos -->
+          <div class="tipo-leyenda">
+            @for (t of tiposUnicos; track t; let i = $index) {
+              <span class="tipo-dot" [style.background]="colorTipo(i)"></span>
+              <span class="tipo-dot-label">{{ t }}</span>
+            }
+          </div>
+
+          @if (dashboard.matrizProyecto.length === 0) {
+            <div class="empty-chart">Sin datos</div>
+          } @else {
+            <table class="matriz-table">
+              <thead>
+                <tr>
+                  <th class="col-proyecto">Proyecto</th>
+                  @for (t of tiposUnicos; track t) {
+                    <th class="col-tipo">{{ t }}</th>
+                  }
+                  <th class="col-total">Total</th>
+                  <th class="col-barra"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of dashboard.matrizProyecto; track p.proyectoNombre) {
+                  <tr>
+                    <td class="col-proyecto">{{ p.proyectoNombre }}</td>
+                    @for (t of tiposUnicos; track t; let i = $index) {
+                      <td class="col-tipo" [class.celda-vacia]="totalPorTipoEnProyecto(p, t) === 0">
+                        @if (totalPorTipoEnProyecto(p, t) > 0) {
+                          <span class="celda-badge" [style.background]="colorTipo(i) + '22'"
+                                [style.color]="colorTipo(i)">
+                            {{ totalPorTipoEnProyecto(p, t) }}
+                          </span>
+                        } @else { — }
+                      </td>
+                    }
+                    <td class="col-total"><strong>{{ p.total }}</strong></td>
+                    <td class="col-barra">
+                      <div class="matriz-bar-track">
+                        @for (t of tiposUnicos; track t; let i = $index) {
+                          @if (totalPorTipoEnProyecto(p, t) > 0) {
+                            <div class="matriz-bar-seg"
+                                 [style.width]="anchoBarra(totalPorTipoEnProyecto(p, t), p)"
+                                 [style.background]="colorTipo(i)"
+                                 [title]="t + ': ' + totalPorTipoEnProyecto(p, t)">
+                            </div>
+                          }
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+
+        <!-- Tendencia por proyecto — 12 meses fijos -->
+        <div class="chart-card dash-tendencia">
+          <div class="chart-title">Evolución por proyecto {{ tendenciaAnio }}</div>
+
+          <!-- Leyenda proyectos -->
+          <div class="tipo-leyenda">
+            @for (p of proyectosUnicos; track p; let i = $index) {
+              <span class="tipo-dot" [style.background]="colorTipo(i)"></span>
+              <span class="tipo-dot-label">{{ p }}</span>
+            }
+          </div>
+
+          <div class="tend-chart">
+            @for (m of dashboard.tendenciaMeses; track m.mes) {
+              <div class="tend-col">
+                <div class="tend-count">{{ m.total || '' }}</div>
+                <div class="tend-bars">
+                  @if (m.total === 0) {
+                    <div class="tend-bar-empty"></div>
+                  } @else {
+                    @for (p of proyectosUnicos; track p; let i = $index) {
+                      @if (totalPorProyectoEnMes(m, p) > 0) {
+                        <div class="tend-bar-seg"
+                             [style.height.%]="(totalPorProyectoEnMes(m, p) / maxTendencia) * 100"
+                             [style.background]="colorTipo(i)"
+                             [title]="p + ': ' + totalPorProyectoEnMes(m, p)">
+                        </div>
+                      }
+                    }
+                  }
+                </div>
+                <div class="tend-label">{{ MESES[m.mes] }}</div>
+              </div>
+            }
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Últimos sancionados -->
+      @if (dashboard.ultimosSancionados.length > 0) {
+        <div class="chart-card" style="margin-top:12px">
+          <div class="chart-title">Últimos trabajadores sancionados</div>
+          <table class="matriz-table">
+            <thead>
+              <tr>
+                <th style="text-align:left">Trabajador</th>
+                <th style="text-align:left">Empresa</th>
+                <th style="text-align:left">Proyecto</th>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Pts</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (s of dashboard.ultimosSancionados; track s.id) {
+                <tr style="cursor:pointer" (click)="verDetalle(s.id)">
+                  <td style="text-align:left">
+                    <div class="worker-cell">
+                      <span>{{ s.workerNombre }}</span>
+                      <small>{{ s.workerDni }}</small>
+                    </div>
+                  </td>
+                  <td style="text-align:left;font-size:11px">{{ s.empresaNombre }}</td>
+                  <td style="text-align:left;font-size:11px">{{ s.proyectoNombre }}</td>
+                  <td>{{ s.fecha | date:'dd/MM/yy' }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="nivelColor(s.nivelGravedad)">{{ s.tipoSancionNombre }}</span>
+                  </td>
+                  <td class="puntos-cell">{{ s.puntosInfraccion }}</td>
+                  <td>
+                    <span class="estado-badge" [ngClass]="estadoClass(s.estado)">{{ estadoLabel(s.estado) }}</span>
+                  </td>
+                  <td><button class="btn-ver" (click)="verDetalle(s.id);$event.stopPropagation()">Ver</button></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+    } @else {
+      <div class="empty-state">No hay datos disponibles.</div>
+    }
+  }
+
+  <!-- ── TAB LISTA ─────────────────────────────────────────────── -->
+  @if (tab === 'lista') {
+
+    @if (loadingLista) {
+      <div class="loading-state">Cargando…</div>
+    } @else if (lista.length === 0) {
+      <div class="empty-state">No se encontraron amonestaciones.</div>
+    } @else {
+      <div class="table-wrapper abril-table-wrap">
+        <table class="abril-table data-table">
+          <thead class="sticky top-0 z-10">
+            <tr>
+              <th>Código</th>
+              <th>Fecha</th>
+              <th>Trabajador</th>
+              <th>Empresa</th>
+              <th>Proyecto</th>
+              <th>Tipo sanción</th>
+              <th>Pts</th>
+              <th>Penalización</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of lista; track a.id) {
+              <tr>
+                <td><code>{{ a.codigo }}</code></td>
+                <td>{{ a.fecha | date:'dd/MM/yyyy' }}</td>
+                <td>
+                  <div class="worker-cell">
+                    <span>{{ a.workerNombre }}</span>
+                    <small>{{ a.workerDni }}</small>
+                  </div>
+                </td>
+                <td>{{ a.empresaNombre }}</td>
+                <td>{{ a.proyectoNombre }}</td>
+                <td>
+                  <span class="badge" [ngClass]="nivelColor(a.nivelGravedad)">
+                    {{ a.tipoSancionNombre }}
+                  </span>
+                </td>
+                <td class="puntos-cell">{{ a.puntosInfraccion }}</td>
+                <td>
+                  @if (a.aplicaPenalizacion) {
+                    <span class="monto">S/ {{ a.montoCalculado | number:'1.2-2' }}</span>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td>
+                  <span class="estado-badge" [ngClass]="estadoClass(a.estado)">{{ estadoLabel(a.estado) }}</span>
+                </td>
+                <td class="td-acciones">
+                  <button class="btn-fotos"
+                          [class.btn-fotos--active]="fotosExpandidoId === a.id"
+                          [class.btn-fotos--loading]="loadingFotosId === a.id"
+                          (click)="toggleFotosRow(a.id, $event)"
+                          title="Ver imágenes">
+                    <i class="ti" [class.ti-camera]="loadingFotosId !== a.id" [class.ti-loader-2]="loadingFotosId === a.id"></i>
+                  </button>
+                  <button class="btn-ver" (click)="verDetalle(a.id)">Ver</button>
+                </td>
+              </tr>
+              @if (fotosExpandidoId === a.id) {
+                <tr class="fotos-row">
+                  <td colspan="10">
+                    @if (!fotosCache.get(a.id)?.length) {
+                      <span class="fotos-empty"><i class="ti ti-photo-off"></i> Sin imágenes adjuntas</span>
+                    } @else {
+                      <div class="fotos-strip">
+                        @for (f of fotosCache.get(a.id)!; track f.id) {
+                          <div class="foto-link" (click)="abrirFoto(f)" title="Ver imagen">
+                            <img [src]="fotoSrc(f)" [alt]="f.nombreArchivo ?? 'Evidencia'" class="foto-thumb" loading="lazy" />
+                          </div>
+                        }
+                      </div>
+                    }
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      <div class="shrink-0 max-w-[440px]">
+        <app-paginator
+          [totalRecords]="totalLista"
+          [currentPage]="query.page ?? 1"
+          [totalPages]="totalPaginas"
+          (pageChange)="cambiarPagina($event)">
+        </app-paginator>
+      </div>
+    }
+  }
+
+  <!-- ── TAB PUNTAJE ────────────────────────────────────────────── -->
+  @if (tab === 'puntaje') {
+
+    <div class="puntaje-search-area">
+      <div class="form-group">
+        <label>Buscar trabajador</label>
+        <div class="search-wrapper">
+          <input type="text" class="form-control"
+                 [ngModel]="puntajeQuery"
+                 (ngModelChange)="onPuntajeQueryChange($event)"
+                 placeholder="Nombre o DNI del trabajador…" />
+        </div>
+        @if (puntajeSearching) { <div class="search-hint">Buscando…</div> }
+        @if (puntajeResults.length > 0) {
+          <ul class="search-dropdown">
+            @for (w of puntajeResults; track w.id) {
+              <li (click)="selectPuntajeWorker(w)" [class.inhabilitado]="w.inhabilitadoSsoma">
+                <span class="worker-name">{{ w.apellidoNombre }}</span>
+                <span class="worker-meta">DNI: {{ w.dni }} | {{ w.empresaActual }}</span>
+                @if (w.inhabilitadoSsoma) {
+                  <span class="badge-inhabilitado">INHABILITADO</span>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+
+    @if (loadingPuntaje) {
+      <div class="loading-state">Cargando puntaje…</div>
+    } @else if (puntajeDto) {
+
+      <div class="puntaje-card" [class.puntaje-card--inhabilitado]="puntajeDto.inhabilitado">
+
+        @if (puntajeDto.inhabilitado) {
+          <div class="inhabilitado-banner">
+            ⚠ TRABAJADOR INHABILITADO — acumuló {{ puntajeDto.puntosAcumulados }}/10 puntos
+          </div>
+        }
+
+        <div class="puntaje-info-grid">
+          <div><label>Nombre</label><span>{{ puntajeDto.nombre }}</span></div>
+          <div><label>DNI</label><span>{{ puntajeDto.dni }}</span></div>
+          <div><label>Empresa</label><span>{{ puntajeDto.empresaNombre }}</span></div>
+        </div>
+
+        <div class="puntaje-bar-area">
+          <div class="puntaje-bar-header">
+            <span>Puntaje acumulado</span>
+            <strong [style.color]="puntajeBarColor">{{ puntajeDto.puntosAcumulados }} / 10</strong>
+          </div>
+          <div class="puntaje-bar-track">
+            <div class="puntaje-bar-fill"
+                 [style.width]="puntajeBarWidth"
+                 [style.background]="puntajeBarColor"></div>
+          </div>
+          <div class="puntaje-bar-ticks">
+            @for (n of [0,1,2,3,4,5,6,7,8,9,10]; track n) {
+              <span>{{ n }}</span>
+            }
+          </div>
+        </div>
+
+        @if (puntajeDto.historial.length > 0) {
+          <div class="historial-title">Historial de amonestaciones</div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr><th>Código</th><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Motivo / Falta</th><th>Pts</th><th>Penaliz.</th></tr>
+              </thead>
+              <tbody>
+                @for (h of puntajeDto.historial; track h.id) {
+                  <tr style="cursor:pointer" (click)="verDetalle(h.id)">
+                    <td><code>{{ h.codigo }}</code></td>
+                    <td>{{ h.fecha | date:'dd/MM/yyyy' }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="nivelColor(h.nivelGravedad)">{{ h.tipoSancionNombre }}</span>
+                    </td>
+                    <td style="font-size:11px;color:#6b7280">{{ h.infraccionTipoNombre || '—' }}</td>
+                    <td class="motivo-cell" [title]="h.descripcion">{{ h.descripcion || '—' }}</td>
+                    <td class="puntos-cell">{{ h.puntosInfraccion }}</td>
+                    <td>
+                      @if (h.aplicaPenalizacion) {
+                        S/ {{ h.montoCalculado | number:'1.2-2' }}
+                      } @else { — }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-state" style="margin-top:12px">Sin historial de amonestaciones.</div>
+        }
+      </div>
+    }
+  }
+
+
+  <!-- ── TAB ESCUELITA ABRIL ──────────────────────────────────────── -->
+  @if (tab === 'escuelita') {
+
+    <div class="escuelita-layout">
+
+      <!-- Panel izquierdo: formulario de registro -->
+      <div class="chart-card escuelita-form-card">
+        <div class="chart-title">Registrar curso de Escuelita Abril</div>
+
+        <!-- Buscador de trabajador -->
+        <div class="form-group">
+          <label class="escuelita-label">Trabajador</label>
+          <div class="search-wrapper">
+            <input type="text" class="form-control"
+                   [ngModel]="escuelitaWorkerQuery"
+                   (ngModelChange)="onEscuelitaQueryChange($event)"
+                   placeholder="Buscar por nombre o DNI…" />
+          </div>
+          @if (escuelitaSearching) { <div class="search-hint">Buscando…</div> }
+          @if (escuelitaWorkerResults.length > 0) {
+            <ul class="search-dropdown">
+              @for (w of escuelitaWorkerResults; track w.id) {
+                <li (click)="selectEscuelitaWorker(w)" [class.inhabilitado]="w.inhabilitadoSsoma">
+                  <span class="worker-name">{{ w.apellidoNombre }}</span>
+                  <span class="worker-meta">DNI: {{ w.dni }} | {{ w.empresaActual }}</span>
+                  @if (w.inhabilitadoSsoma) {
+                    <span class="badge-inhabilitado">INHABILITADO SSOMA</span>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        @if (escuelitaWorkerSelected) {
+          <!-- Estado actual del trabajador -->
+          <div class="escuelita-worker-estado">
+            <div class="escuelita-worker-nombre">{{ escuelitaWorkerSelected.apellidoNombre }}</div>
+            @if (escuelitaPuntosNetos !== null) {
+              <div class="escuelita-puntos-badge"
+                   [style.background]="escuelitaWorkerSelected.inhabilitadoSsoma ? '#fee2e2' : '#f0fdf4'"
+                   [style.color]="escuelitaWorkerSelected.inhabilitadoSsoma ? '#dc2626' : '#16a34a'">
+                @if (escuelitaWorkerSelected.inhabilitadoSsoma) {
+                  <i class="ti ti-lock"></i> INHABILITADO — {{ escuelitaPuntosNetos }} pts netos
+                } @else {
+                  <i class="ti ti-check"></i> Activo — {{ escuelitaPuntosNetos }} pts netos
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Formulario -->
+          <div class="form-group">
+            <label class="escuelita-label">Fecha del curso</label>
+            <input type="date" class="form-control" [(ngModel)]="escuelitaFecha" />
+          </div>
+          <div class="form-group">
+            <label class="escuelita-label">Puntos a descontar</label>
+            <input type="number" class="form-control" [(ngModel)]="escuelitaPuntos"
+                   min="1" max="10" placeholder="Ej. 2" />
+          </div>
+          <div class="form-group">
+            <label class="escuelita-label">Observaciones</label>
+            <textarea class="form-control" [(ngModel)]="escuelitaObs" rows="2"
+                      placeholder="Detalles del curso…"></textarea>
+          </div>
+
+          <button class="btn-filtrar" style="width:100%"
+                  [disabled]="!escuelitaCanSubmit"
+                  (click)="registrarEscuelita()">
+            @if (escuelitaGuardando) { Registrando… } @else { Registrar curso }
+          </button>
+        }
+      </div>
+
+      <!-- Panel derecho: historial de cursos -->
+      <div class="chart-card escuelita-historial-card">
+        <div class="chart-title">Historial de Escuelita Abril</div>
+
+        @if (!escuelitaWorkerSelected) {
+          <div class="empty-state">Selecciona un trabajador para ver su historial.</div>
+        } @else if (escuelitaLoadingHistorial) {
+          <div class="loading-state">Cargando historial…</div>
+        } @else if (escuelitaHistorial.length === 0) {
+          <div class="empty-state">Este trabajador no ha realizado cursos de Escuelita.</div>
+        } @else {
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Pts descontados</th>
+                <th>Pts netos tras curso</th>
+                <th>Estado tras curso</th>
+                <th>Observaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of escuelitaHistorial; track e.id) {
+                <tr>
+                  <td>{{ e.fecha | date:'dd/MM/yyyy' }}</td>
+                  <td class="puntos-cell" style="color:#16a34a">-{{ e.puntosDescontados }}</td>
+                  <td class="puntos-cell">{{ e.puntosNetos }}</td>
+                  <td>
+                    <span class="estado-badge"
+                          [class.estado-cerrada]="!e.inhabilitado"
+                          [class.estado-registrada]="e.inhabilitado">
+                      {{ e.inhabilitado ? 'Inhabilitado' : 'Activo' }}
+                    </span>
+                  </td>
+                  <td style="font-size:11px;color:#6b7280">{{ e.observaciones || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+
+    </div>
+  }
+
+  <!-- ── TAB INHABILITADOS ───────────────────────────────────────── -->
+  @if (tab === 'inhabilitados' && puedeVerInhabilitados) {
+
+    <div class="escuelita-layout">
+
+      <!-- Panel izquierdo: formulario inhabilitación manual -->
+      <div class="chart-card escuelita-form-card">
+        <div class="chart-title">Agregar a lista negra</div>
+
+        <!-- Toggle modo -->
+        <div class="inhab-modo-toggle">
+          <button [class.active]="!inhabModoManual" (click)="inhabModoManual = false">
+            <i class="ti ti-search"></i> Buscar en sistema
+          </button>
+          <button [class.active]="inhabModoManual" (click)="inhabModoManual = true; inhabWorkerSelected = null; inhabWorkerQuery = ''">
+            <i class="ti ti-keyboard"></i> Ingresar DNI manualmente
+          </button>
+        </div>
+
+        @if (!inhabModoManual) {
+          <!-- Modo búsqueda en sistema -->
+          <div class="form-group">
+            <label class="escuelita-label">Buscar trabajador</label>
+            <div class="search-wrapper">
+              <input type="text" class="form-control"
+                     [ngModel]="inhabWorkerQuery"
+                     (ngModelChange)="onInhabQueryChange($event)"
+                     placeholder="Nombre o DNI…" />
+            </div>
+            @if (inhabSearching) { <div class="search-hint">Buscando…</div> }
+            @if (inhabWorkerResults.length > 0) {
+              <ul class="search-dropdown">
+                @for (w of inhabWorkerResults; track w.id) {
+                  <li (click)="selectInhabWorker(w)">
+                    <span class="worker-name">{{ w.apellidoNombre }}</span>
+                    <span class="worker-meta">DNI: {{ w.dni }} | {{ w.empresaActual }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+          @if (inhabWorkerSelected) {
+            <div class="escuelita-worker-estado">
+              <div class="escuelita-worker-nombre">{{ inhabWorkerSelected.apellidoNombre }}</div>
+              <div style="font-size:12px;color:#6b7280">DNI: {{ inhabWorkerSelected.dni }} · {{ inhabWorkerSelected.empresaActual }}</div>
+            </div>
+          }
+        } @else {
+          <!-- Modo ingreso manual (trabajador no existe en el sistema) -->
+          <div class="form-group">
+            <label class="escuelita-label">DNI <span style="color:#dc2626">*</span></label>
+            <input type="text" class="form-control" [(ngModel)]="inhabDniManual"
+                   placeholder="Ej: 12345678" maxlength="8" />
+          </div>
+          <div class="form-group">
+            <label class="escuelita-label">Apellidos y nombres <span style="color:#dc2626">*</span></label>
+            <input type="text" class="form-control" [(ngModel)]="inhabNombreManual"
+                   placeholder="Ej: GARCIA LOPEZ, JUAN" />
+          </div>
+        }
+
+        <div class="form-group" style="margin-top:10px">
+          <label class="escuelita-label">Motivo <span style="color:#dc2626">*</span></label>
+          <textarea class="form-control" rows="3" [(ngModel)]="inhabMotivo"
+                    placeholder="Describa el motivo de la restricción…" style="resize:vertical"></textarea>
+        </div>
+
+        <button class="btn-submit" [disabled]="!inhabCanSubmit" (click)="inhabilitarManual()">
+          @if (inhabGuardando) { Guardando… } @else { Agregar a lista negra }
+        </button>
+      </div>
+
+      <!-- Panel derecho: lista de inhabilitados activos -->
+      <div class="chart-card" style="overflow:hidden">
+        <div class="chart-title" style="display:flex;align-items:center;justify-content:space-between">
+          Lista de inhabilitados activos
+          <button class="btn-refresh" (click)="loadInhabilitados()" title="Recargar">
+            <i class="ti ti-refresh"></i>
+          </button>
+        </div>
+
+        <div class="form-group" style="padding:0 12px;margin-top:8px">
+          <div class="search-wrapper">
+            <input type="text" class="form-control"
+                   [(ngModel)]="inhabFiltroLista"
+                   placeholder="Buscar trabajador por nombre o DNI…" />
+          </div>
+        </div>
+
+        @if (loadingInhabilitados) {
+          <div class="search-hint">Cargando lista…</div>
+        } @else if (inhabilitadosFiltrados.length === 0) {
+          <div class="empty-state">No se encontraron trabajadores inhabilitados con ese criterio.</div>
+        } @else {
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Trabajador</th>
+                  <th>DNI</th>
+                  <th>Proyecto origen</th>
+                  <th>Motivo</th>
+                  <th>Restringido por</th>
+                  <th>Fecha</th>
+                  <th>Estado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (inh of inhabilitadosFiltrados; track inh.id) {
+                  <tr [class.row-inactivo]="!inh.activo">
+                    <td class="nombre-cell">{{ inh.apellidoNombre || '—' }}</td>
+                    <td><code>{{ inh.dni || '—' }}</code></td>
+                    <td style="font-size:11px">{{ inh.proyectoOrigen || '—' }}</td>
+                    <td class="motivo-cell" style="max-width:200px">{{ inh.motivo }}</td>
+                    <td style="font-size:11px">{{ inh.restringidoPor || '—' }}</td>
+                    <td style="font-size:11px">{{ inh.fechaRestriccion ? (inh.fechaRestriccion | date:'dd/MM/yyyy') : '—' }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="inh.activo ? 'badge-critico' : 'badge-bajo'">
+                        {{ inh.activo ? 'Activo' : 'Inactivo' }}
+                      </span>
+                    </td>
+                    <td>
+                      @if (inh.activo && puedeBorrarInhabilitado) {
+                        <button class="btn-action btn-danger-sm"
+                                [disabled]="inhabDesbloqueandoId === inh.id"
+                                (click)="desbloquearInhab(inh.id)"
+                                title="Borrar de lista negra">
+                          @if (inhabDesbloqueandoId === inh.id) { … } @else {
+                            <i class="ti ti-trash"></i>
+                          }
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+    </div>
+  }
+
+  </div><!-- /page-body -->
+
+  <!-- ── MODAL DETALLE / PDF INLINE ────────────────────────────── -->
+  @if (detalleVisible) {
+    <div class="det-overlay" (click)="cerrarDetalle()">
+      <div class="det-panel" (click)="$event.stopPropagation()">
+
+        <!-- Cabecera -->
+        <div class="det-header">
+          <div class="det-header-left">
+            @if (detalle) {
+              <code class="det-codigo">{{ detalle.codigo }}</code>
+              <span class="badge" [ngClass]="nivelColor(detalle.nivelGravedad)">{{ detalle.tipoSancionNombre }}</span>
+            } @else {
+              <span class="det-loading-title">Cargando…</span>
+            }
+          </div>
+          <button class="det-close" (click)="cerrarDetalle()"><i class="ti ti-x"></i></button>
+        </div>
+
+        @if (loadingDetalle) {
+          <div class="det-loading">Cargando detalle…</div>
+        } @else if (detalle) {
+
+          <div class="det-body">
+            <!-- Info rápida -->
+            <div class="det-info-grid">
+              <div><label>Trabajador</label><span>{{ detalle.workerNombre }}</span></div>
+              <div><label>DNI</label><span>{{ detalle.workerDni }}</span></div>
+              <div><label>Empresa</label><span>{{ detalle.empresaNombre }}</span></div>
+              <div><label>Proyecto</label><span>{{ detalle.proyectoNombre }}</span></div>
+              <div><label>Fecha</label><span>{{ detalle.fecha | date:'dd/MM/yyyy' }}</span></div>
+              <div><label>Puntos</label><span>{{ detalle.puntosInfraccion }} pt (acum. {{ detalle.puntosAcumulados }})</span>
+                @if (puedeEditarAmonestacion && !editando) {
+                  <button class="btn-ver" style="margin-left:8px" (click)="abrirEdicion()" title="Corregir puntos/motivo">
+                    <i class="ti ti-edit"></i> Corregir
+                  </button>
+                }
+              </div>
+              @if (detalle.aplicaPenalizacion) {
+                <div><label>Penalización</label><span class="monto">S/ {{ detalle.montoCalculado | number:'1.2-2' }}</span></div>
+              }
+              @if (detalle.diasSuspension) {
+                <div><label>Suspensión</label><span>{{ detalle.diasSuspension }} días ({{ detalle.fechaInicioSuspension | date:'dd/MM/yy' }} – {{ detalle.fechaFinSuspension | date:'dd/MM/yy' }})</span></div>
+              }
+            </div>
+
+            <div class="det-desc"><label>Descripción</label><p>{{ detalle.descripcion }}</p></div>
+
+            @if (editando) {
+              <div class="det-cierre-area" style="border-color:#f59e0b">
+                <div class="det-cierre-title"><i class="ti ti-edit"></i> Corregir amonestación</div>
+                <p class="det-cierre-desc">
+                  Solo para errores de captura. El cambio queda registrado en el historial del trabajador
+                  y puede desbloquearlo o bloquearlo automáticamente si sus puntos netos cambian de umbral.
+                </p>
+                <div class="form-group">
+                  <label class="escuelita-label">Puntos por infracción</label>
+                  <input type="number" class="form-control" [(ngModel)]="editPuntos" min="0" max="10" />
+                </div>
+                <div class="form-group">
+                  <label class="escuelita-label">Descripción</label>
+                  <textarea class="form-control" rows="3" [(ngModel)]="editDescripcion"></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="escuelita-label">Motivo de la corrección <span style="color:#dc2626">*</span></label>
+                  <textarea class="form-control" rows="2" [(ngModel)]="editMotivoEdicion"
+                            placeholder="Por qué se corrige (mínimo 10 caracteres) — queda en auditoría"></textarea>
+                </div>
+                <div class="det-cierre-row">
+                  <button class="btn-ver" (click)="cancelarEdicion()">Cancelar</button>
+                  <button class="det-cierre-btn" [disabled]="!puedeGuardarEdicion" (click)="guardarEdicion()">
+                    @if (guardandoEdicion) { Guardando… } @else { Guardar corrección }
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- Evidencias fotográficas -->
+            @if (detalle.fotos?.length) {
+              <div class="det-fotos-area">
+                <div class="det-fotos-label">
+                  <i class="ti ti-camera"></i> Evidencias fotográficas ({{ detalle.fotos.length }})
+                </div>
+                <div class="det-fotos-grid">
+                  @for (f of detalle.fotos; track f.id) {
+                    <div class="det-foto-link">
+                      <img [src]="fotoSrc(f)" [alt]="f.nombreArchivo ?? 'Evidencia'" class="det-foto-img" loading="lazy" />
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- PDF inline -->
+            @if (loadingPdf) {
+              <div class="det-loading">Cargando PDF…</div>
+            } @else if (pdfSrc) {
+              <div class="det-pdf-area">
+                <div class="det-pdf-toolbar">
+                  <span class="det-pdf-label"><i class="ti ti-file-type-pdf"></i> Documento</span>
+                  @if (pdfApiUrl) {
+                    <a class="det-pdf-link" [href]="pdfApiUrl" target="_blank" rel="noopener">
+                      <i class="ti ti-external-link"></i> Abrir en nueva pestaña
+                    </a>
+                  }
+                </div>
+                <iframe
+                  class="det-pdf-frame"
+                  [src]="pdfSrc"
+                  title="Amonestación PDF"
+                  frameborder="0">
+                </iframe>
+              </div>
+            } @else {
+              <div class="det-no-pdf">
+                <i class="ti ti-file-off"></i> PDF no disponible
+              </div>
+            }
+
+            <!-- ── CONFIRMAR BORRADOR ─────────────────────────── -->
+            @if (detalle.estado === 'Borrador') {
+              <div class="det-cierre-area">
+                <div class="det-cierre-title">
+                  <i class="ti ti-send"></i> Borrador pendiente de confirmación
+                </div>
+                <p class="det-cierre-desc">
+                  Al confirmar se generará el PDF, se subirán las fotos y se enviará el correo a los destinatarios.
+                </p>
+                <button class="det-cierre-btn"
+                        [disabled]="confirmando"
+                        (click)="confirmarAmonestacion()">
+                  @if (confirmando) { Confirmando… } @else { Confirmar y generar papeleta }
+                </button>
+              </div>
+            }
+
+            <!-- ── CIERRE ──────────────────────────────────────── -->
+            @if (detalle.estado === 'Cerrada') {
+              <div class="det-cierre-ok">
+                <i class="ti ti-circle-check-filled"></i>
+                <div>
+                  <strong>Amonestación cerrada</strong>
+                  <span>{{ detalle.fechaCierre | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+                @if (detalle.documentoFirmadoUrl) {
+                  <a class="det-pdf-link" [href]="detalle.documentoFirmadoUrl" target="_blank" rel="noopener">
+                    <i class="ti ti-external-link"></i> Ver firmado
+                  </a>
+                }
+              </div>
+            } @else {
+              <div class="det-cierre-area">
+                <div class="det-cierre-title">
+                  <i class="ti ti-signature"></i> Cerrar amonestación
+                </div>
+                <p class="det-cierre-desc">
+                  Adjunta la foto o escaneo de la papeleta firmada por el trabajador para cerrar el ciclo.
+                </p>
+                <div class="det-cierre-row">
+                  <label class="det-cierre-file-btn">
+                    <i class="ti ti-upload"></i>
+                    {{ archivoFirmado ? archivoFirmado.name : 'Seleccionar archivo…' }}
+                    <input type="file" accept="image/*,.pdf" (change)="onArchivoFirmadoChange($event)" hidden />
+                  </label>
+                  <button class="det-cierre-btn"
+                          [disabled]="!archivoFirmado || cerrando"
+                          (click)="cerrarAmonestacion()">
+                    @if (cerrando) { Cerrando… } @else { Cerrar amonestación }
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <app-fab label="Generar amonestación" (clicked)="nuevaAmonestacion()"></app-fab>
+</div>
+
+@if (filtrosListaAbiertos) {
+  <app-filter-modal (closeModal)="filtrosListaAbiertos = false" (clear)="limpiarFiltros()">
+    <div class="w-full">
+      <app-search-input
+        placeholder="Buscar por DNI o nombre..."
+        [(value)]="filtroWorkerSearch"
+        (valueChange)="filtrar()"
+        width="100%">
+      </app-search-input>
+    </div>
+
+    <div class="w-full">
+      <app-search-input
+        placeholder="Buscar por empresa..."
+        [(value)]="filtroEmpresa"
+        (valueChange)="filtrar()"
+        width="100%">
+      </app-search-input>
+    </div>
+
+    <div class="w-full">
+      <app-search-select
+        label="Proyecto"
+        [options]="proyectos"
+        valueField="id"
+        displayField="nombre"
+        [value]="filtroProyectoId"
+        (valueChange)="filtroProyectoId = $event; filtrar()"
+        placeholder="Todos los proyectos">
+      </app-search-select>
+    </div>
+
+    <div class="flex gap-3">
+      <div class="flex-1">
+        <label class="abril-label">Desde</label>
+        <input type="date" class="abril-input" [(ngModel)]="filtroFechaDesde" (change)="filtrar()" />
+      </div>
+      <div class="flex-1">
+        <label class="abril-label">Hasta</label>
+        <input type="date" class="abril-input" [(ngModel)]="filtroFechaHasta" (change)="filtrar()" />
+      </div>
+    </div>
+  </app-filter-modal>
+}
+
+@if (fotoLightbox) {
+  <div class="lightbox-overlay" (click)="cerrarLightbox()">
+    <button class="lightbox-close" (click)="cerrarLightbox()"><i class="ti ti-x"></i></button>
+    <img class="lightbox-img" [src]="fotoLightbox" alt="Evidencia" (click)="$event.stopPropagation()" />
+  </div>
+}

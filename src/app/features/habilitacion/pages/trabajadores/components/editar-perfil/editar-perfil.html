@@ -1,0 +1,111 @@
+<app-base-modal *ngIf="open" [title]="title" width="w-[680px]" (closeModal)="close()">
+  <div class="form-wrapper">
+
+    <div *ngIf="loadingDetalle" class="loading-row">Cargando datos del trabajador…</div>
+
+    <div class="grid-2" *ngIf="!loadingDetalle">
+
+      <div class="col-span-2">
+        <label class="field-label">Apellido y Nombre *</label>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="model.apellidoNombre"
+          name="apellidoNombre"
+        />
+      </div>
+
+      <div>
+        <label class="field-label">Celular</label>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="model.celular"
+          name="celular"
+          placeholder="999 999 999"
+        />
+      </div>
+
+      <div *ngIf="mostrarSctr">
+        <label class="field-label">¿Requiere SCTR?</label>
+        <select
+          class="field-input"
+          [(ngModel)]="model.sctr"
+          name="sctr"
+        >
+          <option [ngValue]="null">Seleccionar</option>
+          <option [ngValue]="true">Sí</option>
+          <option [ngValue]="false">No</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Fecha de nacimiento</label>
+        <input
+          type="date"
+          class="field-input"
+          [(ngModel)]="model.fechaNacimiento"
+          name="fechaNacimiento"
+        />
+      </div>
+
+      <div>
+        <label class="field-label">Fecha de retiro</label>
+        <input
+          type="date"
+          class="field-input"
+          [(ngModel)]="model.fechaRetiro"
+          name="fechaRetiro"
+        />
+      </div>
+
+      <ng-container *ngIf="mostrarCamposArea">
+        <div class="col-span-2">
+          <label class="field-label">Área</label>
+          <app-search-select
+            [options]="areas"
+            valueField="area"
+            displayField="area"
+            [value]="model.area"
+            [showLabel]="false"
+            placeholder="Seleccionar área"
+            (valueChange)="onAreaChange($event)"
+          />
+        </div>
+
+        <div class="col-span-2">
+          <label class="field-label">Subárea</label>
+          <app-search-select
+            [options]="subareas"
+            valueField="subarea"
+            displayField="subarea"
+            [value]="model.subarea"
+            [showLabel]="false"
+            [placeholder]="model.area ? 'Seleccionar subárea' : 'Selecciona un área primero'"
+            (valueChange)="onSubareaChange($event)"
+          />
+        </div>
+
+        <div class="col-span-2">
+          <label class="field-label">Jefatura</label>
+          <input
+            type="text"
+            class="field-input field-readonly"
+            [value]="model.jefatura || '—'"
+            readonly
+            name="jefatura"
+          />
+        </div>
+      </ng-container>
+
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </footer>
+
+  </div>
+</app-base-modal>

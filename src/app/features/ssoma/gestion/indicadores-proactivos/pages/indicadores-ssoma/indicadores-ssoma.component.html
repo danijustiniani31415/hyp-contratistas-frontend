@@ -1,0 +1,20 @@
+<div class="is-wrap">
+  <div class="is-area-header">
+    <div class="is-area-info">
+      <div class="is-area-badge">SSOMA · Gestión</div>
+      <h1 class="is-area-title">Indicadores Proactivos</h1>
+    </div>
+  </div>
+  <nav class="is-tabs">
+    <a *ngFor="let tab of TABS"
+       class="is-tab"
+       [routerLink]="tab.path"
+       routerLinkActive="is-tab--active">
+      <i class="ti" [ngClass]="tab.icon"></i>
+      {{ tab.label }}
+    </a>
+  </nav>
+  <div class="is-content">
+    <router-outlet></router-outlet>
+  </div>
+</div>

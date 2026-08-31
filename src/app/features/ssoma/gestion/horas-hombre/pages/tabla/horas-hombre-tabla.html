@@ -1,0 +1,98 @@
+<div class="hht-root">
+
+  <app-abril-page-header
+    titulo="Horas Hombre"
+    subtitulo="Detalle diario por proyecto y empresa."
+    [tabs]="tabs">
+
+    <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
+
+    <div class="hht-state" *ngIf="loading">Cargando…</div>
+    <div class="hht-state hht-empty" *ngIf="!loading && items.length === 0">
+      Sin registros de Tareo para los filtros seleccionados.
+    </div>
+
+    <div class="abril-table-wrap" *ngIf="!loading && items.length > 0">
+      <table class="abril-table hht-table">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Fecha</th>
+            <th>Proyecto</th>
+            <th class="hht-num">Personas Casa</th>
+            <th class="hht-num">Personas Contratista</th>
+            <th class="hht-num">Total Personas</th>
+            <th class="hht-num">Horas Hombre</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items">
+            <td>{{ item.fecha | date:'dd/MM/yyyy' }}</td>
+            <td>{{ item.proyectoNombre }}</td>
+            <td class="hht-num">{{ item.personasCasa }}</td>
+            <td class="hht-num">{{ item.personasContratista }}</td>
+            <td class="hht-num hht-num--strong">{{ item.totalPersonas }}</td>
+            <td class="hht-num hht-num--strong">{{ item.horasHombre }}</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" class="hht-foot-label">Total Horas Hombre (página actual)</td>
+            <td class="hht-num hht-num--strong">{{ totalHHPagina }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="shrink-0 max-w-[440px]" *ngIf="!loading && items.length > 0">
+      <app-paginator
+        [totalRecords]="totalRecords"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="onPageChange($event)">
+      </app-paginator>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      valueField="id"
+      displayField="nombre"
+      placeholder="Todos los proyectos"
+      [value]="filtroProyectoId"
+      (valueChange)="onProyectoChange($event)">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Empresa"
+      [options]="empresas"
+      valueField="id"
+      displayField="nombre"
+      placeholder="Todas las empresas"
+      [value]="filtroEmpresaId"
+      (valueChange)="onEmpresaChange($event)">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaDesde" (change)="onFilter()" />
+    </div>
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaHasta" (change)="onFilter()" />
+    </div>
+  </div>
+</app-filter-modal>

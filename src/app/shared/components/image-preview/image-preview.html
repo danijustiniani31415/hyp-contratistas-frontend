@@ -1,0 +1,9 @@
+<div class="flex flex-wrap gap-3 mt-4">
+    <div *ngFor="let preview of previews; let i = index" class="relative">
+        <img [src]="preview" class="w-[120px] h-[120px] object-cover rounded-lg border">
+        <button (click)="removeImage(i)"
+            class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-sm cursor-pointer">
+            ✕
+        </button>
+    </div>
+</div>

@@ -1,0 +1,12 @@
+<div class="search-wrapper">
+  <input
+    type="text"
+    [value]="value"
+    [placeholder]="placeholder"
+    [disabled]="disabled || loading"
+    (input)="onInput($event)"
+    (keypress)="onKeyPress($event)"
+    class="search-input"
+  />
+  <span class="search-icon">🔍</span>
+</div>

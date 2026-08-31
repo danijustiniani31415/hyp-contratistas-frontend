@@ -1,0 +1,167 @@
+<app-abril-modal-panel titulo="Nueva observación de revisión" icono="ti-eye" width="760px" (closeModal)="closeModal.emit()">
+
+  <div class="paso-body">
+
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
+        <i class="ti ti-clipboard-list"></i> Datos generales
+      </h2>
+
+      <div class="form-grid">
+
+        <div class="abril-field">
+          <label class="abril-field-label">Fecha</label>
+          <input type="date" class="abril-field-input" [(ngModel)]="fecha" name="fecha" />
+        </div>
+
+        <div>
+          <app-search-select
+            label="Proyecto"
+            [options]="proyectos"
+            valueField="id"
+            displayField="nombre"
+            placeholder="Buscar proyecto..."
+            [value]="proyectoId"
+            (valueChange)="onProyectoChange($event)">
+          </app-search-select>
+          <p *ngIf="submitted && !proyectoId" class="text-xs text-red-600 mt-[4px]">Selecciona un proyecto.</p>
+        </div>
+
+        <div>
+          <app-search-select
+            label="Revisión"
+            [options]="revisiones"
+            valueField="id"
+            displayField="nombre"
+            placeholder="Selecciona la revisión"
+            [disabled]="!proyectoId"
+            [value]="revisionId"
+            (valueChange)="revisionId = $event">
+          </app-search-select>
+          <p *ngIf="submitted && !revisionId" class="text-xs text-red-600 mt-[4px]">Selecciona una revisión.</p>
+          <p *ngIf="proyectoId && revisiones.length === 0" class="text-xs text-gray-400 mt-[4px]">
+            Este proyecto no tiene revisiones creadas — usá "Catálogos" para agregar una.
+          </p>
+        </div>
+
+        <div *ngIf="esCuentaCompartida; else personaFija">
+          <app-search-select
+            label="Persona que reporta"
+            [options]="trabajadores"
+            valueField="apellidoNombre"
+            displayField="apellidoNombre"
+            placeholder="Buscar trabajador..."
+            [value]="personaReporta || null"
+            (valueChange)="personaReporta = $event ?? ''">
+          </app-search-select>
+          <p *ngIf="submitted && !personaReporta" class="text-xs text-red-600 mt-[4px]">Selecciona quién reporta.</p>
+        </div>
+        <ng-template #personaFija>
+          <div class="abril-field">
+            <label class="abril-field-label">Persona que reporta</label>
+            <input type="text" class="abril-field-input locked" [value]="personaReporta" disabled />
+          </div>
+        </ng-template>
+
+      </div>
+    </section>
+
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
+        <i class="ti ti-alert-triangle"></i> Observación
+      </h2>
+
+      <div class="form-grid">
+
+        <div class="abril-field">
+          <label class="abril-field-label">Zona / Ambiente</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="zonaAmbiente" name="zonaAmbiente" />
+        </div>
+
+        <div>
+          <app-search-select
+            label="Partida a la que se reporta"
+            [options]="partidaOptions"
+            valueField="value"
+            displayField="label"
+            placeholder="Selecciona partida"
+            [value]="partidaReportada"
+            (valueChange)="partidaReportada = $event">
+          </app-search-select>
+        </div>
+
+        <div class="abril-field col-2">
+          <label class="abril-field-label">Descripción de la observación</label>
+          <textarea class="abril-field-input" rows="3" [(ngModel)]="descripcion" name="descripcion"></textarea>
+          <p *ngIf="submitted && !descripcion.trim()" class="text-xs text-red-600 mt-[4px]">Ingresa una descripción.</p>
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Plazo de levantamiento</label>
+          <input type="date" class="abril-field-input" [(ngModel)]="plazoLevantamiento" name="plazoLevantamiento" />
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Fotos de Observación y Levantamiento lado a lado, cada una en su propio contenedor
+         (igual que la app legacy) — adjuntar la de levantamiento registra el levantamiento. -->
+    <section class="abril-form-section">
+      <div class="fotos-row">
+        <div class="foto-col">
+          <h3 class="foto-label"><i class="ti ti-camera"></i> Imagen de observación</h3>
+          <app-photo-grid-picker
+            [previews]="fotoPreview"
+            [max]="1"
+            [multiple]="false"
+            addLabel="Agregar una imagen"
+            (filesSelected)="onFotoSeleccionada($event)"
+            (remove)="quitarFoto()">
+          </app-photo-grid-picker>
+        </div>
+
+        <div class="foto-col">
+          <h3 class="foto-label"><i class="ti ti-camera-check"></i> Imagen del levantamiento</h3>
+          <app-photo-grid-picker
+            [previews]="fotoLevantamientoPreview"
+            [max]="1"
+            [multiple]="false"
+            addLabel="Agregar una imagen"
+            (filesSelected)="onFotoLevantamientoSeleccionada($event)"
+            (remove)="quitarFotoLevantamiento()">
+          </app-photo-grid-picker>
+        </div>
+      </div>
+
+      <div class="form-grid mt-[14px]" *ngIf="registrarLevantamiento">
+        <div>
+          <app-search-select
+            label="Quién levanta"
+            [options]="trabajadores"
+            valueField="id"
+            displayField="apellidoNombre"
+            placeholder="Buscar trabajador..."
+            [value]="levantaPorWorkerId"
+            (valueChange)="levantaPorWorkerId = $event">
+          </app-search-select>
+          <p *ngIf="submitted && !levantaPorWorkerId" class="text-xs text-red-600 mt-[4px]">Selecciona quién levanta la observación.</p>
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Comentario del levantamiento</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="comentarioLevantamiento" name="comentarioLevantamiento" />
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="btn-ghost" (click)="closeModal.emit()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="guardando || !puedeGuardar" (click)="save()">
+      <i class="ti ti-device-floppy"></i>
+      {{ guardando ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+
+</app-abril-modal-panel>

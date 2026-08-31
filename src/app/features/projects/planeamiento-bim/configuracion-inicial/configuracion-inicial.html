@@ -1,0 +1,375 @@
+<div class="bim-config-page">
+  <!-- Encabezado Estándar Abril con Pestañas de Proyectos -->
+  <app-abril-page-header
+    titulo="PLANEAMIENTO"
+    subtitulo="Definición de zonas, niveles, sectores, responsable, meta PPC y fechas metas por fase"
+    [tabs]="tabs"
+    [botonPrimario]="btnGuardarHeader"
+    [botonPrimarioDeshabilitado]="savingConfig || loadingConfig || !selectedProjectId"
+    (primaryClick)="onGuardar()"
+  ></app-abril-page-header>
+
+  <app-planeamiento-bim-subnav></app-planeamiento-bim-subnav>
+
+  <div class="bim-container">
+    <!-- Selector de Proyecto -->
+    <div class="bim-card project-selector-card">
+      <div class="project-selector-wrapper">
+        <label class="project-label" for="projectSelect">PROYECTO SELECCIONADO:</label>
+        <select
+          id="projectSelect"
+          class="bim-select project-select"
+          [ngModel]="selectedProjectId"
+          (ngModelChange)="onProjectChange($event)"
+          [disabled]="loadingProjects || loadingConfig || savingConfig"
+        >
+          <option [ngValue]="null" disabled>-- Seleccione un proyecto --</option>
+          <option *ngFor="let p of projects" [ngValue]="p.projectId">
+            {{ p.projectDescription }}
+          </option>
+        </select>
+      </div>
+
+      <div class="header-actions">
+        <span *ngIf="selectedProjectId" class="status-pill status-pill--active">
+          <i class="ti ti-check"></i> Proyecto Activo
+        </span>
+        <button
+          type="button"
+          class="btn-save-inline"
+          (click)="onGuardar()"
+          [disabled]="savingConfig || loadingConfig || !selectedProjectId"
+        >
+          <i class="ti ti-device-floppy"></i>
+          <span>{{ savingConfig ? 'Guardando...' : 'Guardar Cambios' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Error al cargar inicial (F9) -->
+    <div *ngIf="loadError" class="bim-alert bim-alert--danger">
+      <i class="ti ti-alert-triangle-filled alert-icon"></i>
+      <div class="alert-content">
+        <strong>Error de Carga:</strong> {{ loadError }}
+      </div>
+      <button type="button" class="btn-retry" (click)="cargarDatosIniciales()">
+        <i class="ti ti-refresh"></i> Reintentar
+      </button>
+    </div>
+
+    <!-- Mensaje cuando aún no se ha seleccionado proyecto -->
+    <div *ngIf="!selectedProjectId && !loadingConfig && !loadError" class="empty-state">
+      <i class="ti ti-click empty-icon"></i>
+      <p class="empty-title">Selección de Proyecto Requerida</p>
+      <p class="empty-sub">Por favor, seleccione un proyecto en el menú desplegable para cargar su configuración inicial.</p>
+    </div>
+
+    <!-- Skeleton Loading (F8) - Se muestra ÚNICAMENTE al cargar la configuración de un proyecto -->
+    <div *ngIf="loadingConfig && !loadError" class="skeleton-wrapper">
+      <div class="bim-card skeleton-card skeleton-pulse">
+        <div class="skeleton-line skeleton-line--title"></div>
+        <div class="skeleton-grid">
+          <div class="skeleton-box"></div>
+          <div class="skeleton-box"></div>
+        </div>
+      </div>
+      <div class="bim-card skeleton-card skeleton-pulse">
+        <div class="skeleton-line skeleton-line--title"></div>
+        <div class="skeleton-table">
+          <div class="skeleton-line" *ngFor="let i of [1,2,3,4,5]"></div>
+        </div>
+      </div>
+      <div class="bim-card skeleton-card skeleton-pulse">
+        <div class="skeleton-line skeleton-line--title"></div>
+        <div class="skeleton-box skeleton-box--lg"></div>
+      </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <div *ngIf="!loadingConfig && selectedProjectId && !loadError" class="bim-main-grid">
+
+      <!-- Fila Superior: Datos Generales (Responsable & Meta PPC) + Fases Meta -->
+      <div class="top-section-grid">
+
+        <!-- Card 1: Responsable y Meta PPC -->
+        <div class="bim-card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="ti ti-user-check title-icon"></i> RESPONSABLE Y META PPC
+            </h3>
+            <span class="card-badge">PROYECTO</span>
+          </div>
+
+          <div class="card-body general-fields">
+            <!-- Responsable Planeamiento BIM -->
+            <div class="bim-field">
+              <label class="bim-field-label" for="responsableSelect">RESPONSABLE PLANEAMIENTO BIM</label>
+              <select
+                id="responsableSelect"
+                class="bim-select"
+                [(ngModel)]="config.responsableId"
+              >
+                <option [ngValue]="null">-- Sin Responsable Asignado --</option>
+                <option *ngFor="let r of responsables" [value]="r.id">
+                  {{ r.apellidoNombre }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Meta PPC: estándar del sistema, solo lectura (Fase A backend) -->
+            <div class="bim-field">
+              <label class="bim-field-label" for="metaPpcReadonly">META PPC DEL PROYECTO (%)</label>
+              <div class="ppc-readonly-wrapper" id="metaPpcReadonly">
+                <span class="ppc-readonly-value">{{ metaPpcEstandar }}%</span>
+                <span class="ppc-readonly-badge"><i class="ti ti-lock"></i> ESTÁNDAR DEL SISTEMA</span>
+              </div>
+              <span class="field-hint">Meta PPC fija para todos los proyectos, no editable desde aquí.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: 5 Fases de Planeamiento -->
+        <div class="bim-card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="ti ti-calendar-event title-icon"></i> FASES METAS DEL PROYECTO
+            </h3>
+            <span class="card-badge card-badge--info">5 FASES METAS</span>
+          </div>
+
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="bim-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>NOMBRE DE LA FASE</th>
+                    <th style="width: 180px;">FECHA INICIO META</th>
+                    <th style="width: 180px;">FECHA FIN META</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let fase of config.fases; let i = index">
+                    <td class="text-center font-bold text-navy">{{ i + 1 }}</td>
+                    <td>
+                      <span class="fase-name-label">{{ fase.nombre }}</span>
+                    </td>
+                    <td>
+                      <input
+                        type="date"
+                        class="bim-input-date"
+                        [(ngModel)]="fase.fechaInicio"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="date"
+                        class="bim-input-date"
+                        [(ngModel)]="fase.fechaFinMeta"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Sección Inferior: Zonas, Niveles y Sectores -->
+      <div class="bim-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">
+              <i class="ti ti-layout-grid title-icon"></i> ZONAS, NIVELES Y SECTORES
+            </h3>
+            <p class="card-subtitle">Estructura espacial del proyecto para la Carga Diaria de Planeamiento BIM</p>
+          </div>
+          <button type="button" class="btn-primary-udp" (click)="addZona()">
+            <i class="ti ti-plus"></i> AGREGAR ZONA
+          </button>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="zonas.length === 0" class="empty-state">
+            <i class="ti ti-folder-off empty-icon"></i>
+            <p class="empty-title">Sin zonas configuradas</p>
+            <p class="empty-sub">Haga clic en "+ AGREGAR ZONA" para definir la primera zona espacial del proyecto.</p>
+          </div>
+
+          <div *ngFor="let zona of zonas; let zIdx = index" class="zona-card">
+            <!-- Header de Zona -->
+            <div class="zona-header">
+              <div class="zona-title-wrap">
+                <span class="zona-index-badge">ZONA #{{ zIdx + 1 }}</span>
+                <input
+                  type="text"
+                  class="bim-input zona-name-input"
+                  placeholder="Ej. Zona A - Edificio Principal"
+                  [(ngModel)]="zona.nombre"
+                />
+              </div>
+
+              <div class="zona-actions">
+                <span class="counts-badge">
+                  {{ zona.niveles.length || 0 }} Niveles | {{ totalSectores(zona) }} Sectores
+                </span>
+                <button
+                  type="button"
+                  class="btn-danger-icon"
+                  title="Eliminar Zona"
+                  (click)="removeZona(zIdx)"
+                >
+                  <i class="ti ti-trash"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Niveles (cada uno con su tipo de estructura y sectores exclusivos) + Sectores Compartidos de la Zona -->
+            <div class="zona-columns-grid">
+
+              <!-- Columna Niveles -->
+              <div class="sub-column">
+                <div class="sub-column-header">
+                  <span class="sub-column-title">
+                    <i class="ti ti-layers-intersect"></i> NIVELES
+                  </span>
+                  <button type="button" class="btn-sub-add" (click)="addNivel(zona)">
+                    <i class="ti ti-plus"></i> Agregar Nivel
+                  </button>
+                </div>
+
+                <div *ngIf="!zona.niveles || zona.niveles.length === 0" class="empty-sub-list">
+                  Sin niveles en esta zona. Agregue el primero con "Agregar Nivel".
+                </div>
+
+                <div *ngFor="let nivel of zona.niveles; let nIdx = index" class="nivel-card">
+                  <div class="nivel-card-row">
+                    <input
+                      type="number"
+                      class="bim-input-small nivel-orden-input text-center"
+                      [(ngModel)]="nivel.orden"
+                      min="1"
+                      title="Orden"
+                    />
+                    <input
+                      type="text"
+                      class="bim-input-small nivel-nombre-input"
+                      placeholder="Ej. Piso 1, Sótano 2"
+                      [(ngModel)]="nivel.nombre"
+                    />
+                    <button
+                      type="button"
+                      class="btn-trash-sm"
+                      title="Eliminar Nivel"
+                      (click)="removeNivel(zona, nIdx)"
+                    >
+                      <i class="ti ti-x"></i>
+                    </button>
+                  </div>
+
+                  <div class="nivel-card-row">
+                    <app-search-select
+                      class="nivel-tipo-select"
+                      label=""
+                      [showLabel]="false"
+                      placeholder="Selecciona tipo de estructura"
+                      [options]="tiposEstructura"
+                      valueField="id"
+                      displayField="nombre"
+                      [(value)]="nivel.tipoEstructura"
+                      [compact]="true"
+                    ></app-search-select>
+                  </div>
+
+                  <!-- Sectores exclusivos de este nivel -->
+                  <div class="nivel-sectores-block">
+                    <div class="nivel-sectores-header">
+                      <span>SECTORES EXCLUSIVOS DE ESTE NIVEL</span>
+                      <button type="button" class="btn-sub-add btn-sub-add--sm" (click)="addSectorNivel(nivel)">
+                        <i class="ti ti-plus"></i> Agregar
+                      </button>
+                    </div>
+                    <div *ngIf="!nivel.sectores || nivel.sectores.length === 0" class="empty-sub-list empty-sub-list--sm">
+                      Sin sectores exclusivos. Si el sector aplica a todos los niveles, agréguelo en "Sectores Compartidos".
+                    </div>
+                    <div *ngFor="let sector of nivel.sectores; let sIdx = index" class="nivel-sector-row">
+                      <input
+                        type="text"
+                        class="bim-input-small"
+                        placeholder="Ej. Sector Norte, Sector 1"
+                        [(ngModel)]="sector.nombre"
+                      />
+                      <button
+                        type="button"
+                        class="btn-trash-sm"
+                        title="Eliminar Sector"
+                        (click)="removeSectorNivel(nivel, sIdx)"
+                      >
+                        <i class="ti ti-x"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Columna Sectores Compartidos -->
+              <div class="sub-column">
+                <div class="sub-column-header">
+                  <span class="sub-column-title">
+                    <i class="ti ti-grid-dots"></i> SECTORES COMPARTIDOS
+                  </span>
+                  <button type="button" class="btn-sub-add" (click)="addSectorCompartido(zona)">
+                    <i class="ti ti-plus"></i> Agregar Sector
+                  </button>
+                </div>
+                <p class="sub-column-hint">Aplican automáticamente a todos los niveles de esta zona.</p>
+
+                <div *ngIf="!zona.sectoresCompartidos || zona.sectoresCompartidos.length === 0" class="empty-sub-list">
+                  Sin sectores compartidos en esta zona.
+                </div>
+
+                <div *ngIf="zona.sectoresCompartidos && zona.sectoresCompartidos.length > 0" class="sub-list-wrap">
+                  <table class="sub-table">
+                    <thead>
+                      <tr>
+                        <th>NOMBRE DEL SECTOR</th>
+                        <th style="width: 40px;"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let sector of zona.sectoresCompartidos; let sIdx = index">
+                        <td>
+                          <input
+                            type="text"
+                            class="bim-input-small"
+                            placeholder="Ej. Sector Norte, Sector 1"
+                            [(ngModel)]="sector.nombre"
+                          />
+                        </td>
+                        <td class="text-center">
+                          <button
+                            type="button"
+                            class="btn-trash-sm"
+                            title="Eliminar Sector"
+                            (click)="removeSectorCompartido(zona, sIdx)"
+                          >
+                            <i class="ti ti-x"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

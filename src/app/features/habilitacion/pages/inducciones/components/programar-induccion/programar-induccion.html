@@ -1,0 +1,84 @@
+<app-base-modal *ngIf="open" [title]="title" width="w-[680px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <div>
+      <label class="field-label">Proyecto *</label>
+      <select class="field-input" [(ngModel)]="proyectoId">
+        <option [ngValue]="null">— Seleccionar proyecto —</option>
+        <option *ngFor="let p of proyectos" [ngValue]="p.projectId">
+          {{ p.projectDescription }}
+        </option>
+      </select>
+    </div>
+
+    <div>
+      <label class="field-label">Trabajador *</label>
+      <div *ngIf="selectedWorker" class="selected-worker">
+        <div>
+          <strong>{{ selectedWorker.apellidoNombre }}</strong>
+          <span class="muted-line">DNI {{ selectedWorker.dni }} · {{ selectedWorker.empresaNombre ?? '—' }}</span>
+        </div>
+        <button *ngIf="!workerPreseleccionado" type="button" class="btn-ghost btn-x" (click)="clearWorker()">Cambiar</button>
+      </div>
+      <div *ngIf="!selectedWorker">
+        <input
+          *ngIf="proyectoId"
+          type="text"
+          class="field-input"
+          placeholder="Buscar por nombre o DNI…"
+          [(ngModel)]="workersSearch"
+          (input)="onWorkersSearchChange()"
+        />
+        <p *ngIf="!proyectoId" class="muted-line">Selecciona un proyecto primero.</p>
+        <div class="workers-search-box" *ngIf="workersSearch">
+          <div *ngIf="loadingWorkers" class="muted-line">Buscando…</div>
+          <div
+            *ngIf="!loadingWorkers && workersResultados.length === 0"
+            class="muted-line"
+          >
+            Sin resultados.
+          </div>
+          <div
+            *ngFor="let w of workersResultados"
+            class="worker-row"
+            (click)="selectWorker(w)"
+          >
+            <strong>{{ w.apellidoNombre }}</strong>
+            <span class="muted-line">DNI {{ w.dni }} · {{ w.empresaNombre ?? '—' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label class="field-label">Fecha programada *</label>
+        <app-date-picker
+          [value]="fechaProgramada"
+          [showLabel]="false"
+          [min]="hoy"
+          (valueChange)="fechaProgramada = $event"
+        />
+      </div>
+      <div>
+        <label class="field-label">¿Trabajos en altura?</label>
+        <div class="radio-group">
+          <label class="radio-row">
+            <input type="radio" [value]="true" [(ngModel)]="trabajoAltura" name="altura" />
+            <span>Sí</span>
+          </label>
+          <label class="radio-row">
+            <input type="radio" [value]="false" [(ngModel)]="trabajoAltura" name="altura" />
+            <span>No</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Programar' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

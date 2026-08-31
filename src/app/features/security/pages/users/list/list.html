@@ -1,0 +1,131 @@
+<div class="space-y-3">
+  <!-- Search bar -->
+  <div class="bg-white rounded-lg border border-gray-200 p-4">
+    <app-search-input
+      placeholder="Buscar por nombre, DNI o correo..."
+      [value]="searchTerm"
+      (valueChange)="onSearchChange($event)"
+      width="320px" />
+  </div>
+
+  <!-- Desktop table -->
+  <div class="hidden md:block bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-gray-50 border-b border-gray-200">
+          <th class="text-left px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Tipo</th>
+          <th class="text-left px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">DNI</th>
+          <th class="text-left px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Nombre / Correo</th>
+          <th class="text-left px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Roles</th>
+          <th class="text-left px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Estado</th>
+          <th class="text-right px-4 py-3 text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let item of tableData.data"
+          class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
+        >
+          <td class="px-4 py-3">
+            <span class="text-[0.7rem] font-bold border rounded-full px-2 py-0.5" [ngClass]="userTypeBadge(item.userType)">
+              {{ item.userType }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-gray-600 font-mono text-xs">
+            {{ item.documentIdentityCode ?? '—' }}
+          </td>
+          <td class="px-4 py-3">
+            <p class="font-semibold text-gray-900">{{ item.displayName ?? item.email }}</p>
+            <p *ngIf="item.displayName" class="text-xs text-gray-400">{{ item.email }}</p>
+          </td>
+          <td class="px-4 py-3 text-gray-600 text-xs max-w-[200px]">{{ getRolesText(item) }}</td>
+          <td class="px-4 py-3">
+            <span
+              class="text-[0.7rem] font-bold border rounded-full px-2 py-0.5"
+              [ngClass]="item.active ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-500 border-gray-200'"
+            >
+              {{ item.active ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td class="px-4 py-3">
+            <div class="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                (click)="openEdit(item, $event)"
+              >Editar</button>
+              <button
+                type="button"
+                class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors"
+                [ngClass]="item.active
+                  ? 'bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100'
+                  : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'"
+                (click)="toggleUser(item, $event)"
+              >{{ item.active ? 'Desactivar' : 'Activar' }}</button>
+              <button
+                *ngIf="item.userType === 'PERSONA'"
+                type="button"
+                class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                title="Reenviar correo de registro"
+                (click)="resendEmail(item, $event)"
+              >Reenviar</button>
+              <button
+                type="button"
+                class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
+                (click)="deleteUser(item, $event)"
+              >Eliminar</button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="tableData.data.length === 0">
+          <td colspan="6" class="text-center text-gray-400 py-10 text-sm">{{ emptyMessage }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile cards -->
+  <div class="md:hidden space-y-3">
+    <div
+      *ngFor="let item of tableData.data"
+      class="bg-white rounded-lg border border-gray-200 p-4 space-y-3"
+    >
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <p class="font-semibold text-gray-900">{{ item.displayName ?? item.email }}</p>
+          <p *ngIf="item.displayName" class="text-xs text-gray-400">{{ item.email }}</p>
+          <p *ngIf="item.documentIdentityCode" class="text-xs text-gray-500 font-mono mt-0.5">DNI: {{ item.documentIdentityCode }}</p>
+        </div>
+        <span class="text-[0.7rem] font-bold border rounded-full px-2 py-0.5 shrink-0" [ngClass]="userTypeBadge(item.userType)">
+          {{ item.userType }}
+        </span>
+      </div>
+      <p class="text-xs text-gray-500">{{ getRolesText(item) }}</p>
+      <div class="flex items-center justify-between">
+        <span
+          class="text-[0.7rem] font-bold border rounded-full px-2 py-0.5"
+          [ngClass]="item.active ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-500 border-gray-200'"
+        >{{ item.active ? 'Activo' : 'Inactivo' }}</span>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer bg-blue-50 border-blue-200 text-blue-700"
+            (click)="openEdit(item, $event)"
+          >Editar</button>
+          <button
+            type="button"
+            class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer"
+            [ngClass]="item.active ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-green-50 border-green-200 text-green-700'"
+            (click)="toggleUser(item, $event)"
+          >{{ item.active ? 'Desactivar' : 'Activar' }}</button>
+          <button
+            type="button"
+            class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer bg-red-50 border-red-200 text-red-600"
+            (click)="deleteUser(item, $event)"
+          >Eliminar</button>
+        </div>
+      </div>
+    </div>
+    <p *ngIf="tableData.data.length === 0" class="text-center text-gray-400 py-10 text-sm">{{ emptyMessage }}</p>
+  </div>
+</div>

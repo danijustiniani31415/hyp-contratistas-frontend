@@ -1,0 +1,58 @@
+<app-base-modal [title]="'Agregar participante'" width="w-[480px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-4 p-1">
+
+    <div *ngIf="!externo">
+      <app-search-select
+        label="Trabajador *"
+        [options]="trabajadores"
+        valueField="workerId"
+        displayField="fullName"
+        [value]="workerId"
+        (valueChange)="onTrabajadorChange($event)"
+        placeholder="Busca por nombre...">
+      </app-search-select>
+    </div>
+
+    <div *ngIf="externo">
+      <label class="block text-sm text-gray-600 mb-1">Nombre completo *</label>
+      <input type="text" [(ngModel)]="nombreExterno" (ngModelChange)="onNombreExternoChange()" maxlength="200"
+        class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+        placeholder="Nombre del participante externo" />
+    </div>
+
+    <label class="flex items-center gap-2 text-xs text-gray-500 cursor-pointer select-none">
+      <input type="checkbox" [(ngModel)]="externo" (ngModelChange)="onExternoChange()"
+        class="h-3.5 w-3.5 accent-[var(--color-abril-primary)] cursor-pointer" />
+      Participante externo (no está en la lista de trabajadores)
+    </label>
+
+    <div class="grid grid-cols-[1fr_96px] gap-3">
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Cargo</label>
+        <input type="text" [(ngModel)]="cargo" maxlength="200"
+          class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+          [placeholder]="cargoManual ? 'Ingresa el puesto del trabajador' : 'Cargo'" />
+        <p *ngIf="cargoManual" class="text-[11px] text-amber-600 mt-1">
+          El trabajador no tiene puesto registrado: lo que escribas aquí se guardará en su ficha.
+        </p>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Iniciales</label>
+        <input type="text" [(ngModel)]="iniciales" (ngModelChange)="onInicialesChange()" maxlength="10"
+          class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm text-center focus:outline-none focus:border-[var(--color-abril-primary)]" />
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-3 pt-2">
+      <button type="button" (click)="closeModal.emit()"
+        class="h-[42px] px-5 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors">
+        Cancelar
+      </button>
+      <button type="button" (click)="submit()"
+        class="h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
+        <span class="ti ti-user-plus text-base"></span>
+        Agregar
+      </button>
+    </div>
+  </div>
+</app-base-modal>

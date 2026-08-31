@@ -1,0 +1,43 @@
+<app-base-modal *ngIf="isOpen" title="Agregar proyecto" width="w-[520px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <div class="grid-2">
+
+      <div class="col-span-2">
+        <label class="field-label">Trabajador</label>
+        <input
+          type="text"
+          class="field-input field-readonly"
+          [value]="workerNombre"
+          readonly
+        />
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Proyecto *</label>
+        <app-search-select
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="model.proyectoId"
+          [showLabel]="false"
+          placeholder="Selecciona un proyecto"
+          [allowClear]="true"
+          (valueChange)="model.proyectoId = $event"
+        />
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Fecha de inicio *</label>
+        <input type="date" class="field-input" [(ngModel)]="model.fechaInicio" />
+      </div>
+
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Agregar proyecto' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

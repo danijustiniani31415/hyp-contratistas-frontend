@@ -1,0 +1,205 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Evaluar Contratista"
+  subtitulo="Califica el desempeño de los contratistas en tu área."
+    [tabGroups]="[
+    { label: 'Residentes',   icono: 'ti-user-check', tabs: [
+      { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
+      { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
+      { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
+      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' },
+      { label: 'Asignaciones',  icono: 'ti-users',            route: '/evaluaciones/asignaciones',   featureKey: 'evaluaciones.asignaciones' }
+    ]},
+    { label: 'Contratistas', icono: 'ti-building', tabs: [
+      { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
+      { label: 'Evaluar',          icono: 'ti-pencil',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
+      { label: 'Ver evaluaciones', icono: 'ti-list',      route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' }
+    ]},
+    { label: 'Superv. Contratista', icono: 'ti-shield-check', tabs: [
+      { label: 'Evaluar supervisor', icono: 'ti-pencil', route: '/evaluaciones/evaluar-supervisor-contratista', featureKey: 'evaluaciones.evaluar-supervisor-contratista' },
+      { label: 'Ver evaluaciones',   icono: 'ti-list',   route: '/evaluaciones/ver-supervisores-contratista',   featureKey: 'evaluaciones.ver-supervisores-contratista' }
+    ]},
+    { label: 'Jefe SSOMA', icono: 'ti-user-shield', tabs: [
+      { label: 'Evaluar Jefe SSOMA', icono: 'ti-pencil', route: '/evaluaciones/evaluar-jefe-ssoma', featureKey: 'evaluaciones.evaluar-jefe-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-jefe-ssoma', featureKey: 'evaluaciones.resultados-jefe-ssoma' }
+    ]},
+    { label: 'Prevencionistas', icono: 'ti-vest', tabs: [
+      { label: 'Mi perfil', icono: 'ti-user', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
+      { label: 'Dashboard', icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' }
+    ]},
+    { label: 'Gestión SSOMA', icono: 'ti-users-group', tabs: [
+      { label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-gestion-ssoma', featureKey: 'evaluaciones.resultados-gestion-ssoma' }
+    ]}
+  ]">
+</app-abril-page-header>
+
+<div class="ec-root">
+
+  <!-- LOADING -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <span>Cargando...</span>
+  </div>
+
+  <!-- SIN PERÍODO ACTIVO -->
+  <div class="empty-state" *ngIf="!loading && !inicio?.periodo">
+    <i class="ti ti-calendar-off"></i>
+    <h3>Sin período activo</h3>
+    <p>No hay un período de evaluación abierto en este momento.</p>
+  </div>
+
+  <!-- SIN ÁREA EVALUADORA -->
+  <div class="empty-state" *ngIf="!loading && inicio?.periodo && !inicio?.miAreaNombre">
+    <i class="ti ti-user-question"></i>
+    <h3>Sin área asignada</h3>
+    <p>Tu perfil de trabajador no tiene un área de evaluación configurada. Contacta al administrador.</p>
+  </div>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div class="ec-content" *ngIf="!loading && inicio?.periodo && inicio?.miAreaNombre">
+
+    <!-- PANEL IZQUIERDO: lista de contratistas -->
+    <div class="panel-left">
+      <div class="panel-header">
+        <div class="panel-title">Contratistas a evaluar</div>
+        <div class="panel-badge">{{ inicio?.miAreaNombre }}</div>
+      </div>
+      <div class="period-info" *ngIf="inicio?.periodo">
+        <i class="ti ti-calendar"></i>
+        {{ inicio!.periodo!.nombreMes }} {{ inicio!.periodo!.anio }} ·
+        {{ inicio!.periodo!.diasRestantes }} días restantes
+      </div>
+
+      <!-- Filtro de proyecto (solo para jefes de área, que ven todos los proyectos) -->
+      <div class="proyecto-filtro" *ngIf="inicio?.puedeVerTodos && proyectos.length">
+        <label for="ec-proyecto-filtro">Proyecto</label>
+        <select id="ec-proyecto-filtro" [(ngModel)]="proyectoFiltroId" (ngModelChange)="markForCheck()">
+          <option [ngValue]="null">Todos los proyectos</option>
+          <option *ngFor="let p of proyectos" [ngValue]="p.id">{{ p.nombre }}</option>
+        </select>
+      </div>
+
+      <!-- Sin contratistas -->
+      <div class="empty-list" *ngIf="!inicio?.contratistasAEvaluar?.length && !inicio?.yaMarcoNoAplica">
+        <i class="ti ti-building-off"></i>
+        <p>No hay contratistas con tareo este mes en tus proyectos.</p>
+        <button class="btn-no-aplica" (click)="marcarNoAplica()" [disabled]="marcandoNoAplica">
+          {{ marcandoNoAplica ? 'Guardando...' : 'No corresponde evaluar este período' }}
+        </button>
+      </div>
+
+      <!-- Ya marcó que no aplica -->
+      <div class="empty-list" *ngIf="!inicio?.contratistasAEvaluar?.length && inicio?.yaMarcoNoAplica">
+        <i class="ti ti-check"></i>
+        <p>Ya registraste que no te corresponde evaluar contratistas este período.</p>
+      </div>
+
+      <!-- Lista de contratistas -->
+      <div class="contractor-list" *ngIf="inicio?.contratistasAEvaluar?.length">
+        <div class="contractor-card"
+          *ngFor="let c of contraHistasFiltradas"
+          [class.active]="contraHistaSeleccionada?.contributorId === c.contributorId && contraHistaSeleccionada?.proyectoId === c.proyectoId"
+          [class.evaluated]="c.yaEvalue"
+          (click)="!c.yaEvalue && seleccionarContratista(c)">
+          <div class="cc-header">
+            <div class="cc-avatar">{{ c.contributorNombre.charAt(0) }}</div>
+            <div class="cc-info">
+              <div class="cc-name">{{ c.contributorNombre }}</div>
+              <div class="cc-ruc">{{ c.contributorRuc }}</div>
+              <div class="cc-project"><i class="ti ti-building"></i> {{ c.proyectoNombre }}</div>
+            </div>
+          </div>
+          <div class="cc-footer">
+            <span class="cc-days"><i class="ti ti-calendar-event"></i> {{ c.diasLaborados }} días</span>
+            <span *ngIf="c.yaEvalue && c.noAplica" class="cc-nota" [title]="c.noAplicaMotivo ?? ''">
+              <i class="ti ti-check"></i> No aplica
+            </span>
+            <span *ngIf="c.yaEvalue && !c.noAplica" class="cc-nota" [ngClass]="estadoClase(c.notaPrevia)">
+              <i class="ti ti-check"></i> {{ c.notaPrevia }} — {{ estadoLabel(c.notaPrevia) }}
+            </span>
+            <span *ngIf="!c.yaEvalue" class="cc-pendiente">Pendiente</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL DERECHO: formulario de evaluación -->
+    <div class="panel-right">
+      <!-- Sin selección -->
+      <div class="empty-form" *ngIf="!contraHistaSeleccionada">
+        <i class="ti ti-arrow-left"></i>
+        <p>Selecciona un contratista para evaluarlo</p>
+      </div>
+
+      <!-- Formulario activo -->
+      <div class="eval-form" *ngIf="contraHistaSeleccionada">
+        <div class="ef-header">
+          <div>
+            <div class="ef-title">{{ contraHistaSeleccionada.contributorNombre }}</div>
+            <div class="ef-sub">{{ contraHistaSeleccionada.proyectoNombre }} · {{ contraHistaSeleccionada.diasLaborados }} días laborados</div>
+          </div>
+          <div class="ef-header-actions">
+            <button class="btn-no-aplica" (click)="marcarNoAplicaContratista()" [disabled]="marcandoNoAplica">
+              No corresponde este mes
+            </button>
+            <button class="btn-cambiar" (click)="cambiarContratista()">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Escala de referencia -->
+        <div class="scale-ref">
+          <span *ngFor="let p of puntajes" class="scale-chip" [ngClass]="'scale-' + p">
+            {{ p }}: {{ puntajeLabel[p] }}
+          </span>
+        </div>
+
+        <!-- Criterios -->
+        <div class="criteria-list">
+          <div class="criterion-row" *ngFor="let d of detalles; let i = index" [class.criterion-na]="d.esNa">
+            <div class="cr-num">{{ i + 1 }}</div>
+            <div class="cr-text">{{ d.criterio }}</div>
+            <div class="cr-puntaje">
+              <button *ngFor="let p of puntajes"
+                class="puntaje-btn"
+                [class.selected]="d.puntaje === p"
+                [ngClass]="d.puntaje === p ? 'puntaje-' + p : ''"
+                (click)="setPuntaje(i, p)">
+                {{ p }}
+              </button>
+              <button
+                class="puntaje-btn puntaje-na"
+                [class.selected]="d.esNa"
+                (click)="setNa(i)">
+                N/A
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comentario + Guardar (misma fila para ahorrar altura) -->
+        <div class="bottom-bar">
+          <div class="bottom-comentario">
+            <label class="cmt-label">Comentario (opcional)</label>
+            <textarea class="cmt-input" rows="2" [(ngModel)]="comentario"
+              placeholder="Observaciones adicionales sobre el desempeño..."></textarea>
+          </div>
+          <div class="bottom-actions">
+            <div class="nota-preview" *ngIf="notaCalculada > 0">
+              <span class="np-label">Nota {{ inicio?.miAreaNombre }}:</span>
+              <span class="np-num" [ngClass]="estadoClase(notaCalculada)">{{ notaCalculada }}</span>
+              <span class="np-estado" [ngClass]="estadoClase(notaCalculada)">{{ estadoLabel(notaCalculada) }}</span>
+            </div>
+            <button class="btn-guardar" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
+              <i class="ti ti-device-floppy"></i>
+              {{ guardando ? 'Guardando...' : 'Registrar evaluación' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

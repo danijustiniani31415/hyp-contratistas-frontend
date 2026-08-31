@@ -1,0 +1,456 @@
+<div *ngIf="detalle" class="flex flex-col gap-4 flex-1 min-h-0 overflow-auto pb-4">
+
+  <!-- ── Cabecera ───────────────────────────────────────────────────────── -->
+  <div class="bg-white rounded-lg p-5 flex flex-col gap-4">
+    <div class="flex flex-wrap items-center gap-3">
+      <button type="button" (click)="volver()"
+        class="h-9 w-9 flex items-center justify-center rounded-lg border border-[#E5EAF0] text-gray-500 hover:bg-gray-50 cursor-pointer">
+        <span class="ti ti-arrow-left text-lg"></span>
+      </button>
+      <div>
+        <h2 class="text-lg font-semibold text-[var(--color-abril-primary)]">
+          {{ detalle.projectDescription || detalle.areaScopeDescripcion || 'Organización' }} — Reunión N°{{ detalle.numero }}
+        </h2>
+        <p class="text-xs text-gray-400">
+          {{ detalle.fecha | date:'dd/MM/yyyy' }}
+          <span *ngIf="detalle.horaInicio"> · {{ hora(detalle.horaInicio) }}<span *ngIf="detalle.horaFin"> - {{ hora(detalle.horaFin) }}</span></span>
+        </p>
+      </div>
+      <span class="text-[11px] font-medium px-2.5 py-1 rounded-full" [ngClass]="estadoClass(detalle.reunionEstado)">
+        {{ detalle.reunionEstado }}
+      </span>
+      <span *ngIf="detalle.reprogramaciones.length > 0"
+        class="text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-200 px-2.5 py-1 rounded-full">
+        Reprogramada {{ detalle.reprogramaciones.length }} {{ detalle.reprogramaciones.length === 1 ? 'vez' : 'veces' }}
+      </span>
+
+      <div class="flex-1"></div>
+
+      <button type="button" *ngIf="detalle.reunionEstado !== 'REALIZADA' && puedeEditar" (click)="showReprogramarModal = true"
+        class="h-[38px] px-4 border border-orange-300 text-orange-600 rounded-lg text-sm font-medium cursor-pointer hover:bg-orange-50 transition-colors flex items-center gap-2">
+        <span class="ti ti-calendar-repeat"></span> Reprogramar
+      </button>
+      <button type="button" *ngIf="detalle.reunionEstado === 'PROGRAMADA' && puedeEditar"
+        (click)="cambiarEstado('REALIZADA', '¿Marcar como realizada?', 'La reunión se marcará como realizada para registrar el acta.')"
+        class="h-[38px] px-4 bg-[var(--color-abril-primary)] text-white rounded-lg text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
+        <span class="ti ti-check"></span> Marcar realizada
+      </button>
+      <button type="button" *ngIf="detalle.reunionEstado === 'PROGRAMADA' && puedeEditar"
+        (click)="cambiarEstado('CANCELADA', '¿Cancelar reunión?', 'Podrás reactivarla luego reprogramándola.')"
+        class="h-[38px] px-4 border border-red-200 text-red-500 rounded-lg text-sm font-medium cursor-pointer hover:bg-red-50 transition-colors flex items-center gap-2">
+        <span class="ti ti-x"></span> Cancelar reunión
+      </button>
+      <button type="button" *ngIf="detalle.reunionEstado === 'REALIZADA' && puedeEditar"
+        (click)="cambiarEstado('PROGRAMADA', '¿Volver a programada?', 'La reunión regresará al estado PROGRAMADA.')"
+        class="h-[38px] px-4 border border-[#E5EAF0] text-gray-600 rounded-lg text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-2">
+        <span class="ti ti-arrow-back-up"></span> Reabrir
+      </button>
+      <button type="button" *ngIf="detalle.reunionEstado === 'REALIZADA' && !detalle.reunionSiguienteId"
+        (click)="abrirSiguienteModal()"
+        class="h-[38px] px-4 bg-[var(--color-abril-primary)] text-white rounded-lg text-sm font-medium cursor-pointer hover:opacity-90 transition-opacity flex items-center gap-2">
+        <span class="ti ti-calendar-plus"></span> Agendar siguiente reunión
+      </button>
+      <button type="button" *ngIf="puedeEditar && detalle.reunionEstado !== 'REALIZADA'" (click)="eliminarActa()"
+        class="h-[38px] w-[38px] flex items-center justify-center border border-red-200 text-red-400 rounded-lg cursor-pointer hover:bg-red-50 transition-colors"
+        title="Eliminar acta">
+        <span class="ti ti-trash"></span>
+      </button>
+    </div>
+
+    <p *ngIf="!puedeEditar" class="text-xs text-gray-400 flex items-center gap-1.5">
+      <span class="ti ti-lock"></span> Solo el creador del acta o sus coautores pueden editarla. La estás viendo en modo lectura.
+    </p>
+
+    <!-- Encadenamiento de reuniones -->
+    <div *ngIf="detalle.reunionAnteriorId || detalle.reunionSiguienteId"
+      class="flex flex-wrap gap-2 text-xs">
+      <button type="button" *ngIf="detalle.reunionAnteriorId" (click)="irAReunion(detalle.reunionAnteriorId)"
+        class="flex items-center gap-1.5 bg-[#F5F8FA] border border-[#E5EAF0] rounded-lg px-3 py-1.5 text-gray-600 hover:border-[var(--color-abril-primary)] cursor-pointer">
+        <span class="ti ti-arrow-back-up text-[var(--color-abril-primary)]"></span>
+        Tema promovido desde la Reunión N°{{ detalle.reunionAnteriorNumero }}: {{ detalle.reunionAnteriorTema }}
+      </button>
+      <button type="button" *ngIf="detalle.reunionSiguienteId" (click)="irAReunion(detalle.reunionSiguienteId)"
+        class="flex items-center gap-1.5 bg-[#F5F8FA] border border-[#E5EAF0] rounded-lg px-3 py-1.5 text-gray-600 hover:border-[var(--color-abril-primary)] cursor-pointer">
+        <span class="ti ti-arrow-forward-up text-[var(--color-abril-primary)]"></span>
+        Siguiente reunión: N°{{ detalle.reunionSiguienteNumero }} — {{ detalle.reunionSiguienteTema }}
+      </button>
+    </div>
+
+    <!-- Datos generales editables -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Tema de la reunión *</label>
+        <input type="text" [(ngModel)]="tema" maxlength="300" [disabled]="!puedeEditar" (blur)="guardar(true)"
+          class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)] disabled:bg-gray-50 disabled:text-gray-500" />
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Convocado por</label>
+        <app-search-select
+          [showLabel]="false"
+          [options]="opcionesConvocadoPor"
+          valueField="fullName"
+          displayField="fullName"
+          [value]="convocadoPor || null"
+          (valueChange)="convocadoPor = $event ?? ''; guardar(true)"
+          [disabled]="!puedeEditar"
+          placeholder="Selecciona un trabajador">
+        </app-search-select>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Lugar</label>
+        <input type="text" [(ngModel)]="lugar" maxlength="200" [disabled]="!puedeEditar" (blur)="guardar(true)"
+          class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)] disabled:bg-gray-50 disabled:text-gray-500" />
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">Hora de inicio</label>
+          <input type="time" [(ngModel)]="horaInicio" [disabled]="!puedeEditar" (change)="guardar(true)"
+            class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)] disabled:bg-gray-50 disabled:text-gray-500" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">Hora de término</label>
+          <input type="time" [(ngModel)]="horaFin" [disabled]="!puedeEditar" (change)="guardar(true)"
+            class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)] disabled:bg-gray-50 disabled:text-gray-500" />
+        </div>
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm text-gray-600 mb-1">Observaciones</label>
+        <input type="text" [(ngModel)]="observaciones" [disabled]="!puedeEditar" (blur)="guardar(true)"
+          class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)] disabled:bg-gray-50 disabled:text-gray-500" />
+      </div>
+    </div>
+  </div>
+
+  <app-acuerdos-pendientes-anteriores [reunionId]="reunionId"></app-acuerdos-pendientes-anteriores>
+
+  <!-- ── Agenda ─────────────────────────────────────────────────────────── -->
+  <div *ngIf="agenda?.requiereAgenda" class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <h3 class="text-sm font-semibold text-[var(--color-abril-primary)] uppercase">Agenda</h3>
+
+    <p *ngIf="agenda!.agendaFija" class="text-sm text-gray-700 whitespace-pre-line border border-[#E5EAF0] rounded-lg p-4 bg-[#F5F8FA]">
+      {{ agenda!.agendaTexto }}
+    </p>
+
+    <app-temas-puntuales-agenda *ngIf="agenda!.agendaFija"
+      [reunionId]="reunionId" [agenda]="agenda!" (saved)="cargarAgenda()">
+    </app-temas-puntuales-agenda>
+
+    <app-mis-temas-agenda *ngIf="!agenda!.agendaFija"
+      [reunionId]="reunionId" [agenda]="agenda!" (saved)="cargarAgenda()">
+    </app-mis-temas-agenda>
+  </div>
+
+  <!-- ── Participantes ──────────────────────────────────────────────────── -->
+  <div class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <div class="flex items-center justify-between">
+      <h3 class="text-sm font-semibold text-[var(--color-abril-primary)] uppercase">Participantes</h3>
+      <div class="flex items-center gap-3" *ngIf="puedeEditar">
+        <button type="button" (click)="abrirConvocatoriaMasiva()"
+          class="text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
+          <span class="ti ti-users"></span> Agregar por área/puesto
+        </button>
+        <button type="button" (click)="addParticipante()"
+          class="text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
+          <span class="ti ti-plus"></span> Agregar participante
+        </button>
+      </div>
+    </div>
+    <div class="overflow-auto border border-[#E5EAF0] rounded-lg">
+      <table class="w-full text-sm">
+        <thead class="bg-[#F5F8FA] text-[var(--color-abril-primary)]">
+          <tr class="text-left">
+            <th class="px-3 py-2 font-medium w-10 text-center">N°</th>
+            <th class="px-3 py-2 font-medium">Nombre</th>
+            <th class="px-3 py-2 font-medium">Cargo</th>
+            <th class="px-3 py-2 font-medium w-24 text-center">Iniciales</th>
+            <th class="px-3 py-2 font-medium w-24 text-center">Asistió</th>
+            <th class="px-3 py-2 font-medium w-24 text-center" title="Puede editar el acta igual que su creador">Coautor</th>
+            <th class="px-3 py-2 w-10" *ngIf="puedeEditar"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of participantes; let i = index" class="border-t border-[#E5EAF0]">
+            <td class="px-3 py-1.5 text-center text-gray-500">{{ i + 1 }}</td>
+            <td class="px-2 py-1.5">
+              <input type="text" [(ngModel)]="p.nombre" maxlength="200" [disabled]="!puedeEditar" (blur)="guardar(true)"
+                class="w-full h-[34px] px-2 border border-[#E5EAF0] rounded text-sm focus:outline-none focus:border-[var(--color-abril-primary)] disabled:bg-gray-50 disabled:text-gray-500" />
+            </td>
+            <td class="px-2 py-1.5">
+              <input type="text" [(ngModel)]="p.cargo" maxlength="200" [disabled]="!puedeEditar" (blur)="guardar(true)"
+                class="w-full h-[34px] px-2 border border-[#E5EAF0] rounded text-sm focus:outline-none focus:border-[var(--color-abril-primary)] disabled:bg-gray-50 disabled:text-gray-500" />
+            </td>
+            <td class="px-2 py-1.5">
+              <input type="text" [(ngModel)]="p.iniciales" maxlength="10" [disabled]="!puedeEditar" (blur)="guardar(true)"
+                class="w-full h-[34px] px-2 border border-[#E5EAF0] rounded text-sm text-center focus:outline-none focus:border-[var(--color-abril-primary)] disabled:bg-gray-50 disabled:text-gray-500" />
+            </td>
+            <td class="px-2 py-1.5 text-center">
+              <input type="checkbox" [(ngModel)]="p.asistio" (ngModelChange)="onAsistioChange()" [disabled]="!puedeEditar"
+                class="h-4 w-4 accent-[var(--color-abril-primary)] cursor-pointer" />
+            </td>
+            <td class="px-2 py-1.5 text-center">
+              <input type="checkbox" [(ngModel)]="p.esCoautor" (ngModelChange)="onAsistioChange()"
+                [disabled]="!puedeEditar || !p.workerId"
+                [title]="p.workerId ? 'Puede editar el acta' : 'Un invitado externo no puede ser coautor'"
+                class="h-4 w-4 accent-[var(--color-abril-primary)] cursor-pointer" />
+            </td>
+            <td class="px-2 py-1.5 text-center" *ngIf="puedeEditar">
+              <button type="button" (click)="removeParticipante(i)"
+                class="text-red-400 hover:text-red-600 cursor-pointer">
+                <span class="ti ti-trash text-base"></span>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="participantes.length === 0">
+            <td colspan="7" class="px-4 py-6 text-center text-gray-400">Sin participantes registrados.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p *ngIf="puedeEditar" class="text-xs text-gray-400 text-right">
+      Los cambios se guardan automáticamente.
+    </p>
+  </div>
+
+  <!-- ── Acuerdos / acciones tomadas ────────────────────────────────────── -->
+  <div class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <div class="flex items-center justify-between">
+      <h3 class="text-sm font-semibold text-[var(--color-abril-primary)] uppercase">Acuerdos / acciones tomadas</h3>
+      <button type="button" *ngIf="puedeEditar" (click)="abrirAcuerdo(null)"
+        class="text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
+        <span class="ti ti-plus"></span> Agregar acuerdo
+      </button>
+    </div>
+    <div class="overflow-auto border border-[#E5EAF0] rounded-lg">
+      <table class="w-full text-sm">
+        <thead class="bg-[#F5F8FA] text-[var(--color-abril-primary)]">
+          <tr class="text-left">
+            <th class="px-3 py-2 font-medium w-10 text-center">N°</th>
+            <th class="px-3 py-2 font-medium">Descripción</th>
+            <th class="px-3 py-2 font-medium w-24 text-center">Criticidad</th>
+            <th class="px-3 py-2 font-medium w-32">Responsables</th>
+            <th class="px-3 py-2 font-medium w-28 whitespace-nowrap">F. Programada</th>
+            <th class="px-3 py-2 font-medium w-28 whitespace-nowrap">F. Reprogram.</th>
+            <th class="px-3 py-2 font-medium w-28 whitespace-nowrap">F. Cumplimiento</th>
+            <th class="px-3 py-2 font-medium w-28 text-center">Estado</th>
+            <th class="px-3 py-2 font-medium w-20 text-center">Evidencia</th>
+            <th class="px-3 py-2 w-28 text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let a of detalle.acuerdos; let i = index">
+          <tr class="border-t border-[#E5EAF0]">
+            <td class="px-3 py-2 text-center text-gray-500">{{ i + 1 }}</td>
+            <td class="px-3 py-2 text-gray-700">
+              {{ a.descripcion }}
+              <p *ngIf="a.acciones" class="text-xs text-gray-400 mt-0.5">{{ a.acciones }}</p>
+              <p *ngIf="a.comentarioCumplimiento" class="text-xs text-gray-400 mt-0.5">
+                <span class="font-medium">Cómo se levantó:</span> {{ a.comentarioCumplimiento }}
+              </p>
+            </td>
+            <td class="px-3 py-2 text-center">
+              <span class="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap" [ngClass]="criticidadClass(a.criticidad)">
+                {{ criticidadLabel(a.criticidad) }}
+              </span>
+            </td>
+            <td class="px-3 py-2 text-gray-700 text-xs">{{ responsablesLabel(a) || '—' }}</td>
+            <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ a.fechaProgramada ? (a.fechaProgramada | date:'dd/MM/yyyy') : '—' }}</td>
+            <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ a.fechaReprogramacion ? (a.fechaReprogramacion | date:'dd/MM/yyyy') : '—' }}</td>
+            <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ a.fechaCumplimiento ? (a.fechaCumplimiento | date:'dd/MM/yyyy') : '—' }}</td>
+            <td class="px-3 py-2 text-center">
+              <span class="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap"
+                [ngClass]="acuerdoEstadoClass(a.reunionAcuerdoEstado)">
+                {{ a.reunionAcuerdoEstado }}
+              </span>
+            </td>
+            <td class="px-3 py-2 text-center">
+              <a *ngIf="a.evidenciaUrl" [href]="a.evidenciaUrl" target="_blank" rel="noopener noreferrer"
+                class="text-[#0086A5] hover:text-[#006a83]" title="Ver o descargar evidencia">
+                <span class="ti ti-paperclip text-base"></span>
+              </a>
+              <span *ngIf="!a.evidenciaUrl" class="text-gray-300">—</span>
+            </td>
+            <td class="px-3 py-2 text-center whitespace-nowrap">
+              <button type="button" *ngIf="a.reunionAcuerdoEstado !== 'CUMPLIDO'" (click)="abrirMarcarCumplido(a)"
+                class="text-green-500 hover:text-green-700 cursor-pointer mr-2" title="Marcar como cumplido">
+                <span class="ti ti-circle-check text-base"></span>
+              </button>
+              <button type="button" *ngIf="puedeEditar" (click)="abrirAcuerdo(a)"
+                class="text-[#0086A5] hover:text-[#006a83] cursor-pointer mr-2" title="Editar">
+                <span class="ti ti-pencil text-base"></span>
+              </button>
+              <button type="button" *ngIf="puedeEditar" (click)="eliminarAcuerdo(a)"
+                class="text-red-400 hover:text-red-600 cursor-pointer" title="Eliminar">
+                <span class="ti ti-trash text-base"></span>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="marcandoCumplidoId === a.reunionAcuerdoId" class="border-t border-[#E5EAF0] bg-[#F5F8FA]">
+            <td colspan="9" class="px-3 py-3">
+              <div class="flex flex-col gap-2 max-w-lg">
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-medium text-gray-500">
+                    Archivo de evidencia{{ a.requiereEvidencia ? ' (obligatorio)' : ' (opcional)' }}
+                  </label>
+                  <div class="flex items-center gap-2">
+                    <label class="h-[38px] px-4 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-2 bg-white">
+                      <span class="ti ti-upload text-base"></span>
+                      {{ subiendoEvidenciaCumplimiento ? 'Subiendo...' : 'Elegir archivo' }}
+                      <input type="file" class="hidden" [disabled]="subiendoEvidenciaCumplimiento" (change)="onEvidenciaCumplimientoSeleccionada($event)" />
+                    </label>
+                    <a *ngIf="evidenciaUrlNueva" [href]="evidenciaUrlNueva" target="_blank" rel="noopener noreferrer"
+                      class="text-sm truncate max-w-[180px]" style="color:var(--color-abril-primary)" [title]="evidenciaNombreNueva ?? evidenciaUrlNueva">
+                      {{ evidenciaNombreNueva ?? 'Ver archivo' }}
+                    </a>
+                    <button *ngIf="evidenciaUrlNueva" type="button" (click)="quitarEvidenciaCumplimientoNueva()" class="text-red-400 hover:text-red-600 cursor-pointer">
+                      <span class="ti ti-x text-sm"></span>
+                    </button>
+                  </div>
+                </div>
+                <label class="text-xs font-medium text-gray-500">Cómo se levantó (obligatorio)</label>
+                <textarea [(ngModel)]="comentarioCumplimiento" rows="2" maxlength="1000"
+                  placeholder="Describe cómo se resolvió el acuerdo..."
+                  class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)] resize-none bg-white"></textarea>
+                <div class="flex justify-end gap-2">
+                  <button type="button" (click)="cancelarMarcarCumplido()"
+                    class="h-[34px] px-3 border border-[#E5EAF0] rounded-lg text-xs text-gray-600 cursor-pointer hover:bg-gray-50 bg-white">
+                    Cancelar
+                  </button>
+                  <button type="button" (click)="confirmarMarcarCumplido(a)" [disabled]="subiendoEvidenciaCumplimiento"
+                    class="h-[34px] px-3 bg-[var(--color-abril-primary)] rounded-lg text-white text-xs font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] disabled:opacity-50">
+                    Confirmar cumplido
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+          </ng-container>
+          <tr *ngIf="detalle.acuerdos.length === 0">
+            <td colspan="9" class="px-4 py-6 text-center text-gray-400">Aún no se registran acuerdos.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Archivos adjuntos ──────────────────────────────────────────────── -->
+  <div class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <h3 class="text-sm font-semibold text-[var(--color-abril-primary)] uppercase">Archivos adjuntos</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="flex flex-col gap-3">
+        <app-file-selector
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.zip,.rar"
+          hint="PDF, Office, imágenes, ZIP (máx. 25 MB c/u)"
+          color="var(--color-abril-primary)"
+          (fileSelected)="onFileSelected($event)">
+        </app-file-selector>
+        <app-file-preview [files]="nuevosArchivosPreview" (remove)="removeNuevoArchivo($event)"></app-file-preview>
+        <button type="button" *ngIf="nuevosArchivos.length > 0" (click)="subirArchivos()"
+          class="self-end h-[38px] px-4 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
+          <span class="ti ti-upload text-base"></span>
+          Subir {{ nuevosArchivos.length }} archivo{{ nuevosArchivos.length === 1 ? '' : 's' }}
+        </button>
+      </div>
+
+      <div class="border border-[#E5EAF0] rounded-lg divide-y divide-[#E5EAF0] self-start">
+        <div *ngFor="let archivo of detalle.archivos" class="flex items-center gap-2 px-3 py-2">
+          <a [href]="fileUrl(archivo.archivoUrl)" target="_blank" rel="noopener"
+            class="flex-1 text-sm text-[#0086A5] hover:underline flex items-center gap-1.5 min-w-0">
+            <span class="ti ti-file-text shrink-0"></span>
+            <span class="truncate">{{ archivo.originalFileName || 'Ver archivo' }}</span>
+          </a>
+          <span class="text-[11px] text-gray-400 whitespace-nowrap">{{ archivo.createdDateTime | date:'dd/MM/yyyy' }}</span>
+          <button type="button" *ngIf="puedeEditar" (click)="eliminarArchivo(archivo.reunionArchivoId)"
+            class="text-red-400 hover:text-red-600 cursor-pointer">
+            <span class="ti ti-trash text-base"></span>
+          </button>
+        </div>
+        <div *ngIf="detalle.archivos.length === 0" class="px-3 py-6 text-center text-gray-400 text-sm">
+          Sin archivos adjuntos.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Historial de reprogramaciones ──────────────────────────────────── -->
+  <div *ngIf="detalle.reprogramaciones.length > 0" class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <h3 class="text-sm font-semibold text-[var(--color-abril-primary)] uppercase">Historial de reprogramaciones</h3>
+    <div class="overflow-auto border border-[#E5EAF0] rounded-lg">
+      <table class="w-full text-sm">
+        <thead class="bg-[#F5F8FA] text-[var(--color-abril-primary)]">
+          <tr class="text-left">
+            <th class="px-3 py-2 font-medium">Fecha anterior</th>
+            <th class="px-3 py-2 font-medium">Nueva fecha</th>
+            <th class="px-3 py-2 font-medium">Motivo</th>
+            <th class="px-3 py-2 font-medium">Registrado por</th>
+            <th class="px-3 py-2 font-medium">Fecha de registro</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let rep of detalle.reprogramaciones" class="border-t border-[#E5EAF0]">
+            <td class="px-3 py-2 text-gray-700 whitespace-nowrap">
+              {{ rep.fechaAnterior | date:'dd/MM/yyyy' }}
+              <span *ngIf="rep.horaInicioAnterior" class="text-xs text-gray-400"> {{ hora(rep.horaInicioAnterior) }}</span>
+            </td>
+            <td class="px-3 py-2 text-gray-700 whitespace-nowrap">
+              {{ rep.fechaNueva | date:'dd/MM/yyyy' }}
+              <span *ngIf="rep.horaInicioNueva" class="text-xs text-gray-400"> {{ hora(rep.horaInicioNueva) }}</span>
+            </td>
+            <td class="px-3 py-2 text-gray-700">{{ rep.motivo || '—' }}</td>
+            <td class="px-3 py-2 text-gray-700">{{ rep.createdUserName || '—' }}</td>
+            <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ rep.createdDateTime | date:'dd/MM/yyyy HH:mm' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modales ───────────────────────────────────────────────────────────── -->
+<app-reunion-reprogramar
+  *ngIf="showReprogramarModal && detalle"
+  [reunionId]="detalle.reunionId"
+  [fechaActual]="detalle.fecha"
+  [horaInicioActual]="detalle.horaInicio"
+  [horaFinActual]="detalle.horaFin"
+  (closeModal)="showReprogramarModal = false"
+  (saved)="onReprogramada()">
+</app-reunion-reprogramar>
+
+<app-acuerdo-form
+  *ngIf="showAcuerdoModal && detalle"
+  [reunionId]="detalle.reunionId"
+  [trabajadores]="detalle.trabajadores"
+  [estados]="detalle.acuerdoEstados"
+  [acuerdo]="acuerdoEnEdicion"
+  (closeModal)="showAcuerdoModal = false; acuerdoEnEdicion = null"
+  (saved)="onAcuerdoGuardado()">
+</app-acuerdo-form>
+
+<app-participante-add
+  *ngIf="showParticipanteModal && detalle"
+  [trabajadores]="detalle.trabajadores"
+  [inicialesExistentes]="inicialesActuales"
+  (closeModal)="showParticipanteModal = false"
+  (add)="onParticipanteAgregado($event)">
+</app-participante-add>
+
+<app-convocatoria-masiva
+  *ngIf="showConvocatoriaMasivaModal"
+  (closeModal)="showConvocatoriaMasivaModal = false"
+  (agregarTrabajadores)="onTrabajadoresAgregadosMasivamente($event)">
+</app-convocatoria-masiva>
+
+<app-reunion-add
+  *ngIf="showSiguienteModal && detalle"
+  [proyectos]="proyectoSiguienteOptions"
+  [trabajadores]="detalle.trabajadores"
+  [temas]="detalle.temas"
+  [projectIdFijo]="detalle.projectId"
+  [reunionAnteriorId]="detalle.reunionId"
+  [reunionAnteriorLabel]="'Reunión N°' + detalle.numero + ' — ' + detalle.tema"
+  [participantesSugeridos]="participantesParaSiguiente"
+  (closeModal)="showSiguienteModal = false"
+  (created)="onSiguienteCreada($event)">
+</app-reunion-add>

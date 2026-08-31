@@ -1,0 +1,150 @@
+<div class="detalle-page">
+
+  @if (loading) {
+    <div class="loading-state">
+      <i class="ti ti-loader-2 spin"></i> Cargando...
+    </div>
+  } @else if (!auditoria) {
+    <div class="loading-state">No se encontró la auditoría.</div>
+  } @else {
+
+    <app-abril-page-header
+      badge="SSOMA"
+      [titulo]="'Auditoría de ATS #' + auditoria.id"
+      [subtitulo]="auditoria.fecha + ' · ' + auditoria.auditorNombre"
+      [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+      (secondaryClick)="volver()">
+    </app-abril-page-header>
+
+    <!-- Datos generales -->
+    <div class="card">
+      <h3 class="card-title">Datos generales</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Trabajador auditado</span>
+          <span class="info-value">{{ auditoria.auditadoNombre | titleCase }}</span>
+          @if (auditoria.auditadoEmpresaNombre || auditoria.auditadoCategoria || auditoria.auditadoOcupacion) {
+            <span class="info-sub">
+              {{ auditoria.auditadoEmpresaNombre }}
+              @if (auditoria.auditadoEmpresaNombre && (auditoria.auditadoCategoria || auditoria.auditadoOcupacion)) { · }
+              {{ auditoria.auditadoCategoria }}
+              @if (auditoria.auditadoCategoria && auditoria.auditadoOcupacion) { · }
+              {{ auditoria.auditadoOcupacion }}
+            </span>
+          }
+        </div>
+        <div class="info-item">
+          <span class="info-label">Auditor</span>
+          <span class="info-value">{{ auditoria.auditorNombre | titleCase }}</span>
+          @if (auditoria.auditorEmpresaNombre || auditoria.auditorCategoria || auditoria.auditorOcupacion) {
+            <span class="info-sub">
+              {{ auditoria.auditorEmpresaNombre }}
+              @if (auditoria.auditorEmpresaNombre && (auditoria.auditorCategoria || auditoria.auditorOcupacion)) { · }
+              {{ auditoria.auditorCategoria }}
+              @if (auditoria.auditorCategoria && auditoria.auditorOcupacion) { · }
+              {{ auditoria.auditorOcupacion }}
+            </span>
+          }
+        </div>
+        @if (auditoria.proyectoNombre) {
+          <div class="info-item">
+            <span class="info-label">Proyecto</span>
+            <span class="info-value">{{ auditoria.proyectoNombre | titleCase }}</span>
+          </div>
+        }
+        @if (auditoria.emailAuditado) {
+          <div class="info-item">
+            <span class="info-label">Email</span>
+            <span class="info-value">{{ auditoria.emailAuditado }}</span>
+          </div>
+        }
+        @if (auditoria.actividad) {
+          <div class="info-item">
+            <span class="info-label">Actividad</span>
+            <span class="info-value">{{ auditoria.actividad }}</span>
+          </div>
+        }
+        @if (auditoria.lugar) {
+          <div class="info-item">
+            <span class="info-label">Lugar</span>
+            <span class="info-value">{{ auditoria.lugar }}</span>
+          </div>
+        }
+        @if (auditoria.observaciones) {
+          <div class="info-item info-item--full">
+            <span class="info-label">Observaciones</span>
+            <span class="info-value">{{ auditoria.observaciones }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Evaluación -->
+    @if (auditoria.respuestas.length > 0) {
+      <div class="card">
+        <h3 class="card-title">Evaluación de criterios</h3>
+
+        <!-- Leyenda -->
+        <div class="escala-legend">
+          @for (sc of scoreConfig; track sc.valor) {
+            <div class="leg-item" [style.background]="sc.color" [style.color]="sc.textColor">
+              <span class="leg-num">{{ sc.valor }}</span>
+              <span class="leg-lbl">{{ sc.label }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="respuestas-list">
+          @for (r of auditoria.respuestas; track r.preguntaId) {
+            <div class="resp-row">
+              <div class="resp-info">
+                <span class="resp-num">{{ $index + 1 }}</span>
+                <div class="resp-content">
+                  <span class="resp-texto">{{ r.preguntaTexto }}</span>
+                  @if (r.comentario) {
+                    <span class="resp-comentario">
+                      <i class="ti ti-message-circle"></i> {{ r.comentario }}
+                    </span>
+                  }
+                </div>
+              </div>
+              <div class="resp-score"
+                [style.background]="scoreForPregunta(r.puntaje).color"
+                [style.color]="scoreForPregunta(r.puntaje).textColor">
+                {{ r.puntaje }}
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Fotos -->
+    @if (auditoria.fotos.length > 0) {
+      <div class="card">
+        <h3 class="card-title">Evidencia fotográfica</h3>
+        <div class="fotos-grid">
+          @for (foto of auditoria.fotos; track $index) {
+            <div class="foto-thumb" (click)="ampliarFoto(foto)">
+              <img [src]="'data:image/jpeg;base64,' + foto" alt="Foto {{ $index + 1 }}" />
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+  }
+
+  @if (fotoAmpliada) {
+    <div class="foto-lightbox" (click)="cerrarFotoAmpliada()" (wheel)="onWheelZoom($event)">
+      <button type="button" class="foto-lightbox-cerrar" (click)="cerrarFotoAmpliada()">
+        <i class="ti ti-x"></i>
+      </button>
+      <img
+        [src]="'data:image/jpeg;base64,' + fotoAmpliada"
+        alt="Foto ampliada"
+        [style.transform]="'scale(' + zoom + ')'"
+        (click)="$event.stopPropagation()" />
+    </div>
+  }
+</div>

@@ -1,0 +1,143 @@
+<div class="react-wrap">
+
+  <!-- Filtros -->
+  <div class="react-toolbar">
+    <div class="react-field">
+      <label class="react-label">Mes</label>
+      <app-search-select
+        [options]="meses"
+        valueField="valor"
+        displayField="nombre"
+        placeholder="Todos los meses"
+        [sortAlpha]="false"
+        [value]="mes()"
+        [compact]="true"
+        [showLabel]="false"
+        color="var(--color-abril-primary)"
+        (valueChange)="mes.set(+$event)">
+      </app-search-select>
+    </div>
+    <div class="react-field">
+      <label class="react-label">Año</label>
+      <app-search-select
+        [options]="anios"
+        valueField="valor"
+        displayField="nombre"
+        placeholder="Todos los años"
+        [sortAlpha]="false"
+        [value]="anio()"
+        [compact]="true"
+        [showLabel]="false"
+        color="var(--color-abril-primary)"
+        (valueChange)="anio.set(+$event)">
+      </app-search-select>
+    </div>
+    <button class="react-btn" (click)="cargar()">
+      <i class="ti ti-search"></i> Consultar
+    </button>
+  </div>
+
+  <!-- KPIs globales -->
+  @if (datos().length > 0) {
+    <div class="react-kpi-row">
+      <div class="react-kpi">
+        <i class="ti ti-alert-triangle react-kpi-icon"></i>
+        <div>
+          <div class="react-kpi-val">{{ totalAccidentes }}</div>
+          <div class="react-kpi-lbl">Total accidentes</div>
+        </div>
+      </div>
+      <div class="react-kpi">
+        <i class="ti ti-calendar-off react-kpi-icon"></i>
+        <div>
+          <div class="react-kpi-val">{{ totalDias }}</div>
+          <div class="react-kpi-lbl">Días perdidos</div>
+        </div>
+      </div>
+      <div class="react-kpi">
+        <i class="ti ti-clock react-kpi-icon"></i>
+        <div>
+          <div class="react-kpi-val">{{ totalHHT | number }}</div>
+          <div class="react-kpi-lbl">Horas hombre trabajadas</div>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Calculando indicadores...</div>
+  } @else if (datos().length === 0) {
+    <div class="loading-state">No hay datos para el período seleccionado.</div>
+  } @else {
+    <div class="react-table-wrap">
+      <table class="react-table">
+        <thead>
+          <tr>
+            <th>Proyecto</th>
+            <th class="th-center">Accidentes</th>
+            <th class="th-center">Días perdidos</th>
+            <th class="th-center">HHT</th>
+            <th class="th-center">
+              IF
+              <span class="th-hint">Accidentes × 10⁶ / HHT</span>
+            </th>
+            <th class="th-center">
+              IG
+              <span class="th-hint">Días perdidos × 10⁶ / HHT</span>
+            </th>
+            <th class="th-center">
+              IA
+              <span class="th-hint">IF × IG / 1000</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of datos(); track d.proyectoId) {
+            <tr>
+              <td class="react-td-proyecto">{{ d.proyectoNombre }}</td>
+              <td class="td-center">
+                @if (d.totalAccidentes > 0) {
+                  <span class="react-badge react-badge--danger">{{ d.totalAccidentes }}</span>
+                } @else {
+                  <span class="react-badge react-badge--ok">0</span>
+                }
+              </td>
+              <td class="td-center">
+                @if (d.totalDiasPerdidos > 0) {
+                  <span style="color:#dc2626;font-weight:600">{{ d.totalDiasPerdidos }}</span>
+                } @else {
+                  <span style="color:#9ca3af">0</span>
+                }
+              </td>
+              <td class="td-center react-td-hht">{{ d.horasHombreTrabajadas | number }}</td>
+              <td class="td-center">
+                <span class="react-indicador" [style.color]="ifColor(d.indiceFrecuencia)">
+                  {{ d.indiceFrecuencia | number:'1.2-2' }}
+                </span>
+              </td>
+              <td class="td-center">
+                <span class="react-indicador" [style.color]="igColor(d.indiceGravedad)">
+                  {{ d.indiceGravedad | number:'1.2-2' }}
+                </span>
+              </td>
+              <td class="td-center">
+                <span class="react-indicador" [style.color]="iaColor(d.indiceAccidentabilidad)">
+                  {{ d.indiceAccidentabilidad | number:'1.4-4' }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="react-legend">
+      <span class="react-legend-item"><span class="react-dot react-dot--ok"></span> Sin accidentes</span>
+      <span class="react-legend-item"><span class="react-dot react-dot--warn"></span> Nivel de atención</span>
+      <span class="react-legend-item"><span class="react-dot react-dot--danger"></span> Nivel crítico</span>
+      <span class="react-legend-sep">|</span>
+      <span class="react-legend-note">IF: índice de frecuencia · IG: índice de gravedad · IA: índice de accidentabilidad · Base 10⁶ HHT (norma MINTRA)</span>
+    </div>
+  }
+</div>

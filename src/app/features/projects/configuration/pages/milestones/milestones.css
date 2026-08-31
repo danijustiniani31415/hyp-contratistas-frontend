@@ -1,0 +1,195 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Sub-tabs internos (paleta UDP — DESIGN-VICTOR.md §2.1 / §6.2) ───────── */
+.subtab-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid #E2E8F0;
+  background: #ffffff;
+  color: #64748B;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.subtab-btn:hover {
+  background: #F8FAFC;
+}
+
+.subtab-btn:focus-visible {
+  outline: 2px solid #2E6DB4;
+  outline-offset: 2px;
+}
+
+.subtab-btn--active {
+  background: #1E3A5F;
+  border-color: #1E3A5F;
+  color: #ffffff;
+}
+
+/* ── Tabla (DESIGN-VICTOR.md §6.7) ───────────────────────────────────────── */
+.milestones-th {
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748B;
+  text-align: center;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.milestones-th--left {
+  text-align: left;
+}
+
+.milestones-row:hover {
+  background: #F8FAFC;
+}
+
+/* ── Badges de estado (DESIGN-VICTOR.md §6.3) ────────────────────────────── */
+.milestones-badge {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 2px 8px;
+  margin: 4px 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* ── Switch Activo/Inactivo ───────────────────────────────────────────────
+   Sin componente equivalente documentado en DESIGN-VICTOR.md; se sigue la
+   paleta UDP (verde éxito = activo) y la escala de radios existente. */
+.proyecto-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  cursor: pointer;
+}
+
+.proyecto-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.proyecto-switch__slider {
+  position: absolute;
+  inset: 0;
+  background: #E2E8F0;
+  border-radius: 999px;
+  transition: background-color 150ms ease;
+}
+
+.proyecto-switch__slider::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: transform 150ms ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.proyecto-switch input:checked + .proyecto-switch__slider {
+  background: #1B6B3A;
+}
+
+.proyecto-switch input:checked + .proyecto-switch__slider::before {
+  transform: translateX(18px);
+}
+
+.proyecto-switch input:focus-visible + .proyecto-switch__slider {
+  outline: 2px solid #2E6DB4;
+  outline-offset: 2px;
+}
+
+.proyecto-switch--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Formularios de los modales (DESIGN-VICTOR.md §6.6) ──────────────────── */
+.milestones-field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin-bottom: 4px;
+}
+
+.milestones-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #1E3A5F;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.milestones-input:focus {
+  border-color: #2E6DB4;
+  box-shadow: 0 0 0 2px rgba(46, 109, 180, 0.2);
+}
+
+/* ── Botón primario de los modales (DESIGN-VICTOR.md §6.2) ───────────────── */
+.btn-udp-primary {
+  background: #1E3A5F;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  transition: background-color 150ms ease;
+}
+
+.btn-udp-primary:hover {
+  background: color-mix(in srgb, #1E3A5F 92%, black);
+}
+
+.btn-udp-primary:focus-visible {
+  outline: 2px solid #2E6DB4;
+  outline-offset: 2px;
+}
+
+.btn-udp-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Botón de cerrar modal (DESIGN-VICTOR.md §6.8) ───────────────────────── */
+.modal-close-btn {
+  color: #64748B;
+  transition: color 150ms ease;
+}
+
+.modal-close-btn:hover {
+  color: #1E3A5F;
+}
+
+/* ── Skeleton loading (DESIGN-VICTOR.md §7) ──────────────────────────────── */
+@keyframes milestones-shimmer {
+  0% {
+    background-position: -400% 0;
+  }
+  100% {
+    background-position: 400% 0;
+  }
+}
+
+.skeleton-line {
+  background: linear-gradient(90deg, #dde5ef 25%, #eaeff6 50%, #dde5ef 75%);
+  background-size: 400% 100%;
+  animation: milestones-shimmer 1.5s infinite linear;
+  border-radius: 4px;
+}

@@ -1,0 +1,139 @@
+<app-base-modal *ngIf="open" [title]="'Programar Inducción'" width="w-[700px]" (closeModal)="close()">
+
+  <!-- Step indicator -->
+  <div class="pi-steps">
+    <span class="pi-step" [class.pi-step--active]="step === 1" [class.pi-step--done]="step > 1">
+      <span class="pi-step-num">1</span> Configuración
+    </span>
+    <span class="pi-step-arrow">›</span>
+    <span class="pi-step" [class.pi-step--active]="step === 2">
+      <span class="pi-step-num">2</span> Trabajadores
+    </span>
+  </div>
+
+  <!-- ══════════════ STEP 1: CONFIG ══════════════ -->
+  <div *ngIf="step === 1" class="pi-body">
+    <div class="pi-grid">
+
+      <div class="pi-col-full">
+        <label class="pi-label">Proyecto *</label>
+        <app-search-select
+          [options]="proyectosCombo"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="proyectoId"
+          [showLabel]="false"
+          [placeholder]="loadingProyectos ? 'Cargando proyectos…' : 'Buscar proyecto...'"
+          (valueChange)="proyectoId = $event"
+        />
+      </div>
+
+      <div>
+        <label class="pi-label">Fecha programada *</label>
+        <app-date-picker
+          [value]="fechaProgramada"
+          [showLabel]="false"
+          (valueChange)="fechaProgramada = $event"
+        />
+      </div>
+
+      <div class="pi-checkboxes">
+        <label class="pi-check-row">
+          <input type="checkbox" [(ngModel)]="trabajoAltura" />
+          <span>Trabajo en altura</span>
+        </label>
+        <label class="pi-check-row">
+          <input type="checkbox" [(ngModel)]="equipoElectrico" />
+          <span>Equipo eléctrico</span>
+        </label>
+      </div>
+
+    </div>
+
+    <footer class="pi-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canGoToStep2" (click)="goToStep2()">
+        Siguiente →
+      </button>
+    </footer>
+  </div>
+
+  <!-- ══════════════ STEP 2: TRABAJADORES ══════════════ -->
+  <div *ngIf="step === 2" class="pi-body">
+
+    <!-- Pills obra/staff (solo si empresa es Casa/Abril) -->
+    <div class="pi-tipo-pills" *ngIf="empresaEsAbril">
+      <button class="radio-pill" [class.radio-pill--on]="filtroObraOficina === ''"
+        (click)="filtroObraOficina = ''">Todos</button>
+      <button class="radio-pill" [class.radio-pill--on]="filtroObraOficina === 'Obra'"
+        (click)="filtroObraOficina = 'Obra'">Obra</button>
+      <button class="radio-pill" [class.radio-pill--on]="filtroObraOficina === 'Staff'"
+        (click)="filtroObraOficina = 'Staff'">Staff / Oficina Central</button>
+    </div>
+
+    <!-- Search + select all -->
+    <div class="pi-search-row">
+      <div class="pi-search">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          type="text"
+          class="pi-search-input"
+          placeholder="Buscar nombre o DNI…"
+          [(ngModel)]="workerSearch"
+        />
+      </div>
+      <label class="pi-toggle" *ngIf="!loadingWorkers && workersFiltrados.length > 0">
+        <input type="checkbox" [checked]="todosSeleccionados" (change)="toggleTodos()" />
+        <span>Seleccionar todos</span>
+      </label>
+    </div>
+
+    <!-- Worker list -->
+    <div class="pi-worker-list">
+      <div *ngIf="loadingWorkers" class="pi-list-msg">Cargando trabajadores…</div>
+      <div *ngIf="!loadingWorkers && workersFiltrados.length === 0" class="pi-list-msg">
+        Sin trabajadores para los filtros aplicados.
+      </div>
+      <label
+        *ngFor="let w of workersFiltrados"
+        class="pi-worker-row"
+        [class.pi-worker-row--sel]="selectedWorkerIds.includes(w.workerId)"
+      >
+        <input
+          type="checkbox"
+          [checked]="selectedWorkerIds.includes(w.workerId)"
+          (change)="toggleWorker(w.workerId)"
+        />
+        <div class="pi-worker-info">
+          <div class="pi-worker-name-row">
+            <span class="pi-worker-name">{{ w.apellidoNombre }}</span>
+            <span class="pi-badge-homologa" *ngIf="w.yaIndujo">Ya indujo · puede homologar</span>
+          </div>
+          <span class="pi-worker-meta">{{ w.dni }}<ng-container *ngIf="w.empresaNombre"> · {{ w.empresaNombre }}</ng-container></span>
+        </div>
+        <span class="pi-worker-obra" *ngIf="w.obraOficina">{{ w.obraOficina }}</span>
+      </label>
+    </div>
+
+    <!-- Counter + warning -->
+    <div class="pi-counter" *ngIf="selectedWorkerIds.length > 0">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64bc04" stroke-width="2.5">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      {{ selectedWorkerIds.length }} trabajador{{ selectedWorkerIds.length !== 1 ? 'es' : '' }} seleccionado{{ selectedWorkerIds.length !== 1 ? 's' : '' }}
+    </div>
+    <div class="pi-warning" *ngIf="!loadingWorkers && selectedWorkerIds.length === 0">
+      Selecciona al menos un trabajador para continuar.
+    </div>
+
+    <footer class="pi-footer">
+      <button type="button" class="btn-ghost" (click)="step = 1">← Volver</button>
+      <button type="button" class="btn-primary" [disabled]="!canConfirm" (click)="confirmar()">
+        {{ saving ? 'Guardando…' : 'Confirmar (' + selectedWorkerIds.length + ')' }}
+      </button>
+    </footer>
+  </div>
+
+</app-base-modal>

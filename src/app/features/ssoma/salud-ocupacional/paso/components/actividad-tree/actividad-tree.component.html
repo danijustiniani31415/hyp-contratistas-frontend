@@ -1,0 +1,254 @@
+<div class="tree-wrap">
+
+  <div *ngFor="let grupo of groups">
+
+    <!-- Fila cabecera de categoría -->
+    <div class="cat-header" (click)="toggleGroup(grupo.id)">
+      <i class="ti ti-chevron-right cat-chevron" [class.open]="!isCollapsed(grupo.id)"></i>
+      <span class="cat-name">{{ grupo.nombre }}</span>
+      <span class="cat-count">{{ grupo.actividades.length }}</span>
+    </div>
+
+    <!-- Filas de actividades -->
+    <div *ngIf="!isCollapsed(grupo.id)">
+      <div *ngFor="let a of grupo.actividades" class="actividad-row">
+
+        <!-- Col 1: barra de color SPI -->
+        <div class="act-color-bar" [ngClass]="'act-color-bar--' + spiBarColor(a)"></div>
+
+        <!-- Col 2: nombre -->
+        <div class="act-name-cell">
+          <span class="act-name" [title]="a.nombre">{{ a.nombre }}</span>
+        </div>
+
+        <!-- Col 3: frecuencia -->
+        <span class="freq-badge" [ngClass]="frecuenciaClass(a.frecuencia)">{{ a.frecuencia }}</span>
+
+        <!-- Col 4: meses -->
+        <span class="act-meses">M{{ a.mesInicio }}–M{{ a.mesFin }}</span>
+
+        <!-- Col 5: ejecuciones -->
+        <span class="act-ejec">{{ ejecutadas(a) }}/{{ a.cantidadPlanificada }}</span>
+
+        <!-- Col 6: SPI badge -->
+        <app-spi-badge [spi]="spiActividad(a)" size="sm"></app-spi-badge>
+
+        <!-- Col 7: estado mes actual -->
+        <span class="mes-actual" [ngClass]="'mes-actual--' + ejecucionMesActual(a).estado">
+          {{ ejecucionMesActual(a).label }}
+        </span>
+
+        <!-- Col 8: acciones -->
+        <div class="act-row-actions">
+          <button type="button" class="row-btn row-btn--reg" (click)="abrirEjecucion(a)" title="Registrar ejecución">
+            <i class="ti ti-plus"></i> Registrar
+          </button>
+          <button type="button" class="row-btn row-btn--ver" (click)="abrirDetalle(a)" title="Ver historial">
+            <i class="ti ti-eye"></i>
+          </button>
+          <button type="button" class="row-btn row-btn--del" (click)="abrirEliminar(a)" title="Eliminar">
+            <i class="ti ti-trash"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="groups.length === 0" class="tree-empty">
+    <i class="ti ti-clipboard-list"></i>
+    <p>No hay actividades{{ filtroEstado ? ' con este filtro' : ' en este ámbito' }}</p>
+  </div>
+
+</div>
+
+<app-ejecucion-modal
+  *ngIf="actividadEjecutando"
+  [actividad]="actividadEjecutando"
+  [mesSeleccionado]="mesSeleccionado"
+  [anioSeleccionado]="anioSeleccionado"
+  (closed)="actividadEjecutando = null"
+  (ejecucionCreada)="onEjecucionCreada($event)">
+</app-ejecucion-modal>
+
+<!-- Offcanvas historial de ejecuciones -->
+<div *ngIf="actividadDetalle" class="det-overlay">
+  <div class="det-backdrop" (click)="actividadDetalle = null"></div>
+  <div class="det-panel">
+
+    <div class="det-header">
+      <div class="det-header-info">
+        <h3 class="det-title">{{ actividadDetalle.nombre }}</h3>
+        <div class="det-badges">
+          <span class="freq-badge" [ngClass]="frecuenciaClass(actividadDetalle.frecuencia)">{{ actividadDetalle.frecuencia }}</span>
+          <span class="det-meta-item"><i class="ti ti-calendar-event"></i> M{{ actividadDetalle.mesInicio }}–M{{ actividadDetalle.mesFin }}</span>
+          <span class="det-meta-item"><i class="ti ti-check"></i> {{ ejecutadas(actividadDetalle) }}/{{ actividadDetalle.cantidadPlanificada }}</span>
+        </div>
+      </div>
+      <button type="button" class="det-close" (click)="actividadDetalle = null"><i class="ti ti-x"></i></button>
+    </div>
+
+    <div class="det-kpis">
+      <div class="det-kpi-item">
+        <span class="det-kpi-label">SPI</span>
+        <app-spi-badge [spi]="spiActividad(actividadDetalle)" size="sm"></app-spi-badge>
+      </div>
+      <div class="det-kpi-item">
+        <span class="det-kpi-label">Este mes</span>
+        <span class="mes-actual" [ngClass]="'mes-actual--' + ejecucionMesActual(actividadDetalle).estado">
+          {{ ejecucionMesActual(actividadDetalle).label }}
+        </span>
+      </div>
+    </div>
+
+    <div class="det-tabs">
+      <button type="button" class="det-tab" [class.active]="detallePestana==='ejecuciones'"
+        (click)="detallePestana='ejecuciones'">
+        <i class="ti ti-list"></i> Ejecuciones
+      </button>
+      <button type="button" class="det-tab" [class.active]="detallePestana==='historial'"
+        (click)="detallePestana='historial'">
+        <i class="ti ti-history"></i> Historial de cambios
+      </button>
+    </div>
+
+    <div class="det-body">
+
+      <!-- Pestaña ejecuciones -->
+      <ng-container *ngIf="detallePestana==='ejecuciones'">
+        <p class="det-section-title">Historial de ejecuciones</p>
+        <div *ngIf="!actividadDetalle.ejecuciones?.length" class="det-empty">
+          <i class="ti ti-calendar-off" style="font-size:1.75rem;opacity:0.25"></i>
+          <p>Sin ejecuciones registradas</p>
+        </div>
+        <div *ngFor="let e of actividadDetalle.ejecuciones" class="ejec-row">
+          <div class="ejec-dot" [ngClass]="'ejec-dot--' + e.estado.toLowerCase()"></div>
+          <div class="ejec-info">
+            <div class="ejec-top">
+              <span class="ejec-fecha">{{ e.fechaProgramada | date:'dd MMM yyyy' }}</span>
+              <span class="ejec-badge" [ngClass]="'ejec-badge--' + e.estado.toLowerCase()">{{ e.estado }}</span>
+              <span *ngIf="e.fechaEjecutada" class="ejec-ejecutada">
+                ✓ {{ e.fechaEjecutada | date:'dd MMM' }}
+              </span>
+              <button *ngIf="e.estado === 'Programado' || e.estado === 'Vencido'"
+                type="button" class="ejec-btn-reprog" (click)="abrirReprogramar(e)" title="Reprogramar">
+                <i class="ti ti-calendar-event"></i> Reprogramar
+              </button>
+            </div>
+            <p *ngIf="e.observaciones" class="ejec-obs">{{ e.observaciones }}</p>
+            <p *ngIf="e.participantesCount" class="ejec-obs">{{ e.participantesCount }} participantes</p>
+            <p *ngIf="e.fechaReprogramada" class="ejec-obs">
+              <i class="ti ti-calendar-event" style="color:#d97706"></i>
+              Reprogramada: {{ e.fechaReprogramada | date:'dd MMM yyyy' }}
+              <span *ngIf="e.motivoReprogramacion"> — {{ e.motivoReprogramacion }}</span>
+            </p>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Pestaña historial de cambios -->
+      <ng-container *ngIf="detallePestana==='historial'">
+        <p class="det-section-title">Historial de cambios</p>
+        <div *ngIf="loadingAuditoria" class="det-empty">
+          <i class="ti ti-loader-2 animate-spin" style="font-size:1.5rem;opacity:0.4"></i>
+          <p>Cargando...</p>
+        </div>
+        <div *ngIf="!loadingAuditoria && !auditoria.length" class="det-empty">
+          <i class="ti ti-history" style="font-size:1.75rem;opacity:0.25"></i>
+          <p>Sin cambios registrados</p>
+        </div>
+        <div *ngFor="let c of auditoria" class="audit-row">
+          <div class="audit-icon" [style.color]="auditColor(c.tipo)">
+            <i class="ti" [ngClass]="auditIcono(c.tipo)"></i>
+          </div>
+          <div class="audit-info">
+            <p class="audit-desc">{{ c.descripcion }}</p>
+            <p *ngIf="c.motivo" class="audit-motivo">{{ c.motivo }}</p>
+            <span class="audit-fecha">{{ c.createdAt | date:'dd MMM yyyy, HH:mm' }}</span>
+          </div>
+        </div>
+      </ng-container>
+
+    </div>
+
+    <div class="det-footer">
+      <button type="button" class="det-btn-cancel" (click)="actividadDetalle = null">Cerrar</button>
+      <button type="button" class="det-btn-save" (click)="abrirEjecucion(actividadDetalle); actividadDetalle = null">
+        <i class="ti ti-plus"></i> Registrar ejecución
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal reprogramar ejecución -->
+<app-abril-modal-panel
+  *ngIf="reprogramarOpen && ejecucionAReprogramar"
+  titulo="Reprogramar ejecución"
+  icono="ti-calendar-event"
+  variant="blue"
+  width="480px"
+  (closeModal)="reprogramarOpen = false; ejecucionAReprogramar = null">
+
+  <p class="eliminar-desc">
+    Programada: <strong>{{ ejecucionAReprogramar.fechaProgramada | date:'dd MMM yyyy' }}</strong>
+  </p>
+  <div class="abril-field">
+    <label class="abril-field-label">Nueva fecha *</label>
+    <input type="date" class="abril-field-input" [(ngModel)]="nuevaFechaReprogramacion" />
+  </div>
+  <div class="abril-field">
+    <label class="abril-field-label">Motivo *</label>
+    <textarea class="abril-field-input" [(ngModel)]="motivoReprogramacion"
+      placeholder="Describe el motivo..." rows="3"></textarea>
+    <span *ngIf="motivoReprogramacion.length > 0 && motivoReprogramacion.length < 10" class="eliminar-hint">
+      Mínimo 10 caracteres ({{ motivoReprogramacion.length }}/10)
+    </span>
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="eliminar-btn-cancel"
+      (click)="reprogramarOpen = false; ejecucionAReprogramar = null">
+      Cancelar
+    </button>
+    <button type="button" class="eliminar-btn-confirm"
+      style="background:#d97706"
+      [disabled]="!nuevaFechaReprogramacion || motivoReprogramacion.trim().length < 10"
+      (click)="confirmarReprogramar()">
+      <i class="ti ti-calendar-event"></i> Reprogramar
+    </button>
+  </div>
+</app-abril-modal-panel>
+
+<!-- Modal eliminar actividad -->
+<app-abril-modal-panel
+  *ngIf="eliminarOpen && eliminarActividad"
+  titulo="Eliminar actividad"
+  icono="ti-trash"
+  variant="blue"
+  width="480px"
+  (closeModal)="eliminarOpen = false; motivoEliminacion = ''">
+
+  <p class="eliminar-desc">Esta acción no se puede deshacer. La actividad quedará registrada en el historial.</p>
+  <p class="eliminar-nombre">{{ eliminarActividad.nombre }}</p>
+  <div class="abril-field">
+    <label class="abril-field-label">Motivo de eliminación *</label>
+    <textarea class="abril-field-input" [(ngModel)]="motivoEliminacion"
+      placeholder="Describe el motivo..." rows="3"></textarea>
+    <span *ngIf="motivoEliminacion.length > 0 && motivoEliminacion.length < 10" class="eliminar-hint">
+      Mínimo 10 caracteres ({{ motivoEliminacion.length }}/10)
+    </span>
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="eliminar-btn-cancel"
+      (click)="eliminarOpen = false; motivoEliminacion = ''">
+      Cancelar
+    </button>
+    <button type="button" class="eliminar-btn-confirm"
+      [disabled]="motivoEliminacion.trim().length < 10"
+      (click)="confirmarEliminar()">
+      <i class="ti ti-trash"></i> Eliminar
+    </button>
+  </div>
+</app-abril-modal-panel>

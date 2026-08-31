@@ -1,0 +1,73 @@
+<div class="flex flex-col gap-4 flex-1 min-h-0">
+
+  <!-- Filtros -->
+  <div class="flex flex-wrap gap-3 items-end">
+
+    <div class="w-[220px]">
+      <app-search-select
+        label="Proyecto"
+        [options]="projectOptions"
+        valueField="projectId"
+        displayField="projectDescription"
+        [value]="filters.projectId"
+        (valueChange)="filters.projectId = $event">
+      </app-search-select>
+    </div>
+
+    <div class="w-[220px]">
+      <app-search-select
+        label="Tipo de correo"
+        [options]="typeOptions"
+        valueField="staffProjectEmailTypeId"
+        displayField="description"
+        [value]="filters.staffProjectEmailTypeId"
+        (valueChange)="filters.staffProjectEmailTypeId = $event">
+      </app-search-select>
+    </div>
+
+    <div class="flex flex-col gap-[6px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Correo electrónico</label>
+      <app-search-input
+        width="220px"
+        placeholder="Buscar por correo..."
+        [value]="filters.email || ''"
+        (valueChange)="filters.email = $event"
+        (keyup.enter)="onSearch()">
+      </app-search-input>
+    </div>
+
+    <button type="button" (click)="onSearch()"
+      class="h-[42px] px-5 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors flex items-center gap-2" style="background:var(--color-abril-primary)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
+      </svg>
+      Buscar
+    </button>
+
+  </div>
+
+  <!-- Lista -->
+  <app-staff-project-email-list
+    [filters]="filters"
+    [formData]="formData"
+    (pagedData)="onPagedData($event)"
+    class="flex-1 min-h-0 overflow-auto">
+  </app-staff-project-email-list>
+
+  <!-- Paginador -->
+  <app-paginator
+    [totalRecords]="totalRecords"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    (pageChange)="onPageChange($event)">
+  </app-paginator>
+
+</div>
+
+<!-- Modal crear -->
+<app-staff-project-email-create
+  *ngIf="showCreateModal"
+  [formData]="formData"
+  (closeModal)="showCreateModal = false"
+  (saved)="list.load(1)">
+</app-staff-project-email-create>

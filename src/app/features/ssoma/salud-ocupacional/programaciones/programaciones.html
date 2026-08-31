@@ -1,0 +1,270 @@
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Programaciones"
+  subtitulo="Citas médicas y exámenes programados por trabajador."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: solo aplica a la vista Lista. -->
+  <app-filter-trigger *ngIf="viewMode === 'list'" tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<section class="page-container p-6 flex flex-col gap-[16px] flex-1 min-h-0 overflow-hidden">
+  <div class="flex justify-end shrink-0">
+    <app-view-toggle
+      [modes]="viewModes"
+      [value]="viewMode"
+      (valueChange)="onViewModeChange($event)"
+    ></app-view-toggle>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis-row shrink-0">
+    <div class="kpi-card">
+      <span class="kpi-value">{{ resumen.programados }}</span>
+      <span class="kpi-label">Programados</span>
+    </div>
+    <div class="kpi-card kpi-green">
+      <span class="kpi-value">{{ resumen.aceptados }}</span>
+      <span class="kpi-label">Aceptados</span>
+    </div>
+    <div class="kpi-card kpi-orange">
+      <span class="kpi-value">{{ resumen.enAtencion }}</span>
+      <span class="kpi-label">En Atención</span>
+    </div>
+    <div class="kpi-card kpi-emerald">
+      <span class="kpi-value">{{ resumen.completados }}</span>
+      <span class="kpi-label">Completados</span>
+    </div>
+    <div class="kpi-card kpi-red">
+      <span class="kpi-value">{{ resumen.rechazados }}</span>
+      <span class="kpi-label">Rechazados</span>
+    </div>
+    <div class="kpi-card kpi-gray">
+      <span class="kpi-value">{{ resumen.noPresento }}</span>
+      <span class="kpi-label">No se presentó</span>
+    </div>
+    <div class="kpi-card kpi-violet">
+      <span class="kpi-value">{{ resumen.automaticos }}</span>
+      <span class="kpi-label">Auto</span>
+    </div>
+  </div>
+
+  <!-- Vista Lista -->
+  <div *ngIf="viewMode === 'list'" class="flex flex-col gap-[10px] flex-1 min-h-0">
+    <div class="abril-table-wrap">
+        <table class="abril-table">
+          <thead class="sticky top-0 z-10">
+            <tr>
+              <th>Trabajador</th>
+              <th>Tipo EMO</th>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Clínica</th>
+              <th>Médico</th>
+              <th class="text-center">Estado</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of items" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+              <td>
+                <div class="worker-cell">
+                  <span class="worker-name">{{ item.workerNombre | titleCase }}</span>
+                  <span class="worker-dni">DNI · {{ item.workerDni }}</span>
+                </div>
+              </td>
+              <td class="text-gray-500">{{ item.tipoEmo }}</td>
+              <td class="text-gray-500">{{ formatFecha(item.fechaProgramada) }}</td>
+              <td class="text-gray-500">{{ item.horaProgramada || '—' }}</td>
+              <td class="text-gray-500">{{ item.clinica || '—' }}</td>
+              <td class="text-gray-500">{{ item.medico || '—' }}</td>
+              <td class="text-center">
+                <span class="badge border" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+                <span *ngIf="esAutomatico(item)" class="badge border bg-violet-50 text-violet-700 border-violet-200" style="font-size:0.68rem">AUTO</span>
+              </td>
+              <td class="text-right">
+                <div class="row-actions flex items-center justify-end gap-[8px]">
+                  <button
+                    *ngIf="puedeConfirmar(item)"
+                    type="button"
+                    abrilBulkAction="default"
+                    title="Confirmar"
+                    (click)="cambiarEstado(item, 'Confirmada')"
+                  >
+                    Confirmar
+                  </button>
+                  <button
+                    *ngIf="puedeMarcarNoPresento(item)"
+                    type="button"
+                    abrilBulkAction="default"
+                    title="No se presentó"
+                    (click)="cambiarEstado(item, 'No se presentó')"
+                  >
+                    No presentó
+                  </button>
+                  <button
+                    *ngIf="puedeCancelar(item)"
+                    type="button"
+                    abrilBulkAction="danger"
+                    title="Cancelar"
+                    (click)="cambiarEstado(item, 'Cancelada')"
+                  >
+                    Cancelar
+                  </button>
+                  <span
+                    *ngIf="puedeVerMotivoRechazo(item)"
+                    class="badge border bg-red-50 text-red-700 border-red-200"
+                    title="{{ item.motivoRechazo }}"
+                  >⚠ Rechazado</span>
+                  <span
+                    *ngIf="item.checkInHora"
+                    class="badge border bg-gray-100 text-gray-600 border-gray-200"
+                  >⏱ {{ item.checkInHora }}</span>
+                  <span
+                    *ngIf="item.fechaNotificacion"
+                    class="badge border bg-blue-50 text-blue-600 border-blue-200"
+                    title="Notificado el {{ item.fechaNotificacion | date:'dd/MM/yyyy HH:mm' }}"
+                  >📧</span>
+                </div>
+              </td>
+            </tr>
+
+            <tr *ngIf="!loading && items.length === 0">
+              <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">
+                {{ hasActiveFilters ? 'Sin resultados.' : 'Sin programaciones.' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+    </div>
+
+    <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="totalRecords"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="onPageChange($event)"
+      ></app-paginator>
+    </div>
+  </div>
+
+  <!-- Vista Calendario -->
+  <ng-container *ngIf="viewMode === 'calendar'">
+    <div class="calendar-card">
+      <div class="calendar-header">
+        <button type="button" class="btn-ghost" (click)="prevSemana()">← Anterior</button>
+        <div class="calendar-title">
+          <span>{{ semanaLabel }}</span>
+          <button type="button" class="btn-link" (click)="hoySemana()">Hoy</button>
+        </div>
+        <button type="button" class="btn-ghost" (click)="nextSemana()">Siguiente →</button>
+      </div>
+
+      <div class="calendar-grid">
+        <div *ngFor="let dia of calendarioDias" class="calendar-day">
+          <div class="day-head">
+            <span class="day-name">
+              {{ dia.fecha | date: 'EEEE' }}
+            </span>
+            <span class="day-date">{{ dia.fecha | date: 'dd/MM' }}</span>
+          </div>
+          <div class="day-body">
+            <div *ngIf="dia.items.length === 0" class="day-empty">—</div>
+            <div *ngFor="let p of dia.items" class="event-chip">
+              <div class="event-time">{{ p.horaProgramada || '--' }}</div>
+              <div class="event-body">
+                <div class="event-name">{{ p.workerNombre }}</div>
+                <span *ngIf="esAutomatico(p)"
+                  style="font-size:0.62rem;background:#ede9fe;color:#7c3aed;border-radius:4px;padding:1px 4px;font-weight:700;">
+                  AUTO
+                </span>
+                <div class="event-sub">{{ p.tipoEmo }}<span *ngIf="p.clinica"> · {{ p.clinica }}</span></div>
+                <span class="badge border mt-1" [ngClass]="estadoClass(p.estado)">{{ p.estado }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</section>
+
+<app-fab label="Nueva programación" (clicked)="openCreate()"></app-fab>
+
+<app-programacion-create
+  *ngIf="createOpen"
+  [open]="createOpen"
+  (closed)="closeCreate()"
+  (saved)="onCreated()"
+></app-programacion-create>
+
+<!-- ── Modal de filtros estándar (solo vista Lista) ────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Nombre o DNI..."
+      [value]="filters.search"
+      (valueChange)="onSearchChange($event)"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.estado"
+      placeholder="Todos"
+      (valueChange)="filters.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filters.desde" (change)="onFilterChange()" />
+    </div>
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filters.hasta" (change)="onFilterChange()" />
+    </div>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Clínica"
+      [options]="clinicaOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtroClinicaId"
+      placeholder="Todas"
+      (valueChange)="filtroClinicaId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Gerencia"
+      [options]="gerenciaOptions"
+      valueField="areaScopeId"
+      displayField="areaItemName"
+      [value]="filtroGerenciaId"
+      placeholder="Todas"
+      (valueChange)="onGerenciaChange($event)">
+    </app-search-select>
+  </div>
+
+  <div class="w-full" *ngIf="filtroGerenciaId">
+    <app-search-select
+      label="Área"
+      [options]="areaScopeOptions"
+      valueField="areaScopeId"
+      displayField="areaItemName"
+      [value]="filtroAreaScopeId"
+      placeholder="Todas"
+      (valueChange)="filtroAreaScopeId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

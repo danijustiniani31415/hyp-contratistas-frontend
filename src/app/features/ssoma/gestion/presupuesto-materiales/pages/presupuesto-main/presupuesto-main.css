@@ -1,0 +1,148 @@
+.pres-wrap { padding: 16px; max-width: 1300px; background: #ffffff; }
+
+.pres-toolbar { display: flex; gap: 12px; margin-bottom: 20px; }
+.pres-field { display: flex; flex-direction: column; gap: 4px; }
+.pres-label { font-size: 12px; color: #6b7280; font-weight: 500; }
+.pres-select {
+  height: 38px; padding: 0 12px; border: 1px solid #d1d5db;
+  border-radius: 8px; font-size: 14px; min-width: 320px; background: #fff; color: #111827;
+}
+
+.pres-card {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+  padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* Aviso "no cierres esta pantalla" durante subida/estandarización de lotes grandes */
+.pres-progreso-aviso {
+  display: flex; align-items: flex-start; gap: 10px; font-size: 13px;
+  color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;
+  padding: 10px 14px; margin-top: 12px;
+}
+.pres-progreso-aviso i { margin-top: 2px; flex-shrink: 0; }
+.pres-progreso-barra {
+  margin: 6px 0 4px; height: 6px; background: #fde68a; border-radius: 3px; overflow: hidden; max-width: 320px;
+}
+.pres-progreso-fill { height: 100%; background: #d97706; transition: width 0.3s ease; }
+
+/* Guía de orden del flujo completo (Cargas -> Catálogo -> Datos Base -> Ratios -> Generar) */
+.pres-guia {
+  display: flex; flex-direction: column; gap: 6px; font-size: 13px;
+  color: #0369a1; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 16px;
+}
+.pres-guia-titulo { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+.pres-guia-pasos { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 3px; }
+.pres-guia-pasos li::marker { font-weight: 600; }
+
+/* Materiales (subir + su historial) y Horas Hombre (subir + su historial), cada uno en su propia
+   columna — así ninguno de los dos formularios queda fuera de vista por el otro. */
+.pres-upload-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start;
+}
+.pres-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.pres-col > .pres-card { margin-bottom: 0; }
+@media (max-width: 1100px) {
+  .pres-upload-grid { grid-template-columns: 1fr; }
+}
+.pres-card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.pres-card-title { font-size: 15px; font-weight: 600; color: #1e3a5f; margin: 0 0 6px; display: flex; align-items: center; gap: 6px; }
+.pres-card-sub { font-size: 13px; color: #6b7280; margin: 0 0 14px; }
+
+/* Upload */
+.pres-upload-row { display: flex; align-items: center; gap: 10px; }
+.pres-file-input { display: none; }
+.pres-file-label {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 14px;
+  border: 1px dashed #d1d5db; border-radius: 8px;
+  font-size: 13px; color: #6b7280; cursor: pointer; background: #f9fafb;
+  flex: 1; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pres-file-label:hover { border-color: #1e3a5f; color: #1e3a5f; }
+
+.pres-btn-primary {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 38px; padding: 0 18px;
+  background: #1e3a5f; color: #fff; border: none; border-radius: 8px;
+  font-size: 13px; font-weight: 500; cursor: pointer;
+}
+.pres-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+.pres-btn-icon {
+  width: 34px; height: 34px; border: 1px solid #d1d5db; border-radius: 8px;
+  background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: #6b7280; font-size: 15px;
+}
+.pres-btn-icon:hover { border-color: #1e3a5f; color: #1e3a5f; }
+
+/* Result box */
+.pres-result {
+  margin-top: 14px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px;
+  background: #fffbeb;
+}
+.pres-result-grid { display: flex; gap: 20px; margin-bottom: 8px; }
+.pres-result-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.pres-result-val { font-size: 22px; font-weight: 700; color: #1e3a5f; }
+.pres-result-lbl { font-size: 11px; color: #6b7280; }
+.pres-result-ok .pres-result-val { color: #16a34a; }
+.pres-result-warn .pres-result-val { color: #d97706; }
+.pres-result-danger .pres-result-val { color: #dc2626; }
+.pres-warns { margin: 6px 0 0; padding: 0 0 0 18px; }
+.pres-warns li { font-size: 12px; color: #92400e; list-style: disc; }
+
+/* Table */
+.pres-table-wrap { overflow-x: auto; }
+.pres-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pres-table th {
+  padding: 9px 12px; text-align: left; font-weight: 600; white-space: nowrap;
+}
+.pres-table td { padding: 9px 12px; border-bottom: 1px solid #f3f4f6; color: #374151; }
+.pres-td-file { font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pres-td-num { text-align: right; font-variant-numeric: tabular-nums; }
+.pres-td-date { color: #9ca3af; font-size: 12px; white-space: nowrap; }
+.pres-td-recurso { font-weight: 500; max-width: 220px; }
+.pres-td-familia { color: #6b7280; font-size: 12px; }
+.pres-th-center { text-align: center; }
+.pres-td-actions { text-align: center; white-space: nowrap; }
+
+/* Mini progress */
+.pres-mini-progress { width: 80px; height: 5px; background: #e5e7eb; border-radius: 99px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px; }
+.pres-mini-fill { height: 100%; background: #1e3a5f; border-radius: 99px; }
+.pres-mini-pct { font-size: 12px; color: #374151; }
+
+/* Badge */
+.pres-badge { font-size: 11px; border-radius: 999px; padding: 2px 9px; font-weight: 600; }
+.pres-badge--ok { background: #dcfce7; color: #15803d; }
+.pres-badge--warn { background: #fef3c7; color: #92400e; }
+.pres-badge--neutral { background: #f3f4f6; color: #6b7280; }
+
+/* Re-standardize btn */
+.pres-btn-xs {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 28px; padding: 0 10px;
+  background: #f0f9ff; border: 1px solid #bae6fd; color: #0369a1;
+  border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap;
+}
+.pres-btn-xs:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Revisión */
+.pres-revision-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.pres-sel-count { font-size: 13px; color: #374151; font-weight: 500; }
+.pres-match-method { font-size: 10px; color: #9ca3af; display: block; }
+
+.pres-btn-auth, .pres-btn-rej {
+  width: 30px; height: 30px; border-radius: 6px; border: 1px solid #e5e7eb;
+  background: #fff; cursor: pointer; font-size: 14px; display: inline-flex;
+  align-items: center; justify-content: center; margin: 0 2px; transition: all 0.12s;
+}
+.pres-btn-auth:hover, .pres-btn-auth--active { background: #dcfce7; border-color: #16a34a; color: #16a34a; }
+.pres-btn-rej:hover, .pres-btn-rej--active { background: #fee2e2; border-color: #dc2626; color: #dc2626; }
+.pres-tr--autorizado { background: #f0fdf4; }
+.pres-tr--rechazado { background: #fff1f2; }
+
+.loading-state, .empty-state {
+  text-align: center; padding: 48px 0; color: #9ca3af; font-size: 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

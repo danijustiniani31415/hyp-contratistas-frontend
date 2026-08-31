@@ -1,0 +1,79 @@
+<app-base-modal [title]="'CREAR USUARIO PARA TRABAJADOR DE ABRIL'" width="w-[700px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-5 mt-4">
+
+    <p class="text-sm text-gray-500">
+      Selecciona un trabajador de Abril (correo <span class="font-semibold">@abril.pe</span>) que aún no tiene un
+      usuario en el sistema. Se le creará el usuario activo y se le asignarán los roles indicados.
+    </p>
+
+    <!-- Trabajador -->
+    <div class="flex flex-col gap-1">
+      <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Trabajador de Abril</label>
+
+      <!-- Modo normal: elegir un trabajador registrado en workers -->
+      <ng-container *ngIf="!otroTrabajador">
+        <app-search-select
+          [options]="workers"
+          valueField="personId"
+          displayField="label"
+          [value]="selectedPersonId"
+          (valueChange)="onWorkerSelected($event)"
+          [showLabel]="false"
+          [fullText]="true"
+          placeholder="Busca por nombre o DNI..."
+        ></app-search-select>
+        <p *ngIf="selectedWorkerEmail" class="text-xs text-gray-400 mt-0.5">
+          Correo: <span class="font-mono">{{ selectedWorkerEmail }}</span>
+        </p>
+      </ng-container>
+
+      <!-- Modo "Otro trabajador": escribir un correo @abril.pe manualmente -->
+      <input
+        *ngIf="otroTrabajador"
+        type="email"
+        [(ngModel)]="manualEmail"
+        placeholder="nombre@abril.pe"
+        autocomplete="off"
+        class="w-full border border-gray-300 rounded-[8px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/40"
+      />
+
+      <!-- Checkbox para alternar el modo -->
+      <label class="flex items-center gap-2 mt-1.5 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          [ngModel]="otroTrabajador"
+          (ngModelChange)="onOtroTrabajadorChange($event)"
+          class="accent-[#64BC04] w-4 h-4 cursor-pointer"
+        />
+        <span class="text-xs text-gray-500">
+          Otro trabajador (correo <span class="font-semibold">@abril.pe</span> no registrado en el sistema)
+        </span>
+      </label>
+    </div>
+
+    <!-- Roles -->
+    <div class="flex flex-col gap-1">
+      <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Roles asignados</label>
+      <app-multi-search-select
+        [options]="roles"
+        valueField="roleId"
+        displayField="roleDescription"
+        [value]="selectedRoleIds"
+        (valueChange)="selectedRoleIds = $event"
+        [showLabel]="false"
+        placeholder="Selecciona uno o más roles..."
+      ></app-multi-search-select>
+    </div>
+
+  </div>
+
+  <div class="flex justify-center mt-6">
+    <button
+      type="button"
+      (click)="saveUser()"
+      class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer"
+    >
+      <p class="text-white text-lg">Guardar</p>
+    </button>
+  </div>
+</app-base-modal>

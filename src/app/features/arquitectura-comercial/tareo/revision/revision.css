@@ -1,0 +1,47 @@
+.rev-root { padding: 16px 18px; }
+
+.rev-filtros { margin-bottom: 12px; }
+.rev-select {
+  font-size: 12.5px; border: 1px solid #E5E7EB; border-radius: 7px;
+  padding: 6px 10px; background: #F9FAFB; color: #374151; outline: none;
+}
+
+.rev-loading { display: flex; align-items: center; gap: 8px; padding: 30px; color: #6B7280; font-size: 13px; }
+
+.rev-thumb {
+  width: 40px; height: 40px; border-radius: 6px; object-fit: cover; cursor: pointer;
+  border: 1px solid #E5E7EB;
+}
+
+.rev-badge {
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+}
+.rev-badge-verificado { background: #DCFCE7; color: #15803D; }
+.rev-badge-revisar { background: #FEF3C7; color: #92400E; }
+.rev-badge-sin_enrolar { background: #FEE2E2; color: #991B1B; }
+.rev-badge-rechazado { background: #FEE2E2; color: #991B1B; }
+.rev-badge-pendiente { background: #F1F5F9; color: #475569; }
+
+.rev-motivo { font-size: 11px; color: #6B7280; max-width: 220px; }
+
+.rev-acciones { display: flex; gap: 6px; white-space: nowrap; }
+.rev-btn {
+  width: 26px; height: 26px; border-radius: 6px; border: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.rev-btn-ok { background: #DCFCE7; color: #15803D; }
+.rev-btn-no { background: #FEE2E2; color: #991B1B; }
+
+.rev-empty { text-align: center; color: #9CA3AF; padding: 24px; }
+
+.rev-spinner {
+  width: 14px; height: 14px; border: 2px solid rgba(107,114,128,0.3); border-top-color: #6B7280;
+  border-radius: 50%; animation: rev-spin .7s linear infinite;
+}
+@keyframes rev-spin { to { transform: rotate(360deg); } }
+
+.rev-lightbox {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 600;
+  display: flex; align-items: center; justify-content: center; cursor: zoom-out; padding: 24px;
+}
+.rev-lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; }

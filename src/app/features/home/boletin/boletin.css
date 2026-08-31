@@ -1,0 +1,111 @@
+/* Todo el estilo estático (layout, colores, tipografía, sombras, spacing) vive
+   como utilidades de Tailwind en la plantilla. Aquí solo queda lo que Tailwind
+   no expresa bien: el font-family base, los estados dinámicos y las animaciones
+   con @keyframes / delays escalonados. */
+
+:host {
+  display: block;
+  height: 100%;
+  font-family: 'Kumbh Sans', sans-serif;
+}
+
+/* Tab activa (se alterna en la plantilla con [class.activa]). */
+.activa {
+  background: #e4f3cd;
+  color: #2f6d0a;
+}
+
+/* ============================ Portada (overlay) ============================ */
+.portada {
+  animation: portada-fade 0.4s ease;
+}
+
+/* Línea azul detrás del perro: se "dibuja" con un barrido de izquierda a derecha. */
+.portada-linea {
+  clip-path: inset(0 100% 0 0);
+  animation: dibujar-linea 2.2s ease-out 0.2s forwards;
+}
+
+/* Botón ¡VAMOS!: late constantemente; al hover se detiene agrandado. */
+.btn-vamos {
+  animation: pulso-vamos 2.2s ease-in-out infinite;
+}
+
+.btn-vamos:hover {
+  animation: none;
+  transform: scale(1.1);
+  filter: brightness(1.05);
+  box-shadow: 0 12px 26px rgba(139, 197, 63, 0.55);
+}
+
+/* ============================ Animaciones de entrada ============================ */
+/* Texto: entra desde la izquierda con retraso escalonado vía --d. */
+.anim-left {
+  opacity: 0;
+  animation: entrar-izquierda 2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--d, 0ms);
+}
+
+/* Perro: entra desde la derecha. */
+.anim-right {
+  opacity: 0;
+  animation: entrar-derecha 2.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Entrada de las tarjetas de SOMOS ABRIL (~2s). */
+.card-anim-left {
+  animation: card-desde-izquierda 2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.card-anim-up {
+  animation: card-desde-abajo 2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.card-anim-right {
+  animation: card-desde-derecha 2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes entrar-izquierda {
+  from { opacity: 0; transform: translateX(-90px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes entrar-derecha {
+  from { opacity: 0; transform: translateX(140px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes card-desde-izquierda {
+  from { opacity: 0; transform: translateX(-90px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes card-desde-derecha {
+  from { opacity: 0; transform: translateX(90px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes card-desde-abajo {
+  from { opacity: 0; transform: translateY(90px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulso-vamos {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.09); }
+}
+
+@keyframes dibujar-linea {
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes portada-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-left, .anim-right, .portada-linea, .portada, .btn-vamos,
+  .card-anim-left, .card-anim-up, .card-anim-right { animation: none; opacity: 1; }
+  .portada-linea { clip-path: none; }
+}

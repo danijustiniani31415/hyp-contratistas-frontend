@@ -1,0 +1,111 @@
+<div class="flex flex-col gap-[10px] flex-1 min-h-0">
+  <header class="section-bar">
+    <div>
+      <h3 class="section-title">Tipos de EMO</h3>
+      <p class="section-sub">Catálogo de exámenes médicos ocupacionales y vigencias.</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <app-filter-trigger [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+      <button type="button" class="btn-primary" (click)="openCreate()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        Nuevo tipo
+      </button>
+    </div>
+  </header>
+
+  <div class="abril-table-wrap">
+    <table class="abril-table">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Nombre</th>
+          <th>Vigencia (meses)</th>
+          <th class="text-center">Requiere nuevo</th>
+          <th>Descripción</th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of pageItems" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+          <td class="text-gray-700">{{ item.nombre | titleCase }}</td>
+          <td class="text-gray-500">{{ item.vigenciaMeses }}</td>
+          <td class="text-center">
+            <app-status-badge
+              [text]="item.requiereNuevo ? 'SÍ' : 'NO'"
+              [bgColor]="item.requiereNuevo ? '#EAF2FF' : '#F3F4F6'"
+              [textColor]="item.requiereNuevo ? '#1D4ED8' : '#6B7280'" />
+          </td>
+          <td class="text-gray-500">{{ item.descripcion || '—' }}</td>
+          <td class="text-center">
+            <app-status-badge
+              [text]="(item.activo ?? true) ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="(item.activo ?? true) ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="(item.activo ?? true) ? '#009C87' : '#D30000'" />
+          </td>
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[8px]">
+              <button type="button" abrilBulkAction="default" (click)="openEdit(item)">
+                Editar
+              </button>
+              <button
+                type="button"
+                [abrilBulkAction]="(item.activo ?? true) ? 'danger' : 'default'"
+                (click)="toggleActivo(item)"
+              >
+                {{ (item.activo ?? true) ? 'Desactivar' : 'Activar' }}
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && pageItems.length === 0">
+          <td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ hasActiveFilters ? 'Sin resultados.' : 'Sin tipos registrados.' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)"
+    ></app-paginator>
+  </div>
+</div>
+
+<app-emo-tipo-form
+  *ngIf="formOpen"
+  [open]="formOpen"
+  [mode]="formMode"
+  [initial]="formInitial"
+  (closed)="closeForm()"
+  (saved)="onSaved()"
+></app-emo-tipo-form>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Nombre o descripción..."
+      [value]="filters.search"
+      (valueChange)="onSearchChange($event)"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="filters.estado"
+      (valueChange)="filters.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

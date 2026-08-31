@@ -1,0 +1,37 @@
+.paso-nav {
+  display: flex;
+  gap: 0;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.paso-nav__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.65rem 1.1rem;
+  font-size: 13px;
+  font-weight: 500;
+  color: #9ca3af;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  margin-bottom: -1px;
+  transition: color .15s;
+}
+
+.paso-nav__tab i { font-size: 14px; }
+
+.paso-nav__tab:hover { color: #374151; }
+
+.paso-nav__tab--active {
+  color: #111827;
+  font-weight: 700;
+  background: #ffffff;
+  border-bottom: 3px solid #16a34a;
+  box-shadow: none;
+}

@@ -1,0 +1,23 @@
+<app-abril-modal-panel [titulo]="titulo" icono="ti-list" variant="teal" width="420px" (closeModal)="close()">
+
+  <div class="abril-field">
+    <label class="abril-field-label">Descripción</label>
+    <input class="abril-field-input" type="text" [(ngModel)]="descripcion" placeholder="Ej. Licencia de construcción municipal" />
+  </div>
+
+  <div class="abril-field">
+    <label class="abril-field-label">Días de antelación por defecto</label>
+    <input class="abril-field-input" type="number" min="0" [(ngModel)]="diasAntesDefault" placeholder="Ej. 15" />
+  </div>
+  <p class="text-xs text-gray-400 -mt-1">
+    Se usará para sugerir la fecha de recordatorio al subir el documento (se puede ajustar en cada carga).
+  </p>
+
+  <div modalFooter class="flex justify-between w-full">
+    <button type="button" (click)="close()" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Cancelar</button>
+    <button type="button" (click)="guardar()"
+      class="px-4 py-2 rounded-[var(--radius-standard)] bg-[var(--color-abril-standard)] text-white text-sm font-medium hover:bg-[var(--color-abril-standard-hover)] transition-colors">
+      Guardar
+    </button>
+  </div>
+</app-abril-modal-panel>

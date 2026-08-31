@@ -1,0 +1,163 @@
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Mi Salud"
+  subtitulo="Tu resumen de salud ocupacional y descansos médicos."
+  [tabs]="tabs"
+  [botonSecundario]="{ label: 'Configuración', icono: 'ti-settings' }"
+  [botonSecundarioDeshabilitado]="!puedeConfigurar"
+  [botonSecundarioTooltip]="puedeConfigurar ? 'Configuración de Mi Salud' : 'Solo el Administrador del Sistema puede acceder a la configuración'"
+  (secondaryClick)="irAConfiguracion()">
+</app-abril-page-header>
+
+<section class="page-container px-3 py-4 flex flex-col gap-[16px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- Resumen -->
+  <div class="summary-grid shrink-0" *ngIf="resumen">
+
+    <!-- Card EMO -->
+    <div class="summary-card">
+      <div class="summary-card__header">
+        <i class="ti ti-stethoscope summary-card__icon"></i>
+        <span class="summary-card__title">Mi EMO</span>
+      </div>
+      <ng-container *ngIf="resumen.tieneEmo; else sinEmo">
+        <div class="summary-card__main">
+          <span class="chip" [ngClass]="aptitudClass(resumen.aptitud)">{{ resumen.aptitud ?? '—' }}</span>
+        </div>
+        <div class="summary-card__meta">
+          <span>Tipo: <strong>{{ resumen.tipoEmo ?? '—' }}</strong></span>
+          <span>Fecha: <strong>{{ resumen.fechaEmo | date:'dd/MM/yyyy' }}</strong></span>
+          <span *ngIf="resumen.fechaVencimiento">
+            Vence: <strong>{{ resumen.fechaVencimiento | date:'dd/MM/yyyy' }}</strong>
+          </span>
+        </div>
+        <div class="summary-card__dias" *ngIf="resumen.diasParaVencer != null">
+          <span class="chip" [ngClass]="diasClass(resumen.diasParaVencer)">
+            {{ resumen.diasParaVencer > 0 ? resumen.diasParaVencer + ' días' : 'Vencido' }}
+          </span>
+        </div>
+      </ng-container>
+      <ng-template #sinEmo>
+        <p class="summary-card__empty">Sin EMO registrado</p>
+      </ng-template>
+    </div>
+
+    <!-- Card Restricciones -->
+    <div class="summary-card">
+      <div class="summary-card__header">
+        <i class="ti ti-ban summary-card__icon"></i>
+        <span class="summary-card__title">Restricciones Vigentes</span>
+      </div>
+      <ul class="restricciones-list" *ngIf="resumen.restriccionesVigentes.length > 0; else sinRestricciones">
+        <li *ngFor="let r of resumen.restriccionesVigentes" class="restriccion-item">{{ r }}</li>
+      </ul>
+      <ng-template #sinRestricciones>
+        <p class="summary-card__empty">Sin restricciones</p>
+      </ng-template>
+    </div>
+
+    <!-- Card último descanso -->
+    <div class="summary-card">
+      <div class="summary-card__header">
+        <i class="ti ti-bed summary-card__icon"></i>
+        <span class="summary-card__title">Último Descanso</span>
+      </div>
+      <ng-container *ngIf="resumen.ultimoDescansoEstado; else sinDescanso">
+        <div class="summary-card__main">
+          <span class="badge" [ngClass]="estadoClass(resumen.ultimoDescansoEstado)">
+            {{ resumen.ultimoDescansoEstado }}
+          </span>
+        </div>
+        <div class="summary-card__meta" *ngIf="resumen.ultimoDescansoFechaFin">
+          <span>Hasta: <strong>{{ resumen.ultimoDescansoFechaFin | date:'dd/MM/yyyy' }}</strong></span>
+        </div>
+      </ng-container>
+      <ng-template #sinDescanso>
+        <p class="summary-card__empty">Sin descansos registrados</p>
+      </ng-template>
+    </div>
+
+  </div>
+
+  <!-- Skeleton resumen -->
+  <div class="summary-grid" *ngIf="loadingResumen && !resumen">
+    <div class="summary-card skeleton" *ngFor="let _ of [1,2,3]"></div>
+  </div>
+
+  <!-- Mis Descansos -->
+  <div class="flex flex-col gap-[10px] flex-1 min-h-0">
+    <div class="card-header">
+      <span class="card-header__title">Mis Descansos Médicos</span>
+    </div>
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <colgroup>
+          <col style="width:150px"/>
+          <col style="width:100px"/>
+          <col style="width:105px"/>
+          <col style="width:40px"/>
+          <col/>
+          <col style="width:100px"/>
+          <col style="width:36px"/>
+        </colgroup>
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Tipo</th>
+            <th>Desde</th>
+            <th>Hasta</th>
+            <th class="text-center">Días</th>
+            <th>Diagnóstico</th>
+            <th class="text-center">Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of descansos" class="border-b" style="border-color:var(--color-abril-border)">
+            <td><span class="badge badge-blue">{{ d.tipo }}</span></td>
+            <td class="text-gray-500">{{ d.fechaInicio | date:'dd/MM/yyyy' }}</td>
+            <td class="text-gray-500">{{ d.fechaFin   | date:'dd/MM/yyyy' }}</td>
+            <td class="col-mono text-center">{{ d.dias ?? '—' }}</td>
+            <td class="col-truncate text-gray-500">{{ d.diagnostico ?? '—' }}</td>
+            <td class="text-center">
+              <span class="badge" [ngClass]="estadoClass(d.estado)">{{ d.estado ?? '—' }}</span>
+            </td>
+            <td>
+              <!-- El certificado lo sirve el backend desde SharePoint: no se enlaza el webUrl
+                   directo porque solo abre para quien tiene sesión de Microsoft 365. -->
+              <button *ngFor="let adj of d.adjuntos"
+                      type="button"
+                      class="row-action btn-link-icon"
+                      [disabled]="descargandoId !== null"
+                      [title]="adj.nombre ?? 'Ver certificado'"
+                      (click)="verCertificado(adj)">
+                <i class="ti ti-file-download"></i>
+              </button>
+              <span *ngIf="d.adjuntos.length === 0" class="text-gray-300">—</span>
+            </td>
+          </tr>
+          <tr *ngIf="!loadingDescansos && descansos.length === 0">
+            <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">Sin descansos médicos registrados.</td>
+          </tr>
+          <tr *ngIf="loadingDescansos && descansos.length === 0">
+            <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">Cargando...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+      <app-paginator [totalRecords]="totalRecords" [currentPage]="currentPage"
+        [totalPages]="totalPages" (pageChange)="onPageChange($event)">
+      </app-paginator>
+    </div>
+  </div>
+
+</section>
+
+<app-fab *ngIf="!modalVisible" label="Nuevo Descanso" (clicked)="abrirModal()"></app-fab>
+
+<app-mi-salud-modal
+  *ngIf="modalVisible"
+  [tipos]="resumen?.tiposDescanso ?? []"
+  (closed)="cerrarModal()"
+  (saved)="onGuardado()">
+</app-mi-salud-modal>

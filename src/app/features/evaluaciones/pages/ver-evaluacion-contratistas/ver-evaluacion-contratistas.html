@@ -1,0 +1,167 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Ver Evaluaciones"
+  subtitulo="Resultados consolidados de evaluación de contratistas."
+    [tabGroups]="[
+    { label: 'Residentes',   icono: 'ti-user-check', tabs: [
+      { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
+      { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
+      { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
+      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' },
+      { label: 'Asignaciones',  icono: 'ti-users',            route: '/evaluaciones/asignaciones',   featureKey: 'evaluaciones.asignaciones' }
+    ]},
+    { label: 'Contratistas', icono: 'ti-building', tabs: [
+      { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
+      { label: 'Evaluar',          icono: 'ti-pencil',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
+      { label: 'Ver evaluaciones', icono: 'ti-list',      route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' }
+    ]},
+    { label: 'Superv. Contratista', icono: 'ti-shield-check', tabs: [
+      { label: 'Evaluar supervisor', icono: 'ti-pencil', route: '/evaluaciones/evaluar-supervisor-contratista', featureKey: 'evaluaciones.evaluar-supervisor-contratista' },
+      { label: 'Ver evaluaciones',   icono: 'ti-list',   route: '/evaluaciones/ver-supervisores-contratista',   featureKey: 'evaluaciones.ver-supervisores-contratista' }
+    ]},
+    { label: 'Jefe SSOMA', icono: 'ti-user-shield', tabs: [
+      { label: 'Evaluar Jefe SSOMA', icono: 'ti-pencil', route: '/evaluaciones/evaluar-jefe-ssoma', featureKey: 'evaluaciones.evaluar-jefe-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-jefe-ssoma', featureKey: 'evaluaciones.resultados-jefe-ssoma' }
+    ]},
+    { label: 'Prevencionistas', icono: 'ti-vest', tabs: [
+      { label: 'Mi perfil', icono: 'ti-user', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
+      { label: 'Dashboard', icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' }
+    ]},
+    { label: 'Gestión SSOMA', icono: 'ti-users-group', tabs: [
+      { label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-gestion-ssoma', featureKey: 'evaluaciones.resultados-gestion-ssoma' }
+    ]}
+  ]">
+</app-abril-page-header>
+
+<div class="ve-root">
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div><span>Cargando evaluaciones...</span>
+  </div>
+
+  <div class="ve-content" *ngIf="!loading && data">
+
+    <!-- FILTROS -->
+    <div class="filtros-bar">
+      <select class="filtro-select" [(ngModel)]="periodoId" (change)="filtrar()">
+        <option [ngValue]="null">Todos los períodos</option>
+        <option *ngFor="let p of data.periodos" [ngValue]="p.id">
+          {{ p.nombreMes }} {{ p.anio }}
+        </option>
+      </select>
+
+      <select class="filtro-select" [(ngModel)]="proyectoId" (change)="filtrar()">
+        <option [ngValue]="null">Todos los proyectos</option>
+        <option *ngFor="let pr of data.proyectos" [ngValue]="pr.proyectoId">
+          {{ pr.proyectoNombre }}
+        </option>
+      </select>
+
+      <select class="filtro-select" [(ngModel)]="estadoFiltro">
+        <option value="">Todos los estados</option>
+        <option value="Aprobado">Aprobado</option>
+        <option value="Regular">Regular</option>
+        <option value="Desaprobado">Desaprobado</option>
+        <option value="Sin evaluar">Sin evaluar</option>
+      </select>
+
+      <input class="filtro-search" [(ngModel)]="busqueda" placeholder="Buscar contratista..." />
+
+      <button
+        class="btn-enviar-resultados"
+        type="button"
+        [disabled]="!periodoId || enviandoResultados"
+        [title]="!periodoId ? 'Selecciona un período para enviar resultados' : 'Enviar resultados a los gerentes de cada empresa'"
+        (click)="enviarResultados()"
+      >
+        <i class="ti ti-mail-forward"></i>
+        {{ enviandoResultados ? 'Enviando...' : 'Enviar resultados a gerentes' }}
+      </button>
+
+      <!-- Leyenda -->
+      <div class="leyenda">
+        <span class="leyenda-item leyenda-des"><span class="dot"></span>Desaprobado: 0–11</span>
+        <span class="leyenda-item leyenda-reg"><span class="dot"></span>Regular: 12–15</span>
+        <span class="leyenda-item leyenda-apr"><span class="dot"></span>Aprobado: &gt;15</span>
+      </div>
+    </div>
+
+    <!-- SIN DATOS -->
+    <div class="empty-state" *ngIf="!evaluacionesFiltradas.length">
+      <i class="ti ti-clipboard-off"></i>
+      <p>No hay evaluaciones registradas con los filtros seleccionados.</p>
+    </div>
+
+    <!-- TABLA -->
+    <div class="table-wrap" *ngIf="evaluacionesFiltradas.length">
+      <table class="ev-table">
+        <thead>
+          <tr>
+            <th>CONTRATISTA</th>
+            <th>PROYECTO</th>
+            <th>ESTADO</th>
+            <th class="nota-col">OF. TÉCNICA</th>
+            <th class="nota-col">SSOMA</th>
+            <th class="nota-col">RESIDENCIA</th>
+            <th class="nota-col">CALIDAD</th>
+            <th class="nota-col">PRODUCCIÓN</th>
+            <th class="nota-col">ADMINISTRACIÓN</th>
+            <th class="nota-col total-col">TOTAL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of evaluacionesFiltradas">
+            <td>
+              <div class="contractor-cell">
+                <div class="contractor-av">{{ e.contributorNombre.charAt(0) }}</div>
+                <div>
+                  <div class="contractor-name">{{ e.contributorNombre }}</div>
+                  <div class="contractor-ruc">{{ e.contributorRuc }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="project-cell">{{ e.proyectoNombre }}</td>
+            <td>
+              <span class="estado-badge" [ngClass]="estadoClase(e.estado)">{{ e.estado }}</span>
+            </td>
+            <td class="nota-col"><span class="nota-chip" [ngClass]="notaClase(e.notaOT)">{{ notaDisplay(e.notaOT) }}</span></td>
+            <td class="nota-col"><span class="nota-chip" [ngClass]="notaClase(e.notaSsoma)">{{ notaDisplay(e.notaSsoma) }}</span></td>
+            <td class="nota-col"><span class="nota-chip" [ngClass]="notaClase(e.notaResidencia)">{{ notaDisplay(e.notaResidencia) }}</span></td>
+            <td class="nota-col"><span class="nota-chip" [ngClass]="notaClase(e.notaCalidad)">{{ notaDisplay(e.notaCalidad) }}</span></td>
+            <td class="nota-col"><span class="nota-chip" [ngClass]="notaClase(e.notaProduccion)">{{ notaDisplay(e.notaProduccion) }}</span></td>
+            <td class="nota-col"><span class="nota-chip" [ngClass]="notaClase(e.notaAdministracion)">{{ notaDisplay(e.notaAdministracion) }}</span></td>
+            <td class="nota-col total-col">
+              <span class="nota-total" [ngClass]="notaClase(e.notaTotal)">{{ notaDisplay(e.notaTotal) }}</span>
+              <div class="total-bar">
+                <div class="total-fill" [style.width.%]="((e.notaTotal ?? 0) / 20) * 100"
+                  [ngClass]="notaClase(e.notaTotal)"></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- RESUMEN PIE -->
+    <div class="resumen-bar" *ngIf="evaluacionesFiltradas.length">
+      <div class="rb-item">
+        <span class="rb-num">{{ evaluacionesFiltradas.length }}</span>
+        <span class="rb-lbl">Total</span>
+      </div>
+      <div class="rb-item rb-apr">
+        <span class="rb-num">{{ countEstado('Aprobado') }}</span>
+        <span class="rb-lbl">Aprobados</span>
+      </div>
+      <div class="rb-item rb-reg">
+        <span class="rb-num">{{ countEstado('Regular') }}</span>
+        <span class="rb-lbl">Regulares</span>
+      </div>
+      <div class="rb-item rb-des">
+        <span class="rb-num">{{ countEstado('Desaprobado') }}</span>
+        <span class="rb-lbl">Desaprobados</span>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,236 @@
+<div class="lista-root">
+
+  <app-abril-page-header
+    badge="SSOMA"
+    titulo="Flash Reports — Accidentes e Incidentes"
+    subtitulo="Registro, seguimiento y envío de Flash Reports"
+    [hasExtra]="true">
+
+    <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <div class="lista-body">
+
+    @if (loading) {
+      <div class="skeleton-list">
+        @for (_ of [1,2,3,4,5]; track $index) {
+          <div class="skeleton-row"></div>
+        }
+      </div>
+    }
+
+    @if (!loading) {
+
+      <!-- TABLA DESKTOP -->
+      <div class="tabla-wrap abril-table-wrap">
+        <table class="abril-table tabla">
+          <thead class="sticky top-0 z-10">
+            <tr>
+              <th>Código</th>
+              <th>Fecha</th>
+              <th>Proyecto</th>
+              <th>Descripción</th>
+              <th>Trabajador</th>
+              <th class="ta-c">Tipo</th>
+              <th class="ta-c">Área</th>
+              <th class="ta-c">Severidad real</th>
+              <th class="ta-c">Severidad potencial</th>
+              <th class="ta-c">Días perdidos</th>
+              <th class="ta-c">Alta médica</th>
+              <th class="ta-c">Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (!items.length) {
+              <tr>
+                <td colspan="13" class="empty-row">No se encontraron registros</td>
+              </tr>
+            }
+            @for (item of items; track item.id) {
+              <tr class="tabla-row" (click)="irADetalle(item.id)">
+                <td class="td-codigo">
+                  <span class="codigo-badge">{{ item.codigo }}</span>
+                </td>
+                <td class="td-fecha">{{ item.fecha | date:'dd/MM/yy' }}</td>
+                <td class="td-proyecto">{{ item.proyectoNombre }}</td>
+                <td class="td-descripcion" [title]="item.descripcion">{{ item.descripcion || '—' }}</td>
+                <td class="td-trabajador">{{ item.trabajadorNombre ?? '—' }}</td>
+                <td class="ta-c">
+                  <span class="tipo-chip" [ngClass]="tipoClass(item.tipoCodigo)">{{ item.tipoNombre }}</span>
+                </td>
+                <td class="ta-c">
+                  <span class="area-chip" [ngClass]="areaClass(item.areaOrigen)">{{ areaLabel(item.areaOrigen) }}</span>
+                </td>
+                <td class="ta-c" (click)="$event.stopPropagation()">
+                  <app-search-select
+                    class="nivel-select"
+                    [badgeStyle]="nivelBadgeStyle(item.consecuenciaRealPersonal)"
+                    [compact]="true"
+                    [showLabel]="false"
+                    [fullText]="true"
+                    [options]="nivelesSeveridadOpts"
+                    valueField="value"
+                    displayField="label"
+                    [sortAlpha]="false"
+                    placeholder="—"
+                    [allowClear]="true"
+                    [value]="item.consecuenciaRealPersonal"
+                    (valueChange)="actualizarSeveridad(item, 'real', $event === null ? '' : $event)">
+                  </app-search-select>
+                </td>
+                <td class="ta-c" (click)="$event.stopPropagation()">
+                  <app-search-select
+                    class="nivel-select"
+                    [badgeStyle]="nivelBadgeStyle(item.consecuenciaPotencialPersonal)"
+                    [compact]="true"
+                    [showLabel]="false"
+                    [fullText]="true"
+                    [options]="nivelesSeveridadOpts"
+                    valueField="value"
+                    displayField="label"
+                    [sortAlpha]="false"
+                    placeholder="—"
+                    [allowClear]="true"
+                    [value]="item.consecuenciaPotencialPersonal"
+                    (valueChange)="actualizarSeveridad(item, 'potencial', $event === null ? '' : $event)">
+                  </app-search-select>
+                </td>
+                <td class="ta-c">
+                  @if (item.diasPerdidos > 0) {
+                    <span class="dias-perdidos-badge">{{ item.diasPerdidos }}</span>
+                  } @else {
+                    <span class="no-docs">—</span>
+                  }
+                </td>
+                <td class="ta-c">
+                  <span class="estado-chip" [ngClass]="altaMedicaClass(item.cerradoConAltaMedica)">
+                    {{ altaMedicaLabel(item.cerradoConAltaMedica) }}
+                  </span>
+                </td>
+                <td class="ta-c">
+                  <span class="estado-chip" [ngClass]="estadoClass(item.estado)">
+                    @if (item.enviado) { <i class="ti ti-circle-check"></i> }
+                    {{ item.estado }}
+                  </span>
+                </td>
+                <td>
+                  <div class="acciones">
+                    <button type="button" class="abril-action-btn" (click)="$event.stopPropagation(); irADetalle(item.id)" title="Ver detalle">
+                      <i class="ti ti-eye"></i>
+                    </button>
+                    @if (!item.enviado) {
+                      <button type="button" class="abril-action-btn abril-action-btn--danger" (click)="confirmarEliminar($event, item.id)" title="Eliminar">
+                        <i class="ti ti-trash"></i>
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- CARDS MOBILE -->
+      <div class="cards-mobile">
+        @if (!items.length) {
+          <div class="empty-mobile">No se encontraron registros</div>
+        }
+        @for (item of items; track item.id) {
+          <div class="acc-card" (click)="irADetalle(item.id)">
+            <div class="acc-card__top">
+              <span class="codigo-badge">{{ item.codigo }}</span>
+              <span class="estado-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+            </div>
+            <div class="acc-card__proyecto">{{ item.proyectoNombre }}</div>
+            <div class="acc-card__desc">{{ item.descripcion || item.trabajadorNombre || '—' }}</div>
+            <div class="acc-card__bottom">
+              <span class="tipo-chip" [ngClass]="tipoClass(item.tipoCodigo)">{{ item.tipoNombre }}</span>
+              @if (item.diasPerdidos > 0) {
+                <span class="dias-perdidos-badge">{{ item.diasPerdidos }} días</span>
+              }
+              <span class="acc-date">{{ item.fecha | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- PAGINACIÓN -->
+      <div class="shrink-0 max-w-[440px]">
+        <app-paginator
+          [totalRecords]="total"
+          [currentPage]="page"
+          [totalPages]="totalPages"
+          (pageChange)="cambiarPagina($event)">
+        </app-paginator>
+      </div>
+
+    }
+
+  </div>
+
+  <app-fab label="Nuevo Flash Report" (clicked)="irANuevo()"></app-fab>
+</div>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      valueField="projectId"
+      displayField="projectDescription"
+      [value]="filtroProyectoId"
+      (valueChange)="filtroProyectoId = $event; load()"
+      placeholder="Todos los proyectos">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Tipo"
+      [options]="tipos"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtroTipoId"
+      (valueChange)="filtroTipoId = $event; load()"
+      placeholder="Todos los tipos">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="filtroEstado"
+      (valueChange)="filtroEstado = $event; load()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Área"
+      [options]="areasOrigen"
+      valueField="value"
+      displayField="label"
+      [value]="filtroArea"
+      (valueChange)="filtroArea = $event; load()"
+      placeholder="Todas las áreas">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaDesde" (change)="load()" />
+    </div>
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaHasta" (change)="load()" />
+    </div>
+  </div>
+</app-filter-modal>

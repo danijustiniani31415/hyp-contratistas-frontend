@@ -1,0 +1,362 @@
+<app-abril-modal-panel
+  variant="blue"
+  icono="ti-arrow-left"
+  titulo="Volver a la lista"
+  width="1040px"
+  (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[16px]">
+
+    <!-- ── Cabecera del colaborador ───────────────────────────────────────
+         Todo se lee del requerimiento que originó la contratación; acá no se
+         captura nada. A la derecha, el avance medido en actividades. -->
+    <div class="onb-head flex items-start justify-between gap-[20px] flex-wrap">
+      <div class="min-w-0">
+        <div class="flex items-center gap-[10px] flex-wrap">
+          <span class="text-[13px] font-bold tracking-wide" style="color:var(--color-abril-logo-blue)">
+            {{ item.codigo }}
+          </span>
+          <app-status-badge
+            [text]="item.estadoNombre"
+            [bgColor]="estadoColors(item.estadoCodigo).bg"
+            [textColor]="estadoColors(item.estadoCodigo).text" />
+        </div>
+
+        <h2 class="onb-head-nombre text-[20px] font-bold text-gray-800 mt-[4px] leading-tight">
+          {{ item.nombre | titleCase }}
+        </h2>
+
+        <p class="text-[13px] text-gray-500 mt-[2px]">
+          {{ (item.puesto | titleCase) || 'Sin puesto' }}
+          · {{ (item.area | titleCase) || 'Sin área' }}
+          <!-- La razón social es un nombre legal: no pasa por titleCase. -->
+          · {{ item.empresa || 'Sin razón social' }}
+        </p>
+
+        <p class="text-[12px] text-gray-400 mt-[2px]">
+          Fecha de ingreso:
+          {{ item.fechaIngreso ? (item.fechaIngreso | date: 'dd/MM/yyyy') : 'por confirmar' }}
+        </p>
+      </div>
+
+      <div class="onb-head-avance text-right shrink-0">
+        <p class="text-[10px] font-semibold tracking-wide uppercase text-gray-400">Avance</p>
+        <p class="onb-head-pct text-[30px] font-bold leading-none mt-[2px]" [style.color]="avanceColor(item.avancePorcentaje)">
+          {{ item.avancePorcentaje }}%
+        </p>
+        <p class="text-[11.5px] text-gray-400 mt-[4px]">
+          {{ avance.hechas }} de {{ avance.total }} tareas
+        </p>
+      </div>
+    </div>
+
+    <!-- ── Fases del proceso ──────────────────────────────────────────────
+         El número bajo cada círculo es cuántas actividades de esa fase están
+         hechas. Solo se puede entrar a las fases ya alcanzadas: las futuras
+         todavía no tienen nada que mostrar. -->
+    <div class="onb-fases-card rounded-[12px] border bg-white px-[20px] py-[16px]"
+         style="border-color:var(--color-abril-border)">
+
+      <div class="flex items-center justify-between gap-[10px] mb-[14px]">
+        <h3 class="onb-fases-title text-[15px] font-semibold text-gray-700">Fases</h3>
+        <span class="text-[11.5px] shrink-0" style="color:var(--color-abril-logo-blue)">
+          {{ item.faseNombre }}
+        </span>
+      </div>
+
+      <!-- El aro de la fase que se está viendo se pinta por fuera del círculo y
+           esta fila tiene scroll propio, así que necesita un colchón para que no
+           se lo recorte el borde del scroll (ver .onb-fases en el CSS). -->
+      <div class="onb-fases flex items-start overflow-x-auto">
+        @for (f of fases; track f.faseId; let primero = $first) {
+
+          @if (!primero) {
+            <div class="onb-fases-link h-[2px] flex-1 min-w-[16px] mt-[20px]"
+                 [style.background]="f.orden <= item.faseOrden
+                                   ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-border-strong)'"></div>
+          }
+
+          <button type="button"
+                  class="onb-fases-step flex flex-col items-center gap-[6px] shrink-0 px-[4px]"
+                  [class.cursor-pointer]="alcanzada(f)"
+                  [class.cursor-not-allowed]="!alcanzada(f)"
+                  [disabled]="!alcanzada(f)"
+                  (click)="irAFase(f)"
+                  [title]="alcanzada(f)
+                         ? f.nombre + ' — ' + hechas(f) + ' de ' + f.actividades.length + ' actividades'
+                         : 'Fase aún no alcanzada'">
+
+            <span class="onb-fases-dot flex items-center justify-center w-[40px] h-[40px] rounded-full text-[14px] font-bold border-2 transition-colors"
+                  [style.background]="f.orden <= item.faseOrden ? 'var(--color-abril-logo-blue)' : '#FFFFFF'"
+                  [style.border-color]="f.orden <= item.faseOrden
+                                      ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-border-strong)'"
+                  [style.color]="f.orden <= item.faseOrden ? '#FFFFFF' : 'var(--color-abril-placeholder)'"
+                  [style.box-shadow]="f.orden === faseVista
+                                    ? '0 0 0 2px #ffffff, 0 0 0 4px var(--color-abril-logo-blue)' : 'none'">
+              @if (completada(f)) {
+                <i class="ti ti-check text-[18px]"></i>
+              } @else {
+                {{ f.orden }}
+              }
+            </span>
+
+            <span class="onb-fases-count text-[17px] font-bold leading-none"
+                  [style.color]="hechas(f) > 0 ? 'var(--color-abril-body)' : 'var(--color-abril-placeholder)'">
+              {{ hechas(f) }}
+            </span>
+
+            <span class="onb-fases-name text-[11px] text-center leading-tight"
+                  [style.color]="f.orden <= item.faseOrden
+                               ? 'var(--color-abril-body)' : 'var(--color-abril-placeholder)'">
+              {{ f.nombre }}
+            </span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ── Siguiente paso ─────────────────────────────────────────────────
+         El checklist se abre fase por fase (RF-ONB-26); eso ya se ve en las
+         fases de arriba, así que acá solo va el dato accionable. -->
+    <div class="flex items-center justify-between gap-[12px] flex-wrap rounded-[10px] border px-[16px] py-[10px]"
+         style="background:var(--color-abril-logo-blue-light); border-color:var(--color-abril-logo-blue)">
+      <p class="flex items-center gap-[8px] min-w-0 text-[12.5px] font-semibold"
+         style="color:var(--color-abril-logo-blue)">
+        <i class="ti ti-arrow-narrow-right text-[17px] shrink-0"></i>
+        @if (avance.siguiente) {
+          <span class="min-w-0">Siguiente: {{ avance.siguiente.nombre }}</span>
+        } @else {
+          <span>Sin actividades pendientes</span>
+        }
+      </p>
+      <span class="text-[11.5px] shrink-0 opacity-80" style="color:var(--color-abril-logo-blue)">
+        {{ avance.hechasPrevias }} de {{ avance.totalPrevias }} antes de base maestra
+      </span>
+    </div>
+
+    <!-- ── Checklist de la fase que se está viendo ────────────────────── -->
+    @if (fase; as f) {
+      <div class="flex items-center justify-between gap-[10px] pt-[4px]">
+        <!-- La descripción de la fase va como tooltip: en pantalla el nombre basta. -->
+        <h3 class="text-[15px] font-semibold flex items-center gap-[8px]"
+            style="color:var(--color-abril-logo-blue)"
+            [title]="f.descripcion || f.nombre">
+          <i class="ti ti-chevron-down text-[16px]"></i>
+          {{ f.nombre }}
+        </h3>
+        <span class="text-[12px] font-semibold text-gray-500 shrink-0">
+          {{ hechasEnVista }} de {{ f.actividades.length }}
+        </span>
+      </div>
+
+      @for (a of actividades; track a.actividad.actividadId) {
+        <div class="act" [class.act--hecha]="a.hecha">
+
+          <!-- Marca de la actividad: hecha (check) o pendiente (círculo vacío). -->
+          <span class="act-check" [class.act-check--hecha]="a.hecha">
+            @if (a.hecha) { <i class="ti ti-circle-check-filled"></i> }
+          </span>
+
+          <div class="min-w-0 flex-1">
+            <p class="text-[13.5px] font-semibold text-gray-800 leading-snug">{{ a.actividad.nombre }}</p>
+
+            @switch (a.actividad.codigo) {
+
+              <!-- ── Revisar y aprobar la carta oferta firmada ───────────── -->
+              @case (ACTIVIDAD.revisarAprobarCarta) {
+
+                <!-- Corrección administrativa de la razón social (RF-ONB-03):
+                     se muestra para que el checklist refleje el proceso completo,
+                     pero todavía no está implementada. -->
+                <label class="act-box act-box--aviso flex items-center flex-wrap gap-[9px]"
+                       title="Disponible en una próxima entrega">
+                  <input type="checkbox" [(ngModel)]="corregirRazonSocial" disabled />
+                  <span class="text-[12.5px] font-medium">Corregir razón social</span>
+                  <span class="act-chip">Próximamente</span>
+                </label>
+
+                @if (tieneCartaFirmada) {
+                  <div class="act-archivo">
+                    <i class="ti ti-file-text text-[16px] shrink-0" style="color:var(--color-abril-logo-blue)"></i>
+                    <span class="act-archivo-nombre">{{ item.cartaFirmadaNombre }}</span>
+
+                    @if (cartaAprobada) {
+                      <span class="act-badge act-badge--ok">Aprobada</span>
+                    } @else if (firmadaPorPostulante) {
+                      <!-- La firmó él desde el enlace: GTH no tiene que adjuntar nada, solo revisar. -->
+                      <span class="act-badge act-badge--pend">Firmada por el colaborador</span>
+                    } @else {
+                      <span class="act-badge act-badge--pend">Adjunta</span>
+                    }
+
+                    <a [href]="item.cartaFirmadaUrl" target="_blank" rel="noopener"
+                       class="act-btn act-btn--ghost" title="Abrir la carta firmada en SharePoint">
+                      <i class="ti ti-eye"></i> Ver carta
+                    </a>
+
+                    @if (!cartaAprobada) {
+                      <button type="button" class="act-btn act-btn--primary"
+                              [disabled]="aprobando || subiendo" (click)="aprobarCarta()">
+                        @if (aprobando) { Aprobando… } @else { Aprobar carta }
+                      </button>
+                    }
+
+                    <input #inputReemplazo type="file" class="hidden" accept=".pdf,.doc,.docx"
+                           (change)="onReemplazoSeleccionado($event)" />
+
+                    <button type="button" class="act-btn act-btn--ghost"
+                            [disabled]="subiendo || aprobando" (click)="inputReemplazo.click()">
+                      <i class="ti ti-refresh"></i>
+                      @if (subiendo) { Subiendo… } @else { Reemplazar }
+                    </button>
+                  </div>
+                } @else {
+                  <!-- El camino normal es que el colaborador firme desde el enlace que se le envió;
+                       adjuntarla a mano quedó como respaldo para quien la firme en papel. -->
+                  <div class="act-box act-box--aviso flex items-start gap-[9px]">
+                    <i class="ti ti-clock text-[15px] shrink-0 mt-[1px]"></i>
+                    <span class="text-[12.5px] leading-snug">
+                      Esperando que el colaborador firme su carta desde el enlace que se le envió
+                      @if (item.cartaOfertaEnviadaEn) {
+                        el {{ item.cartaOfertaEnviadaEn | date: 'dd/MM/yyyy HH:mm' }}
+                      }
+                      @if (item.correo) {
+                        a <b>{{ item.correo }}</b>
+                      }.
+                    </span>
+                  </div>
+
+                  <div class="act-archivo">
+                    <button type="button" class="act-btn act-btn--ghost"
+                            [disabled]="reenviando || subiendo || aprobando"
+                            title="Volver a enviarle el correo con el enlace para firmar"
+                            (click)="reenviarEnlace()">
+                      <i class="ti ti-mail-forward"></i>
+                      @if (reenviando) { Reenviando… } @else { Reenviar enlace }
+                    </button>
+
+                    <input #inputRespaldo type="file" class="hidden" accept=".pdf,.doc,.docx"
+                           (change)="onReemplazoSeleccionado($event)" />
+
+                    <button type="button" class="act-btn act-btn--ghost"
+                            [disabled]="subiendo || aprobando || reenviando"
+                            title="Respaldo: solo si el colaborador la firmó en papel y la envió por otro medio"
+                            (click)="inputRespaldo.click()">
+                      <i class="ti ti-upload"></i>
+                      @if (subiendo) { Subiendo… } @else { Adjuntarla a mano }
+                    </button>
+                  </div>
+                }
+
+                <!-- Estado de la carta y dónde queda archivada (el file digital
+                     del colaborador), en una sola línea de pie. -->
+                <p class="act-pie">
+                  <span>
+                    @if (cartaAprobada) {
+                      Aprobada el {{ item.cartaFirmadaAprobadaEn | date: 'dd/MM/yyyy HH:mm' }}
+                    } @else if (firmadaPorPostulante) {
+                      Firmada por el colaborador el
+                      {{ item.cartaFirmadaPostulanteEn | date: 'dd/MM/yyyy HH:mm' }} · pendiente de aprobación
+                    } @else if (tieneCartaFirmada) {
+                      Adjuntada por GTH el
+                      {{ item.cartaFirmadaSubidaEn | date: 'dd/MM/yyyy HH:mm' }} · pendiente de aprobación
+                    } @else {
+                      A la espera de la firma del colaborador
+                    }
+                  </span>
+                  @if (item.fileDigitalCarpeta) {
+                    <span aria-hidden="true">·</span>
+                    <span>SharePoint / {{ item.fileDigitalCarpeta }}</span>
+                  }
+                </p>
+              }
+
+              <!-- ── Aviso preventivo a TI ─────────────────────────────────
+                   Solo los datos que viajaron en el aviso: qué es y cuándo se
+                   envía ya lo dice el nombre de la actividad. -->
+              @case (ACTIVIDAD.avisoTi) {
+                <div class="act-box act-box--ok">
+                  <ul class="act-lista">
+                    <li><b>Puesto:</b> {{ (item.puesto | titleCase) || '—' }}</li>
+                    <li><b>Área / destino:</b> {{ (item.area | titleCase) || '—' }}</li>
+                    <li><b>Empresa:</b> {{ item.empresa || '—' }}</li>
+                    <li>
+                      <b>Ingreso:</b>
+                      {{ item.fechaIngreso ? (item.fechaIngreso | date: 'dd/MM/yyyy') : '—' }}
+                    </li>
+                    <li><b>Requerimiento:</b> {{ item.codigo }}</li>
+                  </ul>
+                </div>
+              }
+
+              <!-- ── Aviso preventivo al responsable de obra / sede ──────── -->
+              @case (ACTIVIDAD.avisoObra) {
+                <div class="act-box act-box--aviso">
+                  <ul class="act-lista">
+                    <li><b>Puesto:</b> {{ (item.puesto | titleCase) || '—' }}</li>
+                    <li><b>Destino:</b> {{ (item.proyectoObra | titleCase) || 'Obra / proyecto del requerimiento' }}</li>
+                    <li>
+                      <b>Fecha requerida:</b>
+                      {{ item.fechaIngreso ? (item.fechaIngreso | date: 'dd/MM/yyyy') : '—' }}
+                    </li>
+                    <li><b>Destinatario:</b> Administrador(a) de la obra asignada</li>
+                    <li>
+                      <b>Respaldo:</b>
+                      Residente de obra → Ing. de Producción → Coordinación de Administración de Obra
+                    </li>
+                  </ul>
+                </div>
+              }
+
+              <!-- ── Resto del checklist: se dibuja, aún sin acciones ────── -->
+              @default {
+                @if (a.actividad.descripcion) {
+                  <p class="text-[12.5px] text-gray-500 leading-relaxed mt-[4px]">{{ a.actividad.descripcion }}</p>
+                }
+                @if (!a.hecha) {
+                  <p class="act-pie" title="Se habilitará cuando se implemente su fase">
+                    <span class="act-chip">Próximamente</span>
+                  </p>
+                }
+              }
+            }
+          </div>
+        </div>
+      }
+    }
+
+  </div>
+
+  <!-- ── Navegación entre fases ─────────────────────────────────────────
+       Misma lógica que el detalle de una adjudicación: a la izquierda se
+       retrocede para ver el historial y a la derecha se avanza — navegando si
+       se está viendo una fase pasada, o cerrando la fase actual si se está en
+       la que toca. -->
+  <div modalFooter class="w-full flex items-center justify-between gap-[10px]">
+    <button type="button" class="nav-btn nav-btn--secundario"
+            title="Fase anterior"
+            [disabled]="!puedeRetroceder" (click)="retroceder()">
+      <i class="ti ti-chevron-left"></i>
+      <span class="nav-btn-label">Fase anterior</span>
+    </button>
+
+    <!-- Posición en el proceso. En teléfono se abrevia a «1/7»: el ancho que
+         libera es lo que les falta a los dos botones para no quedarse sin su
+         rótulo (antes se escondía el texto y quedaban dos flechas sueltas). -->
+    <span class="text-[12px] text-gray-400 shrink-0">
+      <span class="onb-nav-pos">Fase {{ faseVista }} de {{ totalFases }}</span>
+      <span class="onb-nav-pos-corta">{{ faseVista }}/{{ totalFases }}</span>
+    </span>
+
+    <button type="button" class="nav-btn nav-btn--primario"
+            [disabled]="!puedeAvanzar"
+            [title]="motivoBloqueo || etiquetaAvanzar"
+            (click)="avanzar()">
+      <span class="nav-btn-label">
+        @if (avanzando) { Guardando… } @else { {{ etiquetaAvanzar }} }
+      </span>
+      <i class="ti ti-chevron-right"></i>
+    </button>
+  </div>
+
+</app-abril-modal-panel>

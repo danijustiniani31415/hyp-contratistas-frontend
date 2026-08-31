@@ -1,0 +1,46 @@
+﻿<app-abril-page-header
+  badge="GESTIÓN ADMINISTRATIVA · CONFIGURACIÓN"
+  titulo="Configuración"
+  [subtitulo]="subtitulo"
+  [tabs]="tabs"
+  [botonPrimario]="botonPrimario"
+  (primaryClick)="onCreate()">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas y
+       delega en el modal de filtros de la sección activa. -->
+  <app-filter-trigger *ngIf="seccionConFiltros" tabsExtra [count]="filtrosActivos" (open)="onOpenFilters()" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
+  <app-section-tabs
+    class="shrink-0"
+    [tabs]="sectionTabs"
+    [value]="activeSection"
+    color="var(--color-abril-primary)"
+    (valueChange)="onSectionChange($event)">
+  </app-section-tabs>
+
+  <!-- SECCIÓN: Lugares -->
+  <app-ga-lugares *ngIf="activeSection === 'lugares'"></app-ga-lugares>
+
+  <!-- SECCIÓN: Motivos -->
+  <app-ga-motivos *ngIf="activeSection === 'motivos'"></app-ga-motivos>
+
+  <!-- SECCIÓN: Trayectos -->
+  <app-ga-trayectos *ngIf="activeSection === 'trayectos'"></app-ga-trayectos>
+
+  <!-- SECCIÓN: Visibilidad de Salidas -->
+  <app-visibilidad-salidas *ngIf="activeSection === 'visibilidad-salidas'"></app-visibilidad-salidas>
+
+  <!-- SECCIÓN: Carpeta Adjuntos -->
+  <app-ga-carpeta-adjuntos *ngIf="activeSection === 'carpeta-adjuntos'"></app-ga-carpeta-adjuntos>
+
+  <!-- SECCIÓN: Correos -->
+  <app-ga-correos *ngIf="activeSection === 'correos'"></app-ga-correos>
+
+  <!-- SECCIÓN: Tu firma. Panel compartido: la misma firma que registra Contabilidad. -->
+  <div *ngIf="activeSection === 'firma'" class="overflow-y-auto">
+    <app-firma-personal
+      descripcion="Se estampa en la planilla de rendición que firmes y en el resto de documentos que firmes" />
+  </div>
+</div>

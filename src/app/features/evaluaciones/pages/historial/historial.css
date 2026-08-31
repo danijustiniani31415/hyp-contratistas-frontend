@@ -1,0 +1,79 @@
+:host {
+  display: flex; flex-direction: column;
+  height: 100%; min-height: 0;
+  background: #F8FAFC;
+}
+
+.hist-root {
+  background: #F8FAFC;
+  padding: 10px; display: flex; flex-direction: column; gap: 6px;
+  flex: 1; min-height: 0; box-sizing: border-box;
+}
+
+.hist-content {
+  display: grid; grid-template-columns: 240px 1fr; gap: 6px; align-items: stretch;
+  flex: 1; min-height: 0;
+}
+
+/* ─── PANEL IZQUIERDO: períodos ─── */
+.panel-left {
+  background: var(--color-abril-surface); border: 1px solid var(--color-abril-border);
+  border-radius: 10px; overflow: hidden;
+  display: flex; flex-direction: column; min-height: 0;
+}
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-bottom: 1px solid var(--color-abril-border);
+  flex-shrink: 0;
+}
+.panel-title { font-size: 14px; font-weight: 600; }
+
+.periodo-list { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
+.periodo-item {
+  padding: 10px 12px; border-radius: 8px; font-size: 13px; color: var(--color-abril-ink);
+  cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+}
+.periodo-item:hover { background: var(--color-abril-bg-alt, #F1F5F9); }
+.periodo-item.active { background: var(--color-abril-primary-light, #EFF6FF); color: var(--color-abril-primary); font-weight: 600; }
+.periodo-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; flex-shrink: 0; }
+
+/* ─── PANEL DERECHO: evaluaciones ─── */
+.panel-right {
+  background: var(--color-abril-surface); border: 1px solid var(--color-abril-border);
+  border-radius: 10px; overflow: hidden;
+  display: flex; flex-direction: column; min-height: 0;
+}
+
+.eval-filters {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  padding: 8px 16px; border-bottom: 1px solid var(--color-abril-border);
+  flex-shrink: 0;
+}
+.filter-sel, .filter-input {
+  height: 36px; padding: 0 12px; border: 1px solid var(--color-abril-border);
+  border-radius: 8px; font-size: 13px; background: var(--color-abril-surface);
+  color: var(--color-abril-ink); min-width: 160px;
+}
+.filter-sel:focus, .filter-input:focus { outline: none; border-color: var(--color-abril-primary); }
+.filter-input { flex: 1; min-width: 200px; }
+
+.table-wrap { flex: 1; min-height: 0; overflow-y: auto; }
+.eval-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+.eval-table thead tr {
+  background: var(--color-abril-bg-alt, #F8FAFC);
+  border-bottom: 2px solid var(--color-abril-border);
+  position: sticky; top: 0;
+}
+.eval-table th {
+  padding: 10px 16px; font-size: 11px; font-weight: 700;
+  color: var(--color-abril-muted); text-align: left; white-space: nowrap;
+}
+.eval-table td { padding: 12px 16px; border-bottom: 1px solid var(--color-abril-border); font-size: 13px; color: var(--color-abril-ink); }
+.eval-table tbody tr:last-child td { border-bottom: none; }
+.eval-table tbody tr:hover { background: var(--color-abril-bg-alt, #F8FAFC); }
+
+.et-empty { padding: 60px 24px; text-align: center; color: var(--color-abril-muted); font-size: 13px; }
+
+.score-hi { color: #16A34A; font-weight: 700; }
+.score-ok { color: #D97706; font-weight: 700; }
+.score-lo { color: #DC2626; font-weight: 700; }

@@ -1,0 +1,47 @@
+<app-base-modal title="EDITAR ÁREA" width="w-[640px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-[15px] mt-[15px]">
+    <div class="grid grid-cols-2 gap-4">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Tipo</p>
+        <app-search-select
+          [options]="areaTypes"
+          valueField="areaTypeId"
+          displayField="areaTypeName"
+          [value]="dto.areaTypeId"
+          (valueChange)="dto.areaTypeId = $event"
+          [showLabel]="false"
+          [allowClear]="false"
+          placeholder="Seleccionar"
+        ></app-search-select>
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Estado</p>
+        <app-search-select
+          [options]="estadoOptions"
+          [value]="dto.active"
+          (valueChange)="dto.active = $event"
+          [allowClear]="false"
+          [showLabel]="false"
+        ></app-search-select>
+      </div>
+    </div>
+
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">Nombre de Área</p>
+      <input
+        type="text"
+        [(ngModel)]="dto.areaItemName"
+        class="border border-[#E2E2E2] rounded-lg p-[10px]"
+      />
+    </div>
+
+    <div class="flex justify-center pt-2">
+      <button
+        (click)="save()"
+        class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer"
+      >
+        <p class="text-[#ffffff] text-lg">Guardar</p>
+      </button>
+    </div>
+  </div>
+</app-base-modal>

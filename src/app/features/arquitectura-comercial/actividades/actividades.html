@@ -1,0 +1,443 @@
+<app-abril-page-header
+  [badge]="'ARQ. COMERCIAL · ' + anioActual"
+  titulo="Actividades"
+  subtitulo="Gestión de actividades por proyecto y etapa."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="flex flex-1 min-h-0 bg-[#F5F7FA]">
+
+  <!-- ═══════════════ PANEL DERECHO ═══════════════ -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+
+    <!-- Resumen de proyectos (siempre visible) -->
+    <div class="px-5 py-2 border-b border-[#E5E7EB] bg-white flex items-center gap-3 text-xs text-gray-500 shrink-0">
+      <span>{{ proyectosConActividades.length }} proyectos con actividades</span>
+      <span>·</span>
+      <span>{{ proyectosSinActividades.length }} sin actividades</span>
+    </div>
+
+    <!-- Sin proyecto seleccionado -->
+    <div *ngIf="!selectedProyecto" class="flex-1 flex items-center justify-center text-gray-400">
+      <div class="text-center">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" class="mx-auto mb-3 text-gray-300">
+          <path d="M3 7h18M3 12h18M3 17h18" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <p>Selecciona un proyecto desde "Filtros"</p>
+      </div>
+    </div>
+
+    <!-- Proyecto sin actividades: empty state -->
+    <div *ngIf="selectedProyecto && selectedProyecto.sinActividades"
+         class="flex-1 flex items-center justify-center p-8">
+      <div class="text-center max-w-md">
+        <h2 class="text-xl font-semibold text-gray-800 mb-2">{{ selectedProyecto.nombre }}</h2>
+        <p class="text-gray-600 mb-6">
+          Este proyecto todavía no tiene actividades. Genera las 159 actividades base desde la plantilla.
+        </p>
+        <button (click)="generarActividades(selectedProyecto)"
+                class="text-white px-6 py-3 rounded-lg font-medium shadow transition-colors"
+                style="background: var(--color-abril-standard);"
+                onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+                onmouseout="this.style.background='var(--color-abril-standard)'">
+          + Generar actividades desde plantilla
+        </button>
+      </div>
+    </div>
+
+    <!-- Proyecto con actividades -->
+    <ng-container *ngIf="selectedProyecto && !selectedProyecto.sinActividades">
+
+      <!-- Header del proyecto: título + badges + pills + responsable, todo en una línea -->
+      <div class="px-6 py-3 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.1)] relative z-20 flex flex-wrap items-center gap-4">
+        <h1 class="text-[16px] font-bold text-gray-800 whitespace-nowrap">{{ selectedProyecto.nombre }}</h1>
+
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 whitespace-nowrap">
+          {{ total }} actividades
+        </span>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#DCFCE7] text-[#15803D] whitespace-nowrap">
+          {{ selectedProyecto.activas }} {{ selectedProyecto.activas === 1 ? 'activa' : 'activas' }}
+        </span>
+
+        <!-- Tabs tipo (pills) -->
+        <div class="flex gap-1.5">
+          <button (click)="setTipo('')"
+                  [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === '' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+                  [style.background]="tipoFiltro === '' ? 'var(--color-abril-standard)' : null">
+            Todos
+          </button>
+          <button (click)="setTipo('ENTREGABLE')"
+                  [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'ENTREGABLE' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+                  [style.background]="tipoFiltro === 'ENTREGABLE' ? 'var(--color-abril-standard)' : null">
+            Entregable
+          </button>
+          <button (click)="setTipo('HITO')"
+                  [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'HITO' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+                  [style.background]="tipoFiltro === 'HITO' ? 'var(--color-abril-standard)' : null">
+            Hito
+          </button>
+          <button (click)="setTipo('CONSULTA')"
+                  [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'CONSULTA' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+                  [style.background]="tipoFiltro === 'CONSULTA' ? 'var(--color-abril-standard)' : null">
+            Consulta
+          </button>
+        </div>
+
+        <button
+          *ngIf="tipoFiltro === 'CONSULTA'"
+          (click)="mostrarNuevaConsulta = true"
+          class="px-3.5 py-1.5 text-sm rounded-lg text-white font-medium transition-colors whitespace-nowrap"
+          style="background: var(--color-abril-standard);"
+          onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+          onmouseout="this.style.background='var(--color-abril-standard)'"
+        >
+          + Nueva Consulta
+        </button>
+        <button
+          *ngIf="tipoFiltro === 'HITO'"
+          (click)="mostrarNuevoHito = true"
+          class="px-3.5 py-1.5 text-sm rounded-lg text-white font-medium transition-colors whitespace-nowrap"
+          style="background: var(--color-abril-standard);"
+          onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+          onmouseout="this.style.background='var(--color-abril-standard)'"
+        >
+          + Nuevo Hito
+        </button>
+        <button
+          *ngIf="tipoFiltro === 'ENTREGABLE'"
+          (click)="mostrarNuevoEntregable = true"
+          class="px-3.5 py-1.5 text-sm rounded-lg text-white font-medium transition-colors whitespace-nowrap"
+          style="background: var(--color-abril-standard);"
+          onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+          onmouseout="this.style.background='var(--color-abril-standard)'"
+        >
+          + Nuevo Entregable
+        </button>
+
+        <span *ngIf="loading" class="text-xs text-gray-500 whitespace-nowrap">Cargando...</span>
+
+        <div class="flex items-center gap-2 ml-auto w-[240px]">
+          <app-search-select
+            label="Responsable 1"
+            [showLabel]="false"
+            [compact]="true"
+            placeholder="Responsable 1"
+            [options]="supervisores"
+            valueField="id"
+            displayField="apellidoNombre"
+            [value]="selectedProyecto.responsableArqComId ?? null"
+            [allowClear]="true"
+            [sortAlpha]="false"
+            (valueChange)="onEncargadoChange($event)">
+          </app-search-select>
+        </div>
+
+        <button
+          type="button"
+          (click)="reasignarEncargado($event)"
+          title="Asigna el Responsable 1 del proyecto a las actividades que no tengan uno"
+          class="px-3.5 py-1.5 text-sm rounded-lg border font-medium transition-colors whitespace-nowrap"
+          style="border-color: var(--color-abril-standard); color: var(--color-abril-standard);"
+        >
+          Reasignar encargado
+        </button>
+      </div>
+
+      <!-- Tabla -->
+      <div class="flex-1 overflow-auto">
+        <table class="abril-table w-full text-xs">
+          <thead class="sticky top-0 z-10">
+            <tr class="text-left">
+              <th class="p-2 w-8"></th>
+              <th class="p-2 w-10">#</th>
+              <th class="p-2 min-w-[220px]">Actividad</th>
+              <th class="p-2">Etapa</th>
+              <th class="p-2">Partida de Control</th>
+              <th class="p-2">Categoría</th>
+              <th class="p-2">Especialidad</th>
+              <th class="p-2">SPI</th>
+              <th class="p-2">Estado</th>
+              <th class="p-2">Inicio prog.</th>
+              <th class="p-2">Fin prog.</th>
+              <th class="p-2">Inicio efect.</th>
+              <th class="p-2">Fin efect.</th>
+              <th class="p-2">Retraso</th>
+              <th class="p-2 min-w-[180px]">Responsable 1</th>
+              <th class="p-2 min-w-[180px]">Responsable 2</th>
+              <th class="p-2 min-w-[200px]">Observaciones</th>
+              <th class="p-2">Activa</th>
+              <th class="p-2 w-16 th-actions-sticky">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let grupo of etapasConActividades; trackBy: trackByEtapaGroup">
+              <!-- Separador de etapa -->
+              <tr class="bg-[#F0FDF4]">
+                <td colspan="19" class="px-4 py-2 text-[11px] font-bold text-[#15803D] uppercase tracking-wide">
+                  <span class="mr-2">{{ grupo.nombre }}</span>
+                  <span class="text-[#15803D]/70 font-normal normal-case">· {{ grupo.activas }} activas / {{ grupo.total }} total</span>
+                </td>
+              </tr>
+
+              <!-- Filas de actividades -->
+              <tr *ngFor="let a of grupo.items; let i = index; trackBy: trackByActividad"
+                  [class]="'border-b border-[#E5E7EB] ' + (i % 2 === 0 ? 'bg-white ' : 'bg-[#F9FAFB] ') + (a.activo ? 'hover:bg-[#F0FDF4]' : 'opacity-50')">
+                <td class="px-2 py-1.5">
+                  <input type="checkbox"
+                         [checked]="a.activo"
+                         (click)="onToggleActivo(a, $event)"
+                         class="rounded border-gray-300 cursor-pointer" />
+                </td>
+                <td class="px-2 py-1.5 text-gray-500">{{ a.orden }}</td>
+                <td class="px-2 py-1.5 text-gray-800">{{ a.nombre }}</td>
+                <td class="px-2 py-1.5">
+                  <span [class]="'inline-block px-3 py-1 rounded-full text-xs font-semibold border ' + etapaClass(a.etapaNombre)">
+                    {{ a.etapaNombre || '—' }}
+                  </span>
+                </td>
+                <td class="px-2 py-1.5">
+                  <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-gray-100 text-gray-700 border-gray-200">
+                    {{ a.partidaDeControl || '—' }}
+                  </span>
+                </td>
+                <td class="px-2 py-1.5">
+                  <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-gray-100 text-gray-700 border-gray-200">
+                    {{ a.categoriaNombre || '—' }}
+                  </span>
+                </td>
+                <td class="px-2 py-1.5">
+                  <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-gray-100 text-gray-700 border-gray-200">
+                    {{ a.especialidadNombre || '—' }}
+                  </span>
+                </td>
+                <td class="px-2 py-1.5">
+                  <ng-container *ngIf="a.spi != null && a.spi !== 0; else spiVacio">
+                    <span [style.color]="a.spi >= 1 ? '#16a34a' : a.spi >= 0.8 ? '#d97706' : '#dc2626'"
+                          style="font-weight:700">{{ a.spi | number:'1.2-2' }}</span>
+                  </ng-container>
+                  <ng-template #spiVacio><span class="text-gray-300">—</span></ng-template>
+                </td>
+                <td class="px-2 py-1.5">
+                  <span [class]="'inline-block px-3 py-1 rounded-full text-xs font-semibold border ' + estadoClass(a.estado)">
+                    {{ a.estado }}
+                  </span>
+                </td>
+                <td class="px-2 py-1.5">
+                  <input type="date"
+                         [value]="a.inicioProgramado || ''"
+                         (change)="onDateChange(a.id, 'inicioProgramado', $event)"
+                         class="w-32 text-[12px] border border-[#D1D5DB] rounded-[6px] px-2 py-1" />
+                </td>
+                <td class="px-2 py-1.5">
+                  <input type="date"
+                         [value]="a.finProgramado || ''"
+                         (change)="onDateChange(a.id, 'finProgramado', $event)"
+                         [disabled]="!a.activo"
+                         class="w-32 text-[12px] border border-[#D1D5DB] rounded-[6px] px-2 py-1 disabled:bg-gray-100" />
+                </td>
+                <td class="px-2 py-1.5">
+                  <input type="date"
+                         [value]="a.inicioEfectivo || ''"
+                         (change)="onDateChange(a.id, 'inicioEfectivo', $event)"
+                         [disabled]="!a.activo"
+                         class="w-32 text-[12px] border border-[#D1D5DB] rounded-[6px] px-2 py-1 disabled:bg-gray-100" />
+                </td>
+                <td class="px-2 py-1.5">
+                  <input type="date"
+                         [value]="a.finEfectivo || ''"
+                         (change)="onDateChange(a.id, 'finEfectivo', $event)"
+                         [disabled]="!a.activo"
+                         class="w-32 text-[12px] border border-[#D1D5DB] rounded-[6px] px-2 py-1 disabled:bg-gray-100" />
+                </td>
+                <td class="px-2 py-1.5">
+                  <span *ngIf="a.retraso != null"
+                        [class]="a.retraso > 0 ? 'text-red-600 font-bold' : (a.retraso < 0 ? 'text-green-600 font-bold' : 'text-gray-500')">
+                    {{ a.retraso }} d
+                  </span>
+                  <span *ngIf="a.retraso == null" class="text-gray-300">—</span>
+                </td>
+                <td class="px-2 py-1.5 text-gray-700 truncate" [title]="a.encargado1 || ''">
+                  {{ a.encargado1 || '—' }}
+                </td>
+                <td class="px-2 py-1.5 min-w-[180px]">
+                  <app-search-select
+                    label="Responsable 2"
+                    [showLabel]="false"
+                    [compact]="true"
+                    placeholder="— sin responsable —"
+                    [options]="supervisores"
+                    valueField="id"
+                    displayField="apellidoNombre"
+                    [value]="a.userId2"
+                    [allowClear]="true"
+                    [sortAlpha]="false"
+                    [disabled]="!a.activo"
+                    (valueChange)="onResponsable2Change(a, $event)">
+                  </app-search-select>
+                </td>
+                <td class="px-2 py-1.5">
+                  <input type="text"
+                         [value]="a.observaciones || ''"
+                         (blur)="onObservacionesBlur(a.id, $event)"
+                         [disabled]="!a.activo"
+                         placeholder="—"
+                         class="w-full text-[12px] border border-[#D1D5DB] rounded-[6px] px-2 py-1 disabled:bg-gray-100" />
+                </td>
+                <td class="px-2 py-1.5">
+                  <span [class]="a.activo ? 'inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-[#D1FAE5] text-[#065F46] border-[#A7F3D0]' : 'inline-block px-3 py-1 rounded-full text-xs font-semibold bg-[#E5E7EB] text-[#6B7280]'">
+                    {{ a.activo ? 'SÍ' : 'NO' }}
+                  </span>
+                </td>
+                <td class="px-2 py-1.5 whitespace-nowrap td-actions-sticky">
+                  <button
+                    (click)="$event.stopPropagation(); onEditarActividad(a)"
+                    title="Editar"
+                    class="inline-flex items-center justify-center w-6 h-6 rounded border border-[#D1D5DB] bg-white hover:bg-[var(--color-abril-standard-light)] hover:border-[var(--color-abril-standard)] text-gray-400 hover:text-[var(--color-abril-standard)] transition-colors">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M12 20h9"/>
+                      <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                    </svg>
+                  </button>
+                  <button
+                    (click)="$event.stopPropagation(); onEliminarActividad(a.id)"
+                    title="Eliminar"
+                    class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded border border-[#D1D5DB] bg-white hover:bg-[#FEE2E2] hover:border-[#FCA5A5] text-gray-400 hover:text-red-600 transition-colors">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                      <path d="M10 11v6"/><path d="M14 11v6"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            </ng-container>
+
+            <tr *ngIf="!loading && actividades.length === 0">
+              <td colspan="19" class="text-center py-8 text-gray-400">
+                No se encontraron actividades con los filtros aplicados.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </ng-container>
+
+  </main>
+</div>
+
+<!-- Panel de filtros estándar -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      placeholder="Buscar proyecto..."
+      [options]="proyectoOptions"
+      valueField="id"
+      displayField="nombreDisplay"
+      [value]="selectedProyectoId"
+      [allowClear]="true"
+      [sortAlpha]="false"
+      (valueChange)="onProyectoSeleccionado($event)">
+    </app-search-select>
+  </div>
+
+  <label class="flex items-center gap-2 text-[12px] text-gray-700 cursor-pointer">
+    <input type="checkbox" [(ngModel)]="mostrarSinActividades"
+           class="rounded border-gray-300" />
+    Mostrar solo proyectos sin actividades
+  </label>
+
+  <a routerLink="/configuracion/proyectos"
+     class="flex items-center gap-1.5 text-[12px] text-gray-400 hover:text-[var(--color-abril-standard)] transition-colors -mt-[6px]">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Nuevo proyecto
+  </a>
+
+  <div class="w-full">
+    <app-search-select
+      label="Etapa"
+      placeholder="Todas las etapas"
+      [options]="etapaOptions"
+      valueField="value"
+      displayField="label"
+      [value]="etapaNombreFiltro"
+      [allowClear]="true"
+      [sortAlpha]="false"
+      (valueChange)="etapaNombreFiltro = $event; onEtapaFiltroChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <label class="abril-field">
+      <input type="text" class="abril-field-input" [(ngModel)]="searchQuery" (keyup.enter)="onSearchEnter()"
+             placeholder=" " />
+      <span class="abril-field-label">Buscar por nombre</span>
+    </label>
+  </div>
+
+  <label class="flex items-center gap-2 text-[12px] text-gray-700 cursor-pointer">
+    <input type="checkbox" [(ngModel)]="soloActivas" (change)="onFiltroChange()"
+           class="rounded border-gray-300" />
+    Solo activas
+  </label>
+
+  <label class="flex items-center gap-2 text-[12px] text-gray-700 cursor-pointer">
+    <input type="checkbox" [(ngModel)]="excluirCulminadas" (change)="onEtapaFiltroChange()"
+           class="rounded border-gray-300" />
+    Excluir culminadas
+  </label>
+
+  <div class="w-full">
+    <app-search-select
+      label="Supervisor"
+      placeholder="Todos los supervisores"
+      [options]="supervisores"
+      valueField="id"
+      displayField="apellidoNombre"
+      [value]="filtroSupervisorId"
+      [allowClear]="true"
+      [sortAlpha]="false"
+      (valueChange)="filtroSupervisorId = $event; onFiltroChange()">
+    </app-search-select>
+  </div>
+
+</app-filter-modal>
+
+<app-editar-actividad
+  [open]="mostrarEditarActividad"
+  [actividad]="actividadParaEditar"
+  [supervisores]="supervisores"
+  (closed)="mostrarEditarActividad = false"
+  (saved)="onEditarGuardado($event)"
+/>
+
+<app-nueva-consulta
+  [open]="mostrarNuevaConsulta"
+  [projectId]="selectedProyectoId"
+  [supervisores]="supervisores"
+  (closed)="mostrarNuevaConsulta = false"
+  (saved)="onNuevaConsultaGuardada()"
+/>
+
+<app-nuevo-hito
+  [open]="mostrarNuevoHito"
+  [projectId]="selectedProyectoId"
+  [supervisores]="supervisores"
+  (closed)="mostrarNuevoHito = false"
+  (saved)="onNuevoHitoGuardado()"
+/>
+
+<app-nuevo-entregable
+  [open]="mostrarNuevoEntregable"
+  [projectId]="selectedProyectoId"
+  [supervisores]="supervisores"
+  (closed)="mostrarNuevoEntregable = false"
+  (saved)="onNuevoEntregableGuardado()"
+/>

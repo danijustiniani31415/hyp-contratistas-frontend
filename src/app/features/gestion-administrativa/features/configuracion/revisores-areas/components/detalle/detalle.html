@@ -1,0 +1,54 @@
+<app-base-modal
+  [title]="titulo"
+  width="w-[640px]"
+  (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[14px] mt-[12px]">
+
+    <p class="text-xs text-gray-500 leading-relaxed">
+      Las solicitudes se envían al primer revisor
+      <b>activo</b> según el orden de prioridad; si ninguno está activo (o no hay
+      revisores), la solicitud se envía al área de <b>GTH</b>.
+    </p>
+
+    <div *ngIf="usaFallbackGth"
+         class="text-xs text-[#92400E] bg-[#FEF9C3] px-[14px] py-[10px] rounded-lg">
+      {{ revisores.length === 0 ? 'Esta área no tiene revisores asignados' : 'Ningún revisor está activo' }}:
+      las solicitudes de sus trabajadores sin revisores propios se están enviando al área de GTH.
+    </div>
+
+    <div class="w-full rounded-lg border border-[#D6DEE5] max-h-[52vh] overflow-y-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-[#E5F7D1] sticky top-0 z-10">
+          <tr class="text-[#64BC04]">
+            <th class="text-center px-[8px] py-[8px] font-semibold w-[80px]">Prioridad</th>
+            <th class="text-center px-[14px] py-[8px] font-semibold">Revisor</th>
+            <th class="text-center px-[14px] py-[8px] font-semibold">Correo</th>
+            <th class="text-center px-[14px] py-[8px] font-semibold w-[130px]">Categoría</th>
+            <th class="text-center px-[8px] py-[8px] font-semibold w-[100px]">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of revisores" class="border-b" style="border-color:var(--color-abril-border)">
+            <td class="text-center py-[8px] font-semibold text-gray-600">{{ r.ordenPrioridad }}</td>
+            <td class="px-[14px] py-[8px] text-gray-700">{{ (r.revisorFullName || '—') | titleCase }}</td>
+            <td class="px-[14px] py-[8px] text-gray-700">{{ r.revisorEmail || '—' }}</td>
+            <td class="px-[14px] py-[8px] text-gray-700">{{ r.revisorCategory || '—' }}</td>
+            <td class="text-center py-[8px]">
+              <app-status-badge
+                [text]="r.active ? 'ACTIVO' : 'INACTIVO'"
+                [bgColor]="r.active ? '#D7FAF4' : '#FAD5D4'"
+                [textColor]="r.active ? '#009C87' : '#D30000'" />
+            </td>
+          </tr>
+          <tr *ngIf="revisores.length === 0">
+            <td colspan="5" class="text-center py-[24px] text-gray-400 text-sm">
+              Sin revisores asignados.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</app-base-modal>

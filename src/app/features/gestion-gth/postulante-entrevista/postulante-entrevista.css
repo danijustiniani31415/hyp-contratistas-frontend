@@ -1,0 +1,160 @@
+:host {
+  display: block;
+
+  /* Verdes de la marca Abril (los mismos tokens globales de styles.css). El verde oscuro es el
+     único que puede llevar texto blanco encima: el claro y el lima del logo no dan contraste. */
+  --pe-green: var(--color-abril-primary-dark, #2e7d32);
+  --pe-green-soft: var(--color-abril-primary-light, #e8f5e9);
+  --pe-lime: var(--color-abril-lime, #64bc04);
+}
+
+.pe-page {
+  min-height: 100vh;
+  /* Mismo degradado que el formulario del postulante: los dos son páginas públicas del mismo
+     proceso y el candidato pasa de una a la otra. */
+  background: linear-gradient(180deg, #e8f2e6 0%, var(--color-abril-page-bg, #f0f4f1) 340px);
+  padding: 28px 16px 60px;
+  display: flex;
+  align-items: center;
+}
+
+.pe-shell {
+  max-width: 620px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.pe-card {
+  position: relative;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid var(--color-abril-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 24px 28px;
+}
+
+/* Franja de marca superior: va como ::before (y no como border-top) para poder llevar el
+   degradado lima → verde del logo, recortada por el overflow de la tarjeta. */
+.pe-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--pe-lime) 0%, var(--pe-green) 100%);
+}
+
+.pe-state {
+  text-align: center;
+  padding: 52px 28px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.pe-state-logo {
+  height: 34px;
+  width: auto;
+  margin: 0 0 4px;
+}
+
+.pe-state-icon {
+  font-size: 56px;
+  line-height: 1;
+}
+
+.pe-state-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 4px 0 0;
+}
+
+.pe-state-text {
+  font-size: 13.5px;
+  color: #4b5563;
+  line-height: 1.6;
+  max-width: 480px;
+  margin: 0;
+}
+
+
+/* ── Recuadro con los datos de la cita ────────────────────────────────── */
+.pe-cita {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 22px;
+  margin-top: 14px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: var(--pe-green-soft);
+  border: 1px solid #cfe6cf;
+}
+
+/* Rechazar no es un error del candidato, pero el recuadro tiene que leerse distinto del
+   confirmado para que no parezca que igual lo esperamos ese día. */
+.pe-cita--no {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.pe-cita-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.pe-cita-item i {
+  font-size: 16px;
+  color: var(--pe-green);
+}
+
+.pe-cita--no .pe-cita-item i {
+  color: #b91c1c;
+}
+
+/* ── Spinner ──────────────────────────────────────────────────────────── */
+.pe-spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 4px solid var(--pe-green-soft);
+  border-top-color: var(--pe-green);
+  animation: pe-spin 0.9s linear infinite;
+}
+
+@keyframes pe-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 560px) {
+  .pe-state {
+    padding: 40px 18px 32px;
+  }
+
+  .pe-state-logo {
+    height: 30px;
+  }
+
+  .pe-state-icon {
+    font-size: 46px;
+  }
+
+  .pe-state-title {
+    font-size: 18px;
+  }
+
+  .pe-cita {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

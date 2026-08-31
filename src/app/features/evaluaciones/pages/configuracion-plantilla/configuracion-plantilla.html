@@ -1,0 +1,83 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Configuración"
+  subtitulo="Plantilla de criterios y áreas evaluadoras."
+    [tabGroups]="[
+    { label: 'Residentes',   icono: 'ti-user-check', tabs: [
+      { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
+      { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
+      { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
+      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' },
+      { label: 'Asignaciones',  icono: 'ti-users',            route: '/evaluaciones/asignaciones',   featureKey: 'evaluaciones.asignaciones' }
+    ]},
+    { label: 'Contratistas', icono: 'ti-building', tabs: [
+      { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
+      { label: 'Evaluar',          icono: 'ti-pencil',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
+      { label: 'Ver evaluaciones', icono: 'ti-list',      route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' }
+    ]},
+    { label: 'Superv. Contratista', icono: 'ti-shield-check', tabs: [
+      { label: 'Evaluar supervisor', icono: 'ti-pencil', route: '/evaluaciones/evaluar-supervisor-contratista', featureKey: 'evaluaciones.evaluar-supervisor-contratista' },
+      { label: 'Ver evaluaciones',   icono: 'ti-list',   route: '/evaluaciones/ver-supervisores-contratista',   featureKey: 'evaluaciones.ver-supervisores-contratista' }
+    ]},
+    { label: 'Jefe SSOMA', icono: 'ti-user-shield', tabs: [
+      { label: 'Evaluar Jefe SSOMA', icono: 'ti-pencil', route: '/evaluaciones/evaluar-jefe-ssoma', featureKey: 'evaluaciones.evaluar-jefe-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-jefe-ssoma', featureKey: 'evaluaciones.resultados-jefe-ssoma' }
+    ]},
+    { label: 'Prevencionistas', icono: 'ti-vest', tabs: [
+      { label: 'Mi perfil', icono: 'ti-user', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
+      { label: 'Dashboard', icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' }
+    ]},
+    { label: 'Gestión SSOMA', icono: 'ti-users-group', tabs: [
+      { label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-gestion-ssoma', featureKey: 'evaluaciones.resultados-gestion-ssoma' }
+    ]}
+  ]">
+</app-abril-page-header>
+
+<div class="conf-root">
+
+  <div class="conf-body">
+    <div class="area-sidebar">
+      <div class="as-label">Áreas evaluadoras</div>
+      <div class="as-item"
+        *ngFor="let a of areas"
+        [class.active]="areaActiva === a"
+        (click)="selectArea(a)">
+        {{ a }}
+      </div>
+    </div>
+
+    <div class="criterios-panel">
+      <div class="cp-header-bar">
+        <div class="cp-title">{{ areaActiva }} · {{ criterios.length }} criterios</div>
+      </div>
+      <div class="criterio-list">
+        <div class="criterio-item"
+          *ngFor="let c of criterios; let i = index"
+          [class.inactivo]="!c.activo">
+          <span class="ci-num">{{ i + 1 }}</span>
+          <div class="ci-body">
+            <div *ngIf="editandoId !== c.id" class="ci-text">{{ c.criterio }}</div>
+            <textarea *ngIf="editandoId === c.id" [(ngModel)]="editTexto"
+              class="ci-edit" rows="2">
+            </textarea>
+          </div>
+          <div class="ci-actions">
+            <button *ngIf="editandoId !== c.id" class="ci-btn" (click)="iniciarEdicion(c)">
+              <i class="ti ti-edit"></i>
+            </button>
+            <button *ngIf="editandoId === c.id" class="ci-btn ci-btn-save" (click)="guardarEdicion(c)">
+              <i class="ti ti-check"></i>
+            </button>
+            <button *ngIf="editandoId === c.id" class="ci-btn" (click)="editandoId = null">
+              <i class="ti ti-x"></i>
+            </button>
+            <button class="ci-btn" [title]="c.activo ? 'Desactivar' : 'Activar'" (click)="toggleActivo(c)">
+              <i class="ti" [ngClass]="c.activo ? 'ti-eye' : 'ti-eye-off'"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

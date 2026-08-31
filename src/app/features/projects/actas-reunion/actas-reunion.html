@@ -1,0 +1,132 @@
+<app-abril-page-header
+  badge="ACTAS DE REUNIÓN"
+  titulo="Actas de Reunión"
+  subtitulo="Agenda de reuniones y seguimiento de acuerdos, por proyecto, área o de toda la organización."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: 'Agendar reunión', icono: 'ti-calendar-plus' }"
+  [botonSecundario]="{ label: 'Configuración', icono: 'ti-settings' }"
+  (primaryClick)="showAddModal = true"
+  (secondaryClick)="irAConfiguracion()">
+</app-abril-page-header>
+
+<div class="bg-white rounded-lg p-5 flex-1 min-h-0 flex flex-col gap-4">
+
+  <!-- ── Filtros ────────────────────────────────────────────────────────── -->
+  <div class="flex flex-wrap items-end gap-3">
+    <div class="w-64">
+      <app-search-select
+        label="Proyecto"
+        [options]="proyectos"
+        valueField="projectId"
+        displayField="projectDescription"
+        [value]="filtro.projectId"
+        (valueChange)="filtro.projectId = $event; onFilterChange()"
+        placeholder="Todos los proyectos">
+      </app-search-select>
+    </div>
+    <div class="w-48">
+      <app-search-select
+        label="Estado"
+        [options]="estados"
+        valueField="id"
+        displayField="descripcion"
+        [value]="filtro.reunionEstadoId"
+        (valueChange)="filtro.reunionEstadoId = $event; onFilterChange()"
+        placeholder="Todos">
+      </app-search-select>
+    </div>
+    <div class="w-44">
+      <app-date-picker
+        label="Desde"
+        color="var(--color-abril-primary)"
+        [value]="filtro.desde"
+        (valueChange)="filtro.desde = $event; onFilterChange()">
+      </app-date-picker>
+    </div>
+    <div class="w-44">
+      <app-date-picker
+        label="Hasta"
+        color="var(--color-abril-primary)"
+        [value]="filtro.hasta"
+        (valueChange)="filtro.hasta = $event; onFilterChange()">
+      </app-date-picker>
+    </div>
+
+  </div>
+
+  <!-- ── Tabla de reuniones ─────────────────────────────────────────────── -->
+  <div class="overflow-auto border border-[#E5EAF0] rounded-lg">
+    <table class="w-full text-sm">
+      <thead class="bg-[#F5F8FA] text-[var(--color-abril-primary)]">
+        <tr class="text-left">
+          <th class="px-4 py-3 font-medium">Proyecto</th>
+          <th class="px-4 py-3 font-medium text-center">N°</th>
+          <th class="px-4 py-3 font-medium">Tema</th>
+          <th class="px-4 py-3 font-medium">Fecha</th>
+          <th class="px-4 py-3 font-medium text-center">Hora</th>
+          <th class="px-4 py-3 font-medium">Lugar</th>
+          <th class="px-4 py-3 font-medium text-center">Estado</th>
+          <th class="px-4 py-3 font-medium text-center">Acuerdos</th>
+          <th class="px-4 py-3 font-medium text-center">Reprog.</th>
+          <th class="px-4 py-3 font-medium text-center">Archivos</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of reuniones.data" (click)="openDetail(r)"
+          class="border-t border-[#E5EAF0] hover:bg-gray-50 cursor-pointer">
+          <td class="px-4 py-3 text-gray-700">{{ r.projectDescription || r.areaScopeDescripcion || 'Organización' }}</td>
+          <td class="px-4 py-3 text-center text-gray-700 font-medium">{{ r.numero }}</td>
+          <td class="px-4 py-3 text-gray-700">{{ r.tema }}</td>
+          <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ r.fecha | date:'dd/MM/yyyy' }}</td>
+          <td class="px-4 py-3 text-center text-gray-700 whitespace-nowrap">
+            {{ hora(r.horaInicio) }}<span *ngIf="r.horaFin"> - {{ hora(r.horaFin) }}</span>
+          </td>
+          <td class="px-4 py-3 text-gray-700">{{ r.lugar || '—' }}</td>
+          <td class="px-4 py-3 text-center">
+            <span class="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap"
+              [ngClass]="estadoClass(r.reunionEstado)">
+              {{ r.reunionEstado }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-center text-gray-700">
+            <span [class.text-green-600]="r.totalAcuerdos > 0 && r.acuerdosCumplidos === r.totalAcuerdos">
+              {{ r.acuerdosCumplidos }}/{{ r.totalAcuerdos }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-center text-gray-700">
+            <span *ngIf="r.vecesReprogramada > 0"
+              class="text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-200 px-2 py-0.5 rounded-full">
+              {{ r.vecesReprogramada }}
+            </span>
+            <span *ngIf="r.vecesReprogramada === 0">—</span>
+          </td>
+          <td class="px-4 py-3 text-center text-gray-700">{{ r.totalArchivos }}</td>
+        </tr>
+
+        <tr *ngIf="reuniones.data.length === 0">
+          <td colspan="10" class="px-4 py-8 text-center text-gray-400">
+            No hay reuniones registradas.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginator
+    *ngIf="reuniones.totalRecords > 0"
+    [totalRecords]="reuniones.totalRecords"
+    [currentPage]="reuniones.page"
+    [totalPages]="reuniones.totalPages"
+    (pageChange)="onPageChange($event)">
+  </app-paginator>
+</div>
+
+<!-- ── Modal agendar reunión ────────────────────────────────────────────── -->
+<app-reunion-add
+  *ngIf="showAddModal"
+  [proyectos]="proyectos"
+  [trabajadores]="trabajadores"
+  [temas]="temas"
+  (closeModal)="showAddModal = false"
+  (created)="onCreated($event)">
+</app-reunion-add>

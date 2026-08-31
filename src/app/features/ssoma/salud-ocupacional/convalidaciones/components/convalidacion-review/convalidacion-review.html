@@ -1,0 +1,243 @@
+<app-abril-modal-panel
+  *ngIf="open"
+  titulo="Revisar convalidación"
+  icono="ti-check"
+  variant="blue"
+  width="760px"
+  (closeModal)="close()">
+  <ng-container *ngIf="item">
+
+    <div class="worker-banner">
+      <div class="worker-name">{{ item.workerNombre }}</div>
+      <div class="worker-meta">DNI {{ item.workerDni }}</div>
+      <div class="worker-meta">
+        <span *ngIf="item.empresaOrigen">{{ item.empresaOrigen }} →</span>
+        <strong>{{ item.empresaDestino || 'Sin empresa destino' }}</strong>
+      </div>
+      <div class="worker-meta" *ngIf="item.tipoEmo">
+        EMO: {{ item.tipoEmo }}<span *ngIf="item.fechaEmoOrigen"> · {{ item.fechaEmoOrigen | date:'dd/MM/yyyy' }}</span>
+      </div>
+    </div>
+
+    <h2 class="paso-title mt-6"><i class="ti ti-files"></i> Documentos del EMO</h2>
+    <div class="doc-grid">
+      <div class="doc-card">
+        <div class="doc-card-icon resultado-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="15" y2="17"/>
+          </svg>
+        </div>
+        <div class="doc-card-body">
+          <p class="doc-card-title">Lectura EMO</p>
+          <p class="doc-card-sub" *ngIf="item.urlResultado">Archivo disponible</p>
+          <p class="doc-card-sub missing" *ngIf="!item.urlResultado">Sin archivo</p>
+        </div>
+        <div class="doc-card-actions">
+          <button *ngIf="item.urlResultado" type="button" class="doc-btn-ver" (click)="verDocumento(item.urlResultado, 'Lectura EMO')">
+            Ver
+          </button>
+        </div>
+      </div>
+
+      <div class="doc-card">
+        <div class="doc-card-icon aptitud-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <polyline points="9 15 11 17 15 13"/>
+          </svg>
+        </div>
+        <div class="doc-card-body">
+          <p class="doc-card-title">Certificado de Aptitud</p>
+          <p class="doc-card-sub" *ngIf="item.urlAptitud">Archivo disponible</p>
+          <p class="doc-card-sub missing" *ngIf="!item.urlAptitud">Sin archivo</p>
+        </div>
+        <div class="doc-card-actions">
+          <button *ngIf="item.urlAptitud" type="button" class="doc-btn-ver" (click)="verDocumento(item.urlAptitud, 'Certificado de Aptitud')">
+            Ver
+          </button>
+        </div>
+      </div>
+
+      <div class="doc-card">
+        <div class="doc-card-icon emo-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <rect x="8" y="12" width="8" height="6" rx="1"/>
+          </svg>
+        </div>
+        <div class="doc-card-body">
+          <p class="doc-card-title">EMO Completo</p>
+          <p class="doc-card-sub" *ngIf="item.urlEmoCompleto">Archivo disponible</p>
+          <p class="doc-card-sub missing" *ngIf="!item.urlEmoCompleto">Sin archivo</p>
+        </div>
+        <div class="doc-card-actions">
+          <button *ngIf="item.urlEmoCompleto" type="button" class="doc-btn-ver" (click)="verDocumento(item.urlEmoCompleto, 'EMO Completo')">
+            Ver
+          </button>
+        </div>
+      </div>
+
+      <div class="doc-card" *ngIf="item.interconsultaEstado">
+        <div class="doc-card-icon inter-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <path d="M9 10h6M9 14h4"/>
+          </svg>
+        </div>
+        <div class="doc-card-body">
+          <p class="doc-card-title">Interconsulta</p>
+          <p class="doc-card-sub" *ngIf="item.interconsultaUrlInforme">
+            Archivo disponible · {{ item.interconsultaEspecialidad }}
+          </p>
+          <p class="doc-card-sub missing" *ngIf="!item.interconsultaUrlInforme">
+            Pendiente · {{ item.interconsultaEspecialidad }}
+          </p>
+        </div>
+        <div class="doc-card-actions">
+          <button *ngIf="item.interconsultaUrlInforme" type="button" class="doc-btn-ver"
+            (click)="verDocumento(item.interconsultaUrlInforme, 'Informe Interconsulta')">
+            Ver
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint">
+      ¿Aprovechas esta regularización para completar documentos pendientes del trabajador?
+      <button type="button" class="btn-link" (click)="abrirProgramarEmo()">Programar EMO</button>
+      ·
+      <button type="button" class="btn-link" (click)="irARegistrarInterconsulta()">Registrar interconsulta</button>
+    </div>
+
+    <h2 class="paso-title mt-6"><i class="ti ti-briefcase"></i> Cambio de puesto</h2>
+    <div class="puesto-info-grid">
+      <div class="puesto-info-col">
+        <span class="puesto-info-label">Origen (al momento del EMO)</span>
+        <span class="puesto-info-value">{{ item.puestoOrigen || '—' }}</span>
+        <span class="puesto-info-sub">{{ item.obraOficinaStaffOrigenNombre || 'Sin clasificar' }}</span>
+      </div>
+      <div class="puesto-info-arrow">→</div>
+      <div class="puesto-info-col">
+        <span class="puesto-info-label">Destino (registro vigente)</span>
+        <span class="puesto-info-value">{{ item.puestoDestino || '—' }}</span>
+        <span class="puesto-info-sub">{{ item.obraOficinaStaffDestinoNombre || 'Sin clasificar' }}</span>
+      </div>
+    </div>
+    <h2 class="paso-title mt-6"><i class="ti ti-category"></i> Cambio de categoría</h2>
+    <div class="puesto-info-grid">
+      <div class="puesto-info-col">
+        <span class="puesto-info-label">Origen (al momento del EMO)</span>
+        <span class="puesto-info-value">{{ item.categoriaOrigen || '—' }}</span>
+      </div>
+      <div class="puesto-info-arrow">→</div>
+      <div class="puesto-info-col">
+        <span class="puesto-info-label">Destino (registro vigente)</span>
+        <span class="puesto-info-value">{{ item.categoriaDestino || '—' }}</span>
+      </div>
+    </div>
+
+    <p class="hint">
+      Estos datos se toman automáticamente del historial de vinculación del trabajador. Si no son
+      correctos, corrígelos en Habilitación → Gestión de Trabajadores → "Cambiar obra / puesto de
+      trabajo" antes de resolver esta convalidación.
+    </p>
+    <div class="hint" [class.text-red-600]="cambioRiesgoCritico" *ngIf="declaracionRiesgoTexto">
+      <i class="ti" [ngClass]="cambioRiesgoCritico ? 'ti-alert-triangle' : 'ti-info-circle'"></i>
+      {{ declaracionRiesgoTexto }}
+      <button *ngIf="cambioRiesgoCritico" type="button" class="btn-link" (click)="abrirProgramarEmo()">
+        Programar el EMO nuevo ahora
+      </button>
+    </div>
+
+    <h2 class="paso-title mt-6"><i class="ti ti-clipboard-check"></i> Resolución del médico</h2>
+    <div class="form-row">
+      <div class="abril-field">
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Empresa destino *"
+          [options]="empresas"
+          valueField="id"
+          displayField="nombre"
+          [value]="empresaDestinoId"
+          placeholder="Seleccionar empresa destino"
+          (valueChange)="empresaDestinoId = $event">
+        </app-search-select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="abril-field">
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Resultado *"
+          [options]="cambioRiesgoCritico ? [{ id: 'Rechazada', nombre: 'Rechazada' }] : resultadoOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="resultado"
+          placeholder="Seleccionar resultado"
+          (valueChange)="resultado = $event">
+        </app-search-select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="abril-field">
+        <label class="abril-field-label">Fecha vencimiento{{ fechaVencimientoRequerida ? ' *' : '' }}</label>
+        <input type="date" class="abril-field-input" [(ngModel)]="fechaVencimiento" />
+      </div>
+      <div class="abril-field">
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Médico"
+          [options]="medicos"
+          valueField="id"
+          displayField="apellidoNombre"
+          [value]="medicoId"
+          placeholder="Seleccionar médico"
+          (valueChange)="medicoId = $event">
+        </app-search-select>
+      </div>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Notas / Observaciones</label>
+      <textarea
+        rows="4"
+        class="abril-field-input"
+        placeholder="Motivo de la decisión, observaciones clínicas, condiciones de la convalidación…"
+        [(ngModel)]="notas"
+      ></textarea>
+    </div>
+
+  </ng-container>
+
+  <div modalFooter *ngIf="item">
+    <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+      <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
+      {{ saving ? 'Guardando…' : 'Guardar resolución' }}
+    </button>
+  </div>
+
+</app-abril-modal-panel>
+
+<app-document-viewer
+  [archivoUrl]="visorUrl"
+  [nombre]="visorNombre"
+  (closed)="onVisorClosed()">
+</app-document-viewer>
+
+<app-programacion-create
+  *ngIf="item"
+  [open]="showProgramarEmo"
+  [preselectedWorkerId]="item.workerId"
+  [preselectedWorkerNombre]="item.workerNombre"
+  [preselectedWorkerDni]="item.workerDni"
+  [preselectedEmpresaId]="item.empresaDestinoId ?? null"
+  (closed)="onProgramacionClosed()"
+  (saved)="onProgramacionSaved()">
+</app-programacion-create>

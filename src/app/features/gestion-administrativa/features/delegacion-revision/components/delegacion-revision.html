@@ -1,0 +1,92 @@
+<app-abril-page-header
+  [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
+  titulo="Delegación de Revisión"
+  subtitulo="Designa suplentes de revisión para tu área cuando te ausentes."
+  [tabs]="tabs">
+
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
+
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Área</th>
+          <th>Área padre</th>
+          <th>Proyecto</th>
+          <th class="w-[320px]">Revisor actual</th>
+          <th class="text-center w-[130px]">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of pagedRows" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+          <td class="text-gray-700">{{ r.areaName }}</td>
+          <td class="text-gray-700">{{ r.parentName || '—' }}</td>
+          <td class="text-gray-700">{{ r.projectName || '—' }}</td>
+          <td class="text-gray-700">
+            <ng-container *ngIf="revisorPrincipal(r.revisores) as principal; else sinActivos">
+              <span>{{ principal.revisorFullName | titleCase }}</span>
+              <span *ngIf="principal.revisorWorkerId === currentWorkerId"
+                    class="ml-[6px] text-[10px] px-[8px] py-[2px] rounded-full bg-[#E5F7D1] text-[#3f7a04] font-semibold">Tú</span>
+              <span *ngIf="estaDelegando(r)"
+                    class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium whitespace-nowrap">
+                Delegado
+              </span>
+            </ng-container>
+            <ng-template #sinActivos>
+              <span class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#FEF9C3] text-[#92400E] font-medium whitespace-nowrap">
+                Sin revisor activo → GTH
+              </span>
+            </ng-template>
+          </td>
+          <td class="text-center">
+            <button (click)="openEdit(r)" abrilBulkAction="primary">Gestionar</button>
+          </td>
+        </tr>
+
+        <tr *ngIf="filteredRows.length === 0">
+          <td colspan="5" class="text-center py-[40px] text-gray-400 text-sm">
+            {{
+              filtrosActivos > 0
+                ? 'Sin resultados.'
+                : 'No eres revisor de ninguna área. Cuando te asignen como revisor de un área o proyecto, aparecerá aquí para que puedas delegar.'
+            }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredRows.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)"
+    ></app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modal gestionar revisores (delegar / retomar) ─────────────────── -->
+<app-delegacion-editar
+  *ngIf="editando"
+  [asignacion]="editando"
+  [currentWorkerId]="currentWorkerId"
+  (closeModal)="editando = null"
+  (saved)="onSaved()"
+></app-delegacion-editar>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por área, proyecto o revisor..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%"
+    ></app-search-input>
+  </div>
+</app-filter-modal>

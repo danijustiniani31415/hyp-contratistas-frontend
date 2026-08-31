@@ -1,0 +1,67 @@
+<app-base-modal [title]="'EDITAR USUARIO'" width="w-[1000px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-[6px] mb-[15px] mt-[10px] bg-[#F5F7FA] rounded-lg px-[15px] py-[10px]">
+    <p class="text-[#64BC04] text-sm font-semibold">
+      {{ user.person.documentIdentityCode }} — {{ user.person.fullName }}
+    </p>
+  </div>
+  <div class="flex justify-between flex-wrap w-full gap-[30px]">
+    <div class="flex flex-1 flex-col">
+      <p class="text-[#64BC04]">Nombres</p>
+      <input
+        type="text"
+        [(ngModel)]="editDto.firstNames"
+        class="border border-[#E2E2E2] rounded-lg p-[10px]"
+        placeholder="Escribe aquí"
+      />
+    </div>
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">Primer apellido</p>
+      <input
+        type="text"
+        [(ngModel)]="editDto.firstLastName"
+        class="border border-[#E2E2E2] rounded-lg p-[10px]"
+        placeholder="Escribe aquí"
+      />
+    </div>
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">Segundo apellido</p>
+      <input
+        type="text"
+        [(ngModel)]="editDto.secondLastName"
+        class="border border-[#E2E2E2] rounded-lg p-[10px]"
+        placeholder="Escribe aquí"
+      />
+    </div>
+    <div class="flex flex-1 flex-col">
+      <p class="text-[#64BC04]">Correo</p>
+      <input
+        type="email"
+        [(ngModel)]="editDto.email"
+        class="border border-[#E2E2E2] rounded-lg p-[10px]"
+      />
+    </div>
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">Celular</p>
+      <input
+        type="number"
+        [(ngModel)]="editDto.phoneNumber"
+        class="border border-[#E2E2E2] rounded-lg p-[10px]"
+      />
+    </div>
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">Rol</p>
+      <select
+        [(ngModel)]="editDto.roleId"
+        class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-lg cursor-pointer"
+      >
+        <option [ngValue]="0" disabled>Selecciona un rol</option>
+        <option *ngFor="let role of roles" [ngValue]="role.roleId">{{ role.roleDescription }}</option>
+      </select>
+    </div>
+  </div>
+  <div class="flex justify-center mt-[15px]">
+    <button (click)="saveUser()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
+      <p class="text-[#ffffff] text-lg">Guardar</p>
+    </button>
+  </div>
+</app-base-modal>

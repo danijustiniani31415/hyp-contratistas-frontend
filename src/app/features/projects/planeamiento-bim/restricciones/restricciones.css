@@ -1,0 +1,553 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #F4F6F9;
+}
+
+.bim-restricciones-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.bim-container {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ── Tarjetas planas UDP ────────────────────────────────────── */
+.bim-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  box-shadow: none;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.selector-card {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-left: 4px solid #1E3A5F;
+}
+
+.project-selector-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  max-width: 550px;
+}
+
+.project-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.header-filters {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* ── Toggle Switch ─────────────────────────────────────────── */
+.toggle-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-switch input {
+  display: none;
+}
+
+.slider {
+  position: relative;
+  width: 38px;
+  height: 20px;
+  background-color: #CBD5E1;
+  border-radius: 20px;
+  transition: background-color 0.2s;
+}
+
+.slider::before {
+  content: '';
+  position: absolute;
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle-switch input:checked + .slider {
+  background-color: #1E3A5F;
+}
+
+.toggle-switch input:checked + .slider::before {
+  transform: translateX(18px);
+}
+
+.toggle-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+/* ── Card Header ────────────────────────────────────────────── */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.card-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.card-subtitle {
+  font-size: 0.8rem;
+  color: #64748B;
+  margin: 0.25rem 0 0 0;
+}
+
+.title-icon {
+  font-size: 1.1rem;
+  color: #1E3A5F;
+}
+
+.card-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #EDF4FB;
+  color: #1E3A5F;
+}
+
+/* ── Tablas Flat UDP ────────────────────────────────────────── */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.bim-table {
+  width: 100%;
+  font-size: 0.85rem;
+  border-collapse: collapse;
+}
+
+.bim-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #1E3A5F;
+  background: #F8FAFC;
+  border-bottom: 2px solid #E2E8F0;
+}
+
+.bim-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+
+.desc-cell {
+  max-width: 400px;
+}
+
+.desc-text {
+  font-weight: 500;
+  color: #1E293B;
+  line-height: 1.4;
+}
+
+.date-cell {
+  font-size: 0.8rem;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.text-closed-date {
+  color: #64748B;
+  font-weight: 500;
+}
+
+.text-active-dash {
+  color: #CBD5E1;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.text-navy {
+  color: #1E3A5F;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* ── Status Pills ───────────────────────────────────────────── */
+.status-pill {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.status-pill--danger {
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FCA5A5;
+}
+
+.status-pill--warning {
+  background: #FEF3C7;
+  color: #D97706;
+  border: 1px solid #FCD34D;
+}
+
+.status-pill--closed {
+  background: #F1F5F9;
+  color: #64748B;
+  border: 1px solid #CBD5E1;
+}
+
+/* ── Acciones en Fila ───────────────────────────────────────── */
+.actions-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-action {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-action--edit {
+  color: #1E3A5F;
+}
+
+.btn-action--edit:hover:not(:disabled) {
+  background: #EDF4FB;
+  border-color: #1E3A5F;
+}
+
+.btn-action--close {
+  color: #DC2626;
+}
+
+.btn-action--close:hover:not(:disabled) {
+  background: #FEF2F2;
+  border-color: #FCA5A5;
+}
+
+.btn-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+}
+
+/* ── Modales UDP ────────────────────────────────────────────── */
+.modal-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem 0;
+}
+
+.modal-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #F1F5F9;
+}
+
+.bim-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.modal-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.modal-form-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.modal-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-top: 1px solid #F1F5F9;
+  padding-top: 1rem;
+  margin-top: 0.25rem;
+}
+
+.modal-section-title .field-hint {
+  text-transform: none;
+  font-weight: 500;
+  letter-spacing: normal;
+}
+
+.modal-catalogo-error {
+  padding: 0.75rem 1rem;
+  font-size: 0.78rem;
+}
+
+.bim-field-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.field-hint {
+  font-size: 0.75rem;
+  color: #64748B;
+  margin-top: 2px;
+}
+
+.bim-select {
+  height: 38px;
+  padding: 0 12px;
+  width: 100%;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #1E293B;
+  background: #FFFFFF;
+  outline: none;
+}
+
+.bim-textarea {
+  padding: 10px 12px;
+  width: 100%;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #1E293B;
+  background: #FFFFFF;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.bim-select:focus,
+.bim-textarea:focus {
+  border-color: #1E3A5F;
+}
+
+.btn-primary-udp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 36px;
+  padding: 0 1.25rem;
+  background: #1E3A5F;
+  color: #FFFFFF;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary-udp:hover:not(:disabled) {
+  background: #162C48;
+}
+
+.btn-secondary-udp {
+  height: 36px;
+  padding: 0 1.25rem;
+  background: #F1F5F9;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #CBD5E1;
+  cursor: pointer;
+}
+
+.btn-secondary-udp:hover:not(:disabled) {
+  background: #E2E8F0;
+}
+
+/* ── Empty States & Alerts ──────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  background: #F8FAFC;
+  border: 2px dashed #E2E8F0;
+  border-radius: 8px;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  color: #94A3B8;
+  margin-bottom: 0.5rem;
+}
+
+.empty-icon--success {
+  color: #10B981;
+}
+
+.empty-title {
+  font-weight: 700;
+  color: #1E3A5F;
+  font-size: 0.95rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.empty-sub {
+  font-size: 0.8rem;
+  color: #64748B;
+  margin: 0;
+}
+
+.bim-alert {
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.85rem;
+}
+
+.bim-alert--danger {
+  background: #FDF2F2;
+  border: 1px solid #FCA5A5;
+  color: #991B1B;
+}
+
+.bim-alert--warning {
+  background: #FFFBEB;
+  border: 1px solid #FCD34D;
+  color: #92400E;
+}
+
+.alert-icon {
+  font-size: 1.5rem;
+  color: #DC2626;
+}
+
+.btn-retry {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 6px 12px;
+  background: #DC2626;
+  color: #FFFFFF;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+/* ── Skeleton Loaders (DESIGN-VICTOR.md §7) ─────────────────── */
+.skeleton-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400% 0;
+  }
+  100% {
+    background-position: 400% 0;
+  }
+}
+
+.skeleton-line {
+  background: linear-gradient(90deg, #dde5ef 25%, #eaeff6 50%, #dde5ef 75%);
+  background-size: 400% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 4px;
+  height: 16px;
+  margin-bottom: 8px;
+}
+
+.skeleton-line--title {
+  height: 24px;
+  width: 40%;
+  margin-bottom: 1rem;
+}
+
+.skeleton-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

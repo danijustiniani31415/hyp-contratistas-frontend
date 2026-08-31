@@ -1,0 +1,253 @@
+<!-- Sección embebida en GthConfiguracion: el header, el botón de crear y el
+     disparador de filtros viven en el contenedor. -->
+<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── Acción bulk sobre la selección ──────────────────────────────────
+       Siempre visible (deshabilitada si no aplica), mismo lenguaje que la
+       barra de Gestión de Salidas. -->
+  <div class="flex flex-wrap items-center gap-2">
+    <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">
+      {{ selectedIds.size }} seleccionado{{ selectedIds.size === 1 ? '' : 's' }}
+    </span>
+
+    <button
+      type="button"
+      abrilBulkAction="danger"
+      (click)="eliminarSeleccionados()"
+      [disabled]="selectedEliminables.length === 0"
+      [title]="selectedEnUso > 0
+        ? selectedEnUso + ' de los seleccionados no se pueden eliminar por tener trabajadores'
+        : null">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/>
+      </svg>
+      Eliminar<span *ngIf="selectedEliminables.length > 0"> ({{ selectedEliminables.length }})</span>
+    </button>
+  </div>
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th class="w-[44px]">
+            <input
+              type="checkbox"
+              [checked]="allSelected"
+              [disabled]="filteredPuestos.length === 0"
+              (change)="toggleSelectAll()"
+              class="cursor-pointer disabled:cursor-not-allowed"
+              style="accent-color:var(--color-abril-accent)"
+              title="Seleccionar / deseleccionar todos los puestos filtrados" />
+          </th>
+          <th>Puesto</th>
+          <th>Categoría</th>
+          <th>Lo pide</th>
+          <th>Va a</th>
+          <th class="text-center w-[160px]">Trabajadores</th>
+          <th class="text-center w-[140px]">Estado</th>
+          <th class="text-center w-[300px]">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="filteredPuestos.length === 0">
+          <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ filtrosActivos > 0 ? 'Sin resultados.' : 'No hay puestos registrados.' }}
+          </td>
+        </tr>
+
+        <!-- La fila abre el detalle con los trabajadores del puesto. La casilla y los
+             botones cortan la propagación para no abrirlo al usarlos. -->
+        <tr *ngFor="let p of pagedPuestos; let i = index"
+            class="border-b hover:bg-gray-50 cursor-pointer"
+            (click)="openDetalle(p)"
+            title="Ver los trabajadores de este puesto"
+            [style.background]="selectedIds.has(p.id) ? '#EAF6FF' : null"
+            style="border-color:var(--color-abril-border)">
+
+          <!-- Selección (Shift+clic para rango). select-none evita que Shift resalte texto. -->
+          <td class="select-none cursor-pointer" (click)="onSelectClick($event, i)">
+            <input
+              type="checkbox"
+              [checked]="selectedIds.has(p.id)"
+              class="cursor-pointer pointer-events-none"
+              style="accent-color:var(--color-abril-accent)" />
+          </td>
+
+          <td class="text-gray-700">{{ p.nombre | titleCase }}</td>
+
+          <td class="text-gray-700">
+            <span *ngIf="p.categoriaNombre">{{ p.categoriaNombre | titleCase }}</span>
+            <span *ngIf="!p.categoriaNombre" class="text-gray-400 italic">Sin categoría</span>
+          </td>
+
+          <!-- Los nombres de área ya vienen capitalizados del catálogo: nada de titleCase acá,
+               que convertiría "SSOMA" en "Ssoma". -->
+          <td class="text-gray-700">
+            <span *ngIf="p.areaSolicitanteNombre"
+                  class="text-[11px] px-[8px] py-[2px] rounded-full bg-[#EAF6FF] text-[#0B6BA8] font-medium whitespace-nowrap">
+              {{ p.areaSolicitanteNombre }}
+            </span>
+            <span *ngIf="!p.areaSolicitanteNombre" class="text-gray-400 italic">Sin área</span>
+          </td>
+
+          <!-- El destino siempre se nombra. Cuando coincide con "Lo pide" va con los mismos
+               tonos azules de esa columna; el ámbar queda reservado para las pocas filas que
+               entran a OTRA área, que es el caso que hay que notar. -->
+          <td class="text-gray-700">
+            <span *ngIf="p.areaDestinoNombre && p.areaDestinoScopeId !== p.areaSolicitanteScopeId"
+                  class="text-[11px] px-[8px] py-[2px] rounded-full bg-[#FFF3DC] text-[#B26A00] font-medium whitespace-nowrap">
+              {{ p.areaDestinoNombre }}
+            </span>
+            <span *ngIf="p.areaDestinoNombre && p.areaDestinoScopeId === p.areaSolicitanteScopeId"
+                  class="text-[11px] px-[8px] py-[2px] rounded-full bg-[#EAF6FF] text-[#0B6BA8] font-medium whitespace-nowrap">
+              {{ p.areaDestinoNombre }}
+            </span>
+            <span *ngIf="!p.areaDestinoNombre" class="text-gray-400 italic">Sin área</span>
+          </td>
+
+          <td class="text-center">
+            <span *ngIf="p.cantidadTrabajadores > 0"
+                  class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium whitespace-nowrap">
+              {{ p.cantidadTrabajadores }} trabajador(es)
+            </span>
+            <span *ngIf="p.cantidadTrabajadores === 0" class="text-gray-300">—</span>
+          </td>
+
+          <td class="text-center">
+            <app-status-badge
+              [text]="p.activo ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="p.activo ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="p.activo ? '#009C87' : '#D30000'" />
+          </td>
+
+          <td class="text-center" (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-center gap-[8px]">
+              <button (click)="openEdit(p)" abrilBulkAction="default">Editar</button>
+              <button (click)="toggle(p)" [abrilBulkAction]="p.activo ? 'danger' : 'default'">
+                {{ p.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+              <button (click)="eliminar(p)" abrilBulkAction="danger">Eliminar</button>
+            </div>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredPuestos.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modal crear/editar ────────────────────────────────────────────── -->
+<app-puesto-create-edit
+  *ngIf="showModal"
+  [puesto]="puestoToEdit"
+  [categorias]="categorias"
+  [areaOptions]="areaOptions"
+  (closeModal)="closeModales()"
+  (saved)="onSaved()" />
+
+<!-- ── Modal detalle: trabajadores del puesto ───────────────────────── -->
+<app-puesto-detalle
+  *ngIf="puestoDetalle"
+  [puesto]="puestoDetalle"
+  (closeModal)="closeModales()" />
+
+<!-- ── Modal de filtros estándar ─────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por puesto o categoría..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <!-- Área en cascada: elegir una gerencia trae también los puestos de sus áreas hijas,
+       el mismo alcance con el que Solicitud de Personal arma su desplegable. -->
+  <div class="flex flex-wrap gap-3">
+    <ng-container *ngFor="let level of areaLevels; let i = index">
+      <div class="w-[220px]">
+        <app-search-select
+          label="Área"
+          [showLabel]="i === 0"
+          [options]="level"
+          valueField="areaScopeId"
+          displayField="name"
+          [value]="selectedAreaNodes[i]?.areaScopeId"
+          [fullText]="true"
+          [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'"
+          (valueChange)="onAreaNodeChange(i, $event); onFilterChange()">
+        </app-search-select>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Categoría"
+      [options]="categorias"
+      valueField="id"
+      displayField="nombre"
+      [value]="categoriaFilter"
+      (valueChange)="categoriaFilter = $event; onFilterChange()"
+      placeholder="Todas las categorías">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Áreas del puesto"
+      [options]="areaEstadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="areaEstadoFilter"
+      (valueChange)="areaEstadoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Categoría asignada"
+      [options]="conCategoriaFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="conCategoriaFilter"
+      (valueChange)="conCategoriaFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Trabajadores"
+      [options]="usoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="usoFilter"
+      (valueChange)="usoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="estadoFilter"
+      (valueChange)="estadoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

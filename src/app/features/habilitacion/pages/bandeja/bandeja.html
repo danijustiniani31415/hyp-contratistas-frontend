@@ -1,0 +1,300 @@
+<div class="bandeja-layout">
+
+  <!-- ── Tabs de tipo ───────────────────────────────────────── -->
+  <div class="tipo-tabs">
+    <button type="button" class="tipo-tab" [class.tab-active-all]="filtroTipo === ''" (click)="setTipo('')">Todos</button>
+    <button type="button" class="tipo-tab" [class.tab-active-blue]="filtroTipo === 'TRABAJADOR'" (click)="setTipo('TRABAJADOR')">Trabajadores</button>
+    <button type="button" class="tipo-tab" [class.tab-active-green]="filtroTipo === 'EMPRESA'" (click)="setTipo('EMPRESA')">Empresas</button>
+    <button type="button" class="tipo-tab" [class.tab-active-orange]="filtroTipo === 'INDUCCION'" (click)="setTipo('INDUCCION')">Inducciones</button>
+    <button type="button" class="tipo-tab" [class.tab-active-gray]="filtroTipo === 'EQUIPO'" (click)="setTipo('EQUIPO')">Equipos</button>
+  </div>
+
+  <!-- ── Filtros ────────────────────────────────────────────── -->
+  <div class="filters-card" *ngIf="filtroTipo !== 'INDUCCION'">
+    <input class="filter-input" type="text" placeholder="Nombre…"
+      [(ngModel)]="filtroTexto" (ngModelChange)="onFilter()" />
+    <select class="filter-input" [(ngModel)]="filtroEmpresa">
+      <option value="">Todas las empresas</option>
+      <option *ngFor="let e of empresasDisponibles" [value]="e">{{ e }}</option>
+    </select>
+    <select class="filter-input" [(ngModel)]="filtroProyectoId" (change)="loadItems(1)">
+      <option [ngValue]="null">Todos los proyectos</option>
+      <option *ngFor="let p of catalogoProyectos" [ngValue]="p.id">{{ p.nombre }}</option>
+    </select>
+    <select class="filter-input" [(ngModel)]="filtroEntregable">
+      <option value="">Todos los entregables</option>
+      <option *ngFor="let e of entregablesDisponibles" [value]="e">{{ e }}</option>
+    </select>
+    <select class="filter-input" [(ngModel)]="filtroResponsable" (change)="onFilter()">
+      <option value="">Todos los responsables</option>
+      <option value="SSOMA">SSOMA</option>
+      <option value="ADMINISTRACION">Administración</option>
+    </select>
+    <select class="filter-input" [ngModel]="filtroGerenciaId" (ngModelChange)="onGerenciaChange($event)">
+      <option [ngValue]="null">Todas las gerencias</option>
+      <option *ngFor="let g of gerenciaOptions" [ngValue]="g.areaScopeId">{{ g.areaItemName }}</option>
+    </select>
+    <select class="filter-input" *ngIf="filtroGerenciaId" [ngModel]="filtroAreaScopeId" (ngModelChange)="filtroAreaScopeId = $event; loadItems(1)">
+      <option [ngValue]="null">Todas las áreas</option>
+      <option *ngFor="let a of areaScopeOptions" [ngValue]="a.areaScopeId">{{ a.areaItemName }}</option>
+    </select>
+  </div>
+
+  <!-- ── Columnas estándar (Todos / Trabajadores / Empresas / Equipos) ── -->
+  <div class="bandeja-columns" *ngIf="filtroTipo !== 'INDUCCION'">
+
+    <div class="col-items card">
+      <div class="list-header">
+        <label class="sel-all-row">
+          <input
+            type="checkbox"
+            [checked]="allItemsSelected"
+            [indeterminate]="someItemsSelected && !allItemsSelected"
+            (change)="toggleAllItems()"
+          />
+          <span>Seleccionar todos</span>
+        </label>
+        <button *ngIf="selectedIds.size > 0" class="btn-aprobar-masivo" (click)="aprobarMasivo()">
+          ✓ Aprobar ({{ selectedIds.size }})
+        </button>
+      </div>
+
+      <div class="items-list">
+        <div *ngIf="loading" class="empty-list">Cargando…</div>
+        <div *ngIf="!loading && items.length === 0" class="empty-list">
+          No hay documentos pendientes de aprobación.
+        </div>
+
+        <div
+          *ngFor="let item of filteredItems"
+          class="bandeja-card"
+          [class.selected]="selectedItem?.id === item.id"
+          (click)="selectItem(item)"
+        >
+          <input
+            type="checkbox"
+            class="card-checkbox"
+            [checked]="selectedIds.has(item.id)"
+            (change)="toggleSelect(item.id)"
+            (click)="$event.stopPropagation()"
+          />
+          <div class="bc-content">
+            <div class="bc-header">
+              <div class="bc-chips">
+                <span class="btn-chip" [class]="getTipoClass(item.tipo)">{{ item.tipo }}</span>
+                <span class="btn-chip" [class]="getEstadoClass(item.estado)">{{ item.estado }}</span>
+              </div>
+              <span class="bc-fecha" *ngIf="item.vigencia">Vence: {{ item.vigencia | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="bc-entregable">{{ item.nombreEntregable }}</div>
+            <span *ngIf="item.esMensual && item.mesesPendientes && item.mesesPendientes > 1"
+              class="btn-chip chip-orange"
+              style="font-size:0.68rem;margin-top:2px">
+              {{ item.mesesPendientes }} meses pendientes
+            </span>
+            <div class="bc-entidad">{{ item.entidadNombre }}</div>
+            <div class="bc-meta" *ngIf="item.empresaNombre || item.proyectoNombre">
+              <span *ngIf="item.empresaNombre">{{ item.empresaNombre }}</span>
+              <span *ngIf="item.empresaNombre && item.proyectoNombre"> · </span>
+              <span *ngIf="item.proyectoNombre">{{ item.proyectoNombre }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="paginator-wrapper" *ngIf="totalPages > 1">
+        <app-paginator
+          [totalRecords]="totalRecords"
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          (pageChange)="onPageChange($event)"
+        />
+      </div>
+    </div>
+
+    <ng-container *ngIf="selectedItem; else noItemSelected">
+      <div class="col-detalle card">
+        <div class="detalle-header">
+          <div>
+            <div class="detalle-hdr-top">
+              <span class="btn-chip" [class]="getTipoClass(selectedItem.tipo)">{{ selectedItem.tipo }}</span>
+              <h3>{{ selectedItem.nombreEntregable }}</h3>
+            </div>
+            <p class="section-sub">
+              {{ selectedItem.entidadNombre }}
+              <ng-container *ngIf="selectedItem.empresaNombre"> · {{ selectedItem.empresaNombre }}</ng-container>
+              <ng-container *ngIf="selectedItem.proyectoNombre"> · {{ selectedItem.proyectoNombre }}</ng-container>
+              <ng-container *ngIf="selectedItem.vigencia"> &mdash; Vigencia: {{ selectedItem.vigencia | date: 'dd/MM/yyyy' }}</ng-container>
+            </p>
+          </div>
+          <div class="detalle-acciones">
+            <ng-container *ngIf="puedeAprobarItemActual; else estadoSoloLectura">
+              <select class="filter-input" style="width:auto" [(ngModel)]="estadoEditable"
+                (ngModelChange)="guardarEstado(selectedItem)">
+                <option value="Aprobado">Aprobado</option>
+                <option value="Rechazado">Rechazado</option>
+                <option value="Falta">Falta</option>
+                <option value="No Aplica">No Aplica</option>
+                <option value="En Plazo">En Plazo</option>
+                <option value="Vencido">Vencido</option>
+                <option value="Enviado">Enviado</option>
+              </select>
+            </ng-container>
+            <ng-template #estadoSoloLectura>
+              <span [class]="'btn-chip ' + getEstadoClass(selectedItem.estado)">
+                {{ selectedItem.estado }}
+              </span>
+            </ng-template>
+          </div>
+        </div>
+
+        <!-- Panel vigencia + archivos -->
+        <div class="detalle-meta" style="padding:0.75rem 1.25rem;border-bottom:1px solid #e5e7eb;flex-shrink:0;display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+
+          <!-- Vigencia editable -->
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <label style="font-size:0.78rem;color:#6b7280;font-weight:600">VIGENCIA</label>
+            <input *ngIf="puedeAprobarItemActual" type="date" class="filter-input" style="width:auto" [(ngModel)]="vigenciaEditable" />
+            <span *ngIf="!puedeAprobarItemActual"
+              style="font-size:0.82rem;color:#374151">
+              {{ vigenciaEditable ? (vigenciaEditable | date:'dd/MM/yyyy') : '—' }}
+            </span>
+          </div>
+
+          <!-- Selector de mes para items mensuales con meses cargados -->
+          <div *ngIf="selectedItem.esMensual && selectedItem.meses && selectedItem.meses.length > 0"
+            style="display:flex;gap:0.35rem;flex-wrap:wrap;align-items:center">
+            <span style="font-size:0.78rem;color:#6b7280;font-weight:600">MES:</span>
+            <button *ngFor="let m of selectedItem.meses"
+              type="button"
+              class="btn-chip"
+              [class.chip-green]="mesSeleccionadoBandeja?.id === m.id && m.estado === 'Aprobado'"
+              [class.chip-orange]="mesSeleccionadoBandeja?.id === m.id && m.estado === 'Enviado'"
+              [class.chip-red]="mesSeleccionadoBandeja?.id === m.id && m.estado === 'Rechazado'"
+              [class.chip-gray]="mesSeleccionadoBandeja?.id !== m.id"
+              (click)="seleccionarMesBandeja(m)">
+              {{ m.mes }}/{{ m.anio }}
+            </button>
+          </div>
+
+          <!-- Archivos múltiples del mes seleccionado -->
+          <div *ngIf="mesSeleccionadoBandeja?.archivos && mesSeleccionadoBandeja.archivos.length > 1"
+            style="display:flex;gap:0.35rem;flex-wrap:wrap">
+            <button *ngFor="let a of mesSeleccionadoBandeja.archivos; let i=index"
+              type="button" class="btn-chip chip-gray"
+              [class.chip-green]="archivoSeleccionadoIdx === i"
+              (click)="seleccionarArchivo(i)">
+              📄 {{ i + 1 }}
+            </button>
+          </div>
+
+          <!-- Archivos múltiples para items no mensuales -->
+          <div *ngIf="!selectedItem.esMensual && selectedItem.archivos && selectedItem.archivos.length > 1"
+            style="display:flex;gap:0.35rem;flex-wrap:wrap">
+            <button *ngFor="let a of selectedItem.archivos; let i=index"
+              type="button" class="btn-chip chip-gray"
+              [class.chip-green]="archivoSeleccionadoIdx === i"
+              (click)="seleccionarArchivo(i)">
+              📄 {{ i + 1 }}
+            </button>
+          </div>
+
+        </div>
+
+        <div class="doc-body">
+          <div *ngIf="loadingDoc" class="doc-empty">Cargando documento…</div>
+          <iframe
+            *ngIf="!loadingDoc && docSafeUrl"
+            [src]="docSafeUrl"
+            width="100%"
+            height="100%"
+            frameborder="0"
+          ></iframe>
+          <div *ngIf="!loadingDoc && !docSafeUrl && selectedItem.archivoUrl" class="doc-empty">
+            No se pudo cargar el documento.
+          </div>
+          <div *ngIf="!loadingDoc && !docSafeUrl && !selectedItem.archivoUrl" class="doc-empty">
+            Sin archivo adjunto.
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #noItemSelected>
+      <div class="col-detalle card empty-detalle">
+        <p>Selecciona un documento para revisar</p>
+      </div>
+    </ng-template>
+
+  </div>
+
+  <!-- ── Tab Inducciones: tarjetas agrupadas ─────────────────── -->
+  <div class="ind-grupos-wrap" *ngIf="filtroTipo === 'INDUCCION'">
+    <div *ngIf="loadingInducciones" class="empty-list">Cargando inducciones…</div>
+    <div *ngIf="!loadingInducciones && induccionGrupos.length === 0" class="empty-list">
+      No hay inducciones pendientes de aprobación.
+    </div>
+
+    <div *ngFor="let proyecto of induccionGruposPorProyecto" class="proyecto-grupo">
+      <div class="proyecto-grupo-header">
+        <span>{{ proyecto.proyectoNombre }}</span>
+        <span class="proyecto-grupo-count">{{ proyecto.grupos.length }}</span>
+      </div>
+
+      <div *ngFor="let grupo of proyecto.grupos" class="ind-grupo-card card">
+
+        <div class="ind-grupo-header">
+          <div class="ind-grupo-info">
+            <span class="ind-meta">
+              {{ grupo.empresaNombre }} · {{ grupo.fechaProgramada | date:'dd/MM/yyyy' }}
+              <span *ngIf="grupo.trabajoAltura" class="btn-chip chip-orange ind-flag">Altura</span>
+              <span *ngIf="grupo.equipoElectrico" class="btn-chip chip-blue ind-flag">Eléctrico</span>
+            </span>
+          </div>
+          <span class="ind-asistieron">{{ nAsistieron(grupo) }} / {{ grupo.items.length }} asistieron</span>
+        </div>
+
+        <div class="ind-select-all" *ngIf="nAsistieron(grupo) > 0">
+          <label class="ind-check-row">
+            <input type="checkbox"
+                   [checked]="allInduccionSelected(grupo)"
+                   (change)="toggleSelectAll(grupo, $any($event.target).checked)" />
+            <span>Seleccionar todos los asistentes</span>
+          </label>
+        </div>
+
+        <div class="ind-chips-wrap">
+          <div *ngFor="let item of grupo.items"
+               class="ind-chip"
+               [class.ind-chip-green]="item.ingresoConfirmado"
+               [class.ind-chip-gray]="!item.ingresoConfirmado">
+            <input *ngIf="item.ingresoConfirmado" type="checkbox"
+                   [checked]="grupo.seleccionados.has(item.id)"
+                   (change)="toggleWorker(grupo, item)" />
+            <div class="ind-chip-body">
+              <span class="ind-chip-name">{{ item.apellidoNombre }}</span>
+              <span class="ind-chip-sub">
+                {{ item.empresaNombre }}<ng-container *ngIf="item.contrataCasa"> · {{ item.contrataCasa }}</ng-container>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ind-grupo-footer" *ngIf="nAsistieron(grupo) > 0">
+          <button type="button" class="btn-primary"
+                  [disabled]="grupo.seleccionados.size === 0"
+                  (click)="aprobarGrupo(grupo)">
+            Aprobar seleccionados ({{ grupo.seleccionados.size }})
+          </button>
+          <button type="button" class="btn-chip chip-red" style="padding:0.5rem 1rem"
+                  [disabled]="grupo.seleccionados.size === 0"
+                  (click)="rechazarGrupo(grupo)">
+            Rechazar seleccionados
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

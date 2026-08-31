@@ -1,0 +1,20 @@
+<div class="flex border border-[#D6DEE5] rounded-lg overflow-hidden">
+
+  <button
+    *ngFor="let mode of modes; let i = index"
+    type="button"
+    (click)="select(mode.value)"
+    [style.background]="value === mode.value ? activeBackground : null"
+    [style.color]="value === mode.value ? activeColor : null"
+    [ngClass]="[
+      value === mode.value
+        ? ''
+        : 'bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-50',
+      i > 0 ? 'border-l border-[#D6DEE5]' : ''
+    ]"
+    class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer">
+    <span [innerHTML]="safeIcon(mode.icon)" class="pointer-events-none"></span>
+    <span class="hidden sm:inline">{{ mode.label }}</span>
+  </button>
+
+</div>

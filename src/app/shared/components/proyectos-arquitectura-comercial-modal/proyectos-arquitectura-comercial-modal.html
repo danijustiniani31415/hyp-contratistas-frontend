@@ -1,0 +1,39 @@
+<app-base-modal title="Proyectos en Arquitectura Comercial" width="w-[480px]" height="h-[560px]" (closeModal)="closeModal.emit()">
+
+  <p class="text-sm text-gray-500 mb-[12px] flex-shrink-0">
+    Solo los proyectos activos aquí aparecen en los selectores de Observaciones y demás módulos de Arquitectura Comercial.
+  </p>
+
+  <div class="mb-[12px] flex-shrink-0">
+    <app-search-input
+      placeholder="Buscar proyecto..."
+      [(value)]="searchText"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="flex-1 min-h-0 overflow-y-auto border rounded-[7px]" style="border-color:var(--color-abril-border)">
+    <div *ngIf="loading" class="text-center text-sm text-gray-400 py-[24px]">Cargando...</div>
+
+    <div *ngIf="!loading && proyectosFiltrados.length === 0" class="text-center text-sm text-gray-400 py-[24px]">
+      Sin resultados.
+    </div>
+
+    <div *ngFor="let p of proyectosFiltrados; trackBy: trackById"
+         class="flex items-center gap-[10px] px-[12px] py-[9px] border-b last:border-b-0"
+         style="border-color:var(--color-abril-border)">
+      <span class="flex-1 text-sm text-gray-700">{{ p.projectDescription }}</span>
+
+      <button type="button"
+              [disabled]="togglingId === p.projectId"
+              (click)="toggle(p)"
+              class="relative inline-flex h-[20px] w-[36px] items-center rounded-full transition-colors disabled:opacity-50"
+              [style.background]="p.tieneArquitecturaComercial ? 'var(--color-abril-standard)' : '#d1d5db'"
+              [title]="p.tieneArquitecturaComercial ? 'Desactivar' : 'Activar'">
+        <span class="inline-block h-[16px] w-[16px] transform rounded-full bg-white transition-transform"
+              [style.transform]="p.tieneArquitecturaComercial ? 'translateX(18px)' : 'translateX(2px)'"></span>
+      </button>
+    </div>
+  </div>
+
+</app-base-modal>

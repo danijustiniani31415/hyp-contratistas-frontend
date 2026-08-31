@@ -1,0 +1,184 @@
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Salud Ocupacional"
+  subtitulo="Estado general de EMOs, vencimientos y derivaciones."
+  [tabs]="tabs"
+  [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+  (secondaryClick)="load()">
+</app-abril-page-header>
+
+<section class="p-6 space-y-6 flex-1 overflow-y-auto">
+  <!-- Accesos: Catálogos y Reportes -->
+  <div class="dash-shortcuts">
+    <a routerLink="/ssoma/salud-ocupacional/catalogos" class="dash-shortcut-btn">
+      <i class="ti ti-database" aria-hidden="true"></i>
+      <span>Catálogos</span>
+    </a>
+    <a routerLink="/ssoma/salud-ocupacional/reportes" class="dash-shortcut-btn">
+      <i class="ti ti-file-analytics" aria-hidden="true"></i>
+      <span>Reportes</span>
+    </a>
+  </div>
+
+  <ng-container *ngIf="data; else loadingOrError">
+    <!-- Fila 1: KPIs -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <!-- Total trabajadores -->
+      <article class="kpi-card">
+        <div class="kpi-label">Total Trabajadores</div>
+        <div class="kpi-value">{{ data.totalTrabajadores | number }}</div>
+        <div class="kpi-sub">
+          <span><b>{{ data.totalAbril | number }}</b> Abril</span>
+          <span class="dot">·</span>
+          <span><b>{{ data.totalContratistas | number }}</b> Contratistas</span>
+        </div>
+      </article>
+
+      <!-- EMOs Vigentes -->
+      <article class="kpi-card">
+        <div class="kpi-label">EMOs Vigentes</div>
+        <div class="kpi-value text-green-700">{{ emosVigentes | number }}</div>
+        <div class="kpi-sub">Aptos + Aptos c/Restricciones</div>
+      </article>
+
+      <!-- Por Vencer -->
+      <article class="kpi-card" [title]="porVencerTooltip">
+        <div class="kpi-label">Por Vencer</div>
+        <div class="kpi-value text-yellow-700">{{ totalPorVencer | number }}</div>
+        <div class="kpi-sub text-xs">{{ porVencerTooltip }}</div>
+      </article>
+
+      <!-- Vencidos -->
+      <article class="kpi-card" [class.kpi-alert]="data.emosVencidos > 0">
+        <div class="kpi-label">Vencidos</div>
+        <div class="kpi-value" [class.text-red-700]="data.emosVencidos > 0">
+          {{ data.emosVencidos | number }}
+        </div>
+        <div class="kpi-sub">Requieren acción inmediata</div>
+      </article>
+
+      <!-- Inhabilitados -->
+      <article class="kpi-card" [class.kpi-alert]="data.trabajadoresInhabilitados > 0">
+        <div class="kpi-label">Inhabilitados</div>
+        <div class="kpi-value" [class.text-red-700]="data.trabajadoresInhabilitados > 0">
+          {{ data.trabajadoresInhabilitados | number }}
+        </div>
+        <div class="kpi-sub">No aptos vigentes</div>
+      </article>
+    </div>
+
+    <!-- Fila 2: Aptitud (dona) + Próximos a vencer (tabla) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="card p-5 lg:col-span-1">
+        <h3 class="section-title">Aptitud</h3>
+        <div class="chart-wrapper">
+          <canvas #aptitudCanvas></canvas>
+        </div>
+        <ul class="legend">
+          <li>
+            <span class="swatch" [style.background]="'#22c55e'"></span>
+            <span>Apto</span>
+            <b>{{ data.emosPorAptitud.apto | number }}</b>
+          </li>
+          <li>
+            <span class="swatch" [style.background]="'#eab308'"></span>
+            <span>Apto c/Restricciones</span>
+            <b>{{ data.emosPorAptitud.aptoConRestricciones | number }}</b>
+          </li>
+          <li>
+            <span class="swatch" [style.background]="'#ef4444'"></span>
+            <span>No Apto</span>
+            <b>{{ data.emosPorAptitud.noApto | number }}</b>
+          </li>
+          <li>
+            <span class="swatch" [style.background]="'#f97316'"></span>
+            <span>Observado</span>
+            <b>{{ data.emosPorAptitud.observado | number }}</b>
+          </li>
+          <li>
+            <span class="swatch" [style.background]="'#9ca3af'"></span>
+            <span>Sin EMO</span>
+            <b>{{ data.emosPorAptitud.sinEmo | number }}</b>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card p-5 lg:col-span-2">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="section-title">Próximos a vencer</h3>
+          <span class="text-xs text-gray-500">Top 10</span>
+        </div>
+
+        <div *ngIf="!data.proximosVencer?.length" class="empty">
+          Sin EMOs próximos a vencer.
+        </div>
+
+        <div *ngIf="data.proximosVencer?.length" class="table-wrapper">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-gray-500 border-b">
+                <th class="py-2 pr-3">Trabajador</th>
+                <th class="py-2 pr-3">DNI</th>
+                <th class="py-2 pr-3">Empresa</th>
+                <th class="py-2 pr-3">Vencimiento</th>
+                <th class="py-2 pr-3 text-right">Días</th>
+                <th class="py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let p of data.proximosVencer"
+                class="border-b last:border-0 hover:bg-gray-50 cursor-pointer"
+                (click)="irAEmosWorker(p.workerId)"
+              >
+                <td class="py-2 pr-3 text-gray-800">{{ p.nombre }}</td>
+                <td class="py-2 pr-3 text-gray-600">{{ p.dni }}</td>
+                <td class="py-2 pr-3 text-gray-600">{{ p.empresa }}</td>
+                <td class="py-2 pr-3 text-gray-600">{{ p.fechaVencimiento | date: 'dd/MM/yyyy' }}</td>
+                <td class="py-2 pr-3 text-right">
+                  <span class="badge border" [ngClass]="diasBadge(p.diasParaVencer)">
+                    {{ diasLabel(p.diasParaVencer) }}
+                  </span>
+                </td>
+                <td class="py-2 text-right text-gray-400">›</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fila 3: Accesos rápidos -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <button type="button" class="quick-action" (click)="irAInterconsultas()">
+        <div>
+          <div class="quick-label">Interconsultas pendientes</div>
+          <div class="quick-sub">Revisar derivaciones a especialistas</div>
+        </div>
+        <span
+          class="quick-badge"
+          [class.badge-alert]="data.interconsultasPendientes > 0"
+        >
+          {{ data.interconsultasPendientes | number }}
+        </span>
+      </button>
+
+      <button type="button" class="quick-action" (click)="irAProgramaciones()">
+        <div>
+          <div class="quick-label">Programaciones esta semana</div>
+          <div class="quick-sub">Citas médicas y exámenes programados</div>
+        </div>
+        <span class="quick-badge badge-info">
+          {{ data.programacionesSemana | number }}
+        </span>
+      </button>
+    </div>
+  </ng-container>
+
+  <ng-template #loadingOrError>
+    <div *ngIf="loading" class="card p-8 text-center text-gray-500">Cargando dashboard…</div>
+    <div *ngIf="!loading && errorMsg" class="card p-8 text-center text-red-600">
+      {{ errorMsg }}
+    </div>
+  </ng-template>
+</section>

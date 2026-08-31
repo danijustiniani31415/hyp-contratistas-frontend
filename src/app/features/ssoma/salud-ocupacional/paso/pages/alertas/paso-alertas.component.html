@@ -1,0 +1,88 @@
+<div>
+  <app-abril-page-header
+    badge="SSOMA · PASO"
+    titulo="Alertas PASO"
+    subtitulo="Actividades vencidas y próximas a vencer"
+    [tabs]="headerTabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()">
+  </app-abril-page-header>
+
+  <div class="alertas-body">
+
+    <!-- ── Tabs ─────────────────────────────────────────────────── -->
+    <div class="alert-tabs">
+      <button type="button" class="alert-tab tab--red" [class.active]="tabActiva==='vencidas'" (click)="tabActiva='vencidas'">
+        <i class="ti ti-alert-circle"></i>
+        Vencidas
+        <span class="tab-pill" [ngClass]="tabActiva==='vencidas' ? 'tab-pill--red' : 'tab-pill--gray'">{{ vencidas.length }}</span>
+      </button>
+      <button type="button" class="alert-tab tab--yellow" [class.active]="tabActiva==='proximas'" (click)="tabActiva='proximas'">
+        <i class="ti ti-clock"></i>
+        Próximas a vencer
+        <span class="tab-pill" [ngClass]="tabActiva==='proximas' ? 'tab-pill--yellow' : 'tab-pill--gray'">{{ proximas.length }}</span>
+      </button>
+    </div>
+
+    <!-- ── Loading ───────────────────────────────────────────────── -->
+    <div *ngIf="loading" class="loading-center">
+      <i class="ti ti-loader-2 animate-spin" style="font-size:1.5rem"></i>
+      <span>Cargando alertas…</span>
+    </div>
+
+    <!-- ── Cards de alertas ───────────────────────────────────────── -->
+    <div *ngIf="!loading">
+
+      <div *ngIf="!activas.length" class="empty-state">
+        <i class="ti ti-circle-check" style="color:#16a34a"></i>
+        <p>
+          {{ tabActiva === 'vencidas' ? 'Sin actividades vencidas — todo al día' : 'Sin actividades próximas a vencer' }}
+        </p>
+      </div>
+
+      <div *ngIf="activas.length" class="alert-cards">
+        <div *ngFor="let a of activas"
+          class="alert-card"
+          [ngClass]="a.tipoAlerta === 'Vencido' ? 'alert-card--red' : 'alert-card--yellow'">
+
+          <div class="alert-card__icon"
+            [ngClass]="a.tipoAlerta === 'Vencido' ? 'alert-card__icon--red' : 'alert-card__icon--yellow'">
+            <i class="ti" [ngClass]="a.tipoAlerta === 'Vencido' ? 'ti-alert-triangle' : 'ti-clock'"></i>
+          </div>
+
+          <div class="alert-card__body">
+            <div class="alert-card__name">{{ a.actividadNombre }}</div>
+            <div class="alert-card__meta">
+              <span><i class="ti ti-building" style="font-size:.7rem"></i> {{ a.proyectoNombre || '—' }}</span>
+              <span><i class="ti ti-calendar" style="font-size:.7rem"></i> {{ a.fechaProgramada | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+
+          <div class="alert-card__right">
+            <span class="days-badge" [ngClass]="a.tipoAlerta === 'Vencido' ? 'days-badge--red' : 'days-badge--yellow'">
+              <ng-container *ngIf="a.tipoAlerta === 'Vencido'">
+                <i class="ti ti-clock-x"></i> Vencida
+              </ng-container>
+              <ng-container *ngIf="a.tipoAlerta === 'ProximaAVencer'">
+                <i class="ti ti-clock-hour-4"></i> Vence pronto
+              </ng-container>
+            </span>
+            <button type="button" class="registrar-btn" (click)="registrar(a)" [disabled]="loadingActividad">
+              <i class="ti" [ngClass]="loadingActividad ? 'ti-loader-2 animate-spin' : 'ti-plus'"></i>
+              Registrar
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<app-ejecucion-modal *ngIf="actividadEjecutando"
+  [actividad]="actividadEjecutando"
+  [mesSeleccionado]="mesAlerta"
+  [anioSeleccionado]="anioAlerta"
+  (closed)="actividadEjecutando=null; alertaSeleccionada=null"
+  (ejecucionCreada)="onEjecucionCreada()">
+</app-ejecucion-modal>

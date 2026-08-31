@@ -1,0 +1,245 @@
+<app-abril-page-header
+  [badge]="'ARQ. COMERCIAL · ' + anioActual"
+  titulo="Gantt"
+  subtitulo="Cronograma visual de actividades por proyecto."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="flex flex-col flex-1 min-h-0" style="background:#F5F7FA">
+
+  <!-- ══ BARRA DE CONTROL ══ -->
+  <div class="gp-toolbar" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;padding:10px 18px;background:#fff;border-bottom:1px solid #E5E7EB;box-shadow:0 1px 4px rgba(0,0,0,.06);flex-shrink:0;min-height:52px;position:sticky;top:0;z-index:100">
+    <div class="gp-project gp-multiselect" style="width:240px;position:relative">
+      <i class="ti ti-building-skyscraper" style="color:#9CA3AF;font-size:15px"></i>
+      <button type="button" class="gp-multiselect-trigger" (click)="proyectoPanelOpen = !proyectoPanelOpen">
+        <span [title]="selectedProyectosLabel">{{ selectedProyectosLabel }}</span>
+        <i class="ti" [class.ti-chevron-down]="!proyectoPanelOpen" [class.ti-chevron-up]="proyectoPanelOpen"></i>
+      </button>
+
+      <div class="gp-multiselect-backdrop" *ngIf="proyectoPanelOpen" (click)="proyectoPanelOpen = false"></div>
+      <div class="gp-multiselect-panel" *ngIf="proyectoPanelOpen">
+        <input type="text" class="gp-multiselect-search" placeholder="Buscar proyecto..."
+               [(ngModel)]="proyectoSearch" (click)="$event.stopPropagation()" />
+        <div class="gp-multiselect-actions">
+          <button type="button" (click)="seleccionarTodosProyectos()">Todos</button>
+          <button type="button" (click)="limpiarProyectos()">Ninguno</button>
+        </div>
+        <div class="gp-multiselect-list">
+          <label class="gp-multiselect-item" *ngFor="let p of proyectosFiltrados; trackBy: trackByProyecto">
+            <input type="checkbox" [checked]="isProyectoSelected(p.id)" (change)="toggleProyecto(p.id)" />
+            <span [title]="p.nombre">{{ p.nombre }}</span>
+          </label>
+          <p *ngIf="proyectosFiltrados.length === 0" class="gp-multiselect-empty">Sin resultados</p>
+        </div>
+        <button type="button" class="gp-multiselect-apply" (click)="aplicarProyectos()">Aplicar ({{ selectedProyectoIds.length }})</button>
+      </div>
+    </div>
+
+    <div class="gp-sep"></div>
+
+    <div class="gp-project" style="width:220px">
+      <i class="ti ti-user" style="color:#9CA3AF;font-size:15px"></i>
+      <app-search-select
+        label="Supervisor"
+        [showLabel]="false"
+        [compact]="true"
+        placeholder="Todos los supervisores"
+        [options]="supervisores"
+        valueField="id"
+        displayField="apellidoNombre"
+        [value]="filtroSupervisorId"
+        [allowClear]="true"
+        [sortAlpha]="false"
+        (valueChange)="onSupervisorChange($event)">
+      </app-search-select>
+    </div>
+
+    <div class="gp-sep"></div>
+
+    <div class="gp-chips">
+      <button [class]="'gp-chip'+(tipoFiltro===''?           ' gp-chip-on':'')" (click)="setTipo('')">Todos</button>
+      <button [class]="'gp-chip'+(tipoFiltro==='HITO'?       ' gp-chip-on':'')" (click)="setTipo('HITO')">Hito</button>
+      <button [class]="'gp-chip'+(tipoFiltro==='ENTREGABLE'? ' gp-chip-on':'')" (click)="setTipo('ENTREGABLE')">Entregable</button>
+      <button [class]="'gp-chip'+(tipoFiltro==='CONSULTA'?   ' gp-chip-on':'')" (click)="setTipo('CONSULTA')">Consulta</button>
+    </div>
+
+    <div class="gp-sep"></div>
+
+    <div style="width:180px">
+      <app-search-select
+        label="Etapa"
+        [showLabel]="false"
+        [compact]="true"
+        placeholder="Todas las etapas"
+        [options]="etapaOptions"
+        valueField="value"
+        displayField="label"
+        [value]="etapaNombreFiltro"
+        [allowClear]="true"
+        [sortAlpha]="false"
+        (valueChange)="etapaNombreFiltro = $event; onFiltroChange()">
+      </app-search-select>
+    </div>
+
+    <label class="gp-toggle">
+      <input type="checkbox" [(ngModel)]="excluirCulminadas" (change)="onFiltroChange()" />
+      <span>Excluir culminadas</span>
+    </label>
+
+    <div class="gp-sep"></div>
+
+    <div class="gp-chips">
+      <span class="gp-zlabel">Zoom</span>
+      <button [class]="'gp-zoom'+(zoomLevel==='day'?     ' gp-zoom-on':'')" (click)="setZoom('day')">Día</button>
+      <button [class]="'gp-zoom'+(zoomLevel==='week'?    ' gp-zoom-on':'')" (click)="setZoom('week')">Semana</button>
+      <button [class]="'gp-zoom'+(zoomLevel==='month'?   ' gp-zoom-on':'')" (click)="setZoom('month')">Mes</button>
+      <button [class]="'gp-zoom'+(zoomLevel==='quarter'? ' gp-zoom-on':'')" (click)="setZoom('quarter')">Trimestre</button>
+    </div>
+
+    <div class="gp-sep"></div>
+
+    <div class="gp-legend">
+      <span *ngFor="let l of legend" class="gp-leg-item">
+        <span class="gp-leg-dot" [style.background]="l.color"></span>{{ l.label }}
+      </span>
+    </div>
+
+    <div class="gp-legend" *ngIf="mostrarColorProyecto">
+      <span *ngFor="let nombre of proyectosDistintos" class="gp-leg-item">
+        <span class="gp-leg-dot" [style.background]="proyectoColor(nombre)" [title]="nombre"></span>{{ nombre }}
+      </span>
+    </div>
+
+    <div *ngIf="loading" class="gp-loading"><span class="gp-spinner"></span>Cargando…</div>
+
+    <button type="button" class="gp-export-btn" [disabled]="exportandoPdf || ganttRows.length === 0"
+            (click)="exportarPdf()" title="Exportar el Gantt a PDF (A2 horizontal)">
+      <i class="ti" [class.ti-loader-2]="exportandoPdf" [class.spin]="exportandoPdf" [class.ti-file-type-pdf]="!exportandoPdf"></i>
+      {{ exportandoPdf ? 'Generando…' : 'Exportar PDF' }}
+    </button>
+  </div>
+
+  <!-- ══ EMPTY STATE ══ -->
+  <div *ngIf="selectedProyectoIds.length === 0 && !filtroSupervisorId" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:48px">
+    <i class="ti ti-chart-gantt" style="font-size:52px;color:#D1D5DB;display:block;margin-bottom:12px"></i>
+    <p style="font-size:1rem;font-weight:600;color:#374151;margin-bottom:6px">Selecciona un proyecto o supervisor</p>
+    <p style="font-size:.875rem;color:#9CA3AF;max-width:360px">Elige un proyecto o supervisor del selector superior para visualizar el cronograma.</p>
+  </div>
+
+  <div *ngIf="(selectedProyectoIds.length || filtroSupervisorId) && !loading && ganttRows.length === 0" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:48px">
+    <i class="ti ti-calendar-off" style="font-size:52px;color:#D1D5DB;display:block;margin-bottom:12px"></i>
+    <p style="font-size:1rem;font-weight:600;color:#374151;margin-bottom:6px">Sin actividades con fechas</p>
+    <p style="font-size:.875rem;color:#9CA3AF;max-width:360px">No hay actividades que cumplan los filtros seleccionados.</p>
+  </div>
+
+  <!-- ══ GANTT ══ -->
+  <div *ngIf="(selectedProyectoIds.length || filtroSupervisorId) && ganttRows.length > 0"
+       style="flex:1;min-height:0;overflow:auto;background:#fff">
+    <div class="gp-inner" #ganttContent [style.width.px]="leftWidth + timelineWidth">
+
+      <!-- HEADER — sticky top:0 dentro del scroll container -->
+      <div class="gp-head" style="position:sticky;top:0;z-index:30;display:flex;flex-shrink:0">
+        <!-- Left header -->
+        <div class="gp-left gp-left-head" [style.width.px]="leftWidth">
+          <div class="gp-lh-cell" style="width:220px">Actividad</div>
+          <div class="gp-lh-cell" style="width:120px">Proyecto</div>
+          <div class="gp-lh-cell" style="width:90px;justify-content:center;text-align:center">Tipo</div>
+          <div class="gp-lh-cell" style="width:80px;justify-content:center;text-align:center">Etapa</div>
+          <div class="gp-lh-cell" style="width:90px;justify-content:center;text-align:center">Estado</div>
+          <div class="gp-lh-cell" style="width:80px;justify-content:center;text-align:center">Inicio</div>
+          <div class="gp-lh-cell" style="width:80px;justify-content:center;text-align:center">Fin Prog.</div>
+        </div>
+        <!-- Timeline header -->
+        <div class="gp-tl-head" [style.width.px]="timelineWidth" style="position:relative">
+          <!-- Major scale -->
+          <div class="gp-scale-major">
+            <div *ngFor="let c of majorCells" class="gp-scale-cell gp-major"
+                 [class.gp-current]="c.isCurrent" [style.width.px]="c.width">{{ c.label }}</div>
+          </div>
+          <!-- Minor scale -->
+          <div class="gp-scale-minor">
+            <div *ngFor="let c of minorCells" class="gp-scale-cell gp-minor"
+                 [class.gp-current]="c.isCurrent" [class.gp-weekend]="c.minor" [style.width.px]="c.width">{{ c.label }}</div>
+          </div>
+          <!-- Marcador Hoy en header -->
+          <div class="gp-today-label" [style.left.px]="todayLeft">Hoy</div>
+        </div>
+      </div>
+
+      <!-- ROWS -->
+      <div class="gp-rows">
+        <div *ngFor="let row of ganttRows; trackBy: trackByRow; let odd = odd"
+             class="gp-row" [class.gp-row-odd]="odd"
+             [style.borderLeft]="mostrarColorProyecto ? '4px solid ' + proyectoColor(row.proyecto) : ''">
+
+          <!-- Left data -->
+          <div class="gp-left gp-left-data" [style.width.px]="leftWidth">
+            <div class="gp-ld-cell" style="width:220px;white-space:normal;line-height:1.3;font-size:11px" [title]="row.nombre">{{ row.nombre }}</div>
+            <div class="gp-ld-cell" style="width:120px;font-size:10px;color:#64748B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;gap:5px" [title]="row.proyecto ?? ''">
+              <span *ngIf="mostrarColorProyecto" [style.background]="proyectoColor(row.proyecto)" style="width:8px;height:8px;border-radius:2px;flex-shrink:0;display:inline-block"></span>
+              {{ row.proyecto ?? '—' }}
+            </div>
+            <div class="gp-ld-cell" style="width:90px;justify-content:center">
+              <span *ngIf="row.tipo" [class]="tipoClass(row.tipo)">{{ row.tipo }}</span>
+              <span *ngIf="!row.tipo">—</span>
+            </div>
+            <div class="gp-ld-cell" style="width:80px;justify-content:center">
+              <span *ngIf="row.etapa" [class]="etapaClass(row.etapa)">{{ row.etapa | slice:0:10 }}</span>
+              <span *ngIf="!row.etapa">—</span>
+            </div>
+            <div class="gp-ld-cell" style="width:90px;justify-content:center">
+              <span class="gp-status" [style.color]="statusColor(row.status)">{{ statusLabel(row.status) }}</span>
+            </div>
+            <!-- Inicio: prog + efectivo -->
+            <div class="gp-ld-cell" style="width:80px;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+              <span style="font-size:10px;color:#374151;text-align:center">{{ fmtDate(row.startPlan) }}</span>
+              <span *ngIf="row.startReal" style="font-size:9.5px;color:#10B981;font-weight:600;text-align:center">{{ fmtDate(row.startReal) }}</span>
+            </div>
+            <!-- Fin: prog + efectivo -->
+            <div class="gp-ld-cell" style="width:80px;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+              <span style="font-size:10px;color:#374151;text-align:center">{{ fmtDate(row.endPlan) }}</span>
+              <span *ngIf="row.endReal && row.status === 'CULMINADO'" style="font-size:9.5px;color:#10B981;font-weight:600;text-align:center">{{ fmtDate(row.endReal) }}</span>
+            </div>
+          </div>
+
+          <!-- Timeline -->
+          <div class="gp-tl-row" [style.width.px]="timelineWidth">
+            <!-- Columnas de fondo alternadas por período -->
+            <div class="gp-tl-bg">
+              <div *ngFor="let c of minorCells" class="gp-tl-col"
+                   [class.gp-tl-col-current]="c.isCurrent"
+                   [class.gp-tl-col-weekend]="c.minor"
+                   [style.width.px]="c.width"></div>
+            </div>
+
+            <!-- Marcador de hoy -->
+            <div class="gp-today" [style.left.px]="todayLeft"></div>
+
+            <!-- Barra planificada -->
+            <div class="gp-bar"
+                 [style.left.px]="row.planLeft"
+                 [style.width.px]="row.planWidth"
+                 [style.background]="row.planColor"
+                 [style.color]="row.planText"
+                 [title]="row.nombre + '\n' + statusLabel(row.status) + '\nProg: ' + fmtDate(row.startPlan) + ' → ' + fmtDate(row.endPlan)">
+              <span class="gp-bar-dates" *ngIf="row.planWidth > 120">
+                {{ fmtDate(row.startPlan) }} – {{ fmtDate(row.endPlan) }}
+              </span>
+            </div>
+
+            <!-- Barra real -->
+            <div *ngIf="row.realLeft !== null"
+                 class="gp-bar gp-bar-real"
+                 [style.left.px]="row.realLeft"
+                 [style.width.px]="row.realWidth"
+                 [style.background]="row.realColor"
+                 [title]="'Ejecución real: ' + fmtDate(row.startReal) + ' → ' + fmtDate(row.endReal)">
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

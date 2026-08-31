@@ -1,0 +1,377 @@
+/* Página pública de la carta oferta. Mismo lenguaje visual que el formulario público del
+   postulante (`postulante-formulario.css`): las dos le llegan por correo al mismo destinatario y en
+   el mismo proceso, así que tienen que verse como parte de lo mismo. */
+
+:host {
+  display: block;
+}
+
+.co-page {
+  min-height: 100vh;
+  background: #eef2f6;
+  padding: 28px 16px 60px;
+}
+
+.co-shell {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.co-card {
+  background: #ffffff;
+  border: 1px solid var(--color-abril-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 24px 28px;
+}
+
+/* ── Encabezado ───────────────────────────────────────────────────────── */
+.co-header {
+  border-top: 5px solid var(--color-abril-logo-blue, #005d9d);
+}
+
+.co-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0;
+}
+
+.co-brand {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-abril-logo-blue, #005d9d);
+  margin: 4px 0 0;
+}
+
+.co-intro {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #4b5563;
+  margin: 14px 0 0;
+}
+
+/* ── Secciones ────────────────────────────────────────────────────────── */
+.co-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.co-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+/* ── Detalle de la posición ───────────────────────────────────────────── */
+.co-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px 20px;
+}
+
+.co-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.co-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.co-value {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1f2937;
+  word-break: break-word;
+}
+
+.co-label-block {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-abril-logo-blue, #005d9d);
+  margin-bottom: 8px;
+}
+
+/* ── Visor del PDF ────────────────────────────────────────────────────────
+   Alto fijo generoso: la carta oferta suele ser de una o dos páginas y conviene
+   que se lea sin abrir otra pestaña. En móvil se baja bastante (ver responsive)
+   porque un iframe alto deja la página sin espacio para el resto. */
+.co-viewer {
+  width: 100%;
+  height: 620px;
+  border: 1px solid var(--color-abril-border, #e2e8f0);
+  border-radius: 10px;
+  background: #f8fafc;
+  display: block;
+}
+
+.co-viewer-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 260px;
+}
+
+/* ── Firma ────────────────────────────────────────────────────────────── */
+.co-firma-actual {
+  margin-top: 14px;
+  border: 1px solid var(--color-abril-border, #e2e8f0);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.co-firma-actual-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Fondo a cuadros: deja ver que la firma es un PNG con transparencia, que es
+   como se estampa sobre el PDF. */
+.co-firma-img {
+  height: 90px;
+  width: auto;
+  max-width: 100%;
+  align-self: flex-start;
+  border: 1px solid var(--color-abril-border, #e2e8f0);
+  border-radius: 8px;
+  background: repeating-conic-gradient(#f3f4f6 0% 25%, #ffffff 0% 50%) 0 0 / 16px 16px;
+}
+
+.co-firma-pad {
+  margin-top: 18px;
+}
+
+.co-pad-wrap {
+  max-width: 600px;
+}
+
+.co-firma-acciones {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── Firmar ───────────────────────────────────────────────────────────── */
+.co-firmar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.co-firmado {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.co-firmar-accion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.co-bloqueo {
+  font-size: 12.5px;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0;
+  line-height: 1.55;
+}
+
+/* ── Botones ──────────────────────────────────────────────────────────── */
+.co-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.co-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.co-btn-primary {
+  background: var(--color-abril-logo-blue, #005d9d);
+  color: #ffffff;
+  padding: 12px 26px;
+  font-size: 14.5px;
+}
+
+.co-btn-secondary {
+  background: var(--color-abril-lime, #8dc63f);
+  color: #ffffff;
+}
+
+.co-btn-ghost {
+  background: #ffffff;
+  color: #4b5563;
+  border-color: var(--color-abril-border, #e2e8f0);
+}
+
+.co-btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-abril-logo-blue, #005d9d);
+  cursor: pointer;
+}
+
+.co-badge {
+  display: inline-block;
+  border-radius: 8px;
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.co-badge-ok {
+  background: #d7faf4;
+  color: #009c87;
+}
+
+.co-hint {
+  font-size: 12.5px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.55;
+}
+
+.co-pie {
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+  margin: 4px 0 0;
+  line-height: 1.6;
+}
+
+/* ── Estados (cargando / error / firmado) ─────────────────────────────── */
+.co-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  padding: 56px 28px;
+}
+
+.co-state-icon {
+  font-size: 46px;
+  line-height: 1;
+}
+
+.co-state-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.co-state-text {
+  font-size: 13.5px;
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.65;
+  max-width: 620px;
+}
+
+/* El bloque de "ya firmada" reusa los textos de estado pero alineados a la
+   izquierda, porque va junto al ícono y no centrado en una tarjeta vacía. */
+.co-firmado .co-state-text,
+.co-firmado .co-state-title {
+  text-align: left;
+}
+
+.co-firmado .co-state-icon {
+  font-size: 34px;
+}
+
+.co-spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 4px solid #dbeafe;
+  border-top-color: var(--color-abril-logo-blue, #005d9d);
+  animation: co-spin 0.9s linear infinite;
+}
+
+@keyframes co-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────
+   El enlace le llega por correo, así que muchos van a abrirlo desde el celular:
+   el móvil no es un caso borde. Se recupera ancho bajando paddings y se acorta
+   el visor para que el bloque de firma quede al alcance sin scrollear de más. */
+@media (max-width: 640px) {
+  .co-page {
+    padding: 16px 10px 44px;
+  }
+
+  .co-card {
+    padding: 18px 16px;
+  }
+
+  .co-viewer {
+    height: 420px;
+  }
+
+  .co-state {
+    padding: 40px 16px;
+  }
+
+  .co-firma-acciones .co-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .co-btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+}

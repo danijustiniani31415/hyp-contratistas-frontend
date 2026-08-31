@@ -1,0 +1,660 @@
+:host {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.penalidades-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: #ffffff;
+}
+
+.penalidades-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 24px;
+  gap: 14px;
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.rac-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.rac-header__left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rac-header__badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.rac-header__titulo {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.rac-header__actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── BOTONES ─────────────────────────────────────────────── */
+.hdr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.hdr-btn--primary {
+  background: #16a34a;
+  color: #fff;
+  border-color: #16a34a;
+}
+
+.hdr-btn--primary:hover {
+  background: #15803d;
+}
+
+.hdr-btn--outline {
+  background: #fff;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.hdr-btn--outline:hover {
+  background: #f9fafb;
+}
+
+/* ── FILTROS ─────────────────────────────────────────────── */
+.filtros-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.filtro-select {
+  padding: 7px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #374151;
+  background: #fff;
+  cursor: pointer;
+  min-width: 180px;
+}
+
+.filtro-select:focus {
+  outline: none;
+  border-color: #16a34a;
+}
+
+/* ── SKELETON ────────────────────────────────────────────── */
+.skeleton-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-row {
+  height: 44px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── TABLA ───────────────────────────────────────────────── */
+.tabla-wrap {
+  overflow-x: auto;
+}
+
+.tabla-rac {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+
+
+.tabla-rac td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 13px;
+  color: #374151;
+  vertical-align: middle;
+}
+
+.tabla-row:hover {
+  background: #f9fdf9;
+}
+
+.col-codigo {
+  font-weight: 700;
+  color: #1d4ed8;
+  white-space: nowrap;
+}
+
+.col-proyecto,
+.col-empresa,
+.col-infraccion {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-monto {
+  font-weight: 600;
+  color: #b45309;
+  white-space: nowrap;
+}
+
+.col-fecha {
+  white-space: nowrap;
+  color: #6b7280;
+}
+
+.col-acciones {
+  text-align: center;
+  width: 60px;
+}
+
+.link-rac {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #16a34a;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link-rac:hover {
+  color: #15803d;
+}
+
+/* ── CHIPS ESTADO PENALIDAD ──────────────────────────────── */
+.chip-estado {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.chip-estado--lg {
+  font-size: 13px;
+  padding: 5px 14px;
+}
+
+.pen-evaluacion  { background: #eff6ff; color: #1d4ed8; }
+.pen-descargo    { background: #fef3c7; color: #92400e; }
+.pen-aplicada    { background: #fef2f2; color: #b91c1c; }
+.pen-anulada     { background: #f0fdf4; color: #0a7c52; }
+
+/* .abril-action-btn es global (src/styles.css) — no reimplementar el botón
+   de acción de tabla aquí. */
+
+/* ── EMPTY STATE ─────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: #9ca3af;
+}
+
+.empty-state__icon {
+  font-size: 48px;
+  color: #d1d5db;
+}
+
+.empty-state__text {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* ── PAGINACIÓN ──────────────────────────────────────────── */
+.paginacion {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pag-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pag-btn:hover:not(:disabled) {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.pag-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pag-info {
+  font-size: 13px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+/* ── MODAL OVERLAY ───────────────────────────────────────── */
+.pen-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+/* ── MODAL CARD ──────────────────────────────────────────── */
+.pen-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  width: 500px;
+  max-width: 95vw;
+  background: #fff;
+  border-radius: var(--radius-md);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.pen-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.modal-codigo {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.btn-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-close:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.pen-modal__body {
+  padding: 16px 20px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* ── MODAL CONTENIDO ─────────────────────────────────────── */
+.modal-skeleton {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.modal-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.modal-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+}
+
+.modal-valor {
+  font-size: 13px;
+  color: #111827;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.modal-monto {
+  font-size: 15px;
+  font-weight: 700;
+  color: #b45309;
+}
+
+.modal-seccion {
+  margin-bottom: 16px;
+}
+
+.modal-seccion__titulo {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.opcional {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #9ca3af;
+  font-size: 10px;
+}
+
+.modal-parrafo {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.descargo-readonly {
+  font-size: 13px;
+  color: #374151;
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  border: 1px solid #f0f0f0;
+}
+
+/* ── ACCIONES MODAL ──────────────────────────────────────── */
+.modal-acciones {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.modal-acciones--gap {
+  gap: 8px;
+}
+
+.btn-accion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-accion:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-accion--blue {
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.btn-accion--blue:hover:not(:disabled) {
+  background: #1e40af;
+}
+
+.btn-accion--red {
+  background: #b91c1c;
+  color: #fff;
+}
+
+.btn-accion--red:hover:not(:disabled) {
+  background: #991b1b;
+}
+
+.btn-accion--green {
+  background: #16a34a;
+  color: #fff;
+}
+
+.btn-accion--green:hover:not(:disabled) {
+  background: #15803d;
+}
+
+/* ── FORM CONTROLS MODAL ─────────────────────────────────── */
+.form-control {
+  width: 100%;
+  border: 1px solid #d6dee5;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+  outline: none;
+  transition: border 0.15s;
+  box-sizing: border-box;
+  background: #fff;
+  color: #111827;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.form-control:focus {
+  border-color: #4caf50;
+}
+
+.form-hint {
+  display: block;
+  font-size: 11px;
+  color: #e65100;
+  margin-top: 4px;
+}
+
+/* ── ESTADO FINAL ────────────────────────────────────────── */
+.estado-final {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+
+/* ── MODAL FOOTER ────────────────────────────────────────── */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  margin-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-ghost:hover {
+  background: #f9fafb;
+}
+
+/* ── FAB ─────────────────────────────────────────────────── */
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  background: var(--color-abril-standard);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(27, 58, 45, 0.25);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.fab:hover { background: var(--color-abril-standard-hover); transform: scale(1.02); }
+
+.fab__label { display: none; }
+
+@media (min-width: 768px) {
+  .fab__label { display: inline; }
+}
+
+/* ── DOCUMENTO DESCARGO ──────────────────────────────────── */
+.descargo-doc {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.doc-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+}
+
+.doc-subiendo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.doc-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--color-abril-standard);
+  font-weight: 500;
+}
+
+.doc-hint {
+  display: block;
+  font-size: 11px;
+  color: #e65100;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.spin {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ── BADGES ESTADO PENALIDAD (spec 2.4) ──────────────────── */
+.chip-estado { border-radius: 999px; }
+.chip-estado--lg { font-size: 14px; padding: 5px 14px; }
+
+.pen-evaluacion { background: #fdf3dc; color: #8a5a00; }
+.pen-descargo   { background: #eef4ff; color: #2563a8; }
+.pen-aplicada   { background: #fdecea; color: #922b21; }
+.pen-anulada    { background: #f5f3ef; color: #5a5850; }

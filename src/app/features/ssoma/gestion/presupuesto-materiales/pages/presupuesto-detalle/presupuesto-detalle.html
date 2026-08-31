@@ -1,0 +1,136 @@
+<div class="page-root">
+  <ng-container *ngIf="detalle">
+    <app-abril-page-header
+      badge="SSOMA · Materiales"
+      [titulo]="detalle.projectDescription + ' · v' + detalle.version"
+      [subtitulo]="'Presupuesto estimado: S/ ' + (detalle.totalEstimado | number:'1.2-2')"
+      [botonPrimario]="detalle.estado === 'BORRADOR' ? { label: 'Aprobar', icono: 'ti-check' } : { label: 'Ver Control', icono: 'ti-chart-bar' }"
+      [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+      (primaryClick)="detalle.estado === 'BORRADOR' ? aprobar() : irAControl()"
+      (secondaryClick)="volver()">
+    </app-abril-page-header>
+  </ng-container>
+
+  <div class="page-body">
+    <div *ngIf="loading" class="loading-msg">Cargando presupuesto...</div>
+
+    <ng-container *ngIf="detalle && !loading">
+      <!-- Cabecera de resumen -->
+      <div class="resumen-bar">
+        <div class="resumen-item">
+          <span class="resumen-lbl">Estado</span>
+          <span class="badge" [class.badge-ok]="detalle.estado === 'APROBADO'" [class.badge-warn]="detalle.estado !== 'APROBADO'">
+            {{ detalle.estado }}
+          </span>
+        </div>
+        <div class="resumen-item">
+          <span class="resumen-lbl">Total estimado</span>
+          <span class="resumen-val">S/ {{ detalle.totalEstimado | number:'1.2-2' }}</span>
+        </div>
+        <div class="resumen-item">
+          <span class="resumen-lbl">HH</span>
+          <span class="resumen-val">{{ detalle.hhUsado | number:'1.0-0' }}</span>
+        </div>
+        <div class="resumen-item">
+          <span class="resumen-lbl">Área (m²)</span>
+          <span class="resumen-val">{{ detalle.areaUsada | number:'1.2-2' }}</span>
+        </div>
+        <div class="resumen-item">
+          <span class="resumen-lbl">Familias</span>
+          <span class="resumen-val">{{ detalle.totalFamilias }}</span>
+        </div>
+        <div class="resumen-item" *ngIf="detalle.familiasSinHistoria > 0">
+          <span class="resumen-lbl">Sin histórico</span>
+          <span class="resumen-val warn">{{ detalle.familiasSinHistoria }}</span>
+        </div>
+        <div class="resumen-item" *ngIf="detalle.notas">
+          <span class="resumen-lbl">Notas</span>
+          <span class="resumen-nota">{{ detalle.notas }}</span>
+        </div>
+      </div>
+
+      <!-- Acordeón por tipo -->
+      <div *ngFor="let tipo of detalle.tipos" class="tipo-bloque">
+        <button class="tipo-header" (click)="toggleTipo(tipo.tipoId)">
+          <span class="tipo-nombre">{{ tipo.nombreTipo }}</span>
+          <span class="tipo-total">S/ {{ tipo.totalEstimado | number:'1.2-2' }}</span>
+          <i class="ti" [class.ti-chevron-down]="!tipoAbierto.has(tipo.tipoId)"
+                        [class.ti-chevron-up]="tipoAbierto.has(tipo.tipoId)"></i>
+        </button>
+
+        <div *ngIf="tipoAbierto.has(tipo.tipoId)" class="tipo-body">
+          <table class="abril-table lineas-table">
+            <thead>
+              <tr>
+                <th>Familia</th>
+                <th>Se calcula por</th>
+                <th class="num">Ratio</th>
+                <th class="num">Cant. base</th>
+                <th class="num">Cantidad</th>
+                <th class="num">Precio unit.</th>
+                <th class="num">Total</th>
+                <th class="num">Proyt.</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let l of tipo.familias">
+                <!-- Fila normal -->
+                <tr *ngIf="editandoLineaId !== l.lineaId"
+                    [class.no-hist]="!l.tieneHistoria"
+                    [class.override]="tieneOverride(l)">
+                  <td class="familia-cell">
+                    {{ l.nombreFamilia }}
+                    <span *ngIf="!l.tieneHistoria" class="sin-hist-badge" title="Sin datos históricos">!</span>
+                    <span *ngIf="tieneOverride(l)" class="override-badge" title="Valor manual">M</span>
+                  </td>
+                  <td class="base-cell">{{ baseLabel(l.variableBase) }}</td>
+                  <td class="num">{{ l.ratioRecomendado | number:'1.4-4' }}</td>
+                  <td class="num">{{ l.valorDriver | number:'1.0-0' }}</td>
+                  <td class="num">{{ (l.cantidadManual ?? l.cantidadEstimada) | number:'1.2-2' }}</td>
+                  <td class="num">{{ (l.precioManual ?? l.precioUnitario) | number:'1.2-2' }}</td>
+                  <td class="num total-cell">S/ {{ totalEfectivo(l) | number:'1.2-2' }}</td>
+                  <td class="num">{{ l.nProyectosBase }}</td>
+                  <td class="actions-cell">
+                    <button *ngIf="detalle.estado === 'BORRADOR'" class="btn-icon" (click)="editarLinea(l)" title="Editar">
+                      <i class="ti ti-pencil"></i>
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Fila de edición inline -->
+                <tr *ngIf="editandoLineaId === l.lineaId" class="edit-row">
+                  <td colspan="9" class="edit-cell">
+                    <div class="linea-edit-form">
+                      <strong>{{ l.nombreFamilia }}</strong>
+                      <div class="linea-fields">
+                        <label>Cantidad manual
+                          <input type="number" [(ngModel)]="formLinea.cantidadManual"
+                            [placeholder]="l.cantidadEstimada.toString()" min="0" step="0.0001" />
+                        </label>
+                        <label>Precio unitario manual
+                          <input type="number" [(ngModel)]="formLinea.precioManual"
+                            [placeholder]="l.precioUnitario.toString()" min="0" step="0.01" />
+                        </label>
+                        <label class="full-w">Notas
+                          <input type="text" [(ngModel)]="formLinea.notasLinea"
+                            placeholder="Motivo del ajuste..." />
+                        </label>
+                      </div>
+                      <div class="linea-actions">
+                        <button class="btn-save" (click)="guardarLinea(l.lineaId)">
+                          <i class="ti ti-check"></i> Guardar
+                        </button>
+                        <button class="btn-cancel" (click)="cancelarEdicion()">Cancelar</button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </ng-container>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>

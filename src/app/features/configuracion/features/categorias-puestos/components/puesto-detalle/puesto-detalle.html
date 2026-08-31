@@ -1,0 +1,94 @@
+<app-base-modal [title]="'TRABAJADORES DEL PUESTO'" width="w-[660px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[12px] mt-[10px]">
+
+    <!-- Puesto y categoría del registro clickeado: el título del modal es genérico. -->
+    <div class="flex flex-wrap items-center gap-[8px]">
+      <span class="text-[15px] font-semibold text-gray-800">{{ puesto.nombre | titleCase }}</span>
+      <span *ngIf="puesto.categoriaNombre"
+            class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#EAF6FF] text-[#0B6BA8] font-medium whitespace-nowrap">
+        {{ puesto.categoriaNombre | titleCase }}
+      </span>
+      <span *ngIf="!puesto.categoriaNombre" class="text-[11px] text-gray-400 italic">Sin categoría</span>
+    </div>
+
+    <!-- Las dos áreas del puesto. Ya vienen en la fila, así que no cuestan una petición extra.
+         Sin titleCase: los nombres del catálogo ya están capitalizados y el pipe convertiría
+         "SSOMA" en "Ssoma". -->
+    <div class="flex flex-wrap items-center gap-[6px]">
+      <span class="text-[11px] text-gray-500">Lo pide:</span>
+      <span *ngIf="puesto.areaSolicitanteNombre"
+            class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium whitespace-nowrap">
+        {{ puesto.areaSolicitanteNombre }}
+      </span>
+      <span *ngIf="!puesto.areaSolicitanteNombre" class="text-[11px] text-gray-400 italic">
+        Sin área asignada
+      </span>
+
+      <span class="text-[11px] text-gray-500 ml-[8px]">Va a:</span>
+      <span *ngIf="puesto.areaDestinoNombre"
+            class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#FFF3DC] text-[#B26A00] font-medium whitespace-nowrap">
+        {{ puesto.areaDestinoNombre }}
+      </span>
+      <span *ngIf="!puesto.areaDestinoNombre" class="text-[11px] text-gray-400 italic">
+        El área de quien lo pida
+      </span>
+    </div>
+
+    <div *ngIf="trabajadores.length > 0" class="w-full">
+      <app-search-input
+        placeholder="Buscar por nombre o correo..."
+        [(value)]="searchText"
+        (valueChange)="onSearchChange()"
+        width="100%">
+      </app-search-input>
+    </div>
+
+    <div class="abril-table-wrap max-h-[46vh]">
+      <table class="abril-table abril-table--th-center">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Trabajador</th>
+            <th class="w-[260px]">Correo corporativo</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr *ngIf="filteredTrabajadores.length === 0">
+            <td colspan="2" class="text-center py-[40px] text-gray-400 text-sm">
+              <ng-container *ngIf="!cargado">Cargando...</ng-container>
+              <ng-container *ngIf="cargado && trabajadores.length > 0">Sin resultados.</ng-container>
+              <ng-container *ngIf="cargado && trabajadores.length === 0">
+                Ningún trabajador tiene este puesto asignado.
+              </ng-container>
+            </td>
+          </tr>
+
+          <tr *ngFor="let t of pagedTrabajadores"
+              class="border-b hover:bg-gray-50"
+              style="border-color:var(--color-abril-border)">
+
+            <td class="text-gray-700">{{ t.nombreCompleto | titleCase }}</td>
+
+            <td class="text-gray-700">
+              <span *ngIf="t.emailCorporativo">{{ t.emailCorporativo }}</span>
+              <span *ngIf="!t.emailCorporativo" class="text-gray-400 italic">Sin correo</span>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="totalPages > 1" class="max-w-[440px]">
+      <app-paginator
+        [totalRecords]="filteredTrabajadores.length"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="changePage($event)">
+      </app-paginator>
+    </div>
+
+  </div>
+
+</app-base-modal>

@@ -1,0 +1,350 @@
+<app-base-modal [title]="'NUEVA ADJUDICACIÓN'" width="w-[900px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[24px] mt-[20px]">
+
+    <!-- ── SECCIÓN 1: Información general ──────────────────────────── -->
+    <div>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[12px]">
+        Información general
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
+
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select [fullText]="true" label="Proyecto" [options]="createFormData.projects" valueField="projectId"
+            displayField="projectDescription" [(value)]="createDto.projectId" />
+          <p *ngIf="submitted && !createDto.projectId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select [fullText]="true" label="Empresa / Subcontratista" [options]="createFormData.contributors" valueField="contractorId"
+            displayField="contributorName" [value]="createDto.contractorId" (valueChange)="onCompanyChange($event)" />
+          <p *ngIf="submitted && !createDto.contractorId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+      </div>
+
+      <!-- Correos del contratista -->
+      <div *ngIf="createDto.contractorId" class="mt-[16px] flex flex-col gap-[8px]">
+        <p class="text-sm font-medium" style="color:var(--color-abril-primary)">Correos de contacto del contratista</p>
+        <div *ngIf="contractorEmails.length > 0; else noEmails" class="flex flex-wrap gap-[8px]">
+          <span
+            *ngFor="let email of contractorEmails"
+            class="inline-flex items-center gap-[6px] text-[#3a7a00] text-xs font-medium px-[10px] py-[5px] rounded-full" style="background:var(--color-abril-primary-light)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" fill="#3a7a00"/>
+            </svg>
+            {{ email }}
+          </span>
+        </div>
+        <ng-template #noEmails>
+          <div class="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
+            <svg class="w-4 h-4 text-red-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+              <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <p class="text-xs text-red-600 font-medium leading-relaxed">
+              Esta empresa no tiene correos registrados.<br>
+              <span class="font-normal">Debes agregar al menos un correo antes de crear la adjudicación.</span>
+            </p>
+          </div>
+        </ng-template>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-[16px] mt-[16px]">
+
+        <div class="flex flex-col gap-[4px]">
+          <!-- Modo normal: desplegable de Especialidad. Modo búsqueda: desplegable de Partidas. -->
+          <app-search-select *ngIf="!searchByWorkItem" [fullText]="true" label="Especialidad" [options]="createFormData.workSpecialties"
+            valueField="workSpecialtyId" displayField="workSpecialtyDescription"
+            [value]="createDto.workSpecialtyId" (valueChange)="onWorkSpecialtyChange($event)" />
+          <app-search-select *ngIf="searchByWorkItem" [fullText]="true" label="Partida" [options]="searchableWorkItems"
+            valueField="workItemId" displayField="workItemDescription"
+            [value]="createDto.workItemId" (valueChange)="onSearchWorkItemSelected($event)" />
+          <!-- Solo en modo normal: en modo búsqueda elegir la partida rellena la especialidad sola. -->
+          <p *ngIf="submitted && !searchByWorkItem && !createDto.workSpecialtyId" class="text-xs text-red-500">Campo requerido</p>
+          <label class="inline-flex items-center gap-[8px] cursor-pointer select-none mt-[2px]">
+            <input type="checkbox" [checked]="searchByWorkItem" (change)="toggleSearchByWorkItem()"
+              class="w-[14px] h-[14px] accent-[var(--color-abril-primary)] cursor-pointer" />
+            <span class="text-xs text-gray-500">Buscar por partida</span>
+          </label>
+        </div>
+
+        <div *ngIf="createDto.workSpecialtyId" class="flex flex-col gap-[6px]">
+          <app-search-select [fullText]="true" label="Partida de control" [options]="filteredWorkItemCategories"
+            valueField="workItemCategoryId" displayField="workItemCategoryDescription"
+            [value]="createDto.workItemCategoryId" (valueChange)="onWorkItemCategoryChange($event)" />
+          <p *ngIf="submitted && !createDto.workItemCategoryId" class="text-xs text-red-500">Campo requerido</p>
+          <ng-container *ngIf="selectedWorkItemCategorySyncStatus !== null" [ngSwitch]="selectedWorkItemCategorySyncStatus">
+            <span *ngSwitchCase="1" class="flex items-center gap-1 text-[11px] text-[#009C87]">
+              <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+              </svg>
+              Tiene instructivo
+            </span>
+            <span *ngSwitchCase="2" class="flex items-center gap-1 text-[11px] text-blue-500">
+              <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+              </svg>
+              Tiene instructivo (manual)
+            </span>
+            <span *ngSwitchCase="3" class="flex items-center gap-1 text-[11px] text-gray-400">
+              <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+              </svg>
+              Sin instructivo
+            </span>
+          </ng-container>
+          <span *ngIf="selectedWorkItemCategoryInstructivoName"
+            class="text-[11px] text-gray-500 italic break-words">
+            Instructivo: {{ selectedWorkItemCategoryInstructivoName }}
+          </span>
+        </div>
+
+        <div *ngIf="createDto.workItemCategoryId" class="flex flex-col gap-[4px]">
+          <app-search-select [fullText]="true" label="Partida" [options]="filteredWorkItems" valueField="workItemId"
+            displayField="workItemDescription" [value]="createDto.workItemId" (valueChange)="onWorkItemChange($event)" />
+          <p *ngIf="submitted && !createDto.workItemId" class="text-xs text-red-500">Campo requerido</p>
+
+          <ng-container *ngIf="isWorkItemSelected">
+            <span *ngIf="selectedWorkItemForms.length > 0" class="flex items-center gap-1 text-[11px] text-[#009C87]">
+              <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+              </svg>
+              Tiene formas de valorización
+            </span>
+            <span *ngIf="selectedWorkItemForms.length === 0" class="flex items-center gap-1 text-[11px] text-gray-400">
+              <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+              </svg>
+              Sin formas de valorización
+            </span>
+            <ul *ngIf="selectedWorkItemForms.length > 0" class="mt-[2px] flex flex-col gap-[1px] pl-[16px] list-disc">
+              <li *ngFor="let form of selectedWorkItemForms" class="text-[11px] text-gray-500">
+                {{ form.percentage }}% {{ form.concept }}
+              </li>
+            </ul>
+          </ng-container>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="border-t border-[#F0F0F0]"></div>
+
+    <!-- ── SECCIÓN 2: Información del contrato ────────────────────── -->
+    <div>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[12px]">
+        Información del contrato
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-[16px]">
+
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select [fullText]="true" label="Modalidad de contrato" [options]="createFormData.contractModalities"
+            valueField="contractModalityId" displayField="contractModalityDescription"
+            [value]="createDto.contractModalityId" (valueChange)="onContractModalityChange($event)" />
+          <p *ngIf="submitted && !createDto.contractModalityId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select [fullText]="true" label="Tipo de contrato" [options]="createFormData.contractTypes" valueField="contractTypeId"
+            displayField="contractTypeDescription" [(value)]="createDto.contractTypeId" />
+          <p *ngIf="submitted && !createDto.contractTypeId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+
+      </div>
+
+      <!-- Normalización del nombre de la partida para el contrato -->
+      <div class="mt-[16px] flex flex-col gap-[12px]">
+        <div class="flex flex-wrap items-center gap-[20px]">
+          <label class="inline-flex items-center gap-[8px] cursor-pointer select-none">
+            <input type="checkbox" [checked]="createDto.isSubcontract" (change)="toggleSubcontract()"
+              class="w-[16px] h-[16px] accent-[var(--color-abril-primary)] cursor-pointer" />
+            <span class="text-sm text-gray-600">Subcontrato (SC)</span>
+          </label>
+          <label class="inline-flex items-center gap-[8px] cursor-pointer select-none">
+            <input type="checkbox" [checked]="createDto.isLabor" (change)="toggleLabor()"
+              class="w-[16px] h-[16px] accent-[var(--color-abril-primary)] cursor-pointer" />
+            <span class="text-sm text-gray-600">Mano de obra (M.O.)</span>
+          </label>
+        </div>
+
+        <div class="flex flex-col gap-[4px]">
+          <div class="relative mt-[9px]">
+            <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Nombre de la partida en el contrato</label>
+            <!-- El botón cuelga del borde superior derecho, en espejo del label: al aparecer/desaparecer
+                 no empuja el campo ni el resto de la sección. -->
+            <button *ngIf="nameManuallyEdited" type="button" (click)="regenerateContractName()"
+              class="absolute -top-[8px] right-[9px] z-[1] px-[4px] bg-white leading-none text-[11px] text-[var(--color-abril-primary)] underline cursor-pointer">
+              Regenerar automáticamente
+            </button>
+            <input
+              type="text"
+              [ngModel]="createDto.contractWorkItemName"
+              (ngModelChange)="onContractNameInput($event)"
+              placeholder="Se genera automáticamente al elegir la partida"
+              class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 uppercase focus:outline-none"
+            />
+          </div>
+          <p *ngIf="submitted && !createDto.contractWorkItemName?.trim()" class="text-xs text-red-500">Campo requerido</p>
+          <p class="text-[11px] text-gray-400">Es lo que aparecerá como {{ '{{PARTIDA}}' }} en los contratos.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-[#F0F0F0]"></div>
+
+    <!-- ── SECCIÓN 3: Información financiera ─────────────────────── -->
+    <div>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[12px]">
+        Información financiera
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-[16px]">
+
+        <div class="flex flex-col gap-[4px]">
+          <div class="relative mt-[9px]">
+            <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Monto</label>
+            <input
+              type="text"
+              inputmode="decimal"
+              [ngModel]="createDto.amount || ''"
+              placeholder="0.00"
+              (input)="onAmountInput($event)"
+              class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none"
+            />
+          </div>
+          <p *ngIf="submitted && !createDto.amount" class="text-xs text-red-500">Campo requerido</p>
+          <!-- El monto siempre incluye IGV -->
+          <div class="flex items-center gap-[6px] text-xs text-gray-500">
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            El monto ingresado <span class="font-semibold text-gray-600">incluye IGV</span>.
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-[4px]">
+          <!-- uppercase: son códigos ISO (PEN, USD), el formato de nombre propio los dejaba "Pen"/"Usd". -->
+          <app-search-select [fullText]="true" [uppercase]="true" label="Moneda" [options]="createFormData.currencies" valueField="currencyId"
+            displayField="currencyCode" [(value)]="createDto.currencyId" />
+          <p *ngIf="submitted && !createDto.currencyId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select [fullText]="true" label="Modalidad de pago" [options]="createFormData.paymentMethods" valueField="paymentMethodId"
+            displayField="paymentMethodDescription" [(value)]="createDto.paymentMethodId" />
+          <p *ngIf="submitted && !createDto.paymentMethodId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select [fullText]="true" label="Forma de valorización" [options]="createFormData.paymentForms" valueField="paymentFormId"
+            displayField="paymentFormDescription" [(value)]="createDto.paymentFormId" />
+          <p *ngIf="submitted && !createDto.paymentFormId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <!-- ¿Incluye carta de fianza? — solo Suministro (modalidad 2) + contrato con adelanto (pago 2) -->
+        <div *ngIf="createDto.contractModalityId === 2 && createDto.paymentMethodId === 2" class="flex flex-col gap-[4px]">
+          <app-search-select [fullText]="true" label="¿Incluye carta de fianza?" [options]="cartaFianzaOptions"
+            valueField="value" displayField="label" [allowClear]="false" [(value)]="createDto.includesCartaFianza" />
+        </div>
+
+        <div *ngIf="createDto.paymentMethodId === 2" class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
+
+          <!-- Porcentaje de adelanto -->
+          <div class="flex flex-col gap-[4px]">
+            <div class="relative mt-[9px]">
+              <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Porcentaje de adelanto</label>
+              <input
+                type="text"
+                inputmode="decimal"
+                [ngModel]="createDto.advancePercentage"
+                placeholder="0"
+                (input)="onPercentageInput($event)"
+                class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] pl-[10px] pr-[28px] text-[12px] text-gray-700 focus:outline-none"
+              />
+              <span class="absolute right-[11px] top-1/2 -translate-y-1/2 text-[12px] text-gray-400 pointer-events-none">%</span>
+            </div>
+            <p *ngIf="submitted && !createDto.advancePercentage" class="text-xs text-red-500">Campo requerido</p>
+          </div>
+
+          <!-- Monto de adelanto -->
+          <div class="flex flex-col gap-[4px]">
+            <div class="relative mt-[9px]">
+              <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Monto de adelanto</label>
+              <input
+                type="text"
+                inputmode="decimal"
+                [ngModel]="advanceAmount"
+                placeholder="0.00"
+                (input)="onAdvanceAmountInput($event)"
+                class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] pl-[10px] pr-[42px] text-[12px] text-gray-700 focus:outline-none"
+              />
+              <span class="absolute right-[11px] top-1/2 -translate-y-1/2 text-[11px] text-gray-400 pointer-events-none">
+                {{ selectedCurrencyCode }}
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <div class="border-t border-[#F0F0F0]"></div>
+
+    <!-- ── SECCIÓN 4: Archivos ────────────────────────────────────── -->
+    <div>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[12px]">
+        Archivos adjuntos
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
+
+        <!-- Archivos de cotización -->
+        <div class="flex flex-col gap-[8px]">
+          <label class="text-sm font-medium" style="color:var(--color-abril-primary)">
+            Archivos de cotización
+            <span class="text-gray-400 font-normal">(máx. {{ maxQuotationFiles }})</span>
+          </label>
+          <app-file-selector
+            *ngIf="quotationFileItems.length < maxQuotationFiles"
+            accept="*"
+            hint="Cualquier archivo"
+            color="var(--color-abril-primary)"
+            (fileSelected)="onQuotationImageSelected($event)">
+          </app-file-selector>
+          <app-file-preview [files]="quotationFileItems" (remove)="removeQuotationFile($event)"></app-file-preview>
+        </div>
+
+        <!-- Archivos comparativos -->
+        <div class="flex flex-col gap-[8px]">
+          <label class="text-sm font-medium" style="color:var(--color-abril-primary)">
+            Archivos comparativos
+            <span class="text-gray-400 font-normal">(máx. {{ maxComparativeFiles }})</span>
+          </label>
+          <app-file-selector
+            *ngIf="comparativeFileItems.length < maxComparativeFiles"
+            accept="*"
+            hint="Cualquier archivo"
+            color="var(--color-abril-primary)"
+            (fileSelected)="onComparativeImageSelected($event)">
+          </app-file-selector>
+          <app-file-preview [files]="comparativeFileItems" (remove)="removeComparativeFile($event)"></app-file-preview>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── BOTÓN GUARDAR ──────────────────────────────────────────── -->
+    <div class="flex justify-center pt-[4px]">
+      <button
+        (click)="save()"
+        class="w-[140px] py-[8px] rounded-[10px] cursor-pointer transition-colors" style="background:var(--color-abril-primary)"
+      >
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

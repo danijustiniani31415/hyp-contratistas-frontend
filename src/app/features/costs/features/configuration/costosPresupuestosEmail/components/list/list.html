@@ -1,0 +1,78 @@
+<div class="w-full rounded-lg overflow-x-auto border" style="border-color:var(--color-abril-border)">
+  <table class="table-auto min-w-[500px] w-full">
+    <thead class="sticky top-0" style="background:var(--color-abril-primary-light)">
+      <tr class="text-sm" style="color:var(--color-abril-primary-dark)">
+        <th class="py-2 px-3 text-left font-semibold">Correo electrónico</th>
+        <th class="py-2 px-3 text-center font-semibold whitespace-nowrap">Estado</th>
+        <th class="py-2 px-3 text-center font-semibold whitespace-nowrap">Fecha creación</th>
+        <th class="py-2 px-3 text-right font-semibold whitespace-nowrap">Acciones</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let item of items" class="border-b hover:bg-gray-50 transition-colors" style="border-color:var(--color-abril-border)">
+
+        <!-- Correo -->
+        <td class="px-3 py-2">
+          <span [title]="item.email" class="block line-clamp-1 text-sm text-gray-700">
+            {{ item.email }}
+          </span>
+        </td>
+
+        <!-- Estado -->
+        <td class="px-3 py-2 text-center">
+          <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+            [ngClass]="{
+              'bg-[#D7FAF4] text-[#009C87]': item.active,
+              'bg-[#FAD5D4] text-[#D30000]': !item.active
+            }">
+            {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
+          </span>
+        </td>
+
+        <!-- Fecha creación -->
+        <td class="px-3 py-2 text-center text-sm text-gray-500 whitespace-nowrap">
+          {{ item.createdDateTime | date:'dd-MM-yyyy' }}
+        </td>
+
+        <!-- Acciones -->
+        <td class="px-3 py-2">
+          <div class="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+              (click)="openEdit(item, $event)"
+            >Editar</button>
+            <button
+              type="button"
+              class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors"
+              [ngClass]="item.active
+                ? 'bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100'
+                : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'"
+              (click)="toggleActive(item, $event)"
+            >{{ item.active ? 'Desactivar' : 'Activar' }}</button>
+            <button
+              type="button"
+              class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
+              (click)="delete(item.costosPresupuestosEmailId, $event)"
+            >Eliminar</button>
+          </div>
+        </td>
+
+      </tr>
+
+      <tr *ngIf="items.length === 0">
+        <td colspan="4" class="text-center text-sm text-gray-400 italic py-8">
+          No hay registros.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-costos-presupuestos-email-edit
+  *ngIf="showEditModal"
+  [dto]="editDto"
+  (closeModal)="showEditModal = false"
+  (saved)="load(1)">
+</app-costos-presupuestos-email-edit>

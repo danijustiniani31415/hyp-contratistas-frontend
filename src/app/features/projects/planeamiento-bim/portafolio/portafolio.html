@@ -1,0 +1,244 @@
+<app-abril-page-header
+  titulo="PLANEAMIENTO"
+  subtitulo="Vista ejecutiva de todos los proyectos con Planeamiento configurado"
+  [tabs]="tabs"
+>
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<app-planeamiento-bim-subnav></app-planeamiento-bim-subnav>
+
+<div class="page-wrapper">
+
+  <!-- ── KPIs ──────────────────────────────────────────────────────── -->
+  <div class="kpi-grid" *ngIf="loadingKpis">
+    <div class="kpi-card skeleton-card" *ngFor="let i of [1, 2, 3, 4]">
+      <div class="skeleton-line sk-label"></div>
+      <div class="skeleton-line sk-value"></div>
+    </div>
+  </div>
+
+  <div *ngIf="kpisError && !loadingKpis" class="error-banner">
+    <i class="ti ti-alert-triangle mr-2"></i> {{ kpisError }}
+    <button type="button" class="btn-retry" (click)="cargarKpis()">
+      <i class="ti ti-refresh"></i> Reintentar
+    </button>
+  </div>
+
+  <div class="kpi-grid" *ngIf="!loadingKpis && !kpisError && kpis">
+    <!-- PPC PROMEDIO -->
+    <div class="kpi-card" style="border-top-color: #2E6DB4">
+      <div class="kpi-header">
+        <span class="kpi-label">PPC PROMEDIO · ÚLTIMA SEMANA</span>
+        <div class="kpi-icon-box" style="background: rgba(46, 109, 180, 0.08); color: #2E6DB4">
+          <i class="ti ti-gauge"></i>
+        </div>
+      </div>
+      <span class="kpi-value" style="color: #2E6DB4">{{ kpis.ppcPromedioUltimaSemana | number:'1.0-0' }}%</span>
+    </div>
+
+    <!-- PROYECTOS POR FASE -->
+    <div class="kpi-card" style="border-top-color: #1E3A5F">
+      <div class="kpi-header">
+        <span class="kpi-label">PROYECTOS POR FASE</span>
+        <div class="kpi-icon-box" style="background: rgba(30, 58, 95, 0.08); color: #1E3A5F">
+          <i class="ti ti-building-community"></i>
+        </div>
+      </div>
+      <span class="kpi-value" style="color: #1E3A5F">{{ totalProyectosPorFase }}</span>
+      <div class="kpi-subtext" *ngIf="kpis.proyectosPorFase.length > 0">
+        <span class="fase-chip" *ngFor="let f of kpis.proyectosPorFase">
+          {{ f.faseNombre }}: {{ f.cantidadProyectos }}
+        </span>
+      </div>
+    </div>
+
+    <!-- RESTRICCIONES VENCIDAS -->
+    <div class="kpi-card" style="border-top-color: #C0392B">
+      <div class="kpi-header">
+        <span class="kpi-label">PROYECTOS CON RESTRICCIONES &gt; 3 DÍAS</span>
+        <div class="kpi-icon-box" style="background: rgba(192, 57, 43, 0.08); color: #C0392B">
+          <i class="ti ti-barrier-block"></i>
+        </div>
+      </div>
+      <span class="kpi-value" style="color: #C0392B">{{ kpis.proyectosConBloqueosVencidos }}</span>
+    </div>
+
+    <!-- TOP CAUSAS DEL MES -->
+    <div class="kpi-card" style="border-top-color: #D97706">
+      <div class="kpi-header">
+        <span class="kpi-label">TOP CAUSA DE INCUMPLIMIENTO · MES</span>
+        <div class="kpi-icon-box" style="background: rgba(217, 119, 6, 0.08); color: #D97706">
+          <i class="ti ti-alert-triangle"></i>
+        </div>
+      </div>
+      <ng-container *ngIf="causaTopMes; else sinCausas">
+        <span class="kpi-value kpi-value--text" style="color: #D97706">{{ causaTopMes }}</span>
+        <span class="kpi-subtext" *ngIf="causasTopMesExtra > 0">+{{ causasTopMesExtra }} causa(s) más este mes</span>
+      </ng-container>
+      <ng-template #sinCausas>
+        <span class="kpi-value kpi-value--text" style="color: #94A3B8">Sin incumplimientos este mes</span>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- ── Tabla de proyectos ────────────────────────────────────────── -->
+  <div class="table-card">
+    <div class="table-header-row">
+      <div class="table-header-left">
+        <span class="table-title">Proyectos</span>
+        <span class="badge-count">{{ filteredProyectos.length }}</span>
+      </div>
+    </div>
+
+    <!-- Skeleton (F8) -->
+    <div *ngIf="loadingProyectos" class="skeleton-wrapper">
+      <div class="skeleton-line sk-row" *ngFor="let i of [1, 2, 3, 4, 5]"></div>
+    </div>
+
+    <!-- Error (F9) -->
+    <div *ngIf="proyectosError && !loadingProyectos" class="error-banner">
+      <i class="ti ti-alert-triangle mr-2"></i> {{ proyectosError }}
+      <button type="button" class="btn-retry" (click)="cargarProyectos()">
+        <i class="ti ti-refresh"></i> Reintentar
+      </button>
+    </div>
+
+    <ng-container *ngIf="!loadingProyectos && !proyectosError">
+      <div class="abril-table-wrap">
+        <table class="abril-table proyectos-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>PROYECTO</th>
+              <th>REGISTROS</th>
+              <th>AVANCE</th>
+              <th>SEMÁFORO</th>
+              <th class="w-10">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of pagedProyectos; let i = index" class="table-row">
+              <td class="col-num">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+              <td class="col-proyecto" (click)="irADetalle(p)">{{ p.projectNombre }}</td>
+              <td class="col-registros">
+                <ng-container *ngIf="p.totalRegistros > 0; else sinRegistros">
+                  <span class="acts-culminadas">{{ p.cumplidosRegistros }}</span> / {{ p.totalRegistros }}
+                </ng-container>
+                <ng-template #sinRegistros><span class="acts-sin">— / —</span></ng-template>
+              </td>
+              <td class="col-avance">
+                <div class="avance-container">
+                  <div class="avance-track">
+                    <div
+                      class="avance-fill"
+                      [style.width.%]="p.porcentajeAvance ?? 0"
+                      [style.background-color]="avanceBarColor(p)"
+                    ></div>
+                  </div>
+                  <span class="avance-pct" *ngIf="p.porcentajeAvance !== null">{{ p.porcentajeAvance | number:'1.0-0' }}%</span>
+                  <span class="avance-pct acts-sin" *ngIf="p.porcentajeAvance === null">—</span>
+                </div>
+              </td>
+              <td class="col-semaforo">
+                <span
+                  class="semaforo-dot"
+                  role="img"
+                  [attr.aria-label]="semaforoLabel(p)"
+                  [title]="semaforoLabel(p)"
+                  [style.background-color]="semaforoColor(p.semaforo)"
+                ></span>
+              </td>
+              <td class="col-acciones">
+                <div class="acciones-row">
+                  <button
+                    type="button"
+                    class="btn-icon-udp"
+                    title="Ver detalle del proyecto"
+                    (click)="irADetalle(p)"
+                  >
+                    <i class="ti ti-eye"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-icon-udp"
+                    title="Exportar PDF de programación diaria"
+                    [disabled]="exportingProjectId === p.projectId"
+                    (click)="abrirExportarPopover(p, $event)"
+                  >
+                    <i class="ti" [class.ti-file-download]="exportingProjectId !== p.projectId" [class.ti-loader-2]="exportingProjectId === p.projectId"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="filteredProyectos.length === 0">
+              <td colspan="6" class="empty-row">
+                <i class="ti ti-search-off empty-icon"></i>
+                No hay proyectos para los filtros seleccionados.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="paginator-row">
+        <app-paginator
+          [totalRecords]="filteredProyectos.length"
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          (pageChange)="changePage($event)"
+        ></app-paginator>
+      </div>
+    </ng-container>
+  </div>
+
+</div>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar proyecto..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%"
+    ></app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Semáforo"
+      [options]="semaforoOptions"
+      valueField="value"
+      displayField="label"
+      [value]="selectedSemaforo"
+      (valueChange)="selectedSemaforo = $event; onFilterChange()"
+    ></app-search-select>
+  </div>
+</app-filter-modal>
+
+<!-- ── Popover: fecha para exportar PDF de programación diaria ────────── -->
+<ng-container *ngIf="exportPopoverProject as ep">
+  <div class="export-popover-backdrop" (click)="cerrarExportarPopover()"></div>
+  <div class="export-popover" [style.top.px]="exportPopoverPos.top" [style.left.px]="exportPopoverPos.left">
+    <div class="export-popover-title">Exportar PDF — {{ ep.projectNombre }}</div>
+    <label class="export-popover-label" for="exportFechaInput">Fecha de programación diaria</label>
+    <input
+      id="exportFechaInput"
+      type="date"
+      class="bim-input date-select"
+      [(ngModel)]="exportPopoverFecha"
+    />
+    <div class="export-popover-actions">
+      <button type="button" class="btn-popover-cancel" (click)="cerrarExportarPopover()">Cancelar</button>
+      <button
+        type="button"
+        class="btn-popover-confirm"
+        [disabled]="!exportPopoverFecha"
+        (click)="confirmarExportarPdf()"
+      >
+        Exportar
+      </button>
+    </div>
+  </div>
+</ng-container>

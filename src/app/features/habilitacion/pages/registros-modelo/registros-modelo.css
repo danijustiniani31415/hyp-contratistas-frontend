@@ -1,0 +1,150 @@
+.card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.section-bar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.section-sub {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin: 0.15rem 0 0;
+}
+
+.field-input {
+  border: 1px solid #d6dee5;
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.88rem;
+  color: #111827;
+  background: #ffffff;
+}
+
+.field-input:focus {
+  outline: 0;
+  border-color: #64bc04;
+  box-shadow: 0 0 0 3px rgba(100, 188, 4, 0.18);
+}
+
+.search-input {
+  width: 100%;
+  max-width: 320px;
+}
+
+.registros-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+}
+
+@media (max-width: 900px) {
+  .registros-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .registros-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.registro-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fafafa;
+  transition: background 0.1s;
+  gap: 0.75rem;
+}
+
+.registro-card:hover {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.registro-nombre {
+  font-size: 0.85rem;
+  color: #374151;
+  flex: 1;
+  font-weight: 500;
+}
+
+.btn-icon {
+  background: #ffffff;
+  border: 1px solid #d6dee5;
+  cursor: pointer;
+  padding: 0.4rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #64bc04;
+  transition: background 0.1s;
+}
+
+.btn-icon:hover {
+  background: #dcfce7;
+  border-color: #64bc04;
+}
+
+.empty-grid {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.rm-public-page {
+  min-height: 100vh;
+  background: #f3f4f6;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.rm-public-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1.25rem;
+  background: linear-gradient(135deg, #182233, #2a3675);
+  border-radius: 10px;
+}
+
+.rm-public-logo {
+  height: 42px;
+  width: auto;
+}
+
+.rm-public-header h1 {
+  color: #ffffff;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.rm-public-card {
+  max-width: 1200px;
+  margin: 0 auto;
+}

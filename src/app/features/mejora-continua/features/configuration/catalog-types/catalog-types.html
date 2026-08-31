@@ -1,0 +1,74 @@
+<div class="flex flex-col gap-4 bg-white rounded-lg p-[20px]">
+
+  <!-- Botón crear -->
+  <div>
+    <button type="button" (click)="openCreate()"
+      class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer">
+      <div class="flex items-center gap-[10px]">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z" fill="#64BC04" />
+        </svg>
+        <p>Nuevo tipo</p>
+      </div>
+    </button>
+  </div>
+
+  <!-- Tabla -->
+  <div class="flex flex-col">
+    <div class="w-full rounded-lg overflow-auto border-t border-x border-[#D6DEE5]">
+      <table class="w-full table-fixed">
+        <thead class="bg-[#E5F7D1]">
+          <tr class="text-[#64BC04]">
+            <th class="w-[80px]"></th>
+            <th class="text-left px-4 py-2">Nombre</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of pagedTypes"
+            class="border-b border-[#D6DEE5] h-[42px] hover:bg-gray-50">
+
+            <!-- Acciones -->
+            <td class="text-center">
+              <div class="flex items-center justify-center gap-1">
+                <button type="button" (click)="openEdit(t)" title="Editar" class="cursor-pointer">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14.06 9L15 9.94L5.92 19H5V18.08L14.06 9ZM17.66 3C17.41 3 17.15 3.1 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04C21.1 6.65 21.1 6 20.71 5.63L18.37 3.29C18.17 3.09 17.92 3 17.66 3ZM14.06 6.19L3 17.25V21H6.75L17.81 9.94L14.06 6.19Z" fill="#64BC04" />
+                  </svg>
+                </button>
+                <button type="button" (click)="delete(t)" title="Eliminar" class="cursor-pointer">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z" fill="#64BC04" />
+                  </svg>
+                </button>
+              </div>
+            </td>
+
+            <td class="px-4 text-sm text-gray-800 font-medium">{{ t.catalogTypeName }}</td>
+          </tr>
+
+          <tr *ngIf="!loading && types.length === 0">
+            <td colspan="2" class="text-center py-10 text-gray-400 text-sm">
+              No hay tipos de catálogo registrados.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- Modal crear / editar -->
+<app-catalog-type-form
+  *ngIf="showForm"
+  [editingType]="editingType"
+  (closeModal)="showForm = false"
+  (saved)="onSaved()"
+/>

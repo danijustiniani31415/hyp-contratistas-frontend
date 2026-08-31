@@ -1,0 +1,102 @@
+<app-base-modal *ngIf="open" [title]="title" width="w-[820px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <div>
+      <label class="field-label">Supervisor *</label>
+      <div *ngIf="selectedWorker" class="selected-worker">
+        <div>
+          <strong>{{ selectedWorker.apellidoNombre }}</strong>
+          <span class="muted-line">DNI {{ selectedWorker.dni }} · {{ selectedWorker.empresaNombre ?? '—' }}</span>
+        </div>
+        <button type="button" class="btn-ghost btn-x" (click)="clearWorker()">Cambiar</button>
+      </div>
+      <div *ngIf="!selectedWorker">
+        <input
+          type="text"
+          class="field-input"
+          placeholder="Buscar supervisor por nombre o DNI…"
+          [(ngModel)]="workersSearch"
+          (input)="onWorkersSearchChange()"
+        />
+        <div class="workers-search-box" *ngIf="workersSearch">
+          <div *ngIf="loadingWorkers" class="muted-line">Buscando…</div>
+          <div
+            *ngIf="!loadingWorkers && workersResultados.length === 0"
+            class="muted-line"
+          >
+            Sin resultados.
+          </div>
+          <div
+            *ngFor="let w of workersResultados"
+            class="worker-row"
+            (click)="selectWorker(w)"
+          >
+            <strong>{{ w.apellidoNombre }}</strong>
+            <span class="muted-line">DNI {{ w.dni }} · {{ w.empresaNombre ?? '—' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div>
+        <label class="field-label">Proyecto *</label>
+        <select class="field-input" [(ngModel)]="proyectoId">
+          <option [ngValue]="null">— Seleccionar —</option>
+          <option *ngFor="let p of proyectos" [ngValue]="p.projectId">
+            {{ p.projectDescription }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Mes *</label>
+        <select class="field-input" [(ngModel)]="mes">
+          <option *ngFor="let m of meses" [ngValue]="m.num">{{ m.label }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Año *</label>
+        <input type="number" class="field-input" [(ngModel)]="anio" min="2020" max="2100" />
+      </div>
+    </div>
+
+    <h4 class="subsection-title">Criterios (escala 0 a 10)</h4>
+
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Criterio</th>
+            <th class="th-nota">Nota</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of criterios">
+            <td>{{ c.nombre }}</td>
+            <td class="td-nota">
+              <input
+                type="number"
+                class="field-input nota-input"
+                min="0"
+                max="10"
+                step="0.5"
+                [ngModel]="notas[c.id]"
+                (ngModelChange)="setNota(c.id, $event)"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="total-bar">
+      Nota total (promedio): <strong>{{ notaTotal }}</strong> / 10
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Registrar evaluación' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

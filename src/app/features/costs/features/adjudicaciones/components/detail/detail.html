@@ -1,0 +1,1674 @@
+<app-base-modal [title]="'DETALLE DE ADJUDICACIÓN'" width="w-full sm:w-[860px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[20px] mt-[16px]">
+
+    <!-- ── STEPPER DESKTOP (sm+) ───────────────────────────────────── -->
+    <div class="hidden sm:flex items-start justify-between gap-1">
+      <ng-container *ngFor="let step of steps; let i = index">
+        <div *ngIf="i > 0" class="flex-1 mt-[18px] h-[2px] transition-colors"
+          [style.background]="i < actualStatus ? stepColor(i) : '#E5E7EB'">
+        </div>
+        <div class="flex flex-col items-center gap-[6px] min-w-[48px]">
+          <!-- Relleno = paso ya alcanzado · contorno = paso restante · anillo = paso que estás viendo -->
+          <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all hover:opacity-80"
+            [class.cursor-pointer]="i + 1 <= actualStatus"
+            [class.cursor-default]="i + 1 > actualStatus"
+            [style.borderColor]="stepColor(i + 1)"
+            [style.background]="i + 1 <= actualStatus ? stepColor(i + 1) : '#ffffff'"
+            [style.color]="i + 1 <= actualStatus ? '#ffffff' : stepColor(i + 1)"
+            [style.boxShadow]="i + 1 === viewStep ? '0 0 0 2px #ffffff, 0 0 0 4px ' + stepColor(i + 1) : 'none'"
+            (click)="goToStep(i + 1)">
+            <svg *ngIf="i + 1 < actualStatus" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span *ngIf="i + 1 >= actualStatus">{{ i + 1 }}</span>
+          </div>
+          <span class="text-[9px] text-center leading-tight max-w-[52px]"
+            [style.color]="i + 1 === viewStep ? stepColor(i + 1) : '#9CA3AF'"
+            [class.font-semibold]="i + 1 === viewStep">
+            {{ step }}
+          </span>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- ── STEPPER MOBILE ──────────────────────────────────────────── -->
+    <div class="sm:hidden flex flex-col gap-[10px]">
+      <!-- barra de progreso -->
+      <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div class="h-full rounded-full transition-all duration-300"
+          [style.width.%]="(viewStep / totalSteps) * 100" [style.background]="stepColor(viewStep)">
+        </div>
+      </div>
+      <!-- dots + paso actual -->
+      <div class="flex items-center justify-between">
+        <div class="flex gap-1.5">
+          <div *ngFor="let step of steps; let i = index"
+            class="w-2 h-2 rounded-full transition-colors"
+            [class.cursor-pointer]="i + 1 <= actualStatus"
+            [class.cursor-default]="i + 1 > actualStatus"
+            [style.background]="i + 1 <= actualStatus ? stepColor(i + 1) : '#E5E7EB'"
+            (click)="goToStep(i + 1)">
+          </div>
+        </div>
+        <span class="text-xs font-semibold" [style.color]="stepColor(viewStep)">
+          Paso {{ viewStep }}/{{ totalSteps }} · {{ steps[viewStep - 1] }}
+        </span>
+      </div>
+    </div>
+
+    <!-- ── LEYENDA DE OFICINA RESPONSABLE ──────────────────────────── -->
+    <div class="flex items-center justify-center gap-[16px] text-[10px] text-gray-500">
+      <span class="flex items-center gap-[5px]">
+        <span class="w-2.5 h-2.5 rounded-full" style="background:#F59E0B"></span>
+        Avanza Oficina Técnica
+      </span>
+      <span class="flex items-center gap-[5px]">
+        <span class="w-2.5 h-2.5 rounded-full" style="background:var(--color-abril-primary)"></span>
+        Avanza Oficina Central
+      </span>
+    </div>
+
+    <div class="border-t border-[#F0F0F0]"></div>
+
+    <!-- ── CONTENIDO POR PASO ───────────────────────────────────────── -->
+
+    <!-- PASO 1: Enviado -->
+    <div *ngIf="viewStep === 1">
+      <div class="flex items-center justify-between mb-[14px]">
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+          Información de la adjudicación
+        </p>
+        <button *ngIf="canEditInfo && !step1EditMode" type="button" (click)="enterStep1Edit()"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer transition-colors" style="border-color:var(--color-abril-primary); color:var(--color-abril-primary)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Editar
+        </button>
+      </div>
+
+      <!-- Aviso: solo Oficina Central puede llenar/avanzar el paso 1 -->
+      <div *ngIf="actualStatus === 1 && !hasOfCentral"
+        class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+        <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+          <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="text-xs text-amber-700 font-medium leading-relaxed">
+          Solo un usuario de <span class="font-semibold">Oficina Central</span> puede editar la información y enviar los correos del paso 1.
+        </p>
+      </div>
+
+      <!-- ── VISTA DE LECTURA ──────────────────────────────────────── -->
+      <div *ngIf="!step1EditMode">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[24px] gap-y-[14px]">
+
+        <div>
+          <p class="text-xs text-gray-400 mb-[2px]">Empresa / Subcontratista</p>
+          <p class="text-sm font-semibold text-gray-800">{{ item.contributorName }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-[2px]">Proyecto</p>
+          <p class="text-sm font-semibold text-gray-800">{{ item.projectDescription }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-[2px]">Especialidad</p>
+          <p class="text-sm text-gray-700" *ngIf="item.workSpecialtyDescription">{{ item.workSpecialtyDescription }}</p>
+          <p class="text-sm text-gray-400 italic" *ngIf="!item.workSpecialtyDescription">—</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-[2px]">Partida de control</p>
+          <p class="text-sm text-gray-700">{{ item.workItemCategoryDescription }}</p>
+          <span *ngIf="item.workItemCategoryInstructivosFolderName"
+            class="text-[11px] text-gray-500 italic break-words">
+            Instructivo: {{ item.workItemCategoryInstructivosFolderName }}
+          </span>
+          <span *ngIf="!item.workItemCategoryInstructivosFolderName"
+            class="text-[11px] text-gray-400">
+            Sin instructivo
+          </span>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-[2px]">Partida</p>
+          <p class="text-sm text-gray-700">{{ item.workItemDescription }}</p>
+          <ng-container *ngIf="item.workItemValorizationForms?.length; else sinFormas">
+            <span class="flex items-center gap-1 text-[11px] text-[#009C87]">
+              <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+              </svg>
+              Tiene formas de valorización
+            </span>
+            <ul class="mt-[2px] flex flex-col gap-[1px] pl-[16px] list-disc">
+              <li *ngFor="let form of item.workItemValorizationForms" class="text-[11px] text-gray-500">
+                {{ form.percentage }}% {{ form.concept }}
+              </li>
+            </ul>
+          </ng-container>
+          <ng-template #sinFormas>
+            <span class="text-[11px] text-gray-400">Sin formas de valorización</span>
+          </ng-template>
+        </div>
+
+
+        <div *ngIf="item.contractModalityDescription">
+          <p class="text-xs text-gray-400 mb-[2px]">Modalidad de contrato</p>
+          <p class="text-sm text-gray-700">{{ item.contractModalityDescription }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-[2px]">Tipo de contrato</p>
+          <p class="text-sm text-gray-700">{{ item.contractTypeDescription }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-[2px]">Monto</p>
+          <p class="text-sm font-semibold text-gray-800">
+            {{ item.currencyCode }} {{ item.amount | number:'1.2-2' }}
+            <span class="ml-1 text-xs font-normal px-[6px] py-[2px] rounded-full"
+              [ngClass]="item.amountHasIgv ? 'bg-[var(--color-abril-primary-light)] text-[var(--color-abril-primary)]' : 'bg-gray-100 text-gray-400'">
+              {{ item.amountHasIgv ? 'Con IGV' : 'Sin IGV' }}
+            </span>
+          </p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-[2px]">Modalidad de pago</p>
+          <p class="text-sm text-gray-700">{{ item.paymentMethodDescription }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-[2px]">Forma de valorización</p>
+          <p class="text-sm text-gray-700" *ngIf="item.paymentFormDescription">{{ item.paymentFormDescription }}</p>
+          <p class="text-sm text-gray-400 italic" *ngIf="!item.paymentFormDescription">—</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-[2px]">Porcentaje de adelanto</p>
+          <p class="text-sm text-gray-700"
+            *ngIf="(item.paymentMethodId === 2 || item.paymentMethodId === 4) && item.advancePercentage != null">
+            {{ item.advancePercentage }}%
+            <span class="ml-1 text-xs text-gray-400">
+              ({{ item.currencyCode }} {{ (item.advancePercentage / 100) * item.amount | number:'1.2-2' }})
+            </span>
+          </p>
+          <p class="text-sm text-gray-400 italic"
+            *ngIf="!((item.paymentMethodId === 2 || item.paymentMethodId === 4) && item.advancePercentage != null)">
+            No aplica
+          </p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-[2px]">Correos del contratista</p>
+          <div *ngIf="item.contractorEmails?.length; else noEmails" class="flex flex-col gap-[2px]">
+            <p *ngFor="let email of item.contractorEmails" class="text-sm text-gray-700 break-all">{{ email }}</p>
+          </div>
+          <ng-template #noEmails>
+            <p class="text-sm text-gray-400 italic">Sin correos registrados</p>
+          </ng-template>
+        </div>
+
+      </div>
+
+      <!-- Archivos adjuntos -->
+      <div *ngIf="item.quotationFiles?.length || item.comparativeFiles?.length"
+        class="mt-[20px] grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
+
+        <div *ngIf="item.quotationFiles?.length">
+          <p class="text-xs text-gray-400 mb-[8px]">Archivos de cotización</p>
+          <div class="flex flex-col gap-[6px]">
+            <a *ngFor="let file of item.quotationFiles" [href]="file.fileUrl" target="_blank"
+              class="flex items-center gap-2 text-xs hover:underline break-all" style="color:var(--color-abril-primary)">
+              <svg class="w-4 h-4 text-red-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+              </svg>
+              {{ file.originalFileName ? file.originalFileName : (file.fileUrl | slice:file.fileUrl.lastIndexOf('/')+1) }}
+            </a>
+          </div>
+        </div>
+
+        <div *ngIf="item.comparativeFiles?.length">
+          <p class="text-xs text-gray-400 mb-[8px]">Archivos comparativos</p>
+          <div class="flex flex-col gap-[6px]">
+            <a *ngFor="let file of item.comparativeFiles" [href]="file.fileUrl" target="_blank"
+              class="flex items-center gap-2 text-xs hover:underline break-all" style="color:var(--color-abril-primary)">
+              <svg class="w-4 h-4 text-red-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+              </svg>
+              {{ file.originalFileName ? file.originalFileName : (file.fileUrl | slice:file.fileUrl.lastIndexOf('/')+1) }}
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Falta la cotización: es el adjunto del correo de notificación, así que bloquea el paso 2 -->
+      <div *ngIf="actualStatus === 1 && !hasQuotationFile"
+        class="mt-[20px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+        <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+          <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="text-xs text-amber-700 font-medium leading-relaxed">
+          Esta adjudicación no tiene <span class="font-semibold">archivo de cotización</span>.
+          Adjúntelo con <span class="font-semibold">Editar</span> para poder notificar al subcontratista y avanzar al paso 2.
+        </p>
+      </div>
+
+      <!-- ── Datos de registro ─────────────────────────────────────────── -->
+      <div class="mt-[18px] pt-[14px] border-t border-dashed border-gray-200">
+        <p class="text-[10px] font-semibold text-gray-300 uppercase tracking-widest mb-[10px]">Datos de registro</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[24px] gap-y-[8px]">
+          <div>
+            <p class="text-xs text-gray-400 mb-[2px]">Creado por</p>
+            <p class="text-sm text-gray-700">{{ item.createdUserFullName ?? '—' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400 mb-[2px]">Fecha de creación</p>
+            <p class="text-sm text-gray-700">{{ item.createdDateTime | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+        </div>
+      </div>
+      </div>
+      <!-- /VISTA DE LECTURA -->
+
+      <!-- ── VISTA DE EDICIÓN (paso 1) ──────────────────────────────── -->
+      <div *ngIf="step1EditMode && formData" class="flex flex-col gap-[24px]">
+
+        <!-- ── SECCIÓN 1: Información general ─────────────────────────── -->
+        <div>
+          <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[12px]">
+            Información general
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
+
+            <div class="flex flex-col gap-[4px]">
+              <app-search-select [fullText]="true" label="Proyecto" [options]="formData.projects" valueField="projectId"
+                displayField="projectDescription" [(value)]="step1Form.projectId" />
+            </div>
+
+            <div class="flex flex-col gap-[4px]">
+              <app-search-select [fullText]="true" label="Empresa / Subcontratista" [options]="formData.contributors"
+                valueField="contractorId" displayField="contributorName"
+                [value]="step1Form.contractorId" (valueChange)="onStep1CompanyChange($event)" />
+            </div>
+
+            <div class="flex flex-col gap-[4px]">
+              <app-search-select [fullText]="true" label="Especialidad" [options]="formData.workSpecialties"
+                valueField="workSpecialtyId" displayField="workSpecialtyDescription"
+                [(value)]="step1Form.workSpecialtyId" />
+            </div>
+
+            <div class="flex flex-col gap-[4px]">
+              <app-search-select [fullText]="true" label="Partida de control" [options]="formData.workItemCategories"
+                valueField="workItemCategoryId" displayField="workItemCategoryDescription"
+                [(value)]="step1Form.workItemCategoryId" />
+              <span *ngIf="step1SelectedWorkItemCategoryInstructivoName"
+                class="text-[11px] text-gray-500 italic break-words">
+                Instructivo: {{ step1SelectedWorkItemCategoryInstructivoName }}
+              </span>
+            </div>
+
+            <div class="flex flex-col gap-[4px]">
+              <app-search-select [fullText]="true" label="Partida" [options]="formData.workItems"
+                valueField="workItemId" displayField="workItemDescription"
+                [value]="step1Form.workItemId" (valueChange)="onStep1WorkItemChange($event)" />
+              <ng-container *ngIf="step1IsWorkItemSelected">
+                <span *ngIf="step1SelectedWorkItemForms.length > 0" class="flex items-center gap-1 text-[11px] text-[#009C87]">
+                  <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                  </svg>
+                  Tiene formas de valorización
+                </span>
+                <span *ngIf="step1SelectedWorkItemForms.length === 0" class="flex items-center gap-1 text-[11px] text-gray-400">
+                  <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                  </svg>
+                  Sin formas de valorización
+                </span>
+                <ul *ngIf="step1SelectedWorkItemForms.length > 0" class="mt-[2px] flex flex-col gap-[1px] pl-[16px] list-disc">
+                  <li *ngFor="let form of step1SelectedWorkItemForms" class="text-[11px] text-gray-500">
+                    {{ form.percentage }}% {{ form.concept }}
+                  </li>
+                </ul>
+              </ng-container>
+            </div>
+
+          </div>
+
+          <!-- Correos del contratista -->
+          <div class="mt-[16px] flex flex-col gap-[8px]">
+            <p class="text-sm font-medium" style="color:var(--color-abril-primary)">Correos de contacto del contratista</p>
+            <div *ngIf="step1ContractorEmails.length > 0; else noStep1Emails" class="flex flex-wrap gap-[8px]">
+              <span *ngFor="let email of step1ContractorEmails"
+                class="inline-flex items-center gap-[6px] text-[#3a7a00] text-xs font-medium px-[10px] py-[5px] rounded-full" style="background:var(--color-abril-primary-light)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" fill="#3a7a00"/>
+                </svg>
+                {{ email }}
+              </span>
+            </div>
+            <ng-template #noStep1Emails>
+              <div class="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
+                <svg class="w-4 h-4 text-red-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <p class="text-xs text-red-600 font-medium leading-relaxed">
+                  Esta empresa no tiene correos registrados.
+                </p>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+
+        <div class="border-t border-[#F0F0F0]"></div>
+
+        <!-- ── SECCIÓN 2: Información del contrato ────────────────────── -->
+        <div>
+          <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[12px]">
+            Información del contrato
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-[16px]">
+
+            <div class="flex flex-col gap-[4px]">
+              <app-search-select [fullText]="true" label="Modalidad de contrato" [options]="formData.contractModalities"
+                valueField="contractModalityId" displayField="contractModalityDescription"
+                [value]="step1Form.contractModalityId" (valueChange)="onStep1ContractModalityChange($event)" />
+            </div>
+
+            <div class="flex flex-col gap-[4px]">
+              <app-search-select [fullText]="true" label="Tipo de contrato" [options]="formData.contractTypes"
+                valueField="contractTypeId" displayField="contractTypeDescription" [(value)]="step1Form.contractTypeId" />
+            </div>
+
+          </div>
+
+          <!-- Normalización del nombre de la partida para el contrato -->
+          <div class="mt-[16px] flex flex-col gap-[12px]">
+            <div class="flex flex-wrap items-center gap-[20px]">
+              <label class="inline-flex items-center gap-[8px] cursor-pointer select-none">
+                <input type="checkbox" [checked]="step1Form.isSubcontract" (change)="toggleStep1Subcontract()"
+                  class="w-[16px] h-[16px] accent-[var(--color-abril-primary)] cursor-pointer" />
+                <span class="text-sm text-gray-600">Subcontrato (SC)</span>
+              </label>
+              <label class="inline-flex items-center gap-[8px] cursor-pointer select-none">
+                <input type="checkbox" [checked]="step1Form.isLabor" (change)="toggleStep1Labor()"
+                  class="w-[16px] h-[16px] accent-[var(--color-abril-primary)] cursor-pointer" />
+                <span class="text-sm text-gray-600">Mano de obra (M.O.)</span>
+              </label>
+            </div>
+
+            <div class="flex flex-col gap-[4px]">
+              <div class="relative mt-[9px]">
+                <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Nombre de la partida en el contrato</label>
+                <!-- El botón cuelga del borde superior derecho, en espejo del label: al aparecer/desaparecer
+                     no empuja el campo ni el resto de la sección. -->
+                <button *ngIf="step1NameManuallyEdited" type="button" (click)="regenerateStep1ContractName()"
+                  class="absolute -top-[8px] right-[9px] z-[1] px-[4px] bg-white leading-none text-[11px] text-[var(--color-abril-primary)] underline cursor-pointer">
+                  Regenerar automáticamente
+                </button>
+                <input
+                  type="text"
+                  [ngModel]="step1Form.contractWorkItemName"
+                  (ngModelChange)="onStep1ContractNameInput($event)"
+                  placeholder="Se genera automáticamente al elegir la partida"
+                  class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 uppercase focus:outline-none"
+                />
+              </div>
+              <p class="text-[11px] text-gray-400">Es lo que aparecerá como {{ '{{PARTIDA}}' }} en los contratos.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-[#F0F0F0]"></div>
+
+        <!-- ── SECCIÓN 3: Información financiera ──────────────────────── -->
+        <div>
+          <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[12px]">
+            Información financiera
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-[16px]">
+
+            <div class="flex flex-col gap-[4px]">
+              <div class="relative mt-[9px]">
+                <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Monto</label>
+                <input type="number" min="0" step="0.01" [(ngModel)]="step1Form.amount"
+                  (ngModelChange)="onStep1AmountChange()" placeholder="0.00"
+                  class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none" />
+              </div>
+              <!-- El monto siempre incluye IGV — va debajo del input, igual que en el modal de crear -->
+              <div class="flex items-center gap-[6px] text-xs text-gray-500">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                El monto ingresado <span class="font-semibold text-gray-600">incluye IGV</span>.
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-[4px]">
+              <!-- uppercase: son códigos ISO (PEN, USD), el formato de nombre propio los dejaba "Pen"/"Usd". -->
+              <app-search-select [fullText]="true" [uppercase]="true" label="Moneda" [options]="formData.currencies" valueField="currencyId"
+                displayField="currencyCode" [(value)]="step1Form.currencyId" />
+            </div>
+
+            <div class="flex flex-col gap-[4px]">
+              <app-search-select [fullText]="true" label="Modalidad de pago" [options]="formData.paymentMethods"
+                valueField="paymentMethodId" displayField="paymentMethodDescription" [(value)]="step1Form.paymentMethodId" />
+            </div>
+
+            <div class="flex flex-col gap-[4px]">
+              <app-search-select [fullText]="true" label="Forma de valorización" [options]="formData.paymentForms"
+                valueField="paymentFormId" displayField="paymentFormDescription" [(value)]="step1Form.paymentFormId" />
+            </div>
+
+            <!-- ¿Incluye carta de fianza? — solo Suministro (modalidad 2) + contrato con adelanto (pago 2) -->
+            <div *ngIf="step1Form.contractModalityId === 2 && step1Form.paymentMethodId === 2" class="flex flex-col gap-[4px]">
+              <app-search-select [fullText]="true" label="¿Incluye carta de fianza?" [options]="cartaFianzaOptions"
+                valueField="value" displayField="label" [allowClear]="false" [(value)]="step1Form.includesCartaFianza" />
+            </div>
+
+            <!-- Adelanto (contrato con adelanto, obligatorio) / Pagaré (pago a cuenta, opcional) -->
+            <div *ngIf="step1Form.paymentMethodId === 2 || step1Form.paymentMethodId === 4" class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
+              <div class="flex flex-col gap-[4px]">
+                <div class="relative mt-[9px]">
+                  <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Porcentaje de adelanto</label>
+                  <input type="text" inputmode="decimal" [value]="step1Form.advancePercentage" placeholder="0"
+                    (input)="onStep1PercentageInput($event)"
+                    class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] pl-[10px] pr-[28px] text-[12px] text-gray-700 focus:outline-none" />
+                  <span class="absolute right-[11px] top-1/2 -translate-y-1/2 text-[12px] text-gray-400 pointer-events-none">%</span>
+                </div>
+              </div>
+              <div class="flex flex-col gap-[4px]">
+                <div class="relative mt-[9px]">
+                  <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Monto de adelanto</label>
+                  <input type="text" inputmode="decimal" [value]="step1AdvanceAmount ?? ''" placeholder="0.00"
+                    (input)="onStep1AdvanceAmountInput($event)"
+                    class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] pl-[10px] pr-[42px] text-[12px] text-gray-700 focus:outline-none" />
+                  <span class="absolute right-[11px] top-1/2 -translate-y-1/2 text-[11px] text-gray-400 pointer-events-none">
+                    {{ step1SelectedCurrencyCode }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="border-t border-[#F0F0F0]"></div>
+
+        <!-- ── SECCIÓN 4: Archivos adjuntos ───────────────────────────── -->
+        <div>
+          <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[12px]">
+            Archivos adjuntos
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
+
+            <!-- Archivos de cotización -->
+            <div class="flex flex-col gap-[8px]">
+              <label class="text-sm font-medium" style="color:var(--color-abril-primary)">
+                Archivos de cotización
+                <span class="text-gray-400 font-normal">(máx. {{ maxQuotationFiles }})</span>
+              </label>
+
+              <!-- Ya guardados: se abren en OneDrive o se quitan -->
+              <div *ngIf="step1ExistingQuotationFiles.length" class="flex flex-col gap-[6px]">
+                <div *ngFor="let file of step1ExistingQuotationFiles; let i = index"
+                  class="flex items-center gap-2 border border-[#E2E2E2] rounded-lg px-[10px] py-[7px]">
+                  <svg class="w-4 h-4 text-red-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+                  </svg>
+                  <a [href]="file.fileUrl" target="_blank"
+                    class="flex-1 text-xs hover:underline break-all" style="color:var(--color-abril-primary)">
+                    {{ file.originalFileName ? file.originalFileName : (file.fileUrl | slice:file.fileUrl.lastIndexOf('/')+1) }}
+                  </a>
+                  <button type="button" (click)="removeStep1ExistingQuotationFile(i)"
+                    title="Quitar archivo"
+                    class="text-gray-400 hover:text-red-500 cursor-pointer transition-colors shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <app-file-selector
+                *ngIf="step1QuotationCount < maxQuotationFiles"
+                accept="*"
+                hint="Cualquier archivo"
+                color="var(--color-abril-primary)"
+                (fileSelected)="onStep1QuotationSelected($event)">
+              </app-file-selector>
+              <app-file-preview [files]="step1NewQuotationItems" (remove)="removeStep1NewQuotationFile($event)"></app-file-preview>
+
+              <p *ngIf="step1QuotationCount === 0" class="text-[11px] text-amber-600">
+                Sin cotización no se puede notificar al subcontratista ni avanzar al paso 2.
+              </p>
+            </div>
+
+            <!-- Archivos comparativos -->
+            <div class="flex flex-col gap-[8px]">
+              <label class="text-sm font-medium" style="color:var(--color-abril-primary)">
+                Archivos comparativos
+                <span class="text-gray-400 font-normal">(máx. {{ maxComparativeFiles }})</span>
+              </label>
+
+              <div *ngIf="step1ExistingComparativeFiles.length" class="flex flex-col gap-[6px]">
+                <div *ngFor="let file of step1ExistingComparativeFiles; let i = index"
+                  class="flex items-center gap-2 border border-[#E2E2E2] rounded-lg px-[10px] py-[7px]">
+                  <svg class="w-4 h-4 text-red-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+                  </svg>
+                  <a [href]="file.fileUrl" target="_blank"
+                    class="flex-1 text-xs hover:underline break-all" style="color:var(--color-abril-primary)">
+                    {{ file.originalFileName ? file.originalFileName : (file.fileUrl | slice:file.fileUrl.lastIndexOf('/')+1) }}
+                  </a>
+                  <button type="button" (click)="removeStep1ExistingComparativeFile(i)"
+                    title="Quitar archivo"
+                    class="text-gray-400 hover:text-red-500 cursor-pointer transition-colors shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <app-file-selector
+                *ngIf="step1ComparativeCount < maxComparativeFiles"
+                accept="*"
+                hint="Cualquier archivo"
+                color="var(--color-abril-primary)"
+                (fileSelected)="onStep1ComparativeSelected($event)">
+              </app-file-selector>
+              <app-file-preview [files]="step1NewComparativeItems" (remove)="removeStep1NewComparativeFile($event)"></app-file-preview>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── BOTONES ───────────────────────────────────────────────── -->
+        <div class="flex justify-end gap-2 pt-[4px]">
+          <button type="button" (click)="cancelStep1Edit()"
+            class="px-4 py-2 rounded-lg text-sm font-medium border text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors" style="border-color:var(--color-abril-border)">
+            Cancelar
+          </button>
+          <button type="button" (click)="saveStep1()"
+            class="px-5 py-2 rounded-lg text-sm font-medium text-white cursor-pointer transition-colors" style="background:var(--color-abril-primary)">
+            Guardar cambios
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 2: Datos del contrato -->
+    <div *ngIf="viewStep === 2">
+
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[14px]">
+        Datos del contrato
+      </p>
+
+      <!-- Modo edición: en estado 2 (progresión) o al editar en pasos 3/4 -->
+      <ng-container *ngIf="actualStatus === 2 || step2EditMode">
+
+        <!-- Aviso: solo Oficina Técnica puede llenar los datos del contrato -->
+        <div *ngIf="actualStatus === 2 && !canEditStep2"
+          class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+          <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+            <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="text-xs text-amber-700 font-medium leading-relaxed">
+            Solo un usuario de <span class="font-semibold">Oficina Técnica</span> puede llenar los datos del contrato y avanzar al paso 3.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[24px] gap-y-[16px]">
+
+          <div class="flex flex-col sm:col-span-2 sm:w-1/2">
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Fecha de firma</label>
+            <app-date-picker
+              [showLabel]="false"
+              [value]="step2Form.signingDate"
+              (valueChange)="step2Form.signingDate = $event ?? ''"
+              [disabled]="!canEditStep2"
+              color="var(--color-abril-primary)" />
+          </div>
+
+          <div class="flex flex-col">
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Fecha de inicio</label>
+            <app-date-picker
+              [showLabel]="false"
+              [value]="step2Form.startDate"
+              (valueChange)="step2Form.startDate = $event ?? ''"
+              [disabled]="!canEditStep2"
+              color="var(--color-abril-primary)" />
+
+            <!-- Plazo calculado automáticamente -->
+            <div *ngIf="plazoEnDias !== null" class="mt-[6px]">
+              <p class="text-xs text-gray-400 mb-[2px]">Plazo en días <span class="text-gray-300">(calculado)</span></p>
+              <p class="text-sm font-semibold"
+                [ngClass]="plazoEnDias >= 0 ? 'text-[var(--color-abril-primary)]' : 'text-red-500'">
+                {{ plazoEnDias }} {{ plazoEnDias === 1 ? 'día' : 'días' }}
+                <span *ngIf="plazoEnDias < 0" class="text-xs font-normal text-red-400 ml-1">
+                  (la fecha de fin es anterior a la de inicio)
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-col">
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Fecha de fin</label>
+            <app-date-picker
+              [showLabel]="false"
+              [value]="step2Form.endDate"
+              (valueChange)="step2Form.endDate = $event ?? ''"
+              [disabled]="!canEditStep2"
+              color="var(--color-abril-primary)" />
+          </div>
+
+          <div class="flex flex-col sm:col-span-2 sm:w-1/2">
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Número de contrato <span class="text-red-400">*</span></label>
+            <input type="number" [(ngModel)]="step2Form.contractNumber" [disabled]="!canEditStep2"
+              min="0" max="2147483647" step="1"
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
+          </div>
+
+          <div *ngIf="requiresPromissoryNote" class="flex flex-col sm:col-span-2 sm:w-1/2">
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Número de pagaré <span class="text-red-400">*</span></label>
+            <input type="number" [(ngModel)]="step2Form.promissoryNoteNumber" [disabled]="!canEditStep2"
+              min="0" max="2147483647" step="1"
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
+          </div>
+
+          <div class="flex flex-col sm:col-span-2 sm:w-1/2">
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">% fondo de garantía</label>
+            <input type="number" [(ngModel)]="step2Form.guaranteeFundPercentage" [disabled]="!canEditStep2"
+              min="0" max="100" step="1"
+              placeholder="Ej: 5"
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
+          </div>
+
+          <div class="flex flex-col sm:col-span-2 sm:w-1/2">
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Días del fondo de garantía</label>
+            <input type="number" [(ngModel)]="step2Form.guaranteeFundDays" [disabled]="!canEditStep2"
+              min="0" step="1"
+              placeholder="Ej: 365"
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
+          </div>
+
+          <div class="flex flex-col sm:col-span-2 sm:w-1/2">
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Periodo de validez de garantía (días)</label>
+            <input type="number" [(ngModel)]="step2Form.guaranteeValidityDays" [disabled]="!canEditStep2"
+              min="0" step="1"
+              placeholder="Ej: 365"
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
+          </div>
+
+          <!-- Forma de pago en días hábiles — usado en el "pago a x días hábiles" de la hoja resumen -->
+          <div class="flex flex-col sm:col-span-2 sm:w-1/2">
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Forma de pago</label>
+            <div class="flex items-center gap-[8px]">
+              <input type="number" [(ngModel)]="step2Form.paymentDays" [disabled]="!canEditStep2"
+                min="0" step="1"
+                placeholder="Ej: 7"
+                class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none w-full" />
+              <span class="text-sm text-gray-500 shrink-0">días</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Botones de edición (solo al editar en pasos 3/4; en estado 2 el avance lo hace el footer) -->
+        <div *ngIf="step2EditMode" class="flex justify-end gap-2 mt-[16px]">
+          <button type="button" (click)="cancelStep2Edit()"
+            class="px-4 py-2 rounded-lg text-sm font-medium border text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors" style="border-color:var(--color-abril-border)">
+            Cancelar
+          </button>
+          <button type="button" (click)="saveStep2Edit()"
+            class="px-5 py-2 rounded-lg text-sm font-medium text-white cursor-pointer transition-colors" style="background:var(--color-abril-primary)">
+            Guardar cambios
+          </button>
+        </div>
+      </ng-container>
+
+      <!-- Modo lectura: cuando el estado real ya pasó el paso 2 y no se está editando -->
+      <ng-container *ngIf="actualStatus > 2 && !step2EditMode">
+        <!-- Botón editar (solo en pasos 3 y 4) -->
+        <div *ngIf="canEditStep2" class="flex justify-end mb-[12px]">
+          <button type="button" (click)="enterStep2Edit()"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer transition-colors" style="border-color:var(--color-abril-primary); color:var(--color-abril-primary)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Editar
+          </button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[24px] gap-y-[14px]">
+
+          <div class="sm:col-span-2">
+            <p class="text-xs text-gray-400 mb-[2px]">Fecha de firma</p>
+            <p class="text-sm font-semibold text-gray-800">
+              {{ item.signingDate ? (item.signingDate | date:'dd/MM/yyyy') : '-' }}
+            </p>
+          </div>
+
+          <div>
+            <p class="text-xs text-gray-400 mb-[2px]">Fecha de inicio</p>
+            <p class="text-sm font-semibold text-gray-800">
+              {{ item.startDate ? (item.startDate | date:'dd/MM/yyyy') : '-' }}
+            </p>
+          </div>
+
+          <div>
+            <p class="text-xs text-gray-400 mb-[2px]">Fecha de fin</p>
+            <p class="text-sm font-semibold text-gray-800">
+              {{ item.endDate ? (item.endDate | date:'dd/MM/yyyy') : '-' }}
+            </p>
+          </div>
+
+          <div *ngIf="storedPlazoEnDias !== null">
+            <p class="text-xs text-gray-400 mb-[2px]">Plazo en días</p>
+            <p class="text-sm font-semibold" style="color:var(--color-abril-primary)">
+              {{ storedPlazoEnDias }} {{ storedPlazoEnDias === 1 ? 'día' : 'días' }}
+            </p>
+          </div>
+
+          <div *ngIf="item.contractNumber != null">
+            <p class="text-xs text-gray-400 mb-[2px]">Número de contrato</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.contractNumber }}</p>
+          </div>
+
+          <div *ngIf="requiresPromissoryNote && item.promissoryNoteNumber != null">
+            <p class="text-xs text-gray-400 mb-[2px]">Número de pagaré</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.promissoryNoteNumber }}</p>
+          </div>
+
+          <div *ngIf="item.guaranteeFundPercentage != null">
+            <p class="text-xs text-gray-400 mb-[2px]">% fondo de garantía</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.guaranteeFundPercentage }}%</p>
+          </div>
+
+          <div *ngIf="item.guaranteeFundDays != null">
+            <p class="text-xs text-gray-400 mb-[2px]">Días del fondo de garantía</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.guaranteeFundDays }} días</p>
+          </div>
+
+          <div *ngIf="item.guaranteeValidityDays != null">
+            <p class="text-xs text-gray-400 mb-[2px]">Periodo de validez de garantía</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.guaranteeValidityDays }} días</p>
+          </div>
+
+          <div *ngIf="item.paymentDays != null">
+            <p class="text-xs text-gray-400 mb-[2px]">Forma de pago</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.paymentDays }} días</p>
+          </div>
+
+        </div>
+      </ng-container>
+
+    </div>
+
+    <!-- PASO 3: En revisión — documentos del contrato -->
+    <div *ngIf="viewStep === 3">
+
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[14px]">
+        Documentos del contrato
+      </p>
+
+      <!-- Input de archivo oculto, compartido para todos los documentos -->
+      <input #fileInput type="file" class="hidden" (change)="onFileSelected($event)" />
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
+        <div *ngFor="let doc of documents; trackBy: trackByDocKey"
+          class="relative border rounded-lg p-[14px] flex flex-col gap-[10px] transition-colors"
+          [style.borderColor]="dragDoc === doc.key ? 'var(--color-abril-primary)' : '#E2E2E2'"
+          [style.borderStyle]="dragDoc === doc.key ? 'dashed' : 'solid'"
+          [style.background]="dragDoc === doc.key ? 'var(--color-abril-primary-light)' : 'transparent'"
+          (dragenter)="onDocDragEnter(doc.key, $event)"
+          (dragover)="onDocDragOver(doc.key, $event)"
+          (dragleave)="onDocDragLeave(doc.key, $event)"
+          (drop)="onDocDrop(doc.key, $event)">
+
+          <!-- Overlay: se muestra mientras se arrastra un archivo sobre la tarjeta -->
+          <div *ngIf="dragDoc === doc.key"
+            class="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none"
+            style="background:var(--color-abril-primary-light); opacity:0.92">
+            <span class="flex items-center gap-2 text-sm font-semibold" style="color:var(--color-abril-primary)">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Suelta aquí para {{ hasDocFile(doc.key) ? 'reemplazar' : 'subir' }}
+            </span>
+          </div>
+
+          <!-- Variables locales: registro del documento, si tiene archivo real, y si es generable -->
+          <ng-container *ngIf="{ file: getDocFile(doc.key), hasFile: hasDocFile(doc.key), generable: canGenerate(doc.key) } as ctx">
+
+            <!-- Encabezado: ícono + etiqueta -->
+            <div class="flex items-center gap-[8px]">
+              <div class="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+              </div>
+              <span class="text-sm font-semibold text-gray-700">{{ doc.label }}</span>
+            </div>
+
+            <!-- Estado del archivo -->
+            <div class="text-xs min-h-[18px]">
+              <!-- Documentos de plantilla: usan un PDF estándar, no se sube archivo -->
+              <span *ngIf="isTemplateDoc(doc.key); else fileStatus"
+                class="italic text-gray-400 flex items-center gap-1">
+                <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Se usa documento estándar de Abril
+              </span>
+              <ng-template #fileStatus>
+                <a *ngIf="ctx.hasFile; else noFile"
+                  [href]="ctx.file!.fileUrl" target="_blank"
+                  class="hover:underline flex items-center gap-1 break-all" style="color:var(--color-abril-primary)">
+                  <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                  </svg>
+                  {{ ctx.file!.originalFileName ?? 'Ver archivo' }}
+                </a>
+                <ng-template #noFile>
+                  <span class="italic text-gray-300">Sin archivo</span>
+                </ng-template>
+              </ng-template>
+            </div>
+
+            <!-- Desplegable de estado (siempre visible) -->
+            <div class="flex items-center gap-[6px]">
+              <div class="flex-1" [class.opacity-60]="updatingStatusDoc === doc.key"
+                [class.pointer-events-none]="updatingStatusDoc === doc.key">
+                <app-search-select
+                  [options]="$any(getStatusOptionsForDoc(doc.key))"
+                  valueField="id"
+                  displayField="label"
+                  [showLabel]="false"
+                  placeholder="— Estado —"
+                  [allowClear]="true"
+                  [value]="docForms[doc.key].statusId"
+                  (valueChange)="docForms[doc.key].statusId = $event; onStatusChange(doc.key)">
+                </app-search-select>
+              </div>
+              <!-- spinner mientras guarda el estado -->
+              <svg *ngIf="updatingStatusDoc === doc.key"
+                class="w-3.5 h-3.5 shrink-0 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            </div>
+
+            <!-- Observación (cuando estado = Con observaciones, tenga o no archivo) -->
+            <!-- OF Técnica: lectura; OF Central: edición -->
+            <ng-container *ngIf="docForms[doc.key].statusId === 3">
+
+              <textarea
+                [(ngModel)]="docForms[doc.key].observation"
+                (blur)="onObservationBlur(doc.key)"
+                [disabled]="updatingStatusDoc === doc.key"
+                [readonly]="isOfTecnica"
+                placeholder="Observación..."
+                rows="2"
+                class="w-full text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 placeholder-gray-300 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed"
+                [class.bg-gray-50]="isOfTecnica"
+                [class.cursor-default]="isOfTecnica">
+              </textarea>
+
+            </ng-container>
+
+            <!-- Botones (ocultos para documentos de plantilla: no se sube ni genera) -->
+            <div class="flex gap-[8px] mt-auto" *ngIf="!isTemplateDoc(doc.key)">
+
+              <!-- Subir -->
+              <button (click)="triggerUpload(doc.key)"
+                [disabled]="uploadingDoc !== null"
+                class="flex-1 flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg transition-colors border cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed" style="border-color:var(--color-abril-primary); color:var(--color-abril-primary)"
+                [class.cursor-wait]="uploadingDoc === doc.key">
+
+                <!-- spinner mientras sube este doc -->
+                <svg *ngIf="uploadingDoc === doc.key"
+                  class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10"
+                    stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <!-- ícono upload en reposo -->
+                <svg *ngIf="uploadingDoc !== doc.key"
+                  class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+
+                <span>{{ uploadingDoc === doc.key ? 'Subiendo…' : (ctx.hasFile ? 'Reemplazar' : 'Subir') }}</span>
+              </button>
+
+              <!-- Generar -->
+              <button
+                (click)="ctx.generable && generateDoc(doc.key)"
+                [disabled]="!ctx.generable || generatingDoc !== null || uploadingDoc !== null"
+                class="flex-1 flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border transition-colors"
+                [ngClass]="{
+                  'border-blue-400 text-blue-500 hover:bg-blue-50 cursor-pointer':
+                    ctx.generable && generatingDoc === null && uploadingDoc === null,
+                  'border-gray-200 text-gray-300 cursor-not-allowed':
+                    !ctx.generable || (generatingDoc !== null && generatingDoc !== doc.key),
+                  'border-blue-300 text-blue-300 opacity-60 cursor-wait': generatingDoc === doc.key
+                }"
+                [title]="ctx.generable ? 'Generar documento' : 'Próximamente'">
+
+                <!-- spinner mientras genera este doc -->
+                <svg *ngIf="generatingDoc === doc.key"
+                  class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10"
+                    stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <!-- ícono generar en reposo -->
+                <svg *ngIf="generatingDoc !== doc.key"
+                  class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.347a3.858 3.858 0 01-1.196.82l-.25.102a3.89 3.89 0 00-2.3 3.58V16"/>
+                </svg>
+
+                <span>{{ generatingDoc === doc.key ? 'Generando…' : 'Generar' }}</span>
+              </button>
+
+            </div>
+
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- Botones globales de correo -->
+      <div class="flex flex-wrap justify-end gap-3 mt-[16px]">
+
+        <!-- Enviar correo de revisión a Costos (solo OF Técnica) -->
+        <button *ngIf="hasOfTecnica"
+          (click)="sendContractReviewEmailGlobal()"
+          [disabled]="sendingContractReview"
+          class="flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-lg border transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          style="border-color:var(--color-abril-primary); color:var(--color-abril-primary)">
+          <svg *ngIf="sendingContractReview"
+            class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <svg *ngIf="!sendingContractReview"
+            class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          {{ sendingContractReview ? 'Enviando…' : 'Enviar correo de revisión' }}
+        </button>
+
+        <!-- Levantamiento de observación (solo OF Técnica) -->
+        <button *ngIf="canSendLevantamiento"
+          (click)="sendAllLevantamientoEmailGlobal()"
+          [disabled]="sendingAllLevantamientoEmail || !hasAnyLevantamiento"
+          class="flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-lg border border-blue-400 text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+          <svg *ngIf="sendingAllLevantamientoEmail"
+            class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <svg *ngIf="!sendingAllLevantamientoEmail"
+            class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          {{ sendingAllLevantamientoEmail ? 'Enviando…' : 'Enviar correo de levantamiento' }}
+        </button>
+
+        <!-- Observaciones (oculto solo para OF Técnica pura; visible si tiene Central también) -->
+        <button *ngIf="!isOfTecnica"
+          (click)="sendAllObservationsEmailGlobal()"
+          [disabled]="sendingAllObservationsEmail || !hasAnyObservation"
+          class="flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-lg border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+          <!-- spinner mientras envía -->
+          <svg *ngIf="sendingAllObservationsEmail"
+            class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <!-- ícono correo en reposo -->
+          <svg *ngIf="!sendingAllObservationsEmail"
+            class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          {{ sendingAllObservationsEmail ? 'Enviando…' : 'Enviar correo de observaciones' }}
+        </button>
+
+      </div><!-- /botones globales -->
+
+    </div>
+
+    <!-- PASO 4: Por enviar al SC -->
+    <div *ngIf="viewStep === 4">
+
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[14px]">
+        Envío al subcontratista
+      </p>
+
+      <!-- Aviso: solo Oficina Técnica puede enviar al SC -->
+      <div *ngIf="actualStatus === 4 && !canSendToSc"
+        class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+        <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+          <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="text-xs text-amber-700 font-medium leading-relaxed">
+          Solo un usuario de <span class="font-semibold">Oficina Técnica</span> puede enviar al SC y avanzar al paso 5.
+        </p>
+      </div>
+
+      <input #fileInputStep4 type="file" class="hidden" (change)="onStep4FileSelected($event)" />
+
+      <div class="relative border rounded-lg p-[14px] flex flex-col gap-[10px] max-w-sm transition-colors"
+        [style.borderColor]="step4Dragging ? 'var(--color-abril-primary)' : '#E2E2E2'"
+        [style.borderStyle]="step4Dragging ? 'dashed' : 'solid'"
+        [style.background]="step4Dragging ? 'var(--color-abril-primary-light)' : 'transparent'"
+        (dragenter)="onStep4DragEnter($event)"
+        (dragover)="onStep4DragOver($event)"
+        (dragleave)="onStep4DragLeave($event)"
+        (drop)="onStep4Drop($event)">
+
+        <!-- Overlay: se muestra mientras se arrastra un archivo sobre la tarjeta -->
+        <div *ngIf="step4Dragging"
+          class="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none"
+          style="background:var(--color-abril-primary-light); opacity:0.92">
+          <span class="flex items-center gap-2 text-sm font-semibold" style="color:var(--color-abril-primary)">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            Suelta aquí para {{ step4File || item.package ? 'reemplazar' : 'seleccionar' }}
+          </span>
+        </div>
+
+        <!-- Encabezado -->
+        <div class="flex items-center gap-[8px]">
+          <div class="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-gray-700">Contrato completo</span>
+        </div>
+
+        <!-- Archivo seleccionado / guardado -->
+        <div class="text-xs min-h-[18px]">
+          <!-- 1. Paquete generado o guardado → link verde clickeable (tiene prioridad sobre el span) -->
+          <a *ngIf="item.package; else noPackageLink"
+            [href]="item.package.fileUrl" target="_blank"
+            class="hover:underline flex items-center gap-1 break-all" style="color:var(--color-abril-primary)">
+            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+            {{ item.package.originalFileName ?? 'Ver archivo' }}
+          </a>
+
+          <ng-template #noPackageLink>
+            <!-- 2. Archivo seleccionado manualmente en esta sesión (sin paquete persistido) -->
+            <span *ngIf="step4File; else noFile4"
+              class="flex items-center gap-1 break-all" style="color:var(--color-abril-primary)">
+              <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+              {{ step4File.name }}
+            </span>
+            <!-- 3. Sin nada -->
+            <ng-template #noFile4>
+              <span class="italic text-gray-300">Sin archivo seleccionado</span>
+            </ng-template>
+          </ng-template>
+        </div>
+
+        <!-- Botones de archivo -->
+        <div class="flex gap-[8px] flex-wrap">
+
+          <!-- Generar paquete PDF -->
+          <button (click)="generatePackage()"
+            [disabled]="actualStatus !== 4 || generatingPackage || !canSendToSc"
+            class="flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-blue-500 text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            <svg *ngIf="!generatingPackage" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <svg *ngIf="generatingPackage" class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 0 12 12H4z"></path>
+            </svg>
+            {{ generatingPackage ? 'Generando...' : 'Generar archivo' }}
+          </button>
+
+          <!-- Seleccionar archivo manualmente -->
+          <button (click)="fileInputStep4.click()"
+            [disabled]="actualStatus !== 4 || !canSendToSc"
+            class="flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed" style="border-color:var(--color-abril-primary); color:var(--color-abril-primary)">
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            {{ step4File ? 'Cambiar archivo' : 'Seleccionar archivo' }}
+          </button>
+
+        </div>
+
+        <!-- Nota informativa -->
+        <p class="text-xs text-gray-400 leading-relaxed">
+          Al hacer clic en <strong>"Enviar al SC"</strong> se adjuntará este archivo al correo que se enviará a todos los correos del contratista.
+        </p>
+
+      </div>
+    </div>
+
+    <!-- PASO 5: Llegada a Of. Central -->
+    <div *ngIf="viewStep === 5">
+
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[14px]">
+        Llegada a oficina central
+      </p>
+
+      <div class="flex flex-col gap-[16px] max-w-sm">
+
+        <p class="text-sm text-gray-600 leading-relaxed">
+          Indica el estado en que llegaron los documentos físicos del contratista.
+        </p>
+
+        <!-- Aviso: solo Oficina Central puede confirmar la recepción -->
+        <div *ngIf="actualStatus === 5 && !canConfirmArrival"
+          class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+          <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+            <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="text-xs text-amber-700 font-medium leading-relaxed">
+            Solo un usuario de <span class="font-semibold">Oficina Central</span> puede marcar la llegada y confirmar la recepción.
+          </p>
+        </div>
+
+        <!-- Opción: Llegó completo -->
+        <label class="flex items-center gap-[10px] select-none group"
+          [class.cursor-pointer]="actualStatus === 5 && canConfirmArrival"
+          [class.opacity-50]="actualStatus !== 5 || !canConfirmArrival">
+          <div class="relative shrink-0">
+            <input type="radio" class="sr-only"
+              [disabled]="actualStatus !== 5 || !canConfirmArrival"
+              [checked]="step5ArrivalOption === 'complete'"
+              (change)="onArrivalOptionChange('complete')" />
+            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
+              [ngClass]="step5ArrivalOption === 'complete'
+                ? 'border-[var(--color-abril-primary)]'
+                : 'border-gray-300 group-hover:border-[var(--color-abril-primary)]'">
+              <div *ngIf="step5ArrivalOption === 'complete'"
+                class="w-2.5 h-2.5 rounded-full bg-[var(--color-abril-primary)]"></div>
+            </div>
+          </div>
+          <span class="text-sm font-medium"
+            [ngClass]="step5ArrivalOption === 'complete' ? 'text-[var(--color-abril-primary)]' : 'text-gray-600'">
+            Llegó completo
+          </span>
+        </label>
+
+        <!-- Opción: Llegó con observaciones -->
+        <label class="flex items-center gap-[10px] select-none group"
+          [class.cursor-pointer]="actualStatus === 5 && canConfirmArrival"
+          [class.opacity-50]="actualStatus !== 5 || !canConfirmArrival">
+          <div class="relative shrink-0">
+            <input type="radio" class="sr-only"
+              [disabled]="actualStatus !== 5 || !canConfirmArrival"
+              [checked]="step5ArrivalOption === 'with_observations'"
+              (change)="onArrivalOptionChange('with_observations')" />
+            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
+              [ngClass]="step5ArrivalOption === 'with_observations'
+                ? 'border-orange-400'
+                : 'border-gray-300 group-hover:border-orange-400'">
+              <div *ngIf="step5ArrivalOption === 'with_observations'"
+                class="w-2.5 h-2.5 rounded-full bg-orange-400"></div>
+            </div>
+          </div>
+          <span class="text-sm font-medium"
+            [ngClass]="step5ArrivalOption === 'with_observations' ? 'text-orange-500' : 'text-gray-600'">
+            Llegó con observaciones
+          </span>
+        </label>
+
+        <!-- Checkbox de subsanación (solo si eligió "con observaciones") -->
+        <div *ngIf="step5ArrivalOption === 'with_observations'"
+          class="ml-[30px] p-[12px] bg-orange-50 border border-orange-200 rounded-lg flex flex-col gap-[10px]">
+          <p class="text-xs text-orange-600 leading-relaxed">
+            No podrá continuar hasta confirmar que las observaciones han sido subsanadas.
+          </p>
+          <label class="flex items-start gap-[10px] select-none group"
+            [class.cursor-pointer]="actualStatus === 5 && canConfirmArrival"
+            [class.opacity-50]="actualStatus !== 5 || !canConfirmArrival">
+            <div class="relative mt-[2px] shrink-0">
+              <input type="checkbox" class="sr-only"
+                [(ngModel)]="step5ObservationsResolved"
+                [disabled]="actualStatus !== 5 || !canConfirmArrival" />
+              <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+                [ngClass]="step5ObservationsResolved
+                  ? 'bg-[var(--color-abril-primary)] border-[var(--color-abril-primary)]'
+                  : 'bg-white border-orange-300 group-hover:border-[var(--color-abril-primary)]'">
+                <svg *ngIf="step5ObservationsResolved" class="w-3 h-3 text-white" fill="none"
+                  stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+            </div>
+            <span class="text-sm font-medium"
+              [ngClass]="step5ObservationsResolved ? 'text-[var(--color-abril-primary)]' : 'text-orange-600'">
+              Confirmo que las observaciones han sido subsanadas
+            </span>
+          </label>
+        </div>
+
+        <!-- Observación de la llegada (se guarda al confirmar la recepción) -->
+        <div *ngIf="actualStatus === 5 && canConfirmArrival" class="flex flex-col gap-[6px]">
+          <label class="text-xs font-medium text-gray-600">Observación (opcional)</label>
+          <textarea
+            rows="3"
+            [(ngModel)]="step5ArrivalObservation"
+            placeholder="Escriba una observación sobre la llegada del expediente..."
+            class="w-full text-sm text-gray-700 border border-gray-300 rounded-lg px-3 py-2 outline-none resize-none
+                   focus:border-[#64bc04] focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all"
+          ></textarea>
+
+          <!-- Of. Central: enviar las observaciones por correo a Oficina Técnica -->
+          <button type="button" (click)="sendStep5ObservationsEmail()"
+            [disabled]="sendingStep5Observations || !step5ArrivalObservation.trim()"
+            class="self-end mt-[4px] flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-lg border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            <svg *ngIf="sendingStep5Observations" class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <svg *ngIf="!sendingStep5Observations" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            {{ sendingStep5Observations ? 'Enviando…' : 'Enviar observaciones a Of. Técnica' }}
+          </button>
+        </div>
+
+        <!-- Of. Técnica: ver la observación y notificar su levantamiento -->
+        <div *ngIf="actualStatus === 5 && hasOfTecnica && !canConfirmArrival"
+          class="flex flex-col gap-[10px]">
+
+          <div *ngIf="item.arrivalObservation"
+            class="flex flex-col gap-[4px] bg-orange-50 border border-orange-200 rounded-lg px-3 py-2.5">
+            <span class="text-xs font-medium text-orange-600">Observación de Oficina Central</span>
+            <p class="text-sm text-gray-700 whitespace-pre-line">{{ item.arrivalObservation }}</p>
+          </div>
+
+          <label class="text-xs font-medium text-gray-600">Mensaje (opcional)</label>
+          <textarea
+            rows="3"
+            [(ngModel)]="step5LevantamientoMessage"
+            placeholder="Escriba un mensaje sobre el levantamiento de las observaciones..."
+            class="w-full text-sm text-gray-700 border border-gray-300 rounded-lg px-3 py-2 outline-none resize-none
+                   focus:border-[#64bc04] focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all"
+          ></textarea>
+
+          <button type="button" (click)="sendStep5LevantamientoEmail()"
+            [disabled]="sendingStep5Levantamiento"
+            class="self-end flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-lg border border-blue-400 text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            <svg *ngIf="sendingStep5Levantamiento" class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <svg *ngIf="!sendingStep5Levantamiento" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            {{ sendingStep5Levantamiento ? 'Enviando…' : 'Notificar levantamiento de observaciones' }}
+          </button>
+        </div>
+
+        <!-- Modo lectura (cuando ya se pasó el paso 5) -->
+        <div *ngIf="actualStatus > 5 && step5ArrivalObservation"
+          class="flex flex-col gap-[4px] bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+          <span class="text-xs font-medium text-gray-500">Observación</span>
+          <p class="text-sm text-gray-700 whitespace-pre-line">{{ step5ArrivalObservation }}</p>
+        </div>
+
+        <div *ngIf="actualStatus > 5 && step5ArrivalOption"
+          class="flex items-center gap-2 text-xs px-[10px] py-[6px] rounded-full w-fit"
+          [ngClass]="step5ArrivalOption === 'complete'
+            ? 'bg-[var(--color-abril-primary-light)] text-[var(--color-abril-primary)]'
+            : 'bg-orange-50 text-orange-500'">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+          {{ step5ArrivalOption === 'complete' ? 'Llegó completo' : 'Llegó con observaciones (subsanadas)' }}
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PASO 6: Procesos de firma -->
+    <div *ngIf="viewStep === 6">
+
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[14px]">
+        Procesos de firma
+      </p>
+
+      <div class="flex flex-col gap-[20px] max-w-sm">
+
+        <p class="text-sm text-gray-600 leading-relaxed">
+          Confirma que los documentos han sido firmados por los siguientes responsables.
+          Al confirmar se enviará un correo de notificación a <strong>costos y presupuestos</strong> y al <strong>staff de obra</strong> del proyecto.
+        </p>
+
+        <!-- Aviso: solo Oficina Central puede marcar las firmas -->
+        <div *ngIf="actualStatus === 6 && !canMarkStep6"
+          class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+          <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+            <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="text-xs text-amber-700 font-medium leading-relaxed">
+            Solo un usuario de <span class="font-semibold">Oficina Central</span> puede marcar las firmas y avanzar al paso 7.
+          </p>
+        </div>
+
+        <!-- Checkbox Costos y Presupuestos -->
+        <label class="flex items-start gap-[10px] cursor-pointer select-none group"
+          [class.opacity-50]="actualStatus !== 6 || !canMarkStep6">
+          <div class="relative mt-[2px] shrink-0">
+            <input type="checkbox" class="sr-only"
+              [(ngModel)]="step6ConfirmedCostos"
+              (ngModelChange)="onStep6CheckChange()"
+              [disabled]="actualStatus !== 6 || !canMarkStep6" />
+            <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+              [ngClass]="step6ConfirmedCostos
+                ? 'bg-[var(--color-abril-primary)] border-[var(--color-abril-primary)]'
+                : 'bg-white border-gray-300 group-hover:border-[var(--color-abril-primary)]'">
+              <svg *ngIf="step6ConfirmedCostos" class="w-3 h-3 text-white" fill="none" stroke="currentColor"
+                stroke-width="3" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <span class="text-sm font-medium"
+            [ngClass]="step6ConfirmedCostos ? 'text-[var(--color-abril-primary)]' : 'text-gray-600'">
+            Firmado por Costos y Presupuestos
+          </span>
+        </label>
+
+        <!-- Checkbox Gerente Inmobiliario -->
+        <label class="flex items-start gap-[10px] cursor-pointer select-none group"
+          [class.opacity-50]="actualStatus !== 6 || !canMarkStep6">
+          <div class="relative mt-[2px] shrink-0">
+            <input type="checkbox" class="sr-only"
+              [(ngModel)]="step6ConfirmedOriundo"
+              (ngModelChange)="onStep6CheckChange()"
+              [disabled]="actualStatus !== 6 || !canMarkStep6" />
+            <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+              [ngClass]="step6ConfirmedOriundo
+                ? 'bg-[var(--color-abril-primary)] border-[var(--color-abril-primary)]'
+                : 'bg-white border-gray-300 group-hover:border-[var(--color-abril-primary)]'">
+              <svg *ngIf="step6ConfirmedOriundo" class="w-3 h-3 text-white" fill="none" stroke="currentColor"
+                stroke-width="3" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <span class="text-sm font-medium"
+            [ngClass]="step6ConfirmedOriundo ? 'text-[var(--color-abril-primary)]' : 'text-gray-600'">
+            Firmado por el Gerente Inmobiliario
+          </span>
+        </label>
+
+        <!-- Checkbox Gerente General -->
+        <label class="flex items-start gap-[10px] cursor-pointer select-none group"
+          [class.opacity-50]="actualStatus !== 6 || !canMarkStep6">
+          <div class="relative mt-[2px] shrink-0">
+            <input type="checkbox" class="sr-only"
+              [(ngModel)]="step6ConfirmedToratto"
+              (ngModelChange)="onStep6CheckChange()"
+              [disabled]="actualStatus !== 6 || !canMarkStep6" />
+            <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+              [ngClass]="step6ConfirmedToratto
+                ? 'bg-[var(--color-abril-primary)] border-[var(--color-abril-primary)]'
+                : 'bg-white border-gray-300 group-hover:border-[var(--color-abril-primary)]'">
+              <svg *ngIf="step6ConfirmedToratto" class="w-3 h-3 text-white" fill="none" stroke="currentColor"
+                stroke-width="3" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <span class="text-sm font-medium"
+            [ngClass]="step6ConfirmedToratto ? 'text-[var(--color-abril-primary)]' : 'text-gray-600'">
+            Firmado por el Gerente General
+          </span>
+        </label>
+
+      </div>
+    </div>
+
+    <!-- PASO 7: Por escanear -->
+    <div *ngIf="viewStep === 7">
+
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[14px]">
+        Documentos escaneados
+      </p>
+
+      <!-- Aviso: solo Oficina Central puede subir el escaneado -->
+      <div *ngIf="actualStatus === 7 && !hasOfCentral"
+        class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+        <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+          <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="text-xs text-amber-700 font-medium leading-relaxed">
+          Solo un usuario de <span class="font-semibold">Oficina Central</span> puede subir el documento escaneado y avanzar al paso 8.
+        </p>
+      </div>
+
+      <!-- Input oculto compartido para los 3 slots del paso 7 -->
+      <input #fileInputStep7 type="file" class="hidden" (change)="onFileSelectedScanned($event)" />
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
+        <div *ngFor="let doc of scannedDocuments; trackBy: trackByDocKey"
+          class="relative border rounded-lg p-[14px] flex flex-col gap-[10px] transition-colors"
+          [style.borderColor]="dragDoc === doc.key ? 'var(--color-abril-primary)' : '#E2E2E2'"
+          [style.borderStyle]="dragDoc === doc.key ? 'dashed' : 'solid'"
+          [style.background]="dragDoc === doc.key ? 'var(--color-abril-primary-light)' : 'transparent'"
+          (dragenter)="onScannedDragEnter(doc.key, $event)"
+          (dragover)="onScannedDragOver(doc.key, $event)"
+          (dragleave)="onScannedDragLeave(doc.key, $event)"
+          (drop)="onScannedDrop(doc.key, $event)">
+
+          <!-- Overlay: se muestra mientras se arrastra un archivo sobre la tarjeta -->
+          <div *ngIf="dragDoc === doc.key"
+            class="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none"
+            style="background:var(--color-abril-primary-light); opacity:0.92">
+            <span class="flex items-center gap-2 text-sm font-semibold" style="color:var(--color-abril-primary)">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Suelta aquí para {{ getDocFile(doc.key) ? 'reemplazar' : 'subir' }}
+            </span>
+          </div>
+
+          <ng-container *ngIf="{ file: getDocFile(doc.key) } as ctx">
+
+            <!-- Encabezado -->
+            <div class="flex items-center gap-[8px]">
+              <div class="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+              </div>
+              <span class="text-sm font-semibold text-gray-700">{{ doc.label }}</span>
+            </div>
+
+            <!-- Estado del archivo -->
+            <div class="text-xs min-h-[18px]">
+              <a *ngIf="ctx.file; else noScannedFile"
+                [href]="ctx.file.fileUrl" target="_blank"
+                class="hover:underline flex items-center gap-1 break-all" style="color:var(--color-abril-primary)">
+                <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                {{ ctx.file.originalFileName ?? 'Ver archivo' }}
+              </a>
+              <ng-template #noScannedFile>
+                <span class="italic text-gray-300">Sin archivo</span>
+              </ng-template>
+            </div>
+
+            <!-- Botón subir (sin estado ni observación) -->
+            <div class="flex gap-[8px] mt-auto">
+              <button (click)="triggerUploadScanned(doc.key)"
+                [disabled]="uploadingDoc !== null || !hasOfCentral"
+                class="flex-1 flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg transition-colors border cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed" style="border-color:var(--color-abril-primary); color:var(--color-abril-primary)"
+                [class.cursor-wait]="uploadingDoc === doc.key">
+
+                <svg *ngIf="uploadingDoc === doc.key"
+                  class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <svg *ngIf="uploadingDoc !== doc.key"
+                  class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+
+                <span>{{ uploadingDoc === doc.key ? 'Subiendo…' : (ctx.file ? 'Reemplazar' : 'Subir') }}</span>
+              </button>
+            </div>
+
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 8: Envío a obra -->
+    <div *ngIf="viewStep === 8">
+
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[14px]">
+        Envío a obra
+      </p>
+
+      <div class="flex flex-col gap-[16px] max-w-sm">
+
+        <p class="text-sm text-gray-600 leading-relaxed">
+          Al confirmar se enviará un correo a los contactos de <strong>Staff de Obra</strong> del proyecto
+          con los documentos escaneados del paso anterior como adjuntos.
+        </p>
+
+        <!-- Aviso: solo Oficina Central puede enviar a obra -->
+        <div *ngIf="actualStatus === 8 && !hasOfCentral"
+          class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+          <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+            <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="text-xs text-amber-700 font-medium leading-relaxed">
+            Solo un usuario de <span class="font-semibold">Oficina Central</span> puede enviar el correo a obra y completar la adjudicación.
+          </p>
+        </div>
+
+        <!-- Documentos que se adjuntarán -->
+        <div class="flex flex-col gap-[8px]">
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Documentos a adjuntar</p>
+          <ng-container *ngFor="let doc of scannedDocuments">
+            <ng-container *ngIf="getDocFile(doc.key) as file">
+              <a [href]="file.fileUrl" target="_blank"
+                class="flex items-center gap-1.5 text-xs hover:underline break-all" style="color:var(--color-abril-primary)">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                {{ file.originalFileName ?? doc.label }}
+              </a>
+            </ng-container>
+          </ng-container>
+          <p *ngIf="!getDocFile('ScannedDoc1')"
+            class="text-xs italic text-gray-300">
+            No hay documentos escaneados registrados.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PASO 9: Completado (genérico) -->
+    <div *ngIf="viewStep > 8" class="flex flex-col items-center justify-center py-[28px] gap-[12px] text-center">
+      <div class="w-14 h-14 rounded-full flex items-center justify-center" style="background:var(--color-abril-primary-light)">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="color:var(--color-abril-primary)">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+      <p class="text-base font-semibold text-gray-700">Adjudicación completada</p>
+      <p class="text-sm text-gray-400 max-w-[320px]">
+        El proceso de adjudicación ha sido completado exitosamente.
+      </p>
+    </div>
+
+    <!-- ── MODAL CRONOGRAMA (paso 3 — documento Cronograma) ─────────── -->
+    <app-cronograma-modal
+      *ngIf="showCronogramaModal"
+      [projectSubContractorId]="item.projectSubContractorId"
+      (closeModal)="showCronogramaModal = false"
+      (saved)="statusChanged.emit()">
+    </app-cronograma-modal>
+
+    <!-- ── NAVEGACIÓN DE PASOS ──────────────────────────────────────── -->
+    <div class="flex items-center justify-between pt-[4px] border-t border-[#F0F0F0]">
+
+      <button
+        (click)="goBack()"
+        [disabled]="!canGoBack()"
+        class="flex items-center gap-1.5 px-[12px] sm:px-[16px] py-[8px] rounded-lg text-sm font-medium transition-colors"
+        [ngClass]="canGoBack()
+          ? 'border border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer'
+          : 'border border-gray-100 text-gray-300 cursor-not-allowed'">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+        <span class="hidden xs:inline sm:inline">Paso anterior</span>
+      </button>
+
+      <span class="text-xs text-gray-400 shrink-0">Paso {{ viewStep }} de {{ totalSteps }}</span>
+
+      <button
+        (click)="goForward()"
+        [disabled]="!canGoForward()"
+        class="flex items-center gap-1.5 px-[12px] sm:px-[16px] py-[8px] rounded-lg text-sm font-medium transition-colors"
+        [ngClass]="canGoForward()
+          ? 'bg-[var(--color-abril-primary)] text-white cursor-pointer'
+          : 'bg-gray-100 text-gray-300 cursor-not-allowed'">
+        <span class="hidden xs:inline sm:inline">{{ forwardLabel }}</span>
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+
+    </div>
+
+  </div>
+
+</app-base-modal>

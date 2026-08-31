@@ -1,0 +1,43 @@
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Reportes SUNAFIL"
+  subtitulo="Exportar registros de vigilancia médica ocupacional."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="p-6 space-y-4 flex-1 overflow-y-auto">
+  <div class="card" style="max-width:500px;padding:1.5rem;">
+    <h3 style="font-weight:600;margin-bottom:1rem;color:#111827;">Reporte mensual de EMOs</h3>
+    <div class="grid-2" style="margin-bottom:1rem;">
+      <div>
+        <app-search-select
+          label="Mes"
+          [options]="meses"
+          valueField="v"
+          displayField="l"
+          [value]="mes"
+          placeholder="Selecciona mes"
+          [allowClear]="false"
+          [sortAlpha]="false"
+          (valueChange)="mes = $event">
+        </app-search-select>
+      </div>
+      <div>
+        <app-search-select
+          label="Año"
+          [options]="aniosOpts"
+          valueField="id"
+          displayField="label"
+          [value]="anio"
+          placeholder="Selecciona año"
+          [allowClear]="false"
+          [sortAlpha]="false"
+          (valueChange)="anio = $event">
+        </app-search-select>
+      </div>
+    </div>
+    <button class="btn-primary" [disabled]="loading" (click)="exportar()">
+      📊 Exportar Excel
+    </button>
+  </div>
+</div>

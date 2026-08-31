@@ -1,0 +1,140 @@
+<!-- Sección embebida en GaConfiguracion: el header, el botón de crear y el
+     disparador de filtros viven en el contenedor (`ga-configuracion`). -->
+<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Tipo</th>
+          <th>Nombre</th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- ── Lugares fijos ───────────────────────────────────────────── -->
+        <tr *ngIf="fijos.length > 0">
+          <td colspan="4"
+              class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 border-b" style="border-color:var(--color-abril-border)">
+            Lugares fijos
+          </td>
+        </tr>
+        <tr *ngFor="let l of fijos" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+          <td>
+            <span class="inline-block px-[8px] py-[2px] rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600">
+              Fijo
+            </span>
+          </td>
+          <td class="text-gray-700">{{ l.nombreDisplay | titleCase }}</td>
+          <td class="text-center">
+            <app-status-badge
+              [text]="l.activo ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="l.activo ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="l.activo ? '#009C87' : '#D30000'" />
+          </td>
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[8px]">
+              <button
+                (click)="toggle(l)"
+                [abrilBulkAction]="l.activo ? 'danger' : 'default'">
+                {{ l.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+              <button
+                (click)="openEdit(l)"
+                abrilBulkAction="default">
+                Editar
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <!-- ── Proyectos ───────────────────────────────────────────────── -->
+        <tr *ngIf="proyectos.length > 0">
+          <td colspan="4"
+              class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 border-b" style="border-color:var(--color-abril-border)">
+            Proyectos
+          </td>
+        </tr>
+        <tr *ngFor="let l of proyectos" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+          <td>
+            <span class="inline-block px-[8px] py-[2px] rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700">
+              Proyecto
+            </span>
+          </td>
+          <td class="text-gray-700">{{ l.nombreDisplay | titleCase }}</td>
+          <td class="text-center">
+            <app-status-badge
+              [text]="l.activo ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="l.activo ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="l.activo ? '#009C87' : '#D30000'" />
+          </td>
+          <td class="text-center">
+            <div class="flex items-center justify-center">
+              <button
+                (click)="toggle(l)"
+                [abrilBulkAction]="l.activo ? 'danger' : 'default'">
+                {{ l.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Vacío -->
+        <tr *ngIf="fijos.length === 0 && proyectos.length === 0">
+          <td colspan="4" class="py-[32px] text-center text-gray-400 text-sm">
+            {{ searchText.trim() ? 'Sin resultados.' : 'No hay lugares registrados.' }}
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="proyectosFiltrados.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modales (fuera del card) ──────────────────────────────────────── -->
+<app-ga-lugar-create
+  *ngIf="showCreateModal"
+  (closeModal)="showCreateModal = false"
+  (saved)="load()" />
+
+<app-ga-lugar-edit
+  *ngIf="showEditModal && lugarToEdit"
+  [lugar]="lugarToEdit!"
+  (closeModal)="showEditModal = false; lugarToEdit = null"
+  (saved)="load()" />
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por nombre..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="estadoFilter"
+      (valueChange)="estadoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

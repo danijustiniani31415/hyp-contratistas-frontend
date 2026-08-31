@@ -1,0 +1,393 @@
+<div class="detalle-root">
+
+  <app-abril-page-header
+    badge="SSOMA"
+    [titulo]="detalle?.codigo ?? 'Flash Report'"
+    subtitulo="Detalle del evento"
+    [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+    [botonPrimario]="detalle ? { label: 'Editar', icono: 'ti-edit' } : undefined"
+    (secondaryClick)="volver()"
+    (primaryClick)="irAEditar()">
+  </app-abril-page-header>
+
+  <!-- TABS -->
+  <nav class="detalle-tabs">
+    <button class="tab-btn" [class.tab-btn--active]="tabActiva === 'flash'" (click)="setTab('flash')">
+      <i class="ti ti-file-description"></i> Flash Report
+    </button>
+    <button class="tab-btn" [class.tab-btn--active]="tabActiva === 'entregables'" (click)="setTab('entregables')">
+      <i class="ti ti-checklist"></i> Entregables
+    </button>
+    <button class="tab-btn" [class.tab-btn--active]="tabActiva === 'rm050'" (click)="setTab('rm050')">
+      <i class="ti ti-report"></i> Investigación RM-050
+    </button>
+    @if (detalle?.accidenteTrabajoId) {
+      <button class="tab-btn" [class.tab-btn--active]="tabActiva === 'seguimiento'" (click)="setTab('seguimiento')">
+        <i class="ti ti-stethoscope"></i> Seguimiento Médico
+      </button>
+    }
+  </nav>
+
+  <div class="detalle-body">
+
+    @if (loading) {
+      <div class="skeleton-block"></div>
+      <div class="skeleton-block skeleton-block--sm"></div>
+    }
+
+    <!-- TAB: ENTREGABLES -->
+    @if (!loading && tabActiva === 'entregables') {
+      <app-entregables-tab [accidenteId]="id" />
+    }
+
+    <!-- TAB: RM-050 -->
+    @if (!loading && tabActiva === 'rm050') {
+      <app-rm050-tab [accidenteId]="id" [detalle]="detalle" />
+    }
+
+    <!-- TAB: SEGUIMIENTO MÉDICO -->
+    @if (!loading && tabActiva === 'seguimiento' && detalle?.accidenteTrabajoId) {
+      <app-seguimiento-medico-tab [accidenteTrabajoId]="detalle!.accidenteTrabajoId!" />
+    }
+
+    @if (!loading && detalle && tabActiva === 'flash') {
+
+      <!-- ALERTA HIPI: Incidente con potencial grave -->
+      @if (detalle.tipoCodigo === 'IN' && (detalle.consecuenciaPotencialPersonal ?? 0) >= 5) {
+        <div class="hipi-banner">
+          <i class="ti ti-alert-triangle"></i>
+          <div>
+            <strong>Incidente de Alto Potencial (HIPI)</strong>
+            <span>Este incidente tiene consecuencia potencial
+              {{ nivelesConsecuencia[detalle.consecuenciaPotencialPersonal!] }}.
+              Requiere investigación formal equivalente a un accidente grave.
+            </span>
+          </div>
+        </div>
+      }
+
+      <!-- RECLASIFICAR INCIDENTE → ACCIDENTE -->
+      @if (detalle.tipoCodigo === 'IN' && !detalle.enviado) {
+        <div class="reclasificar-banner">
+          <span><i class="ti ti-arrow-up-right"></i> Este evento está registrado como <strong>Incidente</strong>.</span>
+          <button type="button" class="btn-reclasificar" (click)="confirmarReclasificar()"
+            title="Reclasificar como Accidente">
+            Reclasificar como Accidente
+          </button>
+        </div>
+      }
+
+      <!-- BOTÓN ENVIAR -->
+      @if (!detalle.enviado) {
+        <div class="enviar-banner">
+          <div class="enviar-banner__text">
+            <i class="ti ti-send"></i>
+            <span>Este Flash Report está en borrador. Al enviar se generará el PDF y se notificará por correo.</span>
+          </div>
+          <button type="button" class="btn-enviar" [disabled]="enviando" (click)="confirmarEnviar()">
+            @if (enviando) { <i class="ti ti-loader-2 spin"></i> Enviando... }
+            @else { <i class="ti ti-send"></i> Enviar Flash Report }
+          </button>
+        </div>
+      } @else {
+        <div class="enviado-banner">
+          <i class="ti ti-circle-check"></i>
+          Flash Report enviado el {{ detalle.fechaEnvio | date:'dd/MM/yyyy HH:mm' }}
+          · <a href="javascript:void(0)" (click)="verPdf()" class="link-pdf"><i class="ti ti-eye"></i> Ver PDF</a>
+          · <a href="javascript:void(0)" (click)="descargarPdf()" class="link-pdf"><i class="ti ti-download"></i> Descargar PDF</a>
+
+      @if (pdfViewerSafeUrl) {
+        <div class="pdf-viewer-wrap">
+          <div class="pdf-viewer-header">
+            <span>Flash Report — {{ detalle?.codigo }}</span>
+            <button type="button" class="pdf-viewer-close" (click)="cerrarPdfViewer()">
+              <i class="ti ti-x"></i> Cerrar
+            </button>
+          </div>
+          <iframe [src]="pdfViewerSafeUrl" class="pdf-viewer-frame" title="Flash Report PDF"></iframe>
+        </div>
+      }
+        </div>
+      }
+
+      <!-- BOTÓN MINTRA -->
+      <div class="mintra-btn-wrap">
+        <button type="button" class="btn-mintra" (click)="verMintra()">
+          <i class="ti ti-file-certificate"></i> Generar Formulario MINTRA
+        </button>
+      </div>
+
+      <!-- ENCABEZADO -->
+      <div class="card">
+        <div class="card__header">
+          <div class="codigo-grande">{{ detalle.codigo }}</div>
+          <span class="tipo-chip" [ngClass]="tipoClass(detalle.tipoCodigo)">{{ detalle.tipoNombre }}</span>
+          <span class="estado-chip" [ngClass]="estadoClass(detalle.estado)">{{ detalle.estado }}</span>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Proyecto</span>
+            <span class="info-value">{{ detalle.proyectoNombre }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Fecha / Hora</span>
+            <span class="info-value">{{ detalle.fecha | date:'dd/MM/yyyy':'UTC' }} {{ detalle.hora ?? '' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Etapa</span>
+            <span class="info-value">{{ detalle.etapaProyectoNombre ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Partida</span>
+            <span class="info-value">{{ detalle.partidaNombre ?? '—' }}</span>
+          </div>
+          <div class="info-item info-item--full">
+            <span class="info-label">Lugar exacto</span>
+            <span class="info-value">{{ detalle.lugarExacto }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- EMPRESA INVOLUCRADA -->
+      <div class="card">
+        <h3 class="card__subtitulo">Empresa involucrada</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Razón social</span>
+            <span class="info-value">{{ detalle.empresaAbrilNombre ?? detalle.contributorNombre ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Jefe inmediato</span>
+            <span class="info-value">{{ detalle.jefeInmediatoNombre ?? '—' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRABAJADORES AFECTADOS -->
+      <div class="card">
+        <h3 class="card__subtitulo">Trabajadores afectados</h3>
+        @if (detalle.trabajadores && detalle.trabajadores.length > 0) {
+          @for (t of detalle.trabajadores; track t.id) {
+            @if (detalle.trabajadores.length > 1) {
+              <p class="trabajador-separador">Trabajador {{ $index + 1 }}</p>
+            }
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">Nombre</span>
+                <span class="info-value">{{ t.trabajadorNombre }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Puesto</span>
+                <span class="info-value">{{ t.puestoTrabajo ?? '—' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Edad</span>
+                <span class="info-value">{{ t.edad ?? '—' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Años experiencia</span>
+                <span class="info-value">{{ t.aniosExperiencia ?? '—' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Celular</span>
+                <span class="info-value">{{ t.celularTrabajador ?? '—' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Parte afectada</span>
+                <span class="info-value">{{ t.parteAfectadaNombre ?? '—' }}</span>
+              </div>
+            </div>
+          }
+        } @else {
+          <!-- Compatibilidad con registros anteriores (campos sueltos) -->
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Nombre</span>
+              <span class="info-value">{{ detalle.trabajadorNombre ?? '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Puesto</span>
+              <span class="info-value">{{ detalle.puestoTrabajo ?? '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Edad</span>
+              <span class="info-value">{{ detalle.edad ?? '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Años experiencia</span>
+              <span class="info-value">{{ detalle.aniosExperiencia ?? '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Celular</span>
+              <span class="info-value">{{ detalle.celularTrabajador ?? '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Parte afectada</span>
+              <span class="info-value">{{ detalle.parteAfectadaNombre ?? '—' }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- DAÑOS Y CONSECUENCIAS -->
+      <div class="card">
+        <h3 class="card__subtitulo">Daños y consecuencias</h3>
+        <div class="info-grid">
+          <div class="info-item info-item--full">
+            <span class="info-label">Daño al proceso / equipo</span>
+            <span class="info-value">{{ detalle.danoProceso ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Consecuencia real (personal)</span>
+            <span class="info-value nivel-badge" [ngClass]="nivelClass(detalle.consecuenciaRealPersonal)">
+              {{ nivelLabel(detalle.consecuenciaRealPersonal) }}
+            </span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Consecuencia potencial (personal)</span>
+            <span class="info-value nivel-badge" [ngClass]="nivelClass(detalle.consecuenciaPotencialPersonal)">
+              {{ nivelLabel(detalle.consecuenciaPotencialPersonal) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESCRIPCIÓN -->
+      <div class="card">
+        <h3 class="card__subtitulo">Descripción del evento</h3>
+        <p class="desc-text">{{ detalle.descripcion }}</p>
+      </div>
+
+      <!-- ACCIONES INMEDIATAS -->
+      @if (detalle.accionesInmediatas) {
+        <div class="card">
+          <h3 class="card__subtitulo">Acciones inmediatas</h3>
+          <p class="desc-text">{{ detalle.accionesInmediatas }}</p>
+        </div>
+      }
+
+      <!-- DESCANSOS MÉDICOS -->
+      @if (detalle.descansos.length) {
+        <div class="card">
+          <h3 class="card__subtitulo">Períodos de descanso médico</h3>
+          <table class="tabla-descansos">
+            <thead>
+              <tr>
+                <th>Inicio</th>
+                <th>Fin</th>
+                <th>Días</th>
+                <th>Observación</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of detalle.descansos; track d.id) {
+                <tr>
+                  <td>{{ d.fechaInicio | date:'dd/MM/yyyy':'UTC' }}</td>
+                  <td>{{ d.fechaFin | date:'dd/MM/yyyy':'UTC' }}</td>
+                  <td>{{ d.diasDescanso }}</td>
+                  <td>{{ d.observacion ?? '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- FOTOS -->
+      @if (detalle.urlFoto1 || detalle.urlFoto2) {
+        <div class="card">
+          <h3 class="card__subtitulo">Fotografías</h3>
+          <div class="fotos-detalle">
+            @if (detalle.urlFoto1) {
+              <div class="foto-slot">
+                @if (foto1Blob) {
+                  <img [src]="foto1Blob" class="foto-thumb" alt="Foto 1"
+                    (click)="abrirLightbox(foto1Blob)" title="Click para ampliar" />
+                } @else if (foto1Error) {
+                  <div class="foto-skeleton foto-skeleton--error">
+                    <i class="ti ti-photo-off"></i>
+                    <span>No disponible</span>
+                  </div>
+                } @else {
+                  <div class="foto-skeleton"><i class="ti ti-loader-2 spin"></i></div>
+                }
+                <div class="foto-acciones">
+                  @if (foto1Blob) {
+                    <a href="javascript:void(0)" (click)="abrirLightbox(foto1Blob)">
+                      <i class="ti ti-eye"></i> Ver
+                    </a>
+                    <a href="javascript:void(0)" (click)="descargarFoto(foto1Blob, 1)">
+                      <i class="ti ti-download"></i> Descargar
+                    </a>
+                  }
+                </div>
+              </div>
+            }
+            @if (detalle.urlFoto2) {
+              <div class="foto-slot">
+                @if (foto2Blob) {
+                  <img [src]="foto2Blob" class="foto-thumb" alt="Foto 2"
+                    (click)="abrirLightbox(foto2Blob)" title="Click para ampliar" />
+                } @else if (foto2Error) {
+                  <div class="foto-skeleton foto-skeleton--error">
+                    <i class="ti ti-photo-off"></i>
+                    <span>No disponible</span>
+                  </div>
+                } @else {
+                  <div class="foto-skeleton"><i class="ti ti-loader-2 spin"></i></div>
+                }
+                <div class="foto-acciones">
+                  @if (foto2Blob) {
+                    <a href="javascript:void(0)" (click)="abrirLightbox(foto2Blob)">
+                      <i class="ti ti-eye"></i> Ver
+                    </a>
+                    <a href="javascript:void(0)" (click)="descargarFoto(foto2Blob, 2)">
+                      <i class="ti ti-download"></i> Descargar
+                    </a>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ELABORADO POR -->
+      <div class="card">
+        <h3 class="card__subtitulo">Elaborado por</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Nombre</span>
+            <span class="info-value">{{ detalle.elaboradoPorNombre ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Cargo</span>
+            <span class="info-value">{{ detalle.elaboradoPorCargo ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Email</span>
+            <span class="info-value">{{ detalle.elaboradoPorEmail ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Teléfono</span>
+            <span class="info-value">{{ detalle.elaboradoPorTelefono ?? '—' }}</span>
+          </div>
+        </div>
+      </div>
+
+    }
+
+  </div>
+
+</div>
+
+<!-- ══ LIGHTBOX ══════════════════════════════════════════════════════════ -->
+@if (lightboxUrl) {
+  <div class="lightbox-overlay" (click)="cerrarLightbox()">
+    <button class="lightbox-close" (click)="cerrarLightbox()" aria-label="Cerrar">
+      <i class="ti ti-x"></i>
+    </button>
+    <img [src]="lightboxUrl" class="lightbox-img" alt="Foto" (click)="$event.stopPropagation()" />
+  </div>
+}

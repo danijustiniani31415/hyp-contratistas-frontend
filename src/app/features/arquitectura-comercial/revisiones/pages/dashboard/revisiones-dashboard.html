@@ -1,0 +1,107 @@
+<app-abril-page-header
+  [badge]="'ARQ. COMERCIAL · ' + anioActual"
+  titulo="Reporte de Revisiones"
+  subtitulo="Avance de levantamiento de observaciones por revisión y partida."
+  [tabs]="tabs"
+  [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+  (secondaryClick)="load()">
+
+  <div tabsExtra class="w-[220px]">
+    <app-search-select
+      [options]="proyectos"
+      valueField="id"
+      displayField="nombre"
+      placeholder="Buscar proyecto..."
+      [value]="proyectoId"
+      (valueChange)="onProyectoChange($event)">
+    </app-search-select>
+  </div>
+</app-abril-page-header>
+
+<div class="dashboard-root">
+
+  @if (error) {
+    <div class="alert-error">
+      <i class="ti ti-alert-circle"></i> {{ error }}
+    </div>
+  }
+
+  @if (loading) {
+    <div class="skeleton-grid">
+      @for (_ of [1,2,3]; track $index) {
+        <div class="skeleton-card"></div>
+      }
+    </div>
+  }
+
+  @if (!loading && data) {
+    @if (data.grupos.length === 0) {
+      <div class="empty-state">
+        <i class="ti ti-mood-empty"></i>
+        <span>No hay observaciones reportadas en el periodo seleccionado.</span>
+      </div>
+    }
+
+    @for (g of data.grupos; track trackByGrupo($index, g)) {
+      <div class="sup-card">
+
+        <div class="sup-card__side">
+          <div class="sup-card__nombre">
+            {{ g.personaReporta }}
+            <button type="button" class="sup-card__chevron" (click)="irALista()" title="Ver observaciones">
+              <i class="ti ti-chevron-right"></i>
+            </button>
+          </div>
+          <div class="sup-card__proyecto">{{ g.revisionNombre }}</div>
+
+          <div class="donut-wrap">
+            <div class="donut" [ngStyle]="donutStyle(g)">
+              <div class="donut__hole">
+                <span class="donut__pct">{{ g.pctAvance }}%</span>
+                <span class="donut__lbl">Avance</span>
+              </div>
+            </div>
+            <div class="donut-legend">
+              <span class="legend-dot legend-dot--completado"></span> Completado
+              <span class="legend-dot legend-dot--falta"></span> Falta
+            </div>
+          </div>
+
+          <div class="sup-card__pendientes">
+            <span class="dot-rojo"></span>
+            <span class="sup-card__pendientes-val">{{ acuerdosPendientes(g) }}</span>
+            Acuerdos Pendientes
+          </div>
+        </div>
+
+        <div class="sup-card__main">
+          <div class="chart-title">N° Observaciones según la partida</div>
+          <div class="chart-legend">
+            <span class="legend-dot legend-dot--completado-bar"></span> Completado
+            <span class="legend-dot legend-dot--pendiente-bar"></span> Pendiente
+          </div>
+
+          @if (g.porPartida.length === 0) {
+            <div class="empty-state empty-state--inline">Sin observaciones registradas.</div>
+          }
+
+          @for (p of g.porPartida; track trackByPartida($index, p)) {
+            <div class="partida-row">
+              <div class="partida-row__lbl">{{ p.partida }}</div>
+              <div class="partida-row__bar-wrap">
+                <div class="partida-row__bar partida-row__bar--completado"
+                     [style.width.%]="barWidthPct(p.completado, g)">
+                  @if (p.completado > 0) { <span>{{ p.completado }}</span> }
+                </div>
+                <div class="partida-row__bar partida-row__bar--pendiente"
+                     [style.width.%]="barWidthPct(p.pendiente, g)">
+                  @if (p.pendiente > 0) { <span>{{ p.pendiente }}</span> }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

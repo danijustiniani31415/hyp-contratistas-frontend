@@ -1,0 +1,53 @@
+<app-base-modal *ngIf="open" title="Editar razón social" width="w-[680px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <h4 class="section-title">Datos generales (solo lectura)</h4>
+    <div class="grid-2">
+      <div class="col-span-2">
+        <label class="field-label">Razón Social</label>
+        <input type="text" class="field-input field-readonly" [value]="nombre" readonly />
+      </div>
+      <div>
+        <label class="field-label">RUC</label>
+        <input type="text" class="field-input field-readonly" [value]="ruc" readonly />
+      </div>
+      <div>
+        <label class="field-label">Partida Registral</label>
+        <input
+          type="text"
+          class="field-input field-readonly"
+          [value]="partidaRegistral"
+          readonly
+        />
+      </div>
+    </div>
+
+    <h4 class="section-title mt-6">Campos editables</h4>
+    <div class="grid-2">
+      <div class="col-span-2">
+        <label class="field-label">Dirección</label>
+        <input type="text" class="field-input" [(ngModel)]="model.direccion" />
+      </div>
+      <div>
+        <label class="field-label">Tipo Actividad</label>
+        <input type="text" class="field-input" [(ngModel)]="model.tipoActividad" />
+      </div>
+      <div>
+        <label class="field-label">Estado</label>
+        <select class="field-input" [(ngModel)]="model.activo">
+          <option [ngValue]="true">Activa</option>
+          <option [ngValue]="false">Inactiva</option>
+        </select>
+      </div>
+    </div>
+
+    <p class="dev-note">
+      ⚠️ Funcionalidad en desarrollo: el endpoint de edición de razones sociales aún no
+      está disponible. Al guardar verás un mensaje informativo.
+    </p>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" (click)="submit()">Guardar</button>
+    </footer>
+  </div>
+</app-base-modal>

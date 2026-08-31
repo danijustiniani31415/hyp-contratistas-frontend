@@ -1,0 +1,247 @@
+<div class="flex flex-col lg:flex-row gap-4">
+
+ <div class="flex-1 min-w-0 flex flex-col gap-3">
+
+  <!-- Navegación de mes + leyenda -->
+  <div class="flex items-center justify-between flex-wrap gap-2">
+    <div class="flex items-center gap-2">
+      <button type="button" (click)="prevMonth()"
+        class="w-8 h-8 rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 cursor-pointer flex items-center justify-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <span class="text-base font-semibold text-gray-800 min-w-[170px] text-center">{{ monthLabel }}</span>
+      <button type="button" (click)="nextMonth()"
+        class="w-8 h-8 rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 cursor-pointer flex items-center justify-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+
+    <div class="flex items-center gap-4 text-xs text-gray-500">
+      <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#0086A5]"></span> Área común</span>
+      <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#4CAF50]"></span> Departamento</span>
+    </div>
+  </div>
+
+  <!-- Calendario -->
+  <div class="border border-gray-200 rounded-lg overflow-hidden">
+    <!-- Cabecera de días -->
+    <div class="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+      <div *ngFor="let d of weekdays" class="px-2 py-2 text-center text-[11px] font-semibold text-gray-500 uppercase">{{ d }}</div>
+    </div>
+
+    <!-- Semanas -->
+    <div *ngFor="let week of weeks" class="grid grid-cols-7">
+      <div *ngFor="let cell of week"
+        (click)="openDay(cell)"
+        class="min-h-[84px] border-b border-r border-gray-100 p-1.5 flex flex-col gap-1"
+        [ngClass]="cell.inMonth ? 'bg-white cursor-pointer hover:bg-[#F4FBEA] transition-colors' : 'bg-gray-50'">
+
+        <span *ngIf="cell.inMonth" class="text-xs font-medium text-gray-600">{{ cell.dayNum }}</span>
+
+        <!-- Indicadores -->
+        <div *ngIf="cell.inMonth" class="flex flex-col gap-0.5 mt-auto">
+          <span *ngIf="tieneComun(cell.iso)"
+            class="inline-flex items-center gap-1 text-[10px] text-[#0086A5] font-medium truncate">
+            <span class="w-2 h-2 rounded-full bg-[#0086A5] shrink-0"></span> Área común
+          </span>
+          <span *ngIf="tieneDepartamento(cell.iso)"
+            class="inline-flex items-center gap-1 text-[10px] text-[#2E7D32] font-medium truncate">
+            <span class="w-2 h-2 rounded-full bg-[#4CAF50] shrink-0"></span>
+            {{ limpiezasDe(cell.iso).length > 1 ? 'Departamentos' : 'Departamento' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+ </div>
+
+ <!-- Columna de cumplimiento de limpiezas -->
+ <div class="w-full lg:w-[300px] shrink-0 flex flex-col gap-3">
+   <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 flex flex-col gap-3">
+     <span class="text-sm font-semibold text-gray-700">Cumplimiento de limpiezas</span>
+     <p class="text-[11px] text-gray-400 -mt-1">Atenciones realizadas sobre las programadas hasta hoy (sin contar futuras).</p>
+
+     <!-- Total (combinada) -->
+     <div class="rounded-lg border border-[#4CAF50]/30 bg-white p-3 flex flex-col gap-1">
+       <div class="flex items-center justify-between">
+         <span class="text-xs font-bold uppercase tracking-wide text-[#2E7D32]">Total</span>
+         <span class="text-sm font-semibold text-[#2E7D32]">{{ pct(cumplimiento?.totalHechas || 0, cumplimiento?.totalProgramadas || 0) }}%</span>
+       </div>
+       <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+         <div class="h-full bg-[#4CAF50] rounded-full transition-all" [style.width.%]="pct(cumplimiento?.totalHechas || 0, cumplimiento?.totalProgramadas || 0)"></div>
+       </div>
+       <span class="text-[11px] text-gray-400">{{ cumplimiento?.totalHechas || 0 }} de {{ cumplimiento?.totalProgramadas || 0 }} limpiezas</span>
+     </div>
+
+     <!-- Departamento -->
+     <div class="rounded-lg border border-[#2E7D32]/30 bg-white p-3 flex flex-col gap-1">
+       <div class="flex items-center justify-between">
+         <span class="text-xs font-bold uppercase tracking-wide text-[#2E7D32] inline-flex items-center gap-1.5">
+           <span class="w-2 h-2 rounded-full bg-[#4CAF50]"></span> Departamento
+         </span>
+         <span class="text-sm font-semibold text-[#2E7D32]">{{ pct(cumplimiento?.departamentoHechas || 0, cumplimiento?.departamentoProgramadas || 0) }}%</span>
+       </div>
+       <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+         <div class="h-full bg-[#4CAF50] rounded-full transition-all" [style.width.%]="pct(cumplimiento?.departamentoHechas || 0, cumplimiento?.departamentoProgramadas || 0)"></div>
+       </div>
+       <span class="text-[11px] text-gray-400">{{ cumplimiento?.departamentoHechas || 0 }} de {{ cumplimiento?.departamentoProgramadas || 0 }} limpiezas</span>
+     </div>
+
+     <!-- Área común -->
+     <div class="rounded-lg border border-[#0086A5]/30 bg-white p-3 flex flex-col gap-1">
+       <div class="flex items-center justify-between">
+         <span class="text-xs font-bold uppercase tracking-wide text-[#0086A5] inline-flex items-center gap-1.5">
+           <span class="w-2 h-2 rounded-full bg-[#0086A5]"></span> Área común
+         </span>
+         <span class="text-sm font-semibold text-[#0086A5]">{{ pct(cumplimiento?.comunHechas || 0, cumplimiento?.comunProgramadas || 0) }}%</span>
+       </div>
+       <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+         <div class="h-full bg-[#0086A5] rounded-full transition-all" [style.width.%]="pct(cumplimiento?.comunHechas || 0, cumplimiento?.comunProgramadas || 0)"></div>
+       </div>
+       <span class="text-[11px] text-gray-400">{{ cumplimiento?.comunHechas || 0 }} de {{ cumplimiento?.comunProgramadas || 0 }} limpiezas</span>
+     </div>
+   </div>
+ </div>
+
+</div>
+
+<!-- ── Modal detalle del día ───────────────────────────────────────────── -->
+<app-base-modal
+  *ngIf="selectedIso"
+  [title]="'Limpiezas · ' + selectedLabel"
+  width="w-[560px]"
+  height="h-auto"
+  (closeModal)="closeDay()">
+
+  <div class="flex flex-col gap-3 p-1 pb-5">
+
+    <!-- Lista de limpiezas del día -->
+    <div *ngIf="selectedLimpiezas.length; else sinLimpiezas" class="flex flex-col gap-2">
+      <div *ngFor="let l of selectedLimpiezas"
+        class="flex flex-col gap-2 border border-gray-200 rounded-lg p-3">
+
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex flex-col gap-0.5 min-w-0">
+            <span class="text-sm font-medium inline-flex items-center gap-1.5"
+              [ngClass]="esDepartamento(l) ? 'text-[#2E7D32]' : 'text-[#0086A5]'">
+              <span class="w-2.5 h-2.5 rounded-full shrink-0" [ngClass]="esDepartamento(l) ? 'bg-[#4CAF50]' : 'bg-[#0086A5]'"></span>
+              {{ l.tipoDescripcion }}
+            </span>
+            <span *ngIf="esDepartamento(l)" class="text-xs text-gray-600 truncate">
+              {{ l.vecinoDireccion || 'Sin dirección' }}<span *ngIf="l.vecinoInterior"> · {{ l.vecinoInterior }}</span><span *ngIf="l.vecinoNombre"> — {{ l.vecinoNombre }}</span>
+            </span>
+            <span *ngIf="l.descripcion" class="text-xs text-gray-500 whitespace-pre-line">{{ l.descripcion }}</span>
+          </div>
+          <button type="button" (click)="eliminar(l)"
+            class="text-gray-400 hover:text-[#D30000] cursor-pointer shrink-0" title="Eliminar">
+            <i class="ti ti-trash text-sm"></i>
+          </button>
+        </div>
+
+        <!-- Atención de limpieza: solo para hoy y días pasados -->
+        <div *ngIf="esPasadoOHoy(selectedIso)" class="border-t border-dashed border-gray-200 pt-2 flex flex-col gap-2">
+          <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Atención de limpieza</span>
+
+          <!-- Relacionar con compromiso (solo departamento) -->
+          <div *ngIf="esDepartamento(l)" class="flex flex-col gap-[6px]">
+            <label class="text-[11px] text-gray-500">Compromiso relacionado</label>
+            <app-search-select
+              placeholder="Selecciona un compromiso"
+              [showLabel]="false"
+              [options]="compromisosDe(l)"
+              valueField="vecinoCompromisoId"
+              displayField="label"
+              [fullText]="true"
+              [value]="atencionCompromisoSel[l.vecinoLimpiezaId]"
+              (valueChange)="atencionCompromisoSel[l.vecinoLimpiezaId] = $event">
+            </app-search-select>
+            <p *ngIf="compromisosDe(l).length === 0" class="text-[11px] text-[#D30000]">
+              Este vecino no tiene compromisos. Registra uno en su detalle para poder relacionar la atención.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <a *ngIf="l.atencionArchivoUrl" [href]="atencionFileUrl(l.atencionArchivoUrl)" target="_blank"
+              rel="noopener" download
+              class="text-xs text-[#0086A5] hover:underline inline-flex items-center gap-1 truncate max-w-[220px]">
+              <i class="ti ti-file-check"></i> {{ l.atencionOriginalFileName || 'Ver archivo' }}
+            </a>
+            <label
+              class="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#E8F5E9] text-[#4CAF50] cursor-pointer hover:bg-[#d4f0b8] transition-colors inline-flex items-center gap-1">
+              <i class="ti ti-upload"></i> {{ l.atencionArchivoUrl ? 'Reemplazar atención' : 'Subir atención' }}
+              <input type="file" class="hidden"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp"
+                (change)="onAtencionFileSelected(l, $event)" />
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ng-template #sinLimpiezas>
+      <p class="text-sm text-gray-400 italic">No hay limpiezas registradas para este día.</p>
+    </ng-template>
+
+    <!-- Botón agregar / formulario -->
+    <div class="border-t border-gray-100 pt-3">
+      <button *ngIf="!showAddForm" type="button" (click)="startAdd()"
+        class="px-4 py-2 rounded-lg bg-[#4CAF50] text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors inline-flex items-center gap-2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Añadir limpieza
+      </button>
+
+      <div *ngIf="showAddForm" class="flex flex-col gap-3">
+        <div class="flex flex-col gap-[6px]">
+          <label class="text-xs text-[#4CAF50] font-medium">Tipo de limpieza</label>
+          <app-search-select
+            placeholder="Selecciona"
+            [showLabel]="false"
+            [options]="tipos"
+            valueField="id"
+            displayField="descripcion"
+            [value]="nuevo.vecinoLimpiezaTipoId"
+            (valueChange)="nuevo.vecinoLimpiezaTipoId = $event; nuevo.vecinoId = null">
+          </app-search-select>
+        </div>
+
+        <div *ngIf="tipoSeleccionadoEsDepartamento" class="flex flex-col gap-[6px]">
+          <label class="text-xs text-[#4CAF50] font-medium">Departamento / vecino</label>
+          <app-search-select
+            placeholder="Selecciona el vecino"
+            [showLabel]="false"
+            [options]="vecinoOptions"
+            valueField="id"
+            displayField="label"
+            [fullText]="true"
+            [value]="nuevo.vecinoId"
+            (valueChange)="nuevo.vecinoId = $event">
+          </app-search-select>
+          <p *ngIf="vecinoOptions.length === 0" class="text-[11px] text-[#D30000]">
+            No hay vecinos con personas registradas en este proyecto.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-[6px]">
+          <label class="text-xs text-[#4CAF50] font-medium">Detalle (opcional)</label>
+          <textarea
+            [(ngModel)]="nuevo.descripcion"
+            rows="2"
+            placeholder="¿Qué se hace ese día?…"
+            class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30 resize-none"></textarea>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button type="button" (click)="guardar()"
+            class="px-4 py-2 rounded-lg bg-[#4CAF50] text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors">
+            Guardar
+          </button>
+          <button type="button" (click)="showAddForm = false"
+            class="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 text-sm font-medium cursor-pointer hover:bg-gray-200 transition-colors">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</app-base-modal>

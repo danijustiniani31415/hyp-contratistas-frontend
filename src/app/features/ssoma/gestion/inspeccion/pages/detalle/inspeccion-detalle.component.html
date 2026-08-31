@@ -1,0 +1,378 @@
+<div class="detalle-root">
+
+  <app-abril-page-header
+    badge="SSOMA"
+    [titulo]="data ? 'Inspección #' + data.id : 'Detalle inspección'"
+    [subtitulo]="data ? data.tipoNombre + ' — ' + data.proyectoNombre : ''"
+    [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+    [botonPrimario]="{ label: descargandoPdf ? 'Descargando...' : 'Descargar PDF', icono: descargandoPdf ? 'ti-loader-2' : 'ti-download' }"
+    [botonPrimarioDeshabilitado]="descargandoPdf"
+    (secondaryClick)="volver()"
+    (primaryClick)="descargarPdf()">
+  </app-abril-page-header>
+
+  <div class="det-body">
+
+    <!-- SKELETON -->
+    @if (loading) {
+      <div class="skeleton-stack">
+        @for (_ of [1,2,3]; track $index) {
+          <div class="skeleton-card"></div>
+        }
+      </div>
+    }
+
+    @if (!loading && data) {
+
+      <!-- ── TOP ROW: GAUGE + META ── -->
+      <div class="top-row">
+
+        <div class="gauge-card">
+          <svg class="gauge-svg" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="44" fill="none" stroke="#f0ede8" stroke-width="8" />
+            <circle cx="50" cy="50" r="44" fill="none" stroke-width="8" stroke-linecap="round"
+              [ngClass]="scoreClass(data.tasaCumplimiento)"
+              [attr.stroke-dasharray]="circumference"
+              [attr.stroke-dashoffset]="scoreDashOffset(data.tasaCumplimiento)"
+              transform="rotate(-90 50 50)" />
+          </svg>
+          <div class="gauge-center">
+            <span class="gauge-val" [ngClass]="scoreClass(data.tasaCumplimiento)">
+              {{ data.tasaCumplimiento != null ? (data.tasaCumplimiento | number:'1.0-0') + '%' : '—' }}
+            </span>
+          </div>
+          <div class="gauge-lbl">Cumplimiento</div>
+          <div class="gauge-counts">
+            <span class="gc gc--verde">✓ {{ data.totalCumple }}</span>
+            <span class="gc gc--rojo">✗ {{ data.totalNoCumple }}</span>
+            <span class="gc gc--gris">— {{ data.totalNa }}</span>
+          </div>
+          <div class="estado-row">
+            <span class="estado-chip estado-chip--{{ data.estado | lowercase }}">{{ data.estado }}</span>
+          </div>
+        </div>
+
+        <div class="meta-card">
+          <div class="meta-row">
+            <span class="meta-label"><i class="ti ti-building-skyscraper"></i> Proyecto</span>
+            <span class="meta-value">{{ data.proyectoNombre }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label"><i class="ti ti-shield"></i> Tipo</span>
+            <span class="meta-value">
+              {{ data.tipoNombre }}
+              <span class="badge-ambito" [ngClass]="ambitoClass(data.tipoAmbito)">{{ data.tipoAmbito }}</span>
+            </span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label"><i class="ti ti-calendar"></i> Fecha</span>
+            <span class="meta-value">
+              {{ data.fecha | date:'dd/MM/yyyy' }}
+              @if (data.horaInicio) { · {{ data.horaInicio }}{{ data.horaFin ? ' – ' + data.horaFin : '' }} }
+            </span>
+          </div>
+          @if (data.area) {
+            <div class="meta-row">
+              <span class="meta-label"><i class="ti ti-map-pin"></i> Área</span>
+              <span class="meta-value">{{ data.area }}</span>
+            </div>
+          }
+          @if (data.responsableArea) {
+            <div class="meta-row">
+              <span class="meta-label"><i class="ti ti-user"></i> Resp. área</span>
+              <span class="meta-value">{{ data.responsableArea }}</span>
+            </div>
+          }
+          @if (data.empresaNombre) {
+            <div class="meta-row">
+              <span class="meta-label"><i class="ti ti-building"></i> Empresa</span>
+              <span class="meta-value">{{ data.empresaNombre }}</span>
+            </div>
+          }
+          <div class="meta-row">
+            <span class="meta-label"><i class="ti ti-tag"></i> Modalidad</span>
+            <span class="meta-value">{{ data.esPlanificada ? 'Planificada' : 'No planificada' }}</span>
+          </div>
+          @if (data.inspectorNombre) {
+            <div class="meta-row">
+              <span class="meta-label"><i class="ti ti-id-badge"></i> Inspector</span>
+              <span class="meta-value">{{ data.inspectorNombre }}{{ data.inspectorCargo ? ' — ' + data.inspectorCargo : '' }}</span>
+            </div>
+          }
+        </div>
+
+      </div>
+
+      <!-- ── COLABORATIVA: participantes + cierre ── -->
+      @if (data.esColaborativa) {
+        <div class="det-card">
+          <div class="det-card__header">
+            <h2 class="det-card__title"><i class="ti ti-users"></i> Participantes</h2>
+            @if (data.estado === 'Abierta') {
+              <button type="button" class="btn-toggle-na" [disabled]="cerrandoColaborativa" (click)="cerrarColaborativa()">
+                @if (cerrandoColaborativa) { <i class="ti ti-loader-2 spin"></i> } @else { Cerrar inspección }
+              </button>
+            } @else {
+              <button type="button" class="btn-toggle-na" [disabled]="reabriendoColaborativa" (click)="reabrirColaborativa()">
+                @if (reabriendoColaborativa) { <i class="ti ti-loader-2 spin"></i> } @else { Reabrir inspección }
+              </button>
+            }
+          </div>
+          <div class="hallazgo-meta">
+            @for (p of data.participantes; track p.id) {
+              <span><i class="ti ti-user"></i> {{ p.nombre }}{{ p.cargo ? ' — ' + p.cargo : '' }}</span>
+            }
+          </div>
+          @if (data.estado === 'Abierta') {
+            <button type="button" class="btn-cerrar-hallazgo" (click)="irAAgregarHallazgo()" style="margin-top: 8px;">
+              Agregar hallazgo
+            </button>
+          }
+        </div>
+      }
+
+      <!-- ── CHECKLIST ACORDEÓN ── -->
+      @if (grupos.length) {
+        <div class="det-card">
+          <div class="det-card__header">
+            <h2 class="det-card__title"><i class="ti ti-clipboard-check"></i> Checklist</h2>
+            <button type="button" class="btn-toggle-na" (click)="mostrarNA = !mostrarNA">
+              {{ mostrarNA ? 'Ocultar N/A' : 'Mostrar N/A' }}
+            </button>
+          </div>
+          @for (g of grupos; track g.categoria) {
+            <div class="grupo">
+              <div class="grupo-header" (click)="toggleGrupo(g)">
+                <span>{{ g.categoria }}</span>
+                <i class="ti" [class.ti-chevron-down]="!g.expandido" [class.ti-chevron-up]="g.expandido"></i>
+              </div>
+              @if (g.expandido) {
+                @for (item of itemsVisibles(g); track item.itemId) {
+                  <div class="checklist-det-row" [class.det-row--nocumple]="item.resultado === 'NoCumple'">
+                    <div class="det-pregunta">{{ item.pregunta }}</div>
+                    <span class="res-chip" [ngClass]="resultadoClass(item.resultado)">
+                      {{ item.resultado === 'NoCumple' ? 'No cumple' : item.resultado }}
+                    </span>
+                    @if (item.observacion) {
+                      <div class="det-obs">{{ item.observacion }}</div>
+                    }
+                  </div>
+                }
+                @if (itemsVisibles(g).length === 0) {
+                  <div class="grupo-empty">Todos los ítems están en N/A</div>
+                }
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ── HALLAZGOS ── -->
+      @if (data.hallazgos.length) {
+        <div class="det-card">
+          <h2 class="det-card__title"><i class="ti ti-alert-triangle"></i> Hallazgos</h2>
+          <div class="hallazgos-list">
+            @for (h of data.hallazgos; track h.id) {
+              <div class="hallazgo-card" [class.hallazgo-card--critico]="h.tipo === 'Critico'">
+                <div class="hallazgo-top">
+                  <span class="badge-tipo" [ngClass]="tipoClass(h.tipo)">{{ h.tipo }}</span>
+                  <span class="hallazgo-estado" [ngClass]="estadoHallazgoClass(h.estado)">{{ h.estado }}</span>
+                  @if (h.estado === 'Abierto' && data.estado === 'Abierta') {
+                    <div class="hallazgo-actions">
+                      <button type="button" class="btn-editar-hallazgo" (click)="abrirEditar(h)">
+                        Editar
+                      </button>
+                      <button type="button" class="btn-eliminar-hallazgo" [disabled]="eliminandoId === h.id" (click)="eliminarHallazgo(h)">
+                        @if (eliminandoId === h.id) { <i class="ti ti-loader-2 spin"></i> } @else { Eliminar }
+                      </button>
+                      <button type="button" class="btn-cerrar-hallazgo" (click)="abrirCierre(h)">
+                        Cerrar
+                      </button>
+                    </div>
+                  }
+                </div>
+                <div class="hallazgo-desc">{{ h.descripcion }}</div>
+                @if (h.responsableNombre || h.area) {
+                  <div class="hallazgo-meta">
+                    @if (h.area) { <span><i class="ti ti-map-pin"></i> {{ h.area }}</span> }
+                    @if (h.responsableNombre) { <span><i class="ti ti-user"></i> {{ h.responsableNombre }}{{ h.responsableCargo ? ' — ' + h.responsableCargo : '' }}</span> }
+                    @if (h.fechaLimite) { <span><i class="ti ti-calendar"></i> Límite: {{ h.fechaLimite | date:'dd/MM/yyyy' }}</span> }
+                  </div>
+                }
+                @if (h.accionCorrectiva) {
+                  <div class="hallazgo-accion">
+                    <span class="hallazgo-accion__lbl">Acción correctiva</span>
+                    <span>{{ h.accionCorrectiva }}</span>
+                  </div>
+                }
+                @if (h.fotos.length) {
+                  <div class="fotos-grid">
+                    @for (f of h.fotos; track f.id) {
+                      <img [src]="spUrl(f.url)" class="foto-thumb" (click)="openLightbox(spUrl(f.url))" />
+                    }
+                  </div>
+                }
+                @if (h.evidenciaCierreUrl) {
+                  <div class="hallazgo-evidencia">
+                    <span class="hallazgo-accion__lbl">Evidencia de cierre</span>
+                    <img [src]="spUrl(h.evidenciaCierreUrl)" class="evidencia-img" (click)="openLightbox(spUrl(h.evidenciaCierreUrl))" />
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ── CONCLUSIONES ── -->
+      @if (data.descripcionCausas || data.conclusiones) {
+        <div class="det-card">
+          <h2 class="det-card__title"><i class="ti ti-notes"></i> Conclusiones</h2>
+          @if (data.descripcionCausas) {
+            <div class="conclusion-block">
+              <div class="conclusion-lbl">Causas de resultados desfavorables</div>
+              <div class="conclusion-txt">{{ data.descripcionCausas }}</div>
+            </div>
+          }
+          @if (data.conclusiones) {
+            <div class="conclusion-block">
+              <div class="conclusion-lbl">Conclusiones y recomendaciones</div>
+              <div class="conclusion-txt">{{ data.conclusiones }}</div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ── FIRMAS ── -->
+      @if (data.firmaInspectorUrl || data.firmaRepresentanteUrl) {
+        <div class="det-card">
+          <h2 class="det-card__title"><i class="ti ti-signature"></i> Firmas</h2>
+          <div class="firmas-row">
+            @if (data.firmaInspectorUrl) {
+              <div class="firma-block">
+                <img [src]="spUrl(data.firmaInspectorUrl)" class="firma-img" />
+                <div class="firma-nombre">{{ data.inspectorNombre ?? 'Inspector' }}</div>
+                @if (data.inspectorCargo) { <div class="firma-cargo">{{ data.inspectorCargo }}</div> }
+              </div>
+            }
+            @if (data.firmaRepresentanteUrl) {
+              <div class="firma-block">
+                <img [src]="spUrl(data.firmaRepresentanteUrl)" class="firma-img" />
+                <div class="firma-nombre">{{ data.representanteNombre ?? 'Representante' }}</div>
+                @if (data.representanteCargo) { <div class="firma-cargo">{{ data.representanteCargo }}</div> }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+    }<!-- /data -->
+  </div><!-- /det-body -->
+
+  <!-- DRAWER: Cerrar hallazgo -->
+  @if (hallazgoCierre) {
+    <div class="drawer-backdrop" (click)="cerrarDrawer()"></div>
+    <div class="drawer">
+      <div class="drawer-header">
+        <span class="drawer-title">Cerrar hallazgo</span>
+        <button type="button" class="drawer-close" (click)="cerrarDrawer()">
+          <i class="ti ti-x"></i>
+        </button>
+      </div>
+      <div class="drawer-body">
+        <div class="form-group">
+          <label class="form-label">Acción correctiva <span class="required">*</span></label>
+          <textarea class="form-input" [(ngModel)]="cierreAccion" rows="3"
+            placeholder="Describe la acción tomada para corregir el hallazgo..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Evidencia fotográfica</label>
+          @if (!cierreFotoPreview) {
+            <label class="btn-foto-add">
+              <i class="ti ti-camera"></i> Agregar foto
+              <input type="file" accept="image/*" (change)="onCierreFoto($event)" style="display:none" />
+            </label>
+          } @else {
+            <div class="cierre-foto-preview">
+              <img [src]="cierreFotoPreview" />
+              <button type="button" (click)="cierreFotoPreview=''; cierreFotoBase64=''">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="drawer-footer">
+        <button type="button" class="btn-cancelar" (click)="cerrarDrawer()">Cancelar</button>
+        <button type="button" class="btn-confirmar" [disabled]="cerrando" (click)="confirmarCierre()">
+          @if (cerrando) { <i class="ti ti-loader-2 spin"></i> } @else { Confirmar cierre }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- DRAWER: Editar hallazgo -->
+  @if (hallazgoEditar) {
+    <div class="drawer-backdrop" (click)="cerrarDrawerEditar()"></div>
+    <div class="drawer">
+      <div class="drawer-header">
+        <span class="drawer-title">Editar hallazgo</span>
+        <button type="button" class="drawer-close" (click)="cerrarDrawerEditar()">
+          <i class="ti ti-x"></i>
+        </button>
+      </div>
+      <div class="drawer-body">
+        <div class="form-group">
+          <label class="form-label">Descripción <span class="required">*</span></label>
+          <textarea class="form-input" [(ngModel)]="editDescripcion" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Criticidad</label>
+          <div class="tipo-btns">
+            @for (t of ['Critico', 'Mayor', 'Menor']; track t) {
+              <button type="button" class="btn-tipo" [ngClass]="tipoClass(t)"
+                [class.btn-tipo--active]="editTipo === t"
+                (click)="setEditTipo($any(t))">
+                {{ t }}
+              </button>
+            }
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Área</label>
+          <input type="text" class="form-input" [(ngModel)]="editArea" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Responsable</label>
+          <input type="text" class="form-input" [(ngModel)]="editResponsableNombre" placeholder="Nombre" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cargo del responsable</label>
+          <input type="text" class="form-input" [(ngModel)]="editResponsableCargo" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha límite</label>
+          <input type="date" class="form-input" [(ngModel)]="editFechaLimite" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Acción correctiva propuesta</label>
+          <textarea class="form-input" [(ngModel)]="editAccionCorrectiva" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="drawer-footer">
+        <button type="button" class="btn-cancelar" (click)="cerrarDrawerEditar()">Cancelar</button>
+        <button type="button" class="btn-confirmar" [disabled]="guardandoEdicion" (click)="confirmarEdicion()">
+          @if (guardandoEdicion) { <i class="ti ti-loader-2 spin"></i> } @else { Guardar cambios }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- LIGHTBOX -->
+  @if (lightboxOpen) {
+    <div class="lightbox" (click)="closeLightbox()">
+      <img [src]="lightboxUrl" class="lightbox-img" />
+    </div>
+  }
+
+</div>

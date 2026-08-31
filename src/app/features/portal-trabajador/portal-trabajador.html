@@ -1,0 +1,86 @@
+<div class="portal-root">
+  <div class="portal-card">
+
+    <div class="portal-header">
+      <div class="portal-logo">🏗</div>
+      <h1 class="portal-title">Portal del Trabajador</h1>
+      <p class="portal-sub">Consulta tu estado de habilitación y EMO</p>
+    </div>
+
+    <div class="search-row">
+      <input
+        class="field-input"
+        [(ngModel)]="dni"
+        placeholder="Ingresa tu DNI o CE"
+        (keyup.enter)="buscar()"
+        maxlength="12"
+      />
+      <button class="btn-primary" [disabled]="loading || !dni.trim()" (click)="buscar()">
+        {{ loading ? '...' : 'Consultar' }}
+      </button>
+    </div>
+
+    <div *ngIf="error" class="alert-red">{{ error }}</div>
+
+    <div *ngIf="resultado" class="resultado-section">
+
+      <!-- Identidad + estado -->
+      <div class="worker-banner" [style.background]="estadoBg" [style.border-color]="estadoColor">
+        <div class="worker-info">
+          <div class="worker-name">{{ resultado.apellidoNombre }}</div>
+          <div class="worker-meta">{{ resultado.dni }} · {{ resultado.empresa }}</div>
+        </div>
+        <div class="estado-badge" [style.background]="estadoColor">
+          {{ resultado.estadoHabilitacion }}
+        </div>
+      </div>
+
+      <!-- Documentos faltantes -->
+      <div *ngIf="resultado.documentosFaltantes && resultado.documentosFaltantes.length > 0" class="bloque">
+        <div class="bloque-title bloque-red">⚠ Documentos faltantes</div>
+        <ul class="doc-list">
+          <li *ngFor="let d of resultado.documentosFaltantes" class="doc-item doc-missing">{{ d }}</li>
+        </ul>
+      </div>
+
+      <!-- Documentos por vencer -->
+      <div *ngIf="resultado.documentosPorVencer && resultado.documentosPorVencer.length > 0" class="bloque">
+        <div class="bloque-title bloque-orange">⏳ Documentos por vencer</div>
+        <ul class="doc-list">
+          <li *ngFor="let d of resultado.documentosPorVencer" class="doc-item doc-warning">
+            {{ d.nombre }}
+            <span class="doc-vigencia">Vence: {{ d.vigencia }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Entregables -->
+      <div *ngIf="resultado.entregables && resultado.entregables.length > 0" class="bloque">
+        <div class="bloque-title bloque-gray">📋 Entregables</div>
+        <ul class="doc-list">
+          <li *ngFor="let e of resultado.entregables" class="doc-item">
+            <span>{{ e.nombre }}</span>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <span class="estado-chip"
+                [style.background]="e.estado === 'Vigente' ? '#dcfce7' : '#fee2e2'"
+                [style.color]="e.estado === 'Vigente' ? '#166534' : '#dc2626'">
+                {{ e.estado }}
+              </span>
+              <span *ngIf="e.vigencia" class="doc-vigencia">{{ e.vigencia }}</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Todo OK -->
+      <div *ngIf="resultado.estadoHabilitacion === 'Habilitado'
+        && (!resultado.documentosFaltantes || resultado.documentosFaltantes.length === 0)
+        && (!resultado.documentosPorVencer || resultado.documentosPorVencer.length === 0)"
+        class="alert-green">
+        ✓ Todo en orden. No tienes documentos pendientes.
+      </div>
+
+    </div>
+
+  </div>
+</div>

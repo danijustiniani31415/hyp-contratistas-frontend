@@ -1,0 +1,132 @@
+<app-base-modal
+  [title]="'Editar lotes · ' + croquis.projectDescription"
+  width="w-[1100px]"
+  (closeModal)="close()">
+
+  <div class="flex flex-col lg:flex-row gap-4 p-1">
+
+    <!-- ── Lienzo (imagen + overlay SVG) ──────────────────────────────── -->
+    <div class="flex-1 min-w-0">
+      <div class="relative w-full select-none border border-gray-200 rounded overflow-hidden"
+           [class.cursor-crosshair]="drawing"
+           (click)="onCanvasClick($event)">
+        <img [src]="imageSrc()" class="block w-full pointer-events-none" [alt]="'Croquis de ' + croquis.projectDescription" />
+
+        <svg class="absolute inset-0 w-full h-full pointer-events-none"
+             viewBox="0 0 100 100" preserveAspectRatio="none">
+          <!-- Lotes guardados -->
+          <polygon *ngFor="let lote of lotes; let i = index"
+            [attr.points]="pointsToSvg(lote.puntos)"
+            [attr.fill]="colorFor(i)"
+            [attr.fill-opacity]="selectedIndex === i ? 0.45 : 0.25"
+            [attr.stroke]="colorFor(i)"
+            stroke-width="2"
+            vector-effect="non-scaling-stroke" />
+
+          <!-- Polígono en progreso -->
+          <polyline *ngIf="currentPoints.length"
+            [attr.points]="pointsToSvg(currentPoints)"
+            fill="rgba(100,188,4,0.15)"
+            stroke="#509603"
+            stroke-width="2"
+            stroke-dasharray="3 2"
+            vector-effect="non-scaling-stroke" />
+        </svg>
+
+        <!-- Etiquetas de número (HTML, para no deformar el texto) -->
+        <div *ngFor="let lote of lotes; let i = index"
+          class="absolute -translate-x-1/2 -translate-y-1/2 text-[11px] font-bold px-1.5 py-0.5 rounded bg-white/85 border pointer-events-none"
+          [style.left.%]="centroid(lote.puntos).x"
+          [style.top.%]="centroid(lote.puntos).y"
+          [style.borderColor]="colorFor(i)"
+          [style.color]="colorFor(i)">
+          {{ lote.numeroLote }}
+        </div>
+
+        <!-- Vértices del polígono en progreso -->
+        <div *ngFor="let p of currentPoints"
+          class="absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#509603] border border-white pointer-events-none"
+          [style.left.%]="p[0] * 100"
+          [style.top.%]="p[1] * 100">
+        </div>
+      </div>
+
+      <p class="text-xs text-gray-400 mt-2">
+        {{ drawing
+          ? 'Haz clic sobre el croquis para colocar los vértices del lote. Mínimo 3 puntos.'
+          : 'Pulsa “Nuevo lote” y dibuja el contorno de cada lote/edificio haciendo clic.' }}
+      </p>
+    </div>
+
+    <!-- ── Panel lateral ──────────────────────────────────────────────── -->
+    <div class="w-full lg:w-[300px] flex flex-col gap-3">
+
+      <!-- Controles de dibujo -->
+      <div *ngIf="!drawing" class="flex flex-col gap-2">
+        <button type="button" (click)="startDrawing()"
+          class="w-full px-4 py-2 rounded-lg bg-[#64BC04] text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center justify-center gap-1.5">
+          <i class="ti ti-pencil-plus"></i> Nuevo lote
+        </button>
+      </div>
+
+      <div *ngIf="drawing" class="flex flex-col gap-2 bg-[#F4FBEC] border border-[#cfe8b0] rounded-lg p-3">
+        <span class="text-xs font-medium text-[#509603]">Dibujando lote · {{ currentPoints.length }} punto(s)</span>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" (click)="undoPoint()" [disabled]="!currentPoints.length"
+            class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 text-xs cursor-pointer hover:bg-gray-50 disabled:opacity-40">
+            Deshacer punto
+          </button>
+          <button type="button" (click)="cancelDrawing()"
+            class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 text-xs cursor-pointer hover:bg-gray-50">
+            Cancelar
+          </button>
+          <button type="button" (click)="finishLote()" [disabled]="currentPoints.length < 3"
+            class="px-3 py-1.5 rounded bg-[#64BC04] text-white text-xs cursor-pointer hover:bg-[#57a803] disabled:opacity-40">
+            Finalizar lote
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista de lotes -->
+      <div class="flex-1 min-h-0 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+        <div *ngFor="let lote of lotes; let i = index"
+          (click)="selectLote(i)"
+          class="flex items-center justify-between px-3 py-2 cursor-pointer transition-colors"
+          [class.bg-gray-50]="selectedIndex === i">
+          <span class="flex items-center gap-2 text-sm text-gray-700">
+            <span class="w-3 h-3 rounded-sm" [style.background]="colorFor(i)"></span>
+            Lote {{ lote.numeroLote }}
+            <span class="text-xs text-gray-400">({{ lote.puntos.length }} pts)</span>
+          </span>
+          <span class="flex items-center gap-1">
+            <button type="button" (click)="renameLote(i); $event.stopPropagation()"
+              title="Renombrar lote"
+              class="text-gray-400 hover:text-[#509603] text-sm cursor-pointer">
+              <i class="ti ti-pencil"></i>
+            </button>
+            <button type="button" (click)="removeLote(i); $event.stopPropagation()"
+              title="Quitar lote"
+              class="text-gray-400 hover:text-[#D30000] text-sm cursor-pointer">
+              <i class="ti ti-trash"></i>
+            </button>
+          </span>
+        </div>
+        <p *ngIf="lotes.length === 0" class="text-center text-xs text-gray-400 italic py-6">
+          Aún no hay lotes dibujados.
+        </p>
+      </div>
+
+      <!-- Acciones -->
+      <div class="flex gap-2 pt-1">
+        <button type="button" (click)="close()"
+          class="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm font-medium cursor-pointer hover:bg-gray-50">
+          Cancelar
+        </button>
+        <button type="button" (click)="save()"
+          class="flex-1 px-4 py-2 rounded-lg bg-[#64BC04] text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center justify-center gap-1.5">
+          <i class="ti ti-device-floppy"></i> Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</app-base-modal>

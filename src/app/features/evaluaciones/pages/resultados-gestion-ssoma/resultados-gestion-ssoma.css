@@ -1,0 +1,95 @@
+:host {
+  display: flex; flex-direction: column;
+  height: 100%; min-height: 0;
+  background: #F8FAFC;
+}
+
+.rj-root {
+  background: #F8FAFC;
+  padding: 10px; display: flex; flex-direction: column; gap: 6px;
+  flex: 1; min-height: 0; box-sizing: border-box; overflow-y: auto;
+}
+
+.loading-state, .empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; padding: 80px 24px; color: var(--color-abril-muted);
+  flex: 1; min-height: 0;
+}
+.loading-state .spinner {
+  width: 32px; height: 32px; border: 3px solid var(--color-abril-border);
+  border-top-color: var(--color-abril-primary); border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.empty-state i { font-size: 48px; opacity: 0.4; }
+.empty-state h3 { font-size: 18px; font-weight: 600; margin: 0; }
+.empty-state p { font-size: 14px; margin: 0; text-align: center; }
+
+.rj-content { display: flex; flex-direction: column; gap: 16px; }
+
+.top-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.stat-card {
+  background: var(--color-abril-surface); border: 1px solid var(--color-abril-border);
+  border-radius: 10px; padding: 12px 16px;
+}
+.stat-label { font-size: 12px; font-weight: 600; color: var(--color-abril-muted); text-transform: uppercase; }
+.stat-num { font-size: 32px; font-weight: 800; margin-top: 4px; }
+.stat-cumplimiento { color: var(--color-abril-primary); }
+.stat-sub { font-size: 12px; color: var(--color-abril-muted); margin-top: 4px; }
+
+.progress-bar {
+  margin-top: 10px; height: 6px; border-radius: 10px;
+  background: var(--color-abril-bg-alt, #F1F5F9); overflow: hidden;
+}
+.progress-fill { height: 100%; background: var(--color-abril-primary); border-radius: 10px; }
+
+.section-card {
+  background: var(--color-abril-surface); border: 1px solid var(--color-abril-border);
+  border-radius: 10px; padding: 12px 16px;
+}
+.section-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; }
+.section-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.section-title-row .section-title { margin-bottom: 0; }
+.relacion-filtro {
+  font-size: 12px; padding: 5px 8px; border-radius: 6px;
+  border: 1px solid var(--color-abril-border); color: var(--color-abril-ink); background: #fff;
+}
+
+.criterio-row {
+  display: grid; grid-template-columns: 220px 1fr 70px;
+  align-items: center; gap: 12px; padding: 8px 0;
+}
+.cr-nombre { font-size: 13px; }
+.cr-barra-wrap { height: 8px; border-radius: 10px; background: var(--color-abril-bg-alt, #F1F5F9); overflow: hidden; }
+.cr-barra { height: 100%; border-radius: 10px; }
+.cr-valor { font-size: 12px; font-weight: 600; text-align: right; color: var(--color-abril-muted); }
+
+.eval-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--color-abril-border);
+}
+.eval-row:last-child { border-bottom: none; }
+.er-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.er-relacion { font-size: 11px; font-weight: 600; color: var(--color-abril-muted); text-transform: uppercase; }
+.er-evaluado { font-size: 13px; font-weight: 600; }
+.er-por { font-size: 11px; color: var(--color-abril-muted); }
+.er-anon { display: flex; align-items: center; gap: 3px; }
+.er-nota { font-size: 16px; font-weight: 800; flex-shrink: 0; }
+
+.pendiente-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 0; border-bottom: 1px solid var(--color-abril-border);
+}
+.pendiente-item:last-child { border-bottom: none; }
+.pe-avatar {
+  width: 32px; height: 32px; border-radius: 8px; background: #F59E0B;
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+}
+.pe-nombre { font-size: 13px; font-weight: 600; }
+.pe-email { font-size: 11px; color: var(--color-abril-muted); }
+
+.nota-aprobado { color: #059669; }
+.nota-regular { color: #D97706; }
+.nota-desaprobado { color: #DC2626; }
+.nota-sin { color: var(--color-abril-muted); }

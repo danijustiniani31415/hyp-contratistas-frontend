@@ -1,0 +1,215 @@
+<div class="flex flex-col gap-[12px] flex-1 min-h-0 overflow-auto pt-[4px] pb-[8px]">
+
+  <!-- Pestañas internas: un correo a la vez -->
+  <app-section-tabs
+    class="shrink-0"
+    [tabs]="sectionTabs"
+    [value]="activeCodigo"
+    color="var(--color-abril-standard)"
+    (valueChange)="onTabChange($event)">
+  </app-section-tabs>
+
+  <ng-container *ngIf="activeEvento as ev">
+    <ng-container *ngIf="activeEstado as est">
+
+      <!-- Descripción + interruptor maestro del correo -->
+      <div class="flex items-start justify-between gap-[12px] shrink-0">
+        <p class="text-xs text-gray-500 leading-relaxed">{{ ev.descripcion }}</p>
+
+        <div *ngIf="ev.permiteDesactivarEnvio" class="flex items-center gap-[8px] shrink-0">
+          <span class="text-[11px] font-medium whitespace-nowrap"
+                [ngClass]="est.active ? 'text-[#3C7A16]' : 'text-gray-400'">
+            {{ est.active ? 'Correo activo' : 'Correo desactivado' }}
+          </span>
+          <button type="button" class="switch" role="switch"
+            [attr.aria-checked]="est.active"
+            [attr.aria-label]="(est.active ? 'Desactivar' : 'Activar') + ' ' + ev.nombre"
+            [class.switch--on]="est.active"
+            (click)="toggleEnvio()">
+            <span class="switch__knob"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Avisos: correo apagado, o prendido pero sin nadie a quién mandárselo -->
+      <p *ngIf="!est.active"
+        class="text-[11px] text-[#92400E] bg-[#FEF9C3] border border-[#FDE68A] rounded-[8px] px-[12px] py-[8px] shrink-0">
+        Este correo no se está enviando. Su configuración se conserva y vuelve a salir apenas lo actives.
+      </p>
+      <p *ngIf="sinDestinatarios"
+        class="text-[11px] text-[#B42318] bg-[#FDECEC] border border-[#F5C9C6] rounded-[8px] px-[12px] py-[8px] shrink-0">
+        Con el destinatario principal apagado y sin destinatarios activos en "Se enviará a", este correo
+        no le llega a nadie: no se enviará.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-[16px] shrink-0"
+           [class.opacity-60]="!est.active">
+
+        <!-- Columna: se enviará a (inclusiones) -->
+        <section class="border border-[#D6DEE5] rounded-[10px] overflow-hidden flex flex-col">
+          <header class="px-[14px] py-[10px] bg-[#E9F7E0] border-b border-[#CFE9BD]">
+            <p class="text-sm font-semibold text-[#3C7A16]">Se enviará a</p>
+            <p class="text-[11px] text-gray-500">Destinatarios del correo (además del destinatario principal).</p>
+          </header>
+          <div class="p-[12px] flex flex-col gap-[10px]">
+
+            <!-- Destinatario principal: lo resuelve el backend al enviar, acá solo se prende o apaga -->
+            <div *ngIf="ev.permiteDesactivarPrincipal"
+              class="border rounded-[8px] p-[10px] flex items-center justify-between gap-[10px] transition-colors"
+              [ngClass]="est.destinatarioPrincipalActivo
+                ? 'border-[#CFE9BD] bg-[#F4FBEE]'
+                : 'border-[#E2E8EE] bg-gray-50'">
+              <div class="min-w-0">
+                <p class="text-[12px] font-semibold"
+                   [ngClass]="est.destinatarioPrincipalActivo ? 'text-[#3C7A16]' : 'text-gray-400'">
+                  Destinatario principal
+                </p>
+                <p class="text-[11px] text-gray-500 leading-snug">
+                  {{ ev.destinatarioPrincipalNombre }}. Se resuelve automáticamente al enviar.
+                </p>
+              </div>
+              <button type="button" class="switch shrink-0" role="switch"
+                [attr.aria-checked]="est.destinatarioPrincipalActivo"
+                [attr.aria-label]="(est.destinatarioPrincipalActivo ? 'Desactivar' : 'Activar') + ' destinatario principal'"
+                [class.switch--on]="est.destinatarioPrincipalActivo"
+                (click)="togglePrincipal()">
+                <span class="switch__knob"></span>
+              </button>
+            </div>
+
+            <ng-container *ngFor="let row of est.incluir; let i = index">
+              <ng-container *ngTemplateOutlet="filaTpl; context: { $implicit: row, lista: est.incluir, index: i }"></ng-container>
+            </ng-container>
+            <p *ngIf="est.incluir.length === 0" class="text-xs text-gray-400 text-center py-[8px]">
+              Sin destinatarios configurados.
+            </p>
+            <div>
+              <button type="button" (click)="agregar(est.incluir)"
+                class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-[#64BC04] text-[#3C7A16] hover:bg-[#E5F7D1] transition-colors cursor-pointer">
+                + Agregar destinatario
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Columna: nunca se enviará a (exclusiones) -->
+        <section class="border border-[#D6DEE5] rounded-[10px] overflow-hidden flex flex-col">
+          <header class="px-[14px] py-[10px] bg-[#FDECEC] border-b border-[#F5C9C6]">
+            <p class="text-sm font-semibold text-[#B42318]">Nunca se enviará a</p>
+            <p class="text-[11px] text-gray-500">Gana sobre la lista de envío, incluso si es miembro de un área.</p>
+          </header>
+          <div class="p-[12px] flex flex-col gap-[10px]">
+            <ng-container *ngFor="let row of est.excluir; let i = index">
+              <ng-container *ngTemplateOutlet="filaTpl; context: { $implicit: row, lista: est.excluir, index: i }"></ng-container>
+            </ng-container>
+            <p *ngIf="est.excluir.length === 0" class="text-xs text-gray-400 text-center py-[8px]">
+              Nadie excluido.
+            </p>
+            <div>
+              <button type="button" (click)="agregar(est.excluir)"
+                class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-[#D30000] text-[#B42318] hover:bg-[#FAD5D4] transition-colors cursor-pointer">
+                + Agregar exclusión
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="flex justify-center mt-[4px] shrink-0">
+        <button type="button" (click)="guardar()" [disabled]="guardando"
+          class="w-[200px] py-[9px] rounded-[10px] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-default"
+          style="background: var(--color-abril-standard)">
+          <p class="text-white text-base font-medium text-center">Guardar</p>
+        </button>
+      </div>
+    </ng-container>
+  </ng-container>
+</div>
+
+<!-- ── Plantilla de fila de destinatario (reusada por ambas columnas) ─────── -->
+<ng-template #filaTpl let-row let-lista="lista" let-i="index">
+  <div class="border border-[#E2E8EE] rounded-[8px] p-[10px] flex flex-col gap-[8px] bg-white">
+
+    <!-- Selector de tipo + quitar -->
+    <div class="flex items-center justify-between gap-[8px]">
+      <div class="flex gap-[4px]">
+        <button type="button" (click)="setTipo(row, 'TRABAJADOR')"
+          class="text-[11px] px-[8px] py-[3px] rounded-full border transition-colors cursor-pointer"
+          [ngClass]="row.tipoCodigo === 'TRABAJADOR'
+            ? 'border-[var(--color-abril-standard)] bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)] font-semibold'
+            : 'border-gray-200 text-gray-500 hover:bg-gray-50'">
+          Trabajador
+        </button>
+        <button type="button" (click)="setTipo(row, 'AREA')"
+          class="text-[11px] px-[8px] py-[3px] rounded-full border transition-colors cursor-pointer"
+          [ngClass]="row.tipoCodigo === 'AREA'
+            ? 'border-[var(--color-abril-standard)] bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)] font-semibold'
+            : 'border-gray-200 text-gray-500 hover:bg-gray-50'">
+          Área
+        </button>
+        <button type="button" (click)="setTipo(row, 'CORREO')"
+          class="text-[11px] px-[8px] py-[3px] rounded-full border transition-colors cursor-pointer"
+          [ngClass]="row.tipoCodigo === 'CORREO'
+            ? 'border-[var(--color-abril-standard)] bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)] font-semibold'
+            : 'border-gray-200 text-gray-500 hover:bg-gray-50'">
+          Correo
+        </button>
+      </div>
+      <button type="button" (click)="quitar(lista, i)"
+        class="shrink-0 text-[#D30000] hover:bg-[#FAD5D4] rounded-full w-[24px] h-[24px] flex items-center justify-center cursor-pointer transition-colors"
+        title="Quitar">
+        ✕
+      </button>
+    </div>
+
+    <!-- Control según el tipo -->
+    <div>
+      <!-- Trabajador -->
+      <app-search-select *ngIf="row.tipoCodigo === 'TRABAJADOR'"
+        [options]="trabajadores"
+        valueField="workerId"
+        displayField="fullName"
+        [value]="row.workerId"
+        (valueChange)="row.workerId = $event"
+        [showLabel]="false"
+        placeholder="Buscar trabajador...">
+      </app-search-select>
+
+      <!-- Área (se expande a sus miembros) -->
+      <div *ngIf="row.tipoCodigo === 'AREA'" class="flex flex-col gap-[6px]">
+        <app-search-select
+          [options]="areas"
+          valueField="areaScopeId"
+          displayField="label"
+          [value]="row.areaScopeId"
+          (valueChange)="row.areaScopeId = $event"
+          [showLabel]="false"
+          placeholder="Selecciona área...">
+        </app-search-select>
+        <label class="flex items-center gap-[6px] text-[11px] text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" class="w-3.5 h-3.5 accent-[var(--color-abril-standard)] cursor-pointer"
+                 [checked]="row.incluirDescendientes"
+                 (change)="row.incluirDescendientes = !row.incluirDescendientes" />
+          Incluir sub-áreas
+        </label>
+        <p class="text-[11px] text-gray-400 leading-snug">
+          Se envía al correo corporativo de cada trabajador del área.
+        </p>
+      </div>
+
+      <!-- Correo manual -->
+      <input *ngIf="row.tipoCodigo === 'CORREO'" type="email"
+        [(ngModel)]="row.correo"
+        placeholder="correo@abril.pe (o un grupo de correos)"
+        class="w-full h-[34px] px-[10px] text-[12px] border border-gray-300 rounded-[7px] focus:outline-none focus:border-[var(--color-abril-standard)]" />
+    </div>
+
+    <!-- Activo / inactivo -->
+    <label class="flex items-center gap-[6px] text-[11px] text-gray-600 cursor-pointer select-none">
+      <input type="checkbox" class="w-3.5 h-3.5 accent-[var(--color-abril-standard)] cursor-pointer"
+             [checked]="row.active"
+             (change)="row.active = !row.active" />
+      Activo
+    </label>
+  </div>
+</ng-template>

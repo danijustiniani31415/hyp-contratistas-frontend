@@ -1,0 +1,262 @@
+<div class="flex flex-col gap-3">
+
+  <!-- Encabezado del panel -->
+  <div class="flex justify-between items-center">
+    <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">
+      Compromisos · {{ compromisos.length }}
+    </span>
+    <button type="button" (click)="toggleForm()"
+      class="px-3 py-[6px] rounded-lg text-xs font-medium cursor-pointer transition-colors flex items-center gap-1.5"
+      [ngClass]="showForm ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-[#4CAF50] text-white hover:bg-[#43A047]'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path *ngIf="!showForm" d="M12 5v14M5 12h14"/>
+        <path *ngIf="showForm" d="M6 6l12 12M6 18L18 6"/>
+      </svg>
+      {{ showForm ? 'Cancelar' : 'Añadir compromiso' }}
+    </button>
+  </div>
+
+  <!-- Formulario nuevo compromiso -->
+  <div *ngIf="showForm" class="border border-[#D6DEE5] rounded-lg p-4 flex flex-col gap-3 bg-white">
+    <textarea
+      [(ngModel)]="nuevo.descripcion"
+      rows="2"
+      placeholder="Descripción del compromiso…"
+      class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30 resize-none"></textarea>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div class="flex flex-col gap-[6px]">
+        <label class="text-xs text-[#4CAF50] font-medium">Fecha inicio</label>
+        <input type="date" [(ngModel)]="nuevo.fechaInicio"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[10px] py-[9px] text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30" />
+      </div>
+      <div class="flex flex-col gap-[6px]">
+        <label class="text-xs text-[#4CAF50] font-medium">Fecha fin</label>
+        <input type="date" [(ngModel)]="nuevo.fechaFin"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[10px] py-[9px] text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30" />
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-[6px]">
+      <label class="text-xs text-[#4CAF50] font-medium">Estado inicial</label>
+      <app-status-pills
+        [options]="compromisoEstados"
+        [value]="nuevo.vecinoCompromisoEstadoId"
+        (valueChange)="nuevo.vecinoCompromisoEstadoId = $event">
+      </app-status-pills>
+    </div>
+
+    <div class="flex flex-col gap-[6px]">
+      <label class="text-xs text-[#4CAF50] font-medium">Observaciones</label>
+      <textarea
+        [(ngModel)]="nuevo.observaciones"
+        rows="2"
+        placeholder="Observaciones del compromiso (opcional)…"
+        class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30 resize-none"></textarea>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <label class="flex items-center gap-2 cursor-pointer select-none">
+        <button type="button" (click)="nuevo.esCritico = !nuevo.esCritico"
+          class="relative w-10 h-5 rounded-full transition-colors"
+          [ngClass]="nuevo.esCritico ? 'bg-[#D30000]' : 'bg-gray-300'">
+          <span class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
+            [class.translate-x-5]="nuevo.esCritico"></span>
+        </button>
+        <span class="text-sm text-gray-600">Compromiso crítico</span>
+      </label>
+      <button type="button" (click)="addCompromiso()"
+        class="px-5 py-[9px] rounded-lg bg-[#4CAF50] text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors">
+        Guardar compromiso
+      </button>
+    </div>
+  </div>
+
+  <!-- Lista de compromisos -->
+  <div class="flex flex-col gap-3">
+
+    <div *ngFor="let c of compromisos"
+      class="border rounded-lg p-4 flex flex-col gap-3 bg-white"
+      [ngClass]="c.esCritico ? 'border-[#D30000]/40' : 'border-gray-200'">
+
+      <!-- Cabecera del compromiso -->
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex flex-col gap-1 min-w-0">
+          <p class="text-sm text-gray-800 whitespace-pre-line">{{ c.descripcion }}</p>
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-gray-400">
+            <span>Creado: {{ c.createdDateTime | date:'dd/MM/yyyy' }}</span>
+            <span *ngIf="c.fechaInicio">Inicio: {{ c.fechaInicio | date:'dd/MM/yyyy' }}</span>
+            <span *ngIf="c.fechaFin">Fin: {{ c.fechaFin | date:'dd/MM/yyyy' }}</span>
+            <span *ngIf="c.fechaFinMunicipalidad" class="text-[#B45309] font-medium">
+              Límite municipalidad: {{ c.fechaFinMunicipalidad | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+        </div>
+        <div class="flex flex-col items-end gap-1 shrink-0">
+          <span *ngIf="c.esCritico"
+            class="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-[#FAD5D4] text-[#D30000] border border-[#D30000]/30">
+            CRÍTICO
+          </span>
+          <span *ngIf="tieneFechaMunicipalidad(c)"
+            class="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-[#FEF3C7] text-[#B45309] border border-[#B45309]/30 text-right">
+            CON FECHA LÍMITE MUNICIPALIDAD/FISCALIZACIÓN
+          </span>
+        </div>
+      </div>
+
+      <!-- Fecha límite por municipalidad/fiscalización (editable inline) -->
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Fecha límite municipalidad/fiscalización</span>
+          <div class="flex items-center gap-2" *ngIf="editFechaMuniId !== c.vecinoCompromisoId">
+            <button type="button" (click)="startEditFechaMuni(c)"
+              class="text-[11px] text-[#B45309] hover:underline cursor-pointer inline-flex items-center gap-1">
+              <i class="ti ti-calendar-clock"></i>
+              {{ c.fechaFinMunicipalidad ? 'Editar fecha límite' : 'Añadir fecha fin de municipalidad/fiscalización' }}
+            </button>
+            <button *ngIf="c.fechaFinMunicipalidad" type="button" (click)="quitarFechaMuni(c)"
+              class="text-[11px] text-gray-400 hover:text-[#D30000] cursor-pointer inline-flex items-center gap-1">
+              <i class="ti ti-trash"></i> Quitar
+            </button>
+          </div>
+        </div>
+
+        <ng-container *ngIf="editFechaMuniId === c.vecinoCompromisoId; else verFechaMuni">
+          <div class="flex items-center gap-2 flex-wrap">
+            <input type="date" [(ngModel)]="fechaMuniDraft" [max]="c.fechaFin ? (c.fechaFin | date:'yyyy-MM-dd') : null"
+              class="border border-[#D6DEE5] rounded-lg bg-white px-[10px] py-[9px] text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30" />
+            <button type="button" (click)="saveFechaMuni(c)"
+              class="px-3 py-[6px] rounded-lg bg-[#4CAF50] text-white text-xs font-medium cursor-pointer hover:bg-[#43A047] transition-colors">
+              Guardar
+            </button>
+            <button type="button" (click)="cancelEditFechaMuni()"
+              class="px-3 py-[6px] rounded-lg bg-gray-100 text-gray-600 text-xs font-medium cursor-pointer hover:bg-gray-200 transition-colors">
+              Cancelar
+            </button>
+          </div>
+        </ng-container>
+        <ng-template #verFechaMuni>
+          <p class="text-sm text-gray-700">
+            {{ c.fechaFinMunicipalidad ? (c.fechaFinMunicipalidad | date:'dd/MM/yyyy') : '—' }}
+          </p>
+        </ng-template>
+      </div>
+
+      <!-- Estado del compromiso -->
+      <div class="flex flex-col gap-1.5">
+        <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Estado</span>
+        <app-status-pills
+          [options]="compromisoEstados"
+          [value]="c.vecinoCompromisoEstadoId"
+          (valueChange)="onCompromisoEstadoChange(c, $event)">
+        </app-status-pills>
+      </div>
+
+      <!-- Observaciones (editable inline) -->
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Observaciones</span>
+          <button *ngIf="editObsId !== c.vecinoCompromisoId" type="button" (click)="startEditObs(c)"
+            class="text-[11px] text-[#0086A5] hover:underline cursor-pointer inline-flex items-center gap-1">
+            <i class="ti ti-pencil"></i> {{ c.observaciones ? 'Editar' : 'Agregar' }}
+          </button>
+        </div>
+
+        <ng-container *ngIf="editObsId === c.vecinoCompromisoId; else verObs">
+          <textarea
+            [(ngModel)]="obsDraft"
+            rows="2"
+            placeholder="Observaciones del compromiso…"
+            class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30 resize-none"></textarea>
+          <div class="flex items-center gap-2 mt-1">
+            <button type="button" (click)="saveObs(c)"
+              class="px-3 py-[6px] rounded-lg bg-[#4CAF50] text-white text-xs font-medium cursor-pointer hover:bg-[#43A047] transition-colors">
+              Guardar
+            </button>
+            <button type="button" (click)="cancelEditObs()"
+              class="px-3 py-[6px] rounded-lg bg-gray-100 text-gray-600 text-xs font-medium cursor-pointer hover:bg-gray-200 transition-colors">
+              Cancelar
+            </button>
+          </div>
+        </ng-container>
+        <ng-template #verObs>
+          <p class="text-sm text-gray-700 whitespace-pre-line">{{ c.observaciones || '—' }}</p>
+        </ng-template>
+      </div>
+
+      <!-- Entregables -->
+      <div class="border-t border-gray-100 pt-3">
+        <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold mb-2">Entregables</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+          <div *ngFor="let ent of c.entregables" class="flex flex-col gap-1.5">
+            <span class="text-xs text-gray-600">
+              {{ ent.tipoDescripcion }}
+              <span *ngIf="esObligatorio(ent)" class="text-[#D30000]" title="Obligatorio">*</span>
+            </span>
+            <app-status-pills
+              size="xs"
+              [options]="estadosPara(ent)"
+              [value]="ent.vecinoEntregableEstadoId"
+              (valueChange)="onEntregableEstadoChange(ent, $event)">
+            </app-status-pills>
+
+            <!-- Archivo adjunto: link para abrir/descargar + subir/reemplazar -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <a *ngIf="ent.archivoUrl" [href]="entregableFileUrl(ent.archivoUrl)" target="_blank"
+                rel="noopener" download
+                class="text-[11px] text-[#0086A5] hover:underline inline-flex items-center gap-1 truncate max-w-[160px]">
+                <i class="ti ti-file"></i> {{ ent.originalFileName || 'Ver archivo' }}
+              </a>
+              <label
+                class="text-[10px] font-medium px-2 py-[3px] rounded-lg bg-[#E8F5E9] text-[#4CAF50] cursor-pointer hover:bg-[#d4f0b8] transition-colors inline-flex items-center gap-1">
+                <i class="ti ti-upload"></i> {{ ent.archivoUrl ? 'Reemplazar' : 'Subir' }}
+                <input type="file" class="hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp"
+                  (change)="onEntregableFileSelected(ent, $event)" />
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Normativas (varios archivos, sección aparte) -->
+      <div class="border-t border-dashed border-gray-200 pt-3">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Normativas</p>
+          <label
+            class="text-[10px] font-medium px-2 py-[3px] rounded-lg bg-[#E0F2F7] text-[#0086A5] cursor-pointer hover:bg-[#cdeaf1] transition-colors inline-flex items-center gap-1">
+            <i class="ti ti-upload"></i> Subir archivo(s)
+            <input type="file" class="hidden" multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp"
+              (change)="onNormativasSelected(c, $event)" />
+          </label>
+        </div>
+
+        <div *ngIf="c.normativas.length; else sinNormativas" class="flex flex-col gap-1.5">
+          <div *ngFor="let n of c.normativas"
+            class="flex items-center justify-between gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5">
+            <a [href]="entregableFileUrl(n.archivoUrl)" target="_blank" rel="noopener" download
+              class="text-[11px] text-[#0086A5] hover:underline inline-flex items-center gap-1 truncate">
+              <i class="ti ti-file"></i> {{ n.originalFileName || 'Ver archivo' }}
+            </a>
+            <button type="button" (click)="eliminarNormativa(c, n)"
+              class="text-gray-400 hover:text-[#D30000] cursor-pointer shrink-0" title="Eliminar">
+              <i class="ti ti-trash text-sm"></i>
+            </button>
+          </div>
+        </div>
+        <ng-template #sinNormativas>
+          <p class="text-[11px] text-gray-400 italic">Aún no hay archivos de normativas.</p>
+        </ng-template>
+      </div>
+
+    </div>
+
+    <p *ngIf="loaded && compromisos.length === 0"
+      class="text-center text-sm text-gray-400 italic py-6">
+      Esta solicitud aún no tiene compromisos. Usa "Añadir compromiso" para crear el primero.
+    </p>
+
+  </div>
+
+</div>
