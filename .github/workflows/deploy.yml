@@ -29,4 +29,4 @@ jobs:
           source: "dist/Abril/browser/*"
           target: "/var/www/hyp-contratistas"
           strip_components: 3
-          rm: true
+          overwrite: true
