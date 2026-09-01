@@ -8,7 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint:standards": "node scripts/lint-standards.js",
-    "serve:ssr:Abril": "node dist/Abril/server/server.mjs",
+    "serve:ssr:HPConstructores": "node dist/HPConstructores/server/server.mjs",
     "deploy": "npm run build && wrangler deploy",
     "preview": "npm run build && wrangler dev"
   },

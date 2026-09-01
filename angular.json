@@ -7,7 +7,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "Abril": {
+    "HPConstructores": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -66,10 +66,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "Abril:build:production"
+              "buildTarget": "HPConstructores:build:production"
             },
             "development": {
-              "buildTarget": "Abril:build:development"
+              "buildTarget": "HPConstructores:build:development"
             }
           },
           "defaultConfiguration": "development"
