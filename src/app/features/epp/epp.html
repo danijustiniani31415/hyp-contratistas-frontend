@@ -1,0 +1,104 @@
+<div class="ep-page">
+  <app-lb-nav />
+  <header class="ep-header">
+    <p class="ep-eyebrow">HP Constructores Generales · Las Bravas</p>
+    <h1>Entrega de EPP</h1>
+  </header>
+
+  <div class="ep-table-wrap">
+    <table class="ep-table">
+      <thead>
+        <tr>
+          <th>Trabajador</th>
+          <th>Almacén</th>
+          <th>Ítems</th>
+          <th>Entregado por</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="5" class="ep-empty">Cargando...</td></tr>
+        } @else if (!entregas().length) {
+          <tr><td colspan="5" class="ep-empty">Sin entregas registradas todavía.</td></tr>
+        } @else {
+          @for (e of entregas(); track e.id) {
+            <tr>
+              <td>{{ e.personaNombre }}</td>
+              <td>{{ e.almacenNombre }}</td>
+              <td>{{ e.cantidadItems }}</td>
+              <td>{{ e.entregadoPorNombre }}</td>
+              <td>{{ e.creadoEn | slice:0:10 }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <app-paginator [totalRecords]="totalRecords()" [currentPage]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+  }
+
+  @if (authService.hasPermiso('EPP_ENTREGAR')) {
+    <app-fab label="Registrar entrega" (clicked)="abrirNuevo()" />
+  }
+
+  @if (showModal()) {
+    <app-base-modal title="Registrar entrega de EPP" width="w-[600px]" (closeModal)="cerrarModal()">
+      <div class="ep-form-grid">
+        <app-search-select
+          [options]="personas()"
+          displayField="nombreCompleto"
+          [(value)]="form.personaId"
+          label="Trabajador"
+          placeholder="Buscar por nombre o DNI..."
+        />
+        <app-search-select
+          [options]="almacenes()"
+          displayField="nombre"
+          [(value)]="form.almacenId"
+          label="Almacén"
+          placeholder="Selecciona almacén"
+        />
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Observación (opcional)</label>
+        <textarea class="abril-field-input" rows="2" [(ngModel)]="form.observacion"></textarea>
+      </div>
+
+      <div class="ep-items">
+        <div class="ep-items-header">
+          <h3>EPP entregado</h3>
+          <button type="button" class="ep-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
+        </div>
+
+        @for (item of form.items; track $index; let i = $index) {
+          <div class="ep-item-row">
+            <app-search-select
+              [options]="productosEpp()"
+              displayField="nombre"
+              [(value)]="item.productoId"
+              placeholder="Producto EPP"
+            />
+            <input class="abril-field-input ep-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
+            <input class="abril-field-input ep-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidad" placeholder="Cant." />
+            @if (form.items.length > 1) {
+              <button type="button" class="ep-item-quitar" (click)="quitarItem(i)">✕</button>
+            }
+          </div>
+        }
+      </div>
+
+      @if (error()) { <p class="ep-error">{{ error() }}</p> }
+
+      <div class="ep-form-actions">
+        <button class="ep-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="ep-btn" [disabled]="guardando() || !form.personaId || !form.almacenId" (click)="guardar()">
+          {{ guardando() ? 'Guardando...' : 'Registrar entrega' }}
+        </button>
+      </div>
+    </app-base-modal>
+  }
+</div>

@@ -1,4 +1,4 @@
-<div class="relative" [ngClass]="showLabel && label ? 'mt-[9px]' : ''" [style.--ss-accent]="color">
+<div class="relative" [ngClass]="showLabel && label ? 'mt-[9px]' : ''" [style.--ss-accent]="color" [style.--ss-font-size]="fontSizePx">
 
   <!-- Label opcional: se posiciona sobre el borde superior del combobox, "cortándolo" -->
   <label *ngIf="showLabel && label"
@@ -117,7 +117,7 @@
         <div
           *ngFor="let option of filteredOptions; trackBy: trackByOption"
           (click)="select(option)"
-          class="ss-option px-[10px] py-[7px] text-[11px] cursor-pointer transition-colors"
+          class="ss-option px-[10px] py-[7px] cursor-pointer transition-colors"
           [class.ss-full]="fullText"
           [ngClass]="option[valueField] === value
             ? 'ss-option-selected font-medium'

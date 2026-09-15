@@ -20,7 +20,13 @@
           </div>
           <div class="lb-field">
             <label>Contraseña</label>
-            <input type="password" name="password" [(ngModel)]="password" placeholder="Tu contraseña" required autocomplete="current-password" />
+            <div class="lb-password-wrap">
+              <input [type]="showPassword ? 'text' : 'password'" name="password" [(ngModel)]="password" placeholder="Tu contraseña" required autocomplete="current-password" />
+              <button type="button" class="lb-password-toggle" (click)="togglePassword()" [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                {{ showPassword ? 'Ocultar' : 'Mostrar' }}
+              </button>
+            </div>
+            <a routerLink="/auth/olvide-password" class="lb-forgot-link">¿Olvidaste tu contraseña?</a>
           </div>
 
           @if (error) { <p class="lb-login-error">{{ error }}</p> }

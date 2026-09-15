@@ -1,0 +1,198 @@
+<div class="co-page">
+  <app-lb-nav />
+  <header class="co-header">
+    <p class="co-eyebrow">HP Constructores Generales · Las Bravas</p>
+    <h1>Compras</h1>
+  </header>
+
+  <div class="co-toolbar">
+    <div class="abril-field co-filtro">
+      <label class="abril-field-label">Estado</label>
+      <select class="abril-field-input" [(ngModel)]="estadoFiltro" (ngModelChange)="onFiltroChange()">
+        <option value="">Todos</option>
+        @for (e of estados; track e) { <option [value]="e">{{ e }}</option> }
+      </select>
+    </div>
+    @if (authService.hasPermiso('COMPRA_CREAR')) {
+      <button type="button" class="co-btn ghost" (click)="abrirNuevoProveedor()">+ Nuevo proveedor</button>
+    }
+  </div>
+
+  <div class="co-table-wrap">
+    <table class="co-table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Proveedor</th>
+          <th>Almacén</th>
+          <th>Ítems</th>
+          <th>Estado</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="6" class="co-empty">Cargando...</td></tr>
+        } @else if (!ordenes().length) {
+          <tr><td colspan="6" class="co-empty">Sin órdenes de compra todavía.</td></tr>
+        } @else {
+          @for (o of ordenes(); track o.id) {
+            <tr class="co-row" (click)="verDetalle(o.id)">
+              <td>{{ o.codigo }}</td>
+              <td>{{ o.proveedorNombre }}</td>
+              <td>{{ o.almacenNombre }}</td>
+              <td>{{ o.cantidadItems }}</td>
+              <td><span class="co-estado" [class]="o.estado.toLowerCase()">{{ o.estado }}</span></td>
+              <td>{{ o.creadoEn | slice:0:10 }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <app-paginator [totalRecords]="totalRecords()" [currentPage]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+  }
+
+  @if (authService.hasPermiso('COMPRA_CREAR')) {
+    <app-fab label="Nueva orden de compra" (clicked)="abrirNuevo()" />
+  }
+
+  <!-- Modal: nuevo proveedor -->
+  @if (showProveedorModal()) {
+    <app-base-modal title="Nuevo proveedor" width="w-[440px]" (closeModal)="cerrarProveedorModal()">
+      <div class="abril-field">
+        <label class="abril-field-label">Razón social</label>
+        <input class="abril-field-input" [(ngModel)]="proveedorForm.razonSocial" placeholder="Nombre de la empresa" />
+      </div>
+      <div class="co-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">RUC</label>
+          <input class="abril-field-input" [(ngModel)]="proveedorForm.ruc" placeholder="11 dígitos" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Contacto</label>
+          <input class="abril-field-input" [(ngModel)]="proveedorForm.contacto" placeholder="Nombre del contacto" />
+        </div>
+      </div>
+      <div class="co-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Teléfono</label>
+          <input class="abril-field-input" [(ngModel)]="proveedorForm.telefono" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Email</label>
+          <input class="abril-field-input" type="email" [(ngModel)]="proveedorForm.email" />
+        </div>
+      </div>
+
+      @if (proveedorError()) { <p class="co-error">{{ proveedorError() }}</p> }
+
+      <div class="co-form-actions">
+        <button class="co-btn ghost" (click)="cerrarProveedorModal()">Cancelar</button>
+        <button class="co-btn" [disabled]="guardandoProveedor() || !proveedorForm.razonSocial" (click)="guardarProveedor()">
+          {{ guardandoProveedor() ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </div>
+    </app-base-modal>
+  }
+
+  <!-- Modal: nueva orden de compra -->
+  @if (showModal()) {
+    <app-base-modal title="Nueva orden de compra" width="w-[680px]" (closeModal)="cerrarModal()">
+      <div class="co-form-grid">
+        <app-search-select
+          [options]="proveedores()"
+          displayField="razonSocial"
+          [(value)]="form.proveedorId"
+          label="Proveedor"
+          placeholder="Buscar empresa..."
+        />
+        <app-search-select
+          [options]="almacenes()"
+          displayField="nombre"
+          [(value)]="form.almacenId"
+          label="Almacén de destino"
+          placeholder="Selecciona almacén"
+        />
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Observación (opcional)</label>
+        <textarea class="abril-field-input" rows="2" [(ngModel)]="form.observacion"></textarea>
+      </div>
+
+      <div class="co-items">
+        <div class="co-items-header">
+          <h3>Productos a comprar</h3>
+          <button type="button" class="co-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
+        </div>
+
+        @for (item of form.items; track $index; let i = $index) {
+          <div class="co-item-row">
+            <app-search-select
+              [options]="productos()"
+              displayField="nombre"
+              [(value)]="item.productoId"
+              placeholder="Producto"
+            />
+            <input class="abril-field-input co-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
+            <input class="abril-field-input co-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidadSolicitada" placeholder="Cant." />
+            <input class="abril-field-input co-item-costo" type="number" min="0" step="0.01" [(ngModel)]="item.costoUnitario" placeholder="Costo unit." />
+            @if (form.items.length > 1) {
+              <button type="button" class="co-item-quitar" (click)="quitarItem(i)">✕</button>
+            }
+          </div>
+        }
+      </div>
+
+      @if (error()) { <p class="co-error">{{ error() }}</p> }
+
+      <div class="co-form-actions">
+        <button class="co-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="co-btn" [disabled]="guardando() || !form.proveedorId || !form.almacenId" (click)="guardar()">
+          {{ guardando() ? 'Creando...' : 'Crear orden' }}
+        </button>
+      </div>
+    </app-base-modal>
+  }
+
+  <!-- Modal: detalle / recepción -->
+  @if (showDetalle() && detalle(); as d) {
+    <app-base-modal [title]="d.codigo" width="w-[600px]" (closeModal)="cerrarDetalle()">
+      <div class="co-detalle-header">
+        <span class="co-estado" [class]="d.estado.toLowerCase()">{{ d.estado }}</span>
+        <span class="co-detalle-meta">{{ d.proveedorNombre }} · {{ d.almacenNombre }}</span>
+      </div>
+      <p class="co-detalle-meta">Solicitado por {{ d.solicitadoPorNombre }} el {{ d.creadoEn | slice:0:10 }}</p>
+
+      <table class="co-table co-detalle-table">
+        <thead>
+          <tr><th>Producto</th><th>Pedido</th><th>Recibido</th><th>Pendiente</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (it of d.items; track it.id) {
+            <tr>
+              <td>{{ it.productoNombre }} {{ it.talla ? '(' + it.talla + ')' : '' }}</td>
+              <td>{{ it.cantidadSolicitada }}</td>
+              <td>{{ it.cantidadRecibida }}</td>
+              <td>{{ it.cantidadPendiente }}</td>
+              <td>
+                @if (it.cantidadPendiente > 0 && d.estado !== 'CANCELADA' && authService.hasPermiso('COMPRA_RECIBIR')) {
+                  <button type="button" class="co-link" (click)="recibir(it.id, it.cantidadPendiente)">Recibir</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (d.estado === 'PENDIENTE' && authService.hasPermiso('COMPRA_CREAR')) {
+        <div class="co-form-actions">
+          <button class="co-btn ghost danger" (click)="cancelarOrden()">Cancelar orden</button>
+        </div>
+      }
+    </app-base-modal>
+  }
+</div>

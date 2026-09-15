@@ -264,6 +264,70 @@ export const routes: Routes = [
   },
 
   {
+    path: 'roles-permisos',
+    canActivate: [lbAuthGuard],
+    loadComponent: () =>
+      import('./features/roles-permisos/roles-permisos')
+      .then(m => m.RolesPermisos)
+  },
+
+  {
+    path: 'personas/:id',
+    canActivate: [lbAuthGuard],
+    loadComponent: () =>
+      import('./features/personas/detalle/persona-detalle')
+      .then(m => m.PersonaDetalleComponent)
+  },
+
+  {
+    path: 'catalogo',
+    canActivate: [lbAuthGuard],
+    loadComponent: () =>
+      import('./features/catalogo/catalogo')
+      .then(m => m.Catalogo)
+  },
+
+  {
+    path: 'almacen',
+    canActivate: [lbAuthGuard],
+    loadComponent: () =>
+      import('./features/almacen/almacen')
+      .then(m => m.AlmacenComponent)
+  },
+
+  {
+    path: 'pedidos',
+    canActivate: [lbAuthGuard],
+    loadComponent: () =>
+      import('./features/pedidos/pedidos')
+      .then(m => m.Pedidos)
+  },
+
+  {
+    path: 'epp',
+    canActivate: [lbAuthGuard],
+    loadComponent: () =>
+      import('./features/epp/epp')
+      .then(m => m.Epp)
+  },
+
+  {
+    path: 'herramientas',
+    canActivate: [lbAuthGuard],
+    loadComponent: () =>
+      import('./features/herramientas/herramientas')
+      .then(m => m.Herramientas)
+  },
+
+  {
+    path: 'compras',
+    canActivate: [lbAuthGuard],
+    loadComponent: () =>
+      import('./features/compras/compras')
+      .then(m => m.Compras)
+  },
+
+  {
     path: '**',
     redirectTo: 'auth/login'
   }

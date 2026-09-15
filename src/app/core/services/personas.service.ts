@@ -27,12 +27,21 @@ export interface CatalogoItem {
   nombre: string;
 }
 
+export interface RolCatalogoItem extends CatalogoItem {
+  esGlobal: boolean;
+}
+
+export interface AlmacenCatalogoItem extends CatalogoItem {
+  proyectoId: number | null;
+}
+
 export interface CatalogosPersonas {
   tiposVinculo: CatalogoItem[];
   cargos: CatalogoItem[];
   empresasContratistas: CatalogoItem[];
-  roles: CatalogoItem[];
+  roles: RolCatalogoItem[];
   proyectos: CatalogoItem[];
+  almacenes: AlmacenCatalogoItem[];
 }
 
 export interface PersonaCreate {
@@ -46,6 +55,47 @@ export interface PersonaCreate {
   empresaContratistaId?: number | null;
   cargoId?: number | null;
   fechaInicio: string; // YYYY-MM-DD
+}
+
+export interface VinculoLaboral {
+  id: number;
+  tipoVinculoNombre: string;
+  empresaContratistaNombre: string | null;
+  cargoNombre: string | null;
+  fechaInicio: string;
+  fechaFin: string | null;
+  estado: string;
+  motivoCese: string | null;
+}
+
+export interface AsignacionDetalle {
+  id: number;
+  rolNombre: string;
+  esGlobal: boolean;
+  proyectoNombre: string | null;
+  almacenNombre: string | null;
+  fechaInicio: string;
+}
+
+export interface PersonaDetalle {
+  id: number;
+  nombres: string;
+  apellidos: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  telefono: string | null;
+  emailPersonal: string | null;
+  activo: boolean;
+  vinculos: VinculoLaboral[];
+  usuarioSistemaId: number | null;
+  emailLogin: string | null;
+  asignaciones: AsignacionDetalle[];
+}
+
+export interface NuevaAsignacion {
+  rolId: number;
+  proyectoId?: number | null;
+  almacenId?: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -70,5 +120,22 @@ export class PersonasService {
 
   getCatalogos(): Observable<CatalogosPersonas> {
     return this.http.get<CatalogosPersonas>(`${this.apiUrl}/catalogos`, { headers: this.headers() });
+  }
+
+  getById(id: number): Observable<PersonaDetalle> {
+    return this.http.get<PersonaDetalle>(`${this.apiUrl}/${id}`, { headers: this.headers() });
+  }
+
+  /** Da acceso al sistema — solo pide el correo, la persona activa su cuenta por enlace. */
+  crearUsuario(personaId: number, emailLogin: string): Observable<PersonaDetalle> {
+    return this.http.post<PersonaDetalle>(`${this.apiUrl}/${personaId}/usuario`, { emailLogin }, { headers: this.headers() });
+  }
+
+  nuevaAsignacion(personaId: number, dto: NuevaAsignacion): Observable<PersonaDetalle> {
+    return this.http.post<PersonaDetalle>(`${this.apiUrl}/${personaId}/asignaciones`, dto, { headers: this.headers() });
+  }
+
+  revocarAsignacion(personaId: number, asignacionId: number): Observable<PersonaDetalle> {
+    return this.http.post<PersonaDetalle>(`${this.apiUrl}/${personaId}/asignaciones/${asignacionId}/revocar`, {}, { headers: this.headers() });
   }
 }

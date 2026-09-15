@@ -23,8 +23,10 @@
   outline-offset: 1px;
 }
 
+/* --ss-font-size lo fija el componente (Input compact/dark) — variantes densas de tabla/filtro
+   se quedan chicas a propósito, la variante normal usa 16px para calzar con .abril-field-input. */
 .ss-trigger-label {
-  font-size: 12px;
+  font-size: var(--ss-font-size, 12px);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -33,7 +35,7 @@
 }
 
 .ss-option {
-  font-size: 12px;
+  font-size: var(--ss-font-size, 12px);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

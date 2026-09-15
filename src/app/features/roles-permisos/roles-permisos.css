@@ -1,0 +1,135 @@
+.rp-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 24px 100px;
+  font-family: system-ui, sans-serif;
+  color: #1E3A5F;
+}
+
+.rp-header { margin-bottom: 24px; }
+.rp-eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+  color: #64748B; margin: 0 0 6px;
+}
+.rp-header h1 { font-size: 24px; margin: 0 0 6px; }
+.rp-hint { font-size: 13px; color: #64748B; max-width: 640px; margin: 0; line-height: 1.5; }
+
+.rp-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.rp-empty { text-align: center; color: #94A3B8; padding: 24px 0; }
+
+/* ── Lista de roles (sidebar) ───────────────────────────────────────── */
+.rp-roles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 6px;
+  background: #fff;
+}
+
+.rp-rol-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.rp-rol-item:hover { background: #F8FAFC; }
+.rp-rol-item.active { background: #EEF2F7; }
+.rp-rol-item.active .rp-rol-nombre { color: #1E3A5F; }
+
+.rp-rol-nombre { font-size: 13.5px; font-weight: 600; color: #39536B; }
+.rp-rol-count { font-size: 11px; color: #94A3B8; }
+
+/* ── Panel de permisos ───────────────────────────────────────────────── */
+.rp-permisos-panel {
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 20px 22px;
+  background: #fff;
+  min-height: 300px;
+}
+
+.rp-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #F1F5F9;
+}
+.rp-panel-header h2 { font-size: 17px; margin: 0; }
+.rp-rol-desc { font-size: 12.5px; color: #64748B; margin: 4px 0 0; }
+
+.rp-btn {
+  border-radius: 6px; padding: 9px 16px; font-weight: 600; font-size: 13px;
+  border: 1px solid transparent; background: #1E3A5F; color: #fff; cursor: pointer;
+  font-family: inherit; white-space: nowrap;
+}
+.rp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.rp-ok {
+  background: #F0FDF4; border: 1px solid #BBF7D0; color: #1B6B3A;
+  font-size: 12.5px; border-radius: 8px; padding: 10px 14px; margin: 0 0 14px;
+}
+.rp-error {
+  background: #FEF2F2; border: 1px solid #F5C6C6; color: #C0392B;
+  font-size: 12.5px; border-radius: 8px; padding: 10px 14px; margin: 0 0 14px;
+}
+
+.rp-modulos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.rp-modulo-card {
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: #FAFBFC;
+}
+.rp-modulo-card h3 {
+  font-size: 12.5px; font-weight: 700; color: #1E3A5F;
+  text-transform: uppercase; letter-spacing: .03em;
+  margin: 0 0 10px;
+}
+
+.rp-permiso-grid { display: flex; flex-direction: column; gap: 8px; }
+
+.rp-permiso-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #39536B;
+  cursor: pointer;
+}
+.rp-permiso-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #1E3A5F;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  .rp-layout { grid-template-columns: 1fr; }
+  .rp-roles-list { flex-direction: row; overflow-x: auto; }
+  .rp-rol-item { min-width: 160px; }
+}

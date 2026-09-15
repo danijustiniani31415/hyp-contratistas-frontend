@@ -1,0 +1,166 @@
+<div class="pd-page">
+  <button type="button" class="pd-volver" (click)="volver()">← Volver a Personas</button>
+
+  @if (loading() && !persona()) {
+    <p class="pd-loading">Cargando...</p>
+  } @else if (persona(); as p) {
+    <header class="pd-header">
+      <div>
+        <p class="pd-eyebrow">HP Constructores Generales · Las Bravas</p>
+        <h1>{{ p.nombres }} {{ p.apellidos }}</h1>
+        <p class="pd-sub">{{ p.tipoDocumento }} {{ p.numeroDocumento }}</p>
+      </div>
+    </header>
+
+    <div class="pd-grid">
+      <!-- Datos personales -->
+      <section class="pd-card">
+        <h2>Datos personales</h2>
+        <dl class="pd-dl">
+          <dt>Teléfono</dt><dd>{{ p.telefono ?? '—' }}</dd>
+          <dt>Correo personal</dt><dd>{{ p.emailPersonal ?? '—' }}</dd>
+        </dl>
+      </section>
+
+      <!-- Vínculo laboral -->
+      <section class="pd-card">
+        <h2>Vínculo laboral</h2>
+        @if (!p.vinculos.length) {
+          <p class="pd-empty">Sin vínculo registrado.</p>
+        } @else {
+          @for (v of p.vinculos; track v.id) {
+            <div class="pd-vinculo" [class.cesado]="v.estado !== 'ACTIVO'">
+              <div class="pd-vinculo-row">
+                <strong>{{ v.tipoVinculoNombre }}</strong>
+                <span class="pd-badge" [class.on]="v.estado === 'ACTIVO'">{{ v.estado }}</span>
+              </div>
+              <p class="pd-vinculo-detalle">
+                {{ v.cargoNombre ?? 'Sin cargo' }}
+                @if (v.empresaContratistaNombre) { · {{ v.empresaContratistaNombre }} }
+              </p>
+              <p class="pd-vinculo-fechas">
+                Desde {{ v.fechaInicio }}
+                @if (v.fechaFin) { hasta {{ v.fechaFin }} }
+              </p>
+            </div>
+          }
+        }
+      </section>
+
+      <!-- Acceso al sistema -->
+      <section class="pd-card pd-card-wide">
+        <div class="pd-card-header">
+          <h2>Acceso al sistema</h2>
+          @if (!p.usuarioSistemaId) {
+            <button type="button" class="pd-btn" (click)="abrirInvitar()">Dar acceso</button>
+          }
+        </div>
+
+        @if (!p.usuarioSistemaId) {
+          <p class="pd-empty">Esta persona todavía no tiene acceso al sistema.</p>
+        } @else {
+          <p class="pd-login-email">Correo de acceso: <strong>{{ p.emailLogin }}</strong></p>
+
+          <div class="pd-card-header pd-asignaciones-header">
+            <h3>Roles asignados</h3>
+            <button type="button" class="pd-btn ghost" (click)="abrirAsignar()">+ Asignar rol</button>
+          </div>
+
+          @if (!p.asignaciones.length) {
+            <p class="pd-empty">Sin roles asignados todavía.</p>
+          } @else {
+            <table class="pd-table">
+              <thead>
+                <tr>
+                  <th>Rol</th>
+                  <th>Alcance</th>
+                  <th>Desde</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (a of p.asignaciones; track a.id) {
+                  <tr>
+                    <td>{{ a.rolNombre }}</td>
+                    <td>
+                      @if (a.esGlobal) { Global }
+                      @else { {{ a.proyectoNombre ?? '—' }}@if (a.almacenNombre) { · {{ a.almacenNombre }} } }
+                    </td>
+                    <td>{{ a.fechaInicio }}</td>
+                    <td class="pd-table-actions">
+                      <button type="button" class="pd-link-danger" (click)="revocar(a.id)">Revocar</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        }
+      </section>
+    </div>
+  } @else {
+    <p class="pd-empty">Persona no encontrada.</p>
+  }
+
+  <!-- Modal: dar acceso -->
+  @if (showInvitarModal()) {
+    <app-base-modal title="Dar acceso al sistema" width="w-[440px]" (closeModal)="cerrarInvitar()">
+      <p class="pd-modal-hint">
+        Se le enviará un correo con un enlace para que cree su propia contraseña — nunca la
+        defines tú por ella.
+      </p>
+      <div class="abril-field">
+        <label class="abril-field-label">Correo</label>
+        <input class="abril-field-input" type="email" [(ngModel)]="invitarEmail" placeholder="correo@empresa.com" />
+      </div>
+      @if (invitarError()) { <p class="pd-error">{{ invitarError() }}</p> }
+      <div class="pd-form-actions">
+        <button class="pd-btn ghost" (click)="cerrarInvitar()">Cancelar</button>
+        <button class="pd-btn" [disabled]="invitando() || !invitarEmail" (click)="enviarInvitacion()">
+          {{ invitando() ? 'Enviando...' : 'Enviar invitación' }}
+        </button>
+      </div>
+    </app-base-modal>
+  }
+
+  <!-- Modal: asignar rol -->
+  @if (showAsignarModal()) {
+    <app-base-modal title="Asignar rol" width="w-[440px]" (closeModal)="cerrarAsignar()">
+      @if (catalogos(); as cat) {
+        <app-search-select
+          [options]="cat.roles"
+          displayField="nombre"
+          [(value)]="asignarForm.rolId"
+          label="Rol"
+          placeholder="Selecciona rol"
+        />
+
+        @if (!rolSeleccionadoEsGlobal) {
+          <div class="pd-form-row">
+            <app-search-select
+              [options]="cat.proyectos"
+              displayField="nombre"
+              [(value)]="asignarForm.proyectoId"
+              label="Proyecto"
+              placeholder="Buscar proyecto..."
+            />
+            <app-search-select
+              [options]="almacenesDelProyecto"
+              displayField="nombre"
+              [(value)]="asignarForm.almacenId"
+              label="Almacén (opcional)"
+              placeholder="Todos los almacenes"
+            />
+          </div>
+        }
+      }
+      @if (asignarError()) { <p class="pd-error">{{ asignarError() }}</p> }
+      <div class="pd-form-actions">
+        <button class="pd-btn ghost" (click)="cerrarAsignar()">Cancelar</button>
+        <button class="pd-btn" [disabled]="asignando() || !asignarForm.rolId" (click)="guardarAsignacion()">
+          {{ asignando() ? 'Guardando...' : 'Asignar' }}
+        </button>
+      </div>
+    </app-base-modal>
+  }
+</div>

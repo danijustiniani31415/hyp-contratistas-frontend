@@ -1,0 +1,160 @@
+<div class="he-page">
+  <app-lb-nav />
+  <header class="he-header">
+    <p class="he-eyebrow">HP Constructores Generales · Las Bravas</p>
+    <h1>Herramientas y Equipos</h1>
+  </header>
+
+  <div class="he-toolbar">
+    <label class="he-toggle">
+      <input type="checkbox" [(ngModel)]="soloAbiertos" (ngModelChange)="onFiltroChange()" />
+      Solo préstamos abiertos
+    </label>
+  </div>
+
+  <div class="he-table-wrap">
+    <table class="he-table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Trabajador</th>
+          <th>Almacén</th>
+          <th>Ítems</th>
+          <th>Estado</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="6" class="he-empty">Cargando...</td></tr>
+        } @else if (!prestamos().length) {
+          <tr><td colspan="6" class="he-empty">Sin préstamos todavía.</td></tr>
+        } @else {
+          @for (p of prestamos(); track p.id) {
+            <tr class="he-row" (click)="verDetalle(p.id)">
+              <td>{{ p.codigo }}</td>
+              <td>{{ p.personaNombre }}</td>
+              <td>{{ p.almacenNombre }}</td>
+              <td>{{ p.cantidadPendientes }} / {{ p.cantidadItems }} pendientes</td>
+              <td><span class="he-estado" [class.abierto]="p.estado === 'ABIERTO'">{{ p.estado }}</span></td>
+              <td>{{ p.creadoEn | slice:0:10 }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <app-paginator [totalRecords]="totalRecords()" [currentPage]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+  }
+
+  @if (authService.hasPermiso('HERRAMIENTA_PRESTAR')) {
+    <app-fab label="Nuevo préstamo" (clicked)="abrirNuevo()" />
+  }
+
+  <!-- Modal: crear préstamo -->
+  @if (showModal()) {
+    <app-base-modal title="Nuevo préstamo" width="w-[620px]" (closeModal)="cerrarModal()">
+      <div class="he-form-grid">
+        <app-search-select
+          [options]="personas()"
+          displayField="nombreCompleto"
+          [(value)]="form.personaId"
+          label="Trabajador"
+          placeholder="Buscar por nombre o DNI..."
+        />
+        <app-search-select
+          [options]="almacenes()"
+          displayField="nombre"
+          [(value)]="form.almacenId"
+          label="Almacén"
+          placeholder="Selecciona almacén"
+        />
+      </div>
+
+      <div class="he-form-grid">
+        <app-search-select
+          [options]="proyectos()"
+          displayField="nombre"
+          [(value)]="form.proyectoId"
+          label="Proyecto (opcional)"
+          placeholder="Buscar proyecto..."
+        />
+        <div class="abril-field">
+          <label class="abril-field-label">Devolución estimada (opcional)</label>
+          <input class="abril-field-input" type="date" [(ngModel)]="form.fechaDevolucionEstimada" />
+        </div>
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Observación (opcional)</label>
+        <textarea class="abril-field-input" rows="2" [(ngModel)]="form.observacion"></textarea>
+      </div>
+
+      <div class="he-items">
+        <div class="he-items-header">
+          <h3>Herramientas / Equipos</h3>
+          <button type="button" class="he-btn ghost small" (click)="agregarItem()">+ Agregar</button>
+        </div>
+
+        @for (item of form.items; track $index; let i = $index) {
+          <div class="he-item-row">
+            <app-search-select
+              [options]="productosRetornables()"
+              displayField="nombre"
+              [(value)]="item.productoId"
+              placeholder="Herramienta/equipo"
+            />
+            <input class="abril-field-input he-item-talla" [(ngModel)]="item.talla" placeholder="—" />
+            <input class="abril-field-input he-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidad" placeholder="Cant." />
+            @if (form.items.length > 1) {
+              <button type="button" class="he-item-quitar" (click)="quitarItem(i)">✕</button>
+            }
+          </div>
+        }
+      </div>
+
+      @if (error()) { <p class="he-error">{{ error() }}</p> }
+
+      <div class="he-form-actions">
+        <button class="he-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="he-btn" [disabled]="guardando() || !form.almacenId || !form.personaId" (click)="guardar()">
+          {{ guardando() ? 'Guardando...' : 'Registrar préstamo' }}
+        </button>
+      </div>
+    </app-base-modal>
+  }
+
+  <!-- Modal: detalle / devolución -->
+  @if (showDetalle() && detalle(); as d) {
+    <app-base-modal [title]="d.codigo" width="w-[560px]" (closeModal)="cerrarDetalle()">
+      <div class="he-detalle-header">
+        <span class="he-estado" [class.abierto]="d.estado === 'ABIERTO'">{{ d.estado }}</span>
+        <span class="he-detalle-meta">{{ d.personaNombre }} · {{ d.almacenNombre }}</span>
+      </div>
+      @if (d.proyectoNombre) { <p class="he-detalle-meta">Proyecto: {{ d.proyectoNombre }}</p> }
+      @if (d.fechaDevolucionEstimada) { <p class="he-detalle-meta">Devolución estimada: {{ d.fechaDevolucionEstimada }}</p> }
+
+      <table class="he-table he-detalle-table">
+        <thead>
+          <tr><th>Herramienta</th><th>Cant.</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (it of d.items; track it.id) {
+            <tr>
+              <td>{{ it.productoNombre }} {{ it.talla ? '(' + it.talla + ')' : '' }}</td>
+              <td>{{ it.cantidad }}</td>
+              <td><span class="he-item-estado" [class]="it.estado.toLowerCase()">{{ it.estado }}</span></td>
+              <td>
+                @if (it.estado === 'PRESTADO' && authService.hasPermiso('HERRAMIENTA_DEVOLVER')) {
+                  <button type="button" class="he-link" (click)="devolver(it.id)">Registrar devolución</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </app-base-modal>
+  }
+</div>

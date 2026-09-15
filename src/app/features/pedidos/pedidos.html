@@ -1,0 +1,167 @@
+<div class="pd-page">
+  <app-lb-nav />
+  <header class="pd-header">
+    <p class="pd-eyebrow">HP Constructores Generales · Las Bravas</p>
+    <h1>Pedidos</h1>
+  </header>
+
+  <div class="pd-toolbar">
+    <div class="abril-field pd-filtro">
+      <label class="abril-field-label">Estado</label>
+      <select class="abril-field-input" [(ngModel)]="estadoFiltro" (ngModelChange)="onFiltroChange()">
+        <option value="">Todos</option>
+        @for (e of estados; track e) { <option [value]="e">{{ e }}</option> }
+      </select>
+    </div>
+  </div>
+
+  <div class="pd-table-wrap">
+    <table class="pd-table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Proyecto</th>
+          <th>Solicitante</th>
+          <th>Ítems</th>
+          <th>Estado</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="6" class="pd-empty">Cargando...</td></tr>
+        } @else if (!pedidos().length) {
+          <tr><td colspan="6" class="pd-empty">Sin pedidos todavía.</td></tr>
+        } @else {
+          @for (p of pedidos(); track p.id) {
+            <tr class="pd-row" (click)="verDetalle(p.id)">
+              <td>{{ p.codigo }}</td>
+              <td>{{ p.proyectoNombre }}</td>
+              <td>{{ p.solicitanteNombre }}</td>
+              <td>{{ p.cantidadItems }}</td>
+              <td><span class="pd-estado" [class]="p.estado.toLowerCase()">{{ p.estado }}</span></td>
+              <td>{{ p.creadoEn | slice:0:10 }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <app-paginator [totalRecords]="totalRecords()" [currentPage]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+  }
+
+  @if (authService.hasPermiso('PEDIDO_CREAR')) {
+    <app-fab label="Nuevo pedido" (clicked)="abrirNuevo()" />
+  }
+
+  <!-- Modal: crear pedido -->
+  @if (showModal()) {
+    <app-base-modal title="Nuevo pedido" width="w-[620px]" (closeModal)="cerrarModal()">
+      <div class="pd-form-grid">
+        <app-search-select
+          [options]="proyectos()"
+          displayField="nombre"
+          [(value)]="form.proyectoId"
+          label="Proyecto"
+          placeholder="Buscar proyecto..."
+        />
+        <app-search-select
+          [options]="almacenes()"
+          displayField="nombre"
+          [(value)]="form.almacenId"
+          label="Almacén de despacho"
+          placeholder="Selecciona almacén"
+        />
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Observación (opcional)</label>
+        <textarea class="abril-field-input" rows="2" [(ngModel)]="form.observacion"></textarea>
+      </div>
+
+      <div class="pd-items">
+        <div class="pd-items-header">
+          <h3>Productos</h3>
+          <button type="button" class="pd-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
+        </div>
+
+        @for (item of form.items; track $index; let i = $index) {
+          <div class="pd-item-row">
+            <app-search-select
+              [options]="productos()"
+              displayField="nombre"
+              [(value)]="item.productoId"
+              placeholder="Producto"
+            />
+            <input class="abril-field-input pd-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
+            <input class="abril-field-input pd-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidadSolicitada" placeholder="Cant." />
+            @if (form.items.length > 1) {
+              <button type="button" class="pd-item-quitar" (click)="quitarItem(i)">✕</button>
+            }
+          </div>
+        }
+      </div>
+
+      @if (error()) { <p class="pd-error">{{ error() }}</p> }
+
+      <div class="pd-form-actions">
+        <button class="pd-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="pd-btn" [disabled]="guardando() || !form.proyectoId || !form.almacenId" (click)="guardar()">
+          {{ guardando() ? 'Enviando...' : 'Enviar pedido' }}
+        </button>
+      </div>
+    </app-base-modal>
+  }
+
+  <!-- Modal: detalle -->
+  @if (showDetalle() && detalle(); as d) {
+    <app-base-modal [title]="d.codigo" width="w-[560px]" (closeModal)="cerrarDetalle()">
+      <div class="pd-detalle-header">
+        <span class="pd-estado" [class]="d.estado.toLowerCase()">{{ d.estado }}</span>
+        <span class="pd-detalle-meta">{{ d.proyectoNombre }} · {{ d.almacenNombre }}</span>
+      </div>
+      <p class="pd-detalle-meta">Solicitado por {{ d.solicitanteNombre }} el {{ d.creadoEn | slice:0:10 }}</p>
+      @if (d.observacion) { <p class="pd-detalle-obs">"{{ d.observacion }}"</p> }
+
+      <table class="pd-table pd-detalle-table">
+        <thead>
+          <tr><th>Producto</th><th>Talla</th><th>Cant.</th></tr>
+        </thead>
+        <tbody>
+          @for (it of d.items; track it.id) {
+            <tr>
+              <td>{{ it.productoNombre }}</td>
+              <td>{{ it.talla || '—' }}</td>
+              <td>{{ it.cantidadSolicitada }} {{ it.unidadMedida }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (d.motivoRechazo) {
+        <p class="pd-error">Rechazado: {{ d.motivoRechazo }}</p>
+      }
+      @if (d.aprobadoPorNombre) {
+        <p class="pd-detalle-meta">Aprobado por {{ d.aprobadoPorNombre }} el {{ d.aprobadoEn | slice:0:10 }}</p>
+      }
+      @if (d.entregadoPorNombre) {
+        <p class="pd-detalle-meta">Entregado por {{ d.entregadoPorNombre }} el {{ d.entregadoEn | slice:0:10 }}</p>
+      }
+
+      <div class="pd-form-actions">
+        @if (d.estado === 'PENDIENTE' && esMiPedido) {
+          <button class="pd-btn ghost danger" [disabled]="accionando()" (click)="cancelar()">Cancelar pedido</button>
+        }
+        @if (d.estado === 'PENDIENTE' && authService.hasPermiso('PEDIDO_APROBAR')) {
+          <button class="pd-btn ghost danger" [disabled]="accionando()" (click)="rechazar()">Rechazar</button>
+          <button class="pd-btn" [disabled]="accionando()" (click)="aprobar()">Aprobar</button>
+        }
+        @if (d.estado === 'APROBADO' && authService.hasPermiso('PEDIDO_ENTREGAR')) {
+          <button class="pd-btn" [disabled]="accionando()" (click)="entregar()">Marcar como entregado</button>
+        }
+      </div>
+    </app-base-modal>
+  }
+</div>

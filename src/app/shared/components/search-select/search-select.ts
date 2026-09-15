@@ -236,7 +236,22 @@ export class SearchSelect implements OnDestroy {
       return this.fullText ? 'min-h-[26px] py-[3px] text-[11px] pl-[8px] pr-[6px]' : 'h-[26px] text-[11px] pl-[8px] pr-[6px]';
     }
     if (this.dark) return this.fullText ? 'min-h-[30px] py-[5px] text-[11px] pl-[10px] pr-[8px]' : 'h-[30px] text-[11px] pl-[10px] pr-[8px]';
-    return this.fullText ? 'min-h-[34px] py-[7px] text-[12px] pl-[10px] pr-[8px]' : 'h-[34px] text-[12px] pl-[10px] pr-[8px]';
+    // Variante por defecto (formulario normal, no tabla/filtro denso): 44px + 16px, mismo
+    // estándar que .abril-field-input y el login — target táctil + sin riesgo de que iOS haga
+    // zoom (ese bug es de <input>/<textarea>, no de este botón, pero igual se pareja la letra).
+    return this.fullText ? 'min-h-[44px] py-[10px] text-[16px] pl-[12px] pr-[10px]' : 'h-[44px] text-[16px] pl-[12px] pr-[10px]';
+  }
+
+  /**
+   * Tamaño de letra del label del trigger y de cada opción del dropdown — se expone como
+   * variable CSS (`--ss-font-size`) en vez de solo la clase Tailwind del botón porque
+   * `.ss-trigger-label`/`.ss-option` tienen su propio font-size fijo en search-select.css que
+   * ignoraría el tamaño del botón por herencia. Misma lógica de tamaños que triggerSizeClasses.
+   */
+  get fontSizePx(): string {
+    if (this.compact) return this.dark ? '10px' : '11px';
+    if (this.dark) return '11px';
+    return '16px';
   }
 
   get hasValue(): boolean {

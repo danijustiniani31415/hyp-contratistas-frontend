@@ -3,6 +3,8 @@ import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { CompleteRegistration } from "./pages/complete-registration/complete-registration";
 import { LbLogin } from "../lb-login/lb-login";
+import { OlvidePassword } from "../lb-login/olvide-password/olvide-password";
+import { RestablecerPassword } from "../lb-login/restablecer-password/restablecer-password";
 import { MsalRedirect } from "./pages/msal-redirect/msal-redirect";
 import { ActivarContratista } from "./pages/activar-contratista/activar-contratista";
 
@@ -13,6 +15,8 @@ const routes: Routes = [
   { path: "complete-registration", component: CompleteRegistration },
   { path: "set-password", component: ActivarContratista },
   { path: "login", component: LbLogin },
+  { path: "olvide-password", component: OlvidePassword },
+  { path: "restablecer-password", component: RestablecerPassword },
   { path: "msal-redirect", component: MsalRedirect },
 ]
 

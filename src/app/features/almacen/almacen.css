@@ -1,0 +1,64 @@
+.am-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 24px 100px;
+  font-family: system-ui, sans-serif;
+  color: #1E3A5F;
+}
+
+.am-header { margin-bottom: 24px; }
+.am-eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+  color: #64748B; margin: 0 0 6px;
+}
+.am-header h1 { font-size: 24px; margin: 0; }
+
+.am-toolbar { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; }
+.am-toolbar app-search-select { min-width: 220px; }
+.am-search {
+  flex: 1; min-width: 200px; max-width: 320px; border: 1px solid #D6DEE5; border-radius: 6px;
+  padding: 9px 12px; font-size: 13.5px; font-family: inherit; height: 44px; box-sizing: border-box;
+}
+
+.am-btn {
+  border-radius: 6px; padding: 8px 16px; font-weight: 600; font-size: 13.5px;
+  border: 1px solid transparent; background: #1E3A5F; color: #fff; cursor: pointer;
+  font-family: inherit; height: 44px;
+}
+.am-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.am-btn.ghost { background: transparent; color: #1E3A5F; border-color: #D6DEE5; }
+
+.am-table-wrap { border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; }
+.am-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.am-table th {
+  font-size: 12.5px; font-weight: 700; color: #1E3A5F;
+  padding: 10px 14px; border-bottom: 2px solid #1E3A5F; text-align: left;
+}
+.am-table td { padding: 12px 14px; border-bottom: 1px solid #F1F5F9; }
+.am-table tbody tr:hover { background: #FAFBFC; }
+.am-table tbody tr.bajo { background: #FEF2F2; }
+.am-empty { text-align: center; color: #94A3B8; padding: 32px 0 !important; }
+
+.am-codigo { color: #94A3B8; font-size: 11.5px; margin-left: 6px; }
+
+.am-badge-bajo {
+  display: inline-block; margin-left: 8px; font-size: 10px; font-weight: 700;
+  color: #C0392B; border: 1.5px solid #C0392B; border-radius: 20px; padding: 2px 8px;
+}
+
+.am-kardex { margin-top: 32px; }
+.am-kardex h2 { font-size: 16px; margin: 0 0 12px; }
+
+.am-tipo {
+  font-size: 10.5px; font-weight: 700; border-radius: 20px; padding: 3px 10px;
+  border: 1.5px solid #C0392B; color: #C0392B;
+}
+.am-tipo.ingreso { border-color: #1B6B3A; color: #1B6B3A; }
+
+.am-form-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px;
+}
+.am-form-actions {
+  display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;
+}
+.am-error { color: #C0392B; font-size: 12.5px; margin: 4px 0 0; }

@@ -45,6 +45,13 @@ encabezados de tabla) terminó usando **navy** (`#1E3A5F`) de forma consistente 
 decisiones de abajo — es el acento real que ganó en la práctica, no el teal. Tratar `#1E3A5F` como
 el segundo color de marca, no como "el navy de UDP que se descartó".
 
+**Segunda excepción, deliberada (2026-09-15):** la familia de pantallas de login/auth
+(`features/lb-login/` — login, olvide-password, restablecer-password) usa su **propio** acento,
+`#0F172A` (negro azulado profundo, variable `--lb-accent` en `lb-login.css`), no el navy
+`#1E3A5F` del resto de la app. Es la puerta de entrada, no chrome interno — se ve más premium
+con un tono casi negro (referencia: Linear, Stripe, Vercel) que con el mismo navy de un botón de
+tabla. No "corregir" esto a `#1E3A5F` pensando que es una inconsistencia — es a propósito.
+
 ---
 
 ## 2. Decisiones por componente
@@ -92,3 +99,28 @@ por página mientras tanto:
 
 Todo lo de arriba se puede ver renderizado en vivo en **`/catalogo-ui`** de este mismo repo
 (`npm start` → `http://localhost:4300/catalogo-ui`) — componentes reales, no mockups.
+
+## 5. Formularios e inputs — reglas obligatorias (basado en guía de UX real, 2026-09)
+
+Aplica a **todo formulario nuevo o retocado**, no solo login. `.abril-field-input` (global,
+`styles.css`) ya cumple los puntos 1 y 2 — no hay que repetirlos por página.
+
+1. **Altura mínima 44px** en todo input y botón de acción (target táctil). `.abril-field-input`
+   y `.lb-login-btn`/`.lb-field input` (login) ya lo tienen vía `min-height: 44px`.
+2. **Espaciado vertical ~16px** entre campos apilados (no menos — se ve apretado y confunde qué
+   label pertenece a qué input).
+3. **Label siempre visible arriba del input, nunca solo placeholder** — un placeholder desaparece
+   al escribir y el usuario pierde el contexto. El placeholder es solo ayuda extra opcional
+   (ej. formato esperado), nunca la única pista de qué va en el campo. Ya es el patrón de
+   `.abril-field-label` / `app-search-select` / `lb-field label` — mantenerlo.
+4. **Toggle de mostrar/ocultar contraseña** en todo campo de contraseña — patrón de texto
+   "Mostrar"/"Ocultar" dentro del campo, alineado a la derecha (ver `.lb-password-toggle` en
+   `lb-login`, o `.password-toggle` en el login legacy). No usar ícono de ojo sin más contexto;
+   el texto es más claro y ya es el patrón existente.
+5. **CTA principal al fondo del formulario**, con contraste fuerte contra el fondo (navy sólido
+   sobre blanco, nunca un tono apagado) — es lo primero que el ojo debe encontrar.
+6. **"¿Olvidaste tu contraseña?" pegado al campo de contraseña**, chico, sin competir con el CTA
+   — ✅ construido 2026-09-15: `/auth/olvide-password` → `/auth/restablecer-password`, token
+   opaco de un solo uso (`lb_usuario_password_token`, 2h de vigencia), mismo mensaje exista o
+   no el correo (no revela cuentas registradas). Referencia: `features/lb-login/`.
+7. **Sin login social (Google/Apple/etc.)** — decisión explícita, no aplica a esta app.

@@ -1,0 +1,116 @@
+<div class="cp-page">
+  <app-lb-nav />
+  <header class="cp-header">
+    <p class="cp-eyebrow">HP Constructores Generales · Las Bravas</p>
+    <h1>Catálogo Maestro</h1>
+  </header>
+
+  <div class="cp-toolbar">
+    <input
+      class="cp-search"
+      type="text"
+      placeholder="Buscar por nombre o código..."
+      [(ngModel)]="search"
+      (keyup.enter)="onSearch()"
+    />
+    <button class="cp-btn" (click)="onSearch()">Buscar</button>
+  </div>
+
+  <div class="cp-table-wrap">
+    <table class="cp-table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Categoría</th>
+          <th>Unidad</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="5" class="cp-empty">Cargando...</td></tr>
+        } @else if (!productos().length) {
+          <tr><td colspan="5" class="cp-empty">Sin productos registrados todavía.</td></tr>
+        } @else {
+          @for (p of productos(); track p.id) {
+            <tr>
+              <td>{{ p.codigo ?? '—' }}</td>
+              <td>{{ p.nombre }}</td>
+              <td>{{ p.categoriaNombre }}</td>
+              <td>{{ p.unidadMedida }}</td>
+              <td><span class="cp-badge" [class.on]="p.activo">{{ p.activo ? 'ACTIVO' : 'INACTIVO' }}</span></td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <app-paginator [totalRecords]="totalRecords()" [currentPage]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+  }
+
+  @if (showModal()) {
+    <app-base-modal title="Nuevo producto" width="w-[560px]" (closeModal)="cerrarModal()">
+      <div class="cp-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Nombre</label>
+          <input class="abril-field-input" [(ngModel)]="form.nombre" (ngModelChange)="onNombreChange()" placeholder="Ej: Casco de seguridad blanco" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Código (opcional)</label>
+          <input class="abril-field-input" [(ngModel)]="form.codigo" placeholder="Autogenerado si lo dejas vacío" />
+        </div>
+      </div>
+
+      @if (sugerencias().length) {
+        <div class="cp-sugerencias">
+          <p class="cp-sugerencias-title">⚠ Ya existen productos parecidos — revisa que no sea un duplicado:</p>
+          <ul>
+            @for (s of sugerencias(); track s.id) {
+              <li>{{ s.nombre }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      <div class="cp-form-grid">
+        <app-search-select
+          [options]="categorias()"
+          displayField="nombre"
+          [(value)]="form.categoriaId"
+          label="Categoría"
+          placeholder="Selecciona categoría"
+        />
+        <div class="abril-field">
+          <label class="abril-field-label">Unidad de medida</label>
+          <select class="abril-field-input" [(ngModel)]="form.unidadMedida">
+            @for (u of unidades; track u) { <option [value]="u">{{ u }}</option> }
+          </select>
+        </div>
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Descripción (opcional)</label>
+        <textarea class="abril-field-input" rows="2" [(ngModel)]="form.descripcion"></textarea>
+      </div>
+
+      <div class="cp-checkboxes">
+        <label class="cp-checkbox"><input type="checkbox" [(ngModel)]="form.requiereTalla" /> Requiere talla (EPP)</label>
+        <label class="cp-checkbox"><input type="checkbox" [(ngModel)]="form.esRetornable" /> Es retornable (herramienta/equipo en préstamo)</label>
+      </div>
+
+      @if (error()) { <p class="cp-error">{{ error() }}</p> }
+
+      <div class="cp-form-actions">
+        <button class="cp-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="cp-btn" [disabled]="guardando() || !form.nombre || !form.categoriaId" (click)="guardar()">
+          {{ guardando() ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </div>
+    </app-base-modal>
+  }
+
+  <app-fab label="Nuevo producto" (clicked)="abrirNuevo()" />
+</div>

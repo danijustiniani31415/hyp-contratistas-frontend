@@ -1,12 +1,24 @@
 /* Mismo layout que Abril (login.css): sección a pantalla completa, tarjeta blanca centrada,
-   sombra suave azulada, radio grande. Colores adaptados a la marca de Las Bravas (navy en vez
-   de azul Abril, mismo patrón). */
+   radio grande. Acento propio para esta familia de pantallas (login/olvide/restablecer): negro
+   azulado profundo (#0F172A) en vez del navy #1E3A5F que usa el resto de la app (botones/tabs/
+   headers de tabla, ver SISTEMA-DE-DISENO.md §1) — el login es la puerta de entrada, no chrome
+   interno, y se ve mejor con un acento más oscuro/premium tipo SaaS moderno (Linear/Stripe),
+   no con el mismo tono que un botón de tabla. Confirmado 2026-09-15, decisión deliberada. */
+:host {
+  --lb-accent: #0F172A;
+  --lb-accent-hover: #1E293B;
+}
 
 .lb-login-section {
   position: fixed;
   inset: 0;
   z-index: 10;
-  background: #fff;
+  /* Gradiente muy sutil en vez de blanco plano — le da profundidad ambiental a la página sin
+     competir con la tarjeta, que sigue siendo blanco puro (#fff) sobre esto. */
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 20%, rgba(15, 23, 42, 0.035), transparent),
+    radial-gradient(ellipse 70% 60% at 85% 80%, rgba(15, 23, 42, 0.025), transparent),
+    #FAFAFB;
   overflow: hidden;
 }
 
@@ -25,6 +37,11 @@
   justify-content: center;
   max-height: 100%;
   overflow-y: auto;
+  /* Espacio de sobra alrededor de la tarjeta: un contenedor con overflow-y:auto recorta en
+     seco cualquier box-shadow que se pase de su propio borde (WebKit/Blink/Firefox lo hacen
+     igual — no hay forma de "dejar salir" la sombra de un overflow no-visible). Sin este
+     padding, la sombra se veía cuadrada porque literalmente la estaban cortando ahí mismo. */
+  padding: 48px 24px;
   opacity: 0;
   animation: lb-entrar-izquierda 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
@@ -39,14 +56,17 @@
   max-width: 420px;
   background: #fff;
   border-radius: 28px;
-  border: 1px solid #EEF1F4;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  /* Sombra "ambient + directa" en capas, neutra y muy difusa (blur grande, opacidad baja) —
+     así se ve como si la tarjeta flotara de verdad, no como un bloque con borde duro. Mismo
+     recurso que usan Linear/Stripe/Vercel en sus tarjetas. */
   box-shadow:
-    0 1px 2px rgba(30, 58, 95, 0.04),
-    0 8px 16px rgba(30, 58, 95, 0.05),
-    0 24px 48px -12px rgba(30, 58, 95, 0.14);
+    0 1px 1px rgba(15, 23, 42, 0.02),
+    0 4px 8px rgba(15, 23, 42, 0.03),
+    0 12px 24px rgba(15, 23, 42, 0.05),
+    0 24px 48px -12px rgba(15, 23, 42, 0.14);
   padding: 28px 36px 32px;
   box-sizing: border-box;
-  margin: 16px 0;
 }
 
 .lb-login-mascota-wrap {
@@ -108,7 +128,7 @@
 .lb-login-brand h2 {
   font-size: 20px;
   font-weight: 700;
-  color: #1E3A5F;
+  color: var(--lb-accent);
   text-align: center;
   margin: 0;
 }
@@ -121,7 +141,7 @@
 }
 
 .lb-field {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 .lb-field label {
   display: block;
@@ -133,21 +153,83 @@
 .lb-field input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #DBE6EF;
+  min-height: 44px;
+  border: 1px solid #E4E4E7;
   border-radius: 10px;
   padding: 10px 12px;
-  font-size: 13.5px;
+  /* 16px, no menos: en iOS Safari, un input con letra <16px hace que el navegador haga
+     zoom automático de toda la página al enfocarlo — un bug real de mobile, no cosmético. */
+  font-size: 16px;
   font-family: inherit;
-  background: #fff;
-  color: #1E293B;
+  background: #FAFAFA;
+  color: #18181B;
+  transition: background-color 0.15s, border-color 0.15s;
 }
 .lb-field input:focus {
   outline: none;
-  border-color: #1E3A5F;
-  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.12);
+  background: #fff;
+  border-color: var(--lb-accent);
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
 }
 .lb-field input::placeholder {
-  color: #B0BAC5;
+  color: #A1A1AA;
+}
+
+/* El autocompletado del navegador (Chrome/Edge) pinta el campo con su propio azul/amarillo,
+   ignorando el fondo que le dimos — se ve desentonado con el resto de la tarjeta. Truco
+   estándar: un box-shadow inset gigante del mismo color que el input, que "tapa" el fondo que
+   inyecta el navegador (WebKit no deja anular ese fondo directo con background-color). */
+.lb-field input:-webkit-autofill,
+.lb-field input:-webkit-autofill:hover,
+.lb-field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #18181B;
+  box-shadow: 0 0 0 1000px #FAFAFA inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+.lb-field input:-webkit-autofill:focus {
+  box-shadow: 0 0 0 1000px #fff inset, 0 0 0 3px rgba(15, 23, 42, 0.08);
+}
+
+/* Toggle "Mostrar/Ocultar" contraseña: mismo patrón que el login legacy, dentro del
+   campo, alineado a la derecha — fácil de tocar sin robarle protagonismo al input. */
+.lb-password-wrap {
+  position: relative;
+}
+.lb-password-wrap input {
+  padding-right: 68px;
+}
+.lb-password-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 0;
+  color: var(--lb-accent);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 8px;
+  min-height: 32px;
+  font-family: inherit;
+}
+.lb-password-toggle:hover {
+  text-decoration: underline;
+}
+
+/* Pegado al campo de contraseña, chico y sin competir con el botón INGRESAR — regla 6 del
+   sistema de diseño (sección 5). */
+.lb-forgot-link {
+  display: block;
+  text-align: right;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--lb-accent);
+  text-decoration: none;
+}
+.lb-forgot-link:hover {
+  text-decoration: underline;
 }
 
 .lb-login-error {
@@ -158,8 +240,9 @@
 
 .lb-login-btn {
   width: 100%;
+  min-height: 44px;
   margin-top: 4px;
-  background: #1E3A5F;
+  background: var(--lb-accent);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -169,14 +252,21 @@
   letter-spacing: 0.03em;
   cursor: pointer;
   font-family: inherit;
-  transition: transform 0.15s;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 8px 16px -4px rgba(15, 23, 42, 0.16);
+  transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s;
 }
 .lb-login-btn:hover:not(:disabled) {
-  transform: scale(1.02);
+  background: var(--lb-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.1), 0 12px 24px -4px rgba(15, 23, 42, 0.22);
+}
+.lb-login-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 .lb-login-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .lb-login-tutoriales-wrap {
@@ -184,6 +274,28 @@
   padding-top: 14px;
   border-top: 1px solid #EEF3F8;
   text-align: center;
+}
+
+.lb-login-ok {
+  font-size: 13px;
+  color: #18181B;
+  line-height: 1.5;
+  background: #F4F4F5;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 0;
+}
+
+.lb-login-volver {
+  display: block;
+  text-align: center;
+  color: var(--lb-accent);
+  font-weight: 600;
+  font-size: 12px;
+  text-decoration: none;
+}
+.lb-login-volver:hover {
+  text-decoration: underline;
 }
 
 .lb-login-tutoriales {
@@ -195,7 +307,7 @@
   border: 0;
   background: transparent;
   padding: 0;
-  color: #1E3A5F;
+  color: var(--lb-accent);
   font-weight: 700;
   font-size: 11.5px;
   letter-spacing: 0.03em;

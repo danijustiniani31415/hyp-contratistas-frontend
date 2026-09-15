@@ -38,6 +38,15 @@ export class LbAuthService {
     );
   }
 
+  /** Siempre responde igual exista o no el email — el backend no revela cuentas registradas. */
+  solicitarReset(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/solicitar-reset`, { email });
+  }
+
+  resetPassword(token: string, nuevaPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/reset-password`, { token, nuevaPassword });
+  }
+
   private persistSesion(res: LbLoginResponse): void {
     localStorage.setItem('lb_token', res.token);
     localStorage.setItem('lb_user', JSON.stringify({

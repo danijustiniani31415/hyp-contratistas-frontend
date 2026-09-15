@@ -1,0 +1,152 @@
+<div class="am-page">
+  <app-lb-nav />
+  <header class="am-header">
+    <p class="am-eyebrow">HP Constructores Generales · Las Bravas</p>
+    <h1>Almacén / Kardex</h1>
+  </header>
+
+  <div class="am-toolbar">
+    <app-search-select
+      [options]="almacenes()"
+      displayField="nombre"
+      [(value)]="almacenFiltro"
+      label="Almacén"
+      placeholder="Todos los almacenes"
+      (valueChange)="onFiltroChange()"
+    />
+    <input
+      class="am-search"
+      type="text"
+      placeholder="Buscar producto..."
+      [(ngModel)]="search"
+      (keyup.enter)="onSearch()"
+    />
+    <button class="am-btn" (click)="onSearch()">Buscar</button>
+  </div>
+
+  <div class="am-table-wrap">
+    <table class="am-table">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Almacén</th>
+          <th>Talla</th>
+          <th>Cantidad</th>
+          <th>Mínimo</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="5" class="am-empty">Cargando...</td></tr>
+        } @else if (!stock().length) {
+          <tr><td colspan="5" class="am-empty">Sin stock registrado todavía.</td></tr>
+        } @else {
+          @for (s of stock(); track s.id) {
+            <tr [class.bajo]="s.bajoMinimo">
+              <td>{{ s.productoNombre }} <span class="am-codigo">{{ s.productoCodigo }}</span></td>
+              <td>{{ s.almacenNombre }}</td>
+              <td>{{ s.talla || '—' }}</td>
+              <td>
+                {{ s.cantidadActual }} {{ s.unidadMedida }}
+                @if (s.bajoMinimo) { <span class="am-badge-bajo">BAJO MÍNIMO</span> }
+              </td>
+              <td>{{ s.stockMinimo }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <app-paginator [totalRecords]="totalRecords()" [currentPage]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+  }
+
+  <section class="am-kardex">
+    <h2>Movimientos recientes</h2>
+    @if (!movimientos().length) {
+      <p class="am-empty">Sin movimientos todavía.</p>
+    } @else {
+      <table class="am-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Producto</th>
+            <th>Almacén</th>
+            <th>Cantidad</th>
+            <th>Usuario</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of movimientos(); track m.id) {
+            <tr>
+              <td>{{ m.creadoEn | slice:0:10 }}</td>
+              <td><span class="am-tipo" [class.ingreso]="m.tipoMovimiento === 'INGRESO'">{{ m.tipoMovimiento }}</span></td>
+              <td>{{ m.productoNombre }}</td>
+              <td>{{ m.almacenNombre }}</td>
+              <td>{{ m.cantidad }}</td>
+              <td>{{ m.usuarioNombre ?? '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+
+  @if (showModal()) {
+    <app-base-modal title="Registrar movimiento" width="w-[480px]" (closeModal)="cerrarModal()">
+      <div class="am-form-grid">
+        <app-search-select
+          [options]="almacenes()"
+          displayField="nombre"
+          [(value)]="form.almacenId"
+          label="Almacén"
+          placeholder="Selecciona almacén"
+        />
+        <div class="abril-field">
+          <label class="abril-field-label">Tipo</label>
+          <select class="abril-field-input" [(ngModel)]="form.tipoMovimiento">
+            <option value="INGRESO">Ingreso</option>
+            <option value="SALIDA">Salida</option>
+          </select>
+        </div>
+      </div>
+
+      <app-search-select
+        [options]="productos()"
+        displayField="nombre"
+        [(value)]="form.productoId"
+        label="Producto"
+        placeholder="Buscar producto..."
+      />
+
+      <div class="am-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Talla (si aplica)</label>
+          <input class="abril-field-input" [(ngModel)]="form.talla" placeholder="Ej: M, 42, —" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Cantidad</label>
+          <input class="abril-field-input" type="number" min="0.01" step="0.01" [(ngModel)]="form.cantidad" />
+        </div>
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Costo unitario (opcional)</label>
+        <input class="abril-field-input" type="number" min="0" step="0.01" [(ngModel)]="form.costoUnitario" />
+      </div>
+
+      @if (error()) { <p class="am-error">{{ error() }}</p> }
+
+      <div class="am-form-actions">
+        <button class="am-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="am-btn" [disabled]="guardando() || !form.almacenId || !form.productoId || !form.cantidad" (click)="guardar()">
+          {{ guardando() ? 'Guardando...' : 'Registrar' }}
+        </button>
+      </div>
+    </app-base-modal>
+  }
+
+  <app-fab label="Registrar movimiento" (clicked)="abrirNuevo()" />
+</div>

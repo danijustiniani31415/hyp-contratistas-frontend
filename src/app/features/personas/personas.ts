@@ -1,10 +1,12 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { SearchSelect } from '../../shared/components/search-select/search-select';
 import { BaseModal } from '../../shared/components/base-modal/base-modal';
 import { FabButton } from '../../shared/components/fab-button/fab-button';
 import { Paginator } from '../../shared/components/paginator/paginator';
+import { LbNav } from '../../shared/components/lb-nav/lb-nav';
 import {
   PersonasService,
   PersonaListItem,
@@ -27,7 +29,7 @@ import {
 @Component({
   selector: 'app-personas',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, BaseModal, FabButton, Paginator],
+  imports: [CommonModule, FormsModule, RouterLink, SearchSelect, BaseModal, FabButton, Paginator, LbNav],
   templateUrl: './personas.html',
   styleUrl: './personas.css',
 })

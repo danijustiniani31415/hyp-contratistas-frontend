@@ -1,4 +1,5 @@
 <div class="pp-page">
+  <app-lb-nav />
   <header class="pp-header">
     <p class="pp-eyebrow">HP Constructores Generales · Las Bravas</p>
     <h1>Personas</h1>
@@ -34,7 +35,7 @@
           <tr><td colspan="6" class="pp-empty">Sin personas registradas todavía.</td></tr>
         } @else {
           @for (p of personas(); track p.id) {
-            <tr>
+            <tr class="pp-row" [routerLink]="['/personas', p.id]">
               <td>{{ p.nombreCompleto }}</td>
               <td>{{ p.numeroDocumento }}</td>
               <td>{{ p.tipoVinculoNombre ?? '—' }}</td>
