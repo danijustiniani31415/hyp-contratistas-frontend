@@ -1,0 +1,204 @@
+/* Mismo layout que Abril (login.css): sección a pantalla completa, tarjeta blanca centrada,
+   sombra suave azulada, radio grande. Colores adaptados a la marca de Las Bravas (navy en vez
+   de azul Abril, mismo patrón). */
+
+.lb-login-section {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: #fff;
+  overflow: hidden;
+}
+
+.lb-login-grid {
+  display: grid;
+  grid-template-columns: 0.85fr 1fr;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0 9%;
+  box-sizing: border-box;
+}
+
+.lb-login-card-wrap {
+  display: flex;
+  justify-content: center;
+  max-height: 100%;
+  overflow-y: auto;
+  opacity: 0;
+  animation: lb-entrar-izquierda 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes lb-entrar-izquierda {
+  from { opacity: 0; transform: translateX(-32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.lb-login-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 28px;
+  border: 1px solid #EEF1F4;
+  box-shadow:
+    0 1px 2px rgba(30, 58, 95, 0.04),
+    0 8px 16px rgba(30, 58, 95, 0.05),
+    0 24px 48px -12px rgba(30, 58, 95, 0.14);
+  padding: 28px 36px 32px;
+  box-sizing: border-box;
+  margin: 16px 0;
+}
+
+.lb-login-mascota-wrap {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.lb-login-mascota {
+  position: relative;
+  z-index: 1;
+  max-height: 92%;
+  width: auto;
+  object-fit: contain;
+  opacity: 0;
+  animation: lb-entrar-derecha 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes lb-entrar-derecha {
+  from { opacity: 0; transform: translateX(60px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-login-card-wrap, .lb-login-mascota {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+@media (max-width: 900px) {
+  .lb-login-grid {
+    grid-template-columns: 1fr;
+    padding: 24px;
+    overflow-y: auto;
+  }
+  .lb-login-mascota-wrap {
+    display: none;
+  }
+}
+
+.lb-login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 20px;
+}
+
+.lb-login-logo-img {
+  height: 42px;
+  width: auto;
+  margin-bottom: 6px;
+}
+
+.lb-login-brand h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1E3A5F;
+  text-align: center;
+  margin: 0;
+}
+
+.lb-login-brand p {
+  font-size: 12px;
+  color: #7D93A8;
+  text-align: center;
+  margin: 0;
+}
+
+.lb-field {
+  margin-bottom: 14px;
+}
+.lb-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #39536B;
+  margin-bottom: 4px;
+}
+.lb-field input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #DBE6EF;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+  background: #fff;
+  color: #1E293B;
+}
+.lb-field input:focus {
+  outline: none;
+  border-color: #1E3A5F;
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.12);
+}
+.lb-field input::placeholder {
+  color: #B0BAC5;
+}
+
+.lb-login-error {
+  color: #C0392B;
+  font-size: 12px;
+  margin: -6px 0 12px;
+}
+
+.lb-login-btn {
+  width: 100%;
+  margin-top: 4px;
+  background: #1E3A5F;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 11px;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.15s;
+}
+.lb-login-btn:hover:not(:disabled) {
+  transform: scale(1.02);
+}
+.lb-login-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lb-login-tutoriales-wrap {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #EEF3F8;
+  text-align: center;
+}
+
+.lb-login-tutoriales {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: default;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #1E3A5F;
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-family: inherit;
+}

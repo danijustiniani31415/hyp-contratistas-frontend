@@ -1,0 +1,535 @@
+<div class="cat-page">
+
+  <header class="cat-header">
+    <p class="cat-eyebrow">HP Constructores Generales · Las Bravas</p>
+    <h1>Catálogo de componentes reales</h1>
+    <p class="cat-lead">
+      Cada bloque de abajo es el componente compartido tal cual existe en el código hoy (mismo
+      selector, mismos inputs) — no una recreación. Mira, decide cuál queda como el único
+      estándar por categoría, y dime cuáles en el chat.
+    </p>
+  </header>
+
+  <!-- ============================================================ -->
+  <section class="cat-block">
+    <h2>Pantallas reales de referencia</h2>
+    <p class="cat-note">
+      Estas no son componentes sueltos — son pantallas completas ya construidas. Ábrelas para
+      comparar contra las capturas que mandaste.
+    </p>
+    <div class="cat-ref-list">
+      @for (p of pantallasReferencia; track p.ruta) {
+        <a [routerLink]="p.ruta" class="cat-ref-card">
+          <div class="cat-ref-title">{{ p.titulo }} <i class="ti ti-external-link"></i></div>
+          <div class="cat-ref-nota">{{ p.nota }}</div>
+        </a>
+      }
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="cat-block">
+    <h2>Combobox / select <span class="cat-confirmed">✅ confirmado — A (app-search-select)</span></h2>
+    <p class="cat-note">A es app-search-select (botón que abre un panel con buscador adentro). B es autocompletar en línea, sin abrir nada.</p>
+    <div class="cat-demo-row">
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">A · Actual (app-search-select)</span>
+        <app-search-select
+          [options]="almacenes"
+          [(value)]="almacenSel"
+          label="Almacén"
+          placeholder="Buscar almacén..."
+        />
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">B · Autocompletar en línea (escribes directo, sin clic para abrir)</span>
+        <label class="cat-date-c-label">Almacén</label>
+        <div class="cat-autocomplete">
+          <input type="text" class="abril-field-input" placeholder="Escribe para buscar..." [value]="'alma'" />
+          <div class="cat-autocomplete-list">
+            <div class="cat-autocomplete-item hit">Alm<b>a</b>cén Central Lima</div>
+            <div class="cat-autocomplete-item hit">Alm<b>a</b>cén Las Bravas</div>
+          </div>
+        </div>
+        <p class="cat-note-inline">1 solo paso (escribir), pero pierde el "ver todas las opciones sin escribir" que sí tiene A.</p>
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">app-multi-search-select (multi, sin cambios)</span>
+        <app-multi-search-select
+          [options]="categorias"
+          [(value)]="categoriasSel"
+          label="Categorías"
+          placeholder="Selecciona categorías"
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="cat-block">
+    <h2>Modal / diálogo <span class="cat-confirmed">✅ confirmado — A corto / C largo</span></h2>
+    <p class="cat-note">Regla: formularios cortos → <b>A · app-base-modal</b> (X ya corregida a teal, ver abajo). Formularios largos/muchos campos → <b>C · drawer lateral</b>. app-abril-modal-panel (B) queda pendiente de decidir si se descontinúa o se mantiene solo para SSOMA.</p>
+    <div class="cat-demo-row">
+      <button class="cat-btn" (click)="showBaseModal = true">A · Abrir app-base-modal</button>
+      <button class="cat-btn" (click)="showPanelTeal = true">B · abril-modal-panel (teal)</button>
+      <button class="cat-btn" (click)="showPanelBlue = true">B · abril-modal-panel (blue)</button>
+      <button class="cat-btn" (click)="showDrawer = true">C · Panel lateral (drawer)</button>
+    </div>
+
+    @if (showDrawer) {
+      <div class="cat-drawer-overlay" (click)="showDrawer = false">
+        <div class="cat-drawer" (click)="$event.stopPropagation()">
+          <div class="cat-drawer-head">
+            <span>Agregar a lista negra</span>
+            <i class="ti ti-x" (click)="showDrawer = false"></i>
+          </div>
+          <div class="cat-drawer-body">
+            <label class="cat-date-c-label">Buscar trabajador</label>
+            <input class="abril-field-input" placeholder="Nombre o DNI..." style="margin-bottom:14px;" />
+            <label class="cat-date-c-label">Motivo</label>
+            <textarea class="abril-field-input" rows="3" placeholder="Describe el motivo de la restricción..."></textarea>
+          </div>
+          <div class="cat-drawer-footer">
+            <button class="cat-btn ghost" (click)="showDrawer = false">Cancelar</button>
+            <button class="cat-btn">Agregar</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (showBaseModal) {
+      <app-base-modal title="Nuevo producto" width="w-[520px]" (closeModal)="showBaseModal = false">
+        <div class="abril-field">
+          <label class="abril-field-label">Nombre</label>
+          <input class="abril-field-input" [(ngModel)]="productoNombre" placeholder="Ej: Casco MSA V-Gard" />
+        </div>
+        <app-search-select [options]="categorias" [(value)]="productoCategoria" label="Categoría" />
+      </app-base-modal>
+    }
+
+    @if (showPanelTeal) {
+      <app-abril-modal-panel
+        titulo="Registrar movimiento"
+        icono="ti-truck"
+        variant="teal"
+        (closeModal)="showPanelTeal = false">
+        <div class="abril-field">
+          <label class="abril-field-label">Descripción del lugar</label>
+          <input class="abril-field-input" placeholder="Ej: Almacén Central, pañol 2" />
+        </div>
+        <div modalFooter class="modal-footer-row">
+          <button class="cat-btn ghost" (click)="showPanelTeal = false">Cancelar</button>
+          <button class="cat-btn">Guardar</button>
+        </div>
+      </app-abril-modal-panel>
+    }
+
+    @if (showPanelBlue) {
+      <app-abril-modal-panel
+        titulo="Nuevo RAC"
+        icono="ti-alert-triangle"
+        variant="blue"
+        width="820px"
+        (closeModal)="showPanelBlue = false">
+        <div class="cat-form-grid">
+          <app-date-picker [(value)]="fecha" label="Fecha del reporte" [floatingLabel]="true" [dense]="true" [required]="true" />
+          <app-search-select [options]="categorias" [value]="null" label="Tipo" placeholder="Selecciona tipo" [required]="true" />
+        </div>
+        <div modalFooter class="modal-footer-row">
+          <button class="cat-btn ghost" (click)="showPanelBlue = false">Cancelar</button>
+          <button class="cat-btn"><i class="ti ti-device-floppy"></i> Guardar RAC</button>
+        </div>
+      </app-abril-modal-panel>
+    }
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="cat-block">
+    <h2>Fecha y hora <span class="cat-confirmed">✅ confirmado — B (nativo simple)</span></h2>
+    <p class="cat-note">La opción A es la actual (app-date-picker/app-time-picker, calendario propio). B y C son alternativas más simples.</p>
+    <div class="cat-demo-row">
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">A · Actual (calendario propio)</span>
+        <app-date-picker [(value)]="fecha" label="Fecha del reporte" />
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">B · Nativo simple (picker del navegador)</span>
+        <div class="abril-field">
+          <label class="abril-field-label">Fecha del reporte</label>
+          <input type="date" class="abril-field-input" />
+        </div>
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">C · Nativo + ícono a la derecha</span>
+        <div class="cat-date-c">
+          <label class="cat-date-c-label">Fecha del reporte</label>
+          <div class="cat-date-c-box">
+            <input type="date" class="cat-date-c-input" />
+            <i class="ti ti-calendar"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="cat-note" style="margin-top:16px;">Lo mismo para hora — A es app-time-picker (columnas hora/minuto), B/C son nativo.</p>
+    <div class="cat-demo-row">
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">A · Actual (columnas hora/min)</span>
+        <app-time-picker [(value)]="hora" label="Hora" />
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">B · Nativo simple</span>
+        <div class="abril-field">
+          <label class="abril-field-label">Hora</label>
+          <input type="time" class="abril-field-input" />
+        </div>
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">C · Nativo + ícono</span>
+        <div class="cat-date-c">
+          <label class="cat-date-c-label">Hora</label>
+          <div class="cat-date-c-box">
+            <input type="time" class="cat-date-c-input" />
+            <i class="ti ti-clock"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="cat-note" style="margin-top:20px;">
+      <span class="cat-pending">🔁 3 patrones distintos (no solo color) — solo para fecha</span>
+    </p>
+    <div class="cat-demo-row">
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">D · Segmentado (día / mes / año en cajitas)</span>
+        <label class="cat-date-c-label">Fecha del reporte</label>
+        <div class="cat-date-seg">
+          <input type="text" maxlength="2" placeholder="DD" #d1 (input)="d1.value.length===2 && m1.focus()" />
+          <span>/</span>
+          <input type="text" maxlength="2" placeholder="MM" #m1 (input)="m1.value.length===2 && a1.focus()" />
+          <span>/</span>
+          <input type="text" maxlength="4" placeholder="AAAA" #a1 />
+        </div>
+        <p class="cat-note-inline">Se escribe número por número, avanza solo de caja — sin abrir nada. Común en formularios cortos.</p>
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">E · 3 selects (día / mes / año)</span>
+        <label class="cat-date-c-label">Fecha del reporte</label>
+        <div class="cat-date-selects">
+          <select><option>Día</option><option>06</option><option>07</option></select>
+          <select><option>Mes</option><option>Ago</option><option>Sep</option></select>
+          <select><option>Año</option><option>2025</option><option>2026</option></select>
+        </div>
+        <p class="cat-note-inline">Cero ambigüedad (nunca se confunde día/mes), pero 3 clics en vez de 1.</p>
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">F · Accesos rápidos + calendario</span>
+        <label class="cat-date-c-label">Fecha del reporte</label>
+        <div class="cat-date-quick">
+          <button type="button" class="active">Hoy</button>
+          <button type="button">Ayer</button>
+          <button type="button"><i class="ti ti-calendar"></i></button>
+        </div>
+        <p class="cat-note-inline">Para el caso más común (hoy/ayer) un clic; el calendario queda solo para fechas atrás.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="cat-block">
+    <h2>Subida de archivos / fotos</h2>
+    <p class="cat-note">3 variantes reales: file-selector (botón), photo-grid-picker (grid), camera-capture (cámara en vivo).</p>
+    <div class="cat-demo-row">
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">app-file-selector</span>
+        <app-file-selector (fileSelected)="onFileSelected($event)" />
+        @if (archivoNombre) { <p class="cat-file-name">{{ archivoNombre }}</p> }
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">app-photo-grid-picker</span>
+        <app-photo-grid-picker [previews]="fotos" (filesSelected)="onFotosSelected($event)" (remove)="removeFoto($event)" />
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">app-camera-capture</span>
+        <p class="cat-note-inline">Requiere permiso de cámara del navegador — no se instancia aquí para no pedir permiso sin que lo pidas; ábrela desde una pantalla real que ya la use (control de acceso / enrolamiento).</p>
+      </div>
+    </div>
+
+    <p class="cat-note" style="margin-top:20px;">
+      <span class="cat-pending">🔁 mismo patrón de arrastrar, otros colores/estilo</span>
+    </p>
+    <div class="cat-demo-row">
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">Teal (marca)</span>
+        <div class="cat-drop cat-drop--teal">
+          <i class="ti ti-cloud-upload"></i>
+          <span>Arrastra archivos aquí o <b>haz clic</b></span>
+          <small>PNG, JPG, JPEG</small>
+        </div>
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">Navy/gris (sobrio, borde sólido)</span>
+        <div class="cat-drop cat-drop--navy">
+          <i class="ti ti-upload"></i>
+          <span>Arrastra archivos aquí o <b>haz clic</b></span>
+          <small>PNG, JPG, JPEG</small>
+        </div>
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">Minimal (línea fina, sin ícono grande)</span>
+        <div class="cat-drop cat-drop--minimal">
+          <i class="ti ti-paperclip"></i>
+          <span>Arrastra o <b>selecciona un archivo</b></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="cat-block">
+    <h2>Firma digital</h2>
+    <p class="cat-note">app-signature-pad (lienzo real) + metadata de lugar/fecha automática — el componente nuevo que definimos, no existe armado así todavía.</p>
+    <div class="cat-demo-card cat-demo-card--wide">
+      <span class="cat-confirmed">✅ confirmado</span>
+      <app-signature-pad (drawingChange)="hayFirma = $event" />
+      <div class="cat-sig-meta">
+        <div><b>Lugar:</b> {{ lugarFirma }}</div>
+        <div><b>Fecha/hora:</b> {{ fechaHoraFirma }}</div>
+      </div>
+      <p class="cat-note-inline">firma-personal (firma guardada de por vida) y firma-digital-pad (SSOMA) siguen existiendo aparte — este lienzo de acá es el mismo app-signature-pad que ya usan las dos, solo que sin conectarlo a ningún servicio para la demo.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="cat-block">
+    <h2>Badges de estado <span class="cat-pending">🔁 no convencieron, más opciones elegantes</span></h2>
+    <p class="cat-note">A es el actual (pill sólido de color). B, C y D son variantes más sobrias.</p>
+
+    <p class="cat-note-inline" style="margin:0 0 6px;">A · Actual (app-status-badge, pill sólido)</p>
+    <div class="cat-demo-row cat-badges" style="margin-bottom:20px;">
+      <app-status-badge status="Habilitado" />
+      <app-status-badge status="Pendiente" />
+      <app-status-badge status="Vencido" />
+      <app-status-badge status="Rechazado" />
+    </div>
+
+    <p class="cat-note-inline" style="margin:0 0 6px;">B · Punto de color + texto, sin fondo</p>
+    <div class="cat-demo-row cat-badges" style="margin-bottom:20px;">
+      <span class="cat-badge-dot"><i style="background:#1B6B3A"></i>Habilitado</span>
+      <span class="cat-badge-dot"><i style="background:#D97706"></i>Pendiente</span>
+      <span class="cat-badge-dot"><i style="background:#C0392B"></i>Vencido</span>
+      <span class="cat-badge-dot"><i style="background:#94A3B8"></i>Rechazado</span>
+    </div>
+
+    <p class="cat-note-inline" style="margin:0 0 6px;">C · Contorno (borde de color, fondo blanco)</p>
+    <div class="cat-demo-row cat-badges" style="margin-bottom:20px;">
+      <span class="cat-badge-outline" style="--c:#1B6B3A">Habilitado</span>
+      <span class="cat-badge-outline" style="--c:#D97706">Pendiente</span>
+      <span class="cat-badge-outline" style="--c:#C0392B">Vencido</span>
+      <span class="cat-badge-outline" style="--c:#94A3B8">Rechazado</span>
+    </div>
+
+    <p class="cat-note-inline" style="margin:0 0 6px;">D · Franja lateral (barra de color a la izquierda, fondo gris muy claro)</p>
+    <div class="cat-demo-row cat-badges">
+      <span class="cat-badge-stripe" style="--c:#1B6B3A">Habilitado</span>
+      <span class="cat-badge-stripe" style="--c:#D97706">Pendiente</span>
+      <span class="cat-badge-stripe" style="--c:#C0392B">Vencido</span>
+      <span class="cat-badge-stripe" style="--c:#94A3B8">Rechazado</span>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="cat-block">
+    <h2>Tabs de sección <span class="cat-confirmed">✅ confirmado — estilo íconos + azul</span></h2>
+    <p class="cat-note">La que mandaste (Indicadores Proactivos): íconos + texto, subrayado azul en la activa, sin fondo sólido. app-section-tabs hoy NO soporta íconos — hay que agregarle un campo `icon` a `SectionTab` para implementar esto de verdad.</p>
+    <div class="cat-demo-card cat-demo-card--wide">
+      <div class="cat-tabs-blue">
+        @for (t of tabsConIcono; track t.id) {
+          <button type="button" class="cat-tab-blue" [class.active]="tabActiva === t.id" (click)="tabActiva = t.id">
+            <i class="ti" [ngClass]="t.icon"></i>{{ t.label }}
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="cat-block">
+    <h2>Toggle segmentado <span class="cat-pending">🔁 otras opciones</span></h2>
+    <p class="cat-note">A es el actual (app-view-toggle, pill con fondo sólido en el activo). B y C son alternativas.</p>
+    <div class="cat-demo-row">
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">A · Actual (app-view-toggle)</span>
+        <app-view-toggle [modes]="modosVista" [(value)]="modoVista" />
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">B · Deslizante (fondo que se mueve)</span>
+        <div class="cat-seg-slide">
+          <div class="cat-seg-slide-bg" [class.right]="modoVista === 'manual'"></div>
+          <button type="button" [class.active]="modoVista==='sistema'" (click)="modoVista='sistema'">Buscar en sistema</button>
+          <button type="button" [class.active]="modoVista==='manual'" (click)="modoVista='manual'">Ingresar DNI</button>
+        </div>
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">C · Pestañas rectangulares simples</span>
+        <div class="cat-seg-rect">
+          <button type="button" [class.active]="modoVista==='sistema'" (click)="modoVista='sistema'">Buscar en sistema</button>
+          <button type="button" [class.active]="modoVista==='manual'" (click)="modoVista='manual'">Ingresar DNI</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="cat-block">
+    <h2>Botón flotante y paginador <span class="cat-confirmed">✅ confirmado</span></h2>
+    <div class="cat-demo-row">
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">app-paginator</span>
+        <app-paginator [totalRecords]="47" [currentPage]="paginaActual" [totalPages]="5" (pageChange)="paginaActual = $event" />
+      </div>
+    </div>
+    <p class="cat-note-inline">app-fab (el botón "+" flotante) está activo en toda esta página, abajo a la derecha.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="cat-block">
+    <h2>Checkbox &amp; radio <span class="cat-confirmed">✅ confirmado — C (custom, navy)</span></h2>
+    <p class="cat-note">Sin componente compartido hoy — 109 archivos usan el input nativo del navegador directo.</p>
+    <div class="cat-demo-row">
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">A · Nativo</span>
+        <label class="cat-check-row"><input type="checkbox" checked /> Casco</label>
+        <label class="cat-check-row"><input type="checkbox" /> Guantes</label>
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">B · Nativo + accent-color marca</span>
+        <label class="cat-check-row"><input type="checkbox" class="cat-check-accent" checked /> Casco</label>
+        <label class="cat-check-row"><input type="checkbox" class="cat-check-accent" /> Guantes</label>
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">C · Custom (cuadrito propio con check)</span>
+        <label class="cat-check-row"><span class="cat-cb-custom on"></span> Casco</label>
+        <label class="cat-check-row"><span class="cat-cb-custom"></span> Guantes</label>
+        <label class="cat-check-row" style="margin-top:10px;"><span class="cat-ro-custom on"></span> Planilla</label>
+        <label class="cat-check-row"><span class="cat-ro-custom"></span> Contratista</label>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="cat-block">
+    <h2>Tablas <span class="cat-confirmed">✅ confirmado — D (SaaS moderno) + título estilo Odoo</span></h2>
+    <p class="cat-note">4 patrones reales de ERPs de referencia, mismo dataset para comparar. Ninguno es "el actual" — son opciones nuevas.</p>
+
+    <p class="cat-note-inline" style="margin:0 0 6px;">A · SAP Fiori (denso, header gris claro, números a la derecha, estado como punto+texto)</p>
+    <div class="cat-table-wrap" style="margin-bottom:24px;">
+      <table class="cat-tbl cat-tbl--fiori">
+        <thead>
+          <tr><th>Producto <i class="ti ti-arrow-up"></i></th><th>Almacén</th><th style="text-align:right">Stock</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Casco MSA V-Gard</td><td>Las Bravas</td><td style="text-align:right">18</td><td><span class="fiori-dot" style="background:#1B6B3A"></span>Disponible</td></tr>
+          <tr><td>Guantes de nitrilo</td><td>Sauce Zen</td><td style="text-align:right">4</td><td><span class="fiori-dot" style="background:#D97706"></span>Stock bajo</td></tr>
+          <tr><td>Arnés de seguridad</td><td>Central Lima</td><td style="text-align:right">0</td><td><span class="fiori-dot" style="background:#C0392B"></span>Agotado</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="cat-note-inline" style="margin:0 0 6px;">B · Odoo (sin fondo en header, solo línea inferior, acciones aparecen al pasar el mouse)</p>
+    <div class="cat-table-wrap" style="margin-bottom:24px;">
+      <table class="cat-tbl cat-tbl--odoo">
+        <thead>
+          <tr><th>Producto</th><th>Almacén</th><th style="text-align:right">Stock</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Casco MSA V-Gard</td><td>Las Bravas</td><td style="text-align:right">18</td>
+            <td><span class="odoo-badge" style="background:#DCFCE7;color:#166534">Disponible</span></td>
+            <td class="cat-tbl-actions"><i class="ti ti-pencil"></i><i class="ti ti-trash"></i></td>
+          </tr>
+          <tr>
+            <td>Guantes de nitrilo</td><td>Sauce Zen</td><td style="text-align:right">4</td>
+            <td><span class="odoo-badge" style="background:#FEF3C7;color:#92400E">Stock bajo</span></td>
+            <td class="cat-tbl-actions"><i class="ti ti-pencil"></i><i class="ti ti-trash"></i></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="cat-note-inline" style="margin:0 0 6px;">C · Oracle/NetSuite (grilla completa, primera columna fija, fila de totales)</p>
+    <div class="cat-table-wrap" style="margin-bottom:24px;">
+      <table class="cat-tbl cat-tbl--oracle">
+        <thead>
+          <tr><th>Código</th><th>Producto</th><th>Almacén</th><th style="text-align:right">Stock</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="frozen">EPP-001</td><td>Casco MSA V-Gard</td><td>Las Bravas</td><td style="text-align:right">18</td></tr>
+          <tr><td class="frozen">EPP-014</td><td>Guantes de nitrilo</td><td>Sauce Zen</td><td style="text-align:right">4</td></tr>
+          <tr class="totals"><td class="frozen" colspan="3">Total</td><td style="text-align:right">22</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="cat-note-inline" style="margin:0 0 6px;">D · SaaS moderno tipo Linear/Notion (aire generoso, checkbox al hover, íconos en vez de texto)</p>
+    <div class="cat-table-wrap">
+      <table class="cat-tbl cat-tbl--modern">
+        <thead>
+          <tr><th style="width:28px"></th><th>Producto</th><th>Almacén</th><th style="text-align:right">Stock</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="cat-tbl-check"><input type="checkbox" /></td>
+            <td><i class="ti ti-shield"></i> Casco MSA V-Gard</td><td>Las Bravas</td><td style="text-align:right">18</td>
+            <td><span class="modern-pill" style="--c:#1B6B3A">Disponible</span></td>
+          </tr>
+          <tr>
+            <td class="cat-tbl-check"><input type="checkbox" /></td>
+            <td><i class="ti ti-hand-stop"></i> Guantes de nitrilo</td><td>Sauce Zen</td><td style="text-align:right">4</td>
+            <td><span class="modern-pill" style="--c:#D97706">Stock bajo</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="cat-block">
+    <h2>Gráficas <span class="cat-confirmed">✅ confirmado — C (real, dashboard-proyecto)</span></h2>
+    <p class="cat-note">A y B eran propuestas nuevas (paleta DESIGN-VICTOR / monocromo). Ganó C: el patrón que ya usa <code>ssoma/gestion/indicadores-proactivos/indicadores-ssoma/dashboard-proyecto</code> — línea con relleno suave (16% opacidad) y un color fijo por métrica (no una paleta categórica compartida), grid casi invisible.</p>
+    <div class="cat-demo-row">
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">A · Paleta DESIGN-VICTOR (descartada)</span>
+        <div class="cat-chart-box"><canvas #chartA></canvas></div>
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">B · Monocromo navy (descartada)</span>
+        <div class="cat-chart-box"><canvas #chartB></canvas></div>
+      </div>
+      <div class="cat-demo-card">
+        <span class="cat-demo-tag">C · Real (dashboard-proyecto) — GANADORA</span>
+        <div class="cat-chart-box"><canvas #chartC></canvas></div>
+      </div>
+    </div>
+    <a routerLink="/ssoma/gestion/indicadores-proactivos/indicadores-ssoma/dashboard-proyecto" class="cat-ref-card" style="margin-top:12px;">
+      <div class="cat-ref-title">Ver dashboard-proyecto real <i class="ti ti-external-link"></i></div>
+      <div class="cat-ref-nota">Colores fijos por métrica: rojo #dc2626 (accidentes), naranja #ea580c (días perdidos), navy #0f4c75 (trabajadores).</div>
+    </a>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="cat-block">
+    <h2>Cronograma / Gantt</h2>
+    <p class="cat-note">
+      Este ya no es una decisión nueva — DESIGN-VICTOR.md sección 2.2 documenta un sistema de color
+      completo, probado en pantalla ("implementado, versión final"): 10 colores de rama sin repetir,
+      acento por <code>border-left</code> uniforme en los 3 niveles, badge de fase circular y línea
+      conectora tipo árbol. Ábrelo para confirmar si sigue sirviendo tal cual para Las Bravas.
+    </p>
+    <a routerLink="/projects/cronograma-actividades" class="cat-ref-card">
+      <div class="cat-ref-title">Ver Gantt real (Cronograma de Actividades) <i class="ti ti-external-link"></i></div>
+      <div class="cat-ref-nota">dhtmlx-gantt + el sistema de color de DESIGN-VICTOR.md §2.2.</div>
+    </a>
+  </section>
+
+  <app-fab label="Nuevo" />
+</div>

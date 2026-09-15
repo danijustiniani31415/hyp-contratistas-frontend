@@ -1,0 +1,126 @@
+<div class="pp-page">
+  <header class="pp-header">
+    <p class="pp-eyebrow">HP Constructores Generales · Las Bravas</p>
+    <h1>Personas</h1>
+  </header>
+
+  <div class="pp-toolbar">
+    <input
+      class="pp-search"
+      type="text"
+      placeholder="Buscar por nombre o documento..."
+      [(ngModel)]="search"
+      (keyup.enter)="onSearch()"
+    />
+    <button class="pp-btn" (click)="onSearch()">Buscar</button>
+  </div>
+
+  <div class="pp-table-wrap">
+    <table class="pp-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Documento</th>
+          <th>Vínculo</th>
+          <th>Cargo</th>
+          <th>Estado</th>
+          <th>Usuario</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="6" class="pp-empty">Cargando...</td></tr>
+        } @else if (!personas().length) {
+          <tr><td colspan="6" class="pp-empty">Sin personas registradas todavía.</td></tr>
+        } @else {
+          @for (p of personas(); track p.id) {
+            <tr>
+              <td>{{ p.nombreCompleto }}</td>
+              <td>{{ p.numeroDocumento }}</td>
+              <td>{{ p.tipoVinculoNombre ?? '—' }}</td>
+              <td>{{ p.cargoNombre ?? '—' }}</td>
+              <td>
+                <span class="pp-badge" [class.on]="p.estadoVinculo === 'ACTIVO'">{{ p.estadoVinculo }}</span>
+              </td>
+              <td>{{ p.tieneUsuario ? 'Sí' : 'No' }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <app-paginator [totalRecords]="totalRecords()" [currentPage]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+  }
+
+  @if (showModal()) {
+    <app-base-modal title="Nueva persona" width="w-[560px]" (closeModal)="cerrarModal()">
+      <div class="pp-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Nombres</label>
+          <input class="abril-field-input" [(ngModel)]="form.nombres" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Apellidos</label>
+          <input class="abril-field-input" [(ngModel)]="form.apellidos" />
+        </div>
+      </div>
+      <div class="pp-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Tipo de documento</label>
+          <select class="abril-field-input" [(ngModel)]="form.tipoDocumento">
+            <option value="DNI">DNI</option>
+            <option value="CE">Carné de extranjería</option>
+            <option value="PASAPORTE">Pasaporte</option>
+          </select>
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Número de documento</label>
+          <input class="abril-field-input" [(ngModel)]="form.numeroDocumento" />
+        </div>
+      </div>
+
+      @if (catalogos(); as cat) {
+        <div class="pp-form-grid">
+          <app-search-select
+            [options]="cat.tiposVinculo"
+            displayField="nombre"
+            [(value)]="form.tipoVinculoId"
+            label="Tipo de vínculo"
+            placeholder="Selecciona tipo de vínculo"
+          />
+          <app-search-select
+            [options]="cat.cargos"
+            displayField="nombre"
+            [(value)]="form.cargoId"
+            label="Cargo"
+            placeholder="Selecciona cargo"
+          />
+        </div>
+        <div class="pp-form-grid">
+          <app-search-select
+            [options]="cat.empresasContratistas"
+            displayField="nombre"
+            [(value)]="form.empresaContratistaId"
+            label="Empresa contratista"
+            placeholder="Solo si aplica (CONTRATISTA)"
+          />
+          <div class="abril-field">
+            <label class="abril-field-label">Fecha de inicio</label>
+            <input class="abril-field-input" type="date" [(ngModel)]="form.fechaInicio" />
+          </div>
+        </div>
+      }
+
+      @if (error()) { <p class="pp-error">{{ error() }}</p> }
+
+      <div class="pp-form-actions">
+        <button class="pp-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="pp-btn" (click)="guardar()">Guardar</button>
+      </div>
+    </app-base-modal>
+  }
+
+  <app-fab label="Nueva persona" (clicked)="abrirNuevo()" />
+</div>

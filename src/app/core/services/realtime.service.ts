@@ -40,7 +40,9 @@ export class RealtimeService {
         // Volver a la zona de Angular para que la actualización de permisos dispare
         // change detection (ej. el sidebar relee allowed_features).
         this.zone.run(() => {
-          this.authService.refresh().subscribe({ next: () => {}, error: () => {} });
+          // [REVISADO] mismo bug que SessionRefreshService: tragar el error acá dejaba una
+          // sesión inválida reintentando para siempre sin nunca cerrarse.
+          this.authService.refresh().subscribe({ next: () => {}, error: () => this.authService.logout() });
         });
       });
 

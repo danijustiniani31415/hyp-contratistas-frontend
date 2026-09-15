@@ -1,0 +1,586 @@
+.cat-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 24px 100px;
+  font-family: system-ui, sans-serif;
+  color: #1E3A5F;
+}
+
+.cat-header {
+  margin-bottom: 32px;
+}
+.cat-eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748B;
+  margin: 0 0 6px;
+}
+.cat-header h1 {
+  font-size: 26px;
+  margin: 0 0 10px;
+}
+.cat-lead {
+  color: #64748B;
+  max-width: 68ch;
+  margin: 0;
+}
+
+.cat-block {
+  margin: 0 0 40px;
+  padding-top: 24px;
+  border-top: 1px solid #E2E8F0;
+}
+.cat-block h2 {
+  font-size: 18px;
+  margin: 0 0 6px;
+}
+.cat-note {
+  color: #64748B;
+  font-size: 13px;
+  margin: 0 0 16px;
+  max-width: 68ch;
+}
+.cat-note-inline {
+  color: #94A3B8;
+  font-size: 12px;
+  margin: 8px 0 0;
+}
+
+.cat-demo-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.cat-demo-card {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 16px;
+  flex: 1 1 260px;
+  min-width: 240px;
+  position: relative;
+}
+.cat-demo-card--wide {
+  flex-basis: 100%;
+}
+.cat-demo-tag {
+  display: inline-block;
+  font-family: 'Courier New', monospace;
+  font-size: 10.5px;
+  color: #94A3B8;
+  background: #F8FAFC;
+  border-radius: 5px;
+  padding: 2px 6px;
+  margin-bottom: 10px;
+}
+
+.cat-ref-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cat-ref-card {
+  display: block;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .15s ease, background .15s ease;
+}
+.cat-ref-card:hover {
+  border-color: #2E6DB4;
+  background: #F0F4F8;
+}
+.cat-ref-title {
+  font-weight: 600;
+  font-size: 14.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #1E3A5F;
+}
+.cat-ref-title i {
+  font-size: 13px;
+  color: #94A3B8;
+}
+.cat-ref-nota {
+  font-size: 12.5px;
+  color: #64748B;
+  margin-top: 4px;
+}
+
+.cat-btn {
+  border-radius: 6px;
+  padding: 9px 16px;
+  font-weight: 600;
+  font-size: 13.5px;
+  border: 1px solid transparent;
+  background: #1E3A5F;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.cat-btn.ghost {
+  background: transparent;
+  color: #1E3A5F;
+  border-color: #D6DEE5;
+}
+
+.cat-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.modal-footer-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.cat-file-name {
+  font-family: 'Courier New', monospace;
+  font-size: 11.5px;
+  color: #64748B;
+  margin: 8px 0 0;
+}
+
+.cat-sig-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: #475569;
+}
+.cat-sig-meta div {
+  background: #F8FAFC;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+.cat-badges {
+  gap: 8px;
+}
+
+.cat-check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  margin-bottom: 8px;
+}
+.cat-check-row:last-child {
+  margin-bottom: 0;
+}
+.cat-check-accent {
+  accent-color: #0F6E56;
+}
+
+/* ── marcadores de estado de decisión ──────────────────────────────── */
+.cat-pending, .cat-confirmed {
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 5px;
+  padding: 2px 8px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.cat-pending {
+  background: #FEF3C7;
+  color: #92400E;
+}
+.cat-confirmed {
+  background: #DCFCE7;
+  color: #166534;
+}
+
+/* ── fecha/hora opción C (nativo + ícono) ──────────────────────────── */
+.cat-date-c-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin-bottom: 6px;
+}
+.cat-date-c-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.cat-date-c-input {
+  flex: 1;
+  border: 1px solid #D6DEE5;
+  border-radius: 6px;
+  padding: 8px 32px 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+}
+.cat-date-c-box i {
+  position: absolute;
+  right: 10px;
+  color: #94A3B8;
+  pointer-events: none;
+  font-size: 15px;
+}
+
+/* ── archivos: variantes de color del drag & drop ──────────────────── */
+.cat-drop {
+  border-radius: 8px;
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.cat-drop i { font-size: 26px; margin-bottom: 4px; }
+.cat-drop small { color: #94A3B8; font-size: 11px; }
+
+.cat-drop--teal {
+  border: 2px dashed #BFE0D6;
+  background: #F0FBF8;
+  color: #1E3A5F;
+}
+.cat-drop--teal i, .cat-drop--teal b { color: #0F6E56; }
+
+.cat-drop--navy {
+  border: 1px solid #D6DEE5;
+  background: #F8FAFC;
+  color: #1E3A5F;
+}
+.cat-drop--navy i, .cat-drop--navy b { color: #2E6DB4; }
+
+.cat-drop--minimal {
+  border: 1px dashed #CBD5E1;
+  background: transparent;
+  color: #64748B;
+  flex-direction: row;
+  padding: 14px 12px;
+}
+.cat-drop--minimal i { font-size: 16px; margin: 0; }
+.cat-drop--minimal b { color: #1E3A5F; }
+
+/* ── badges: variantes B/C/D ────────────────────────────────────────── */
+.cat-badge-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #334155;
+}
+.cat-badge-dot i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.cat-badge-outline {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 3px 11px;
+  border: 1.5px solid var(--c);
+  color: var(--c);
+  background: #fff;
+}
+
+.cat-badge-stripe {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #334155;
+  background: #F8FAFC;
+  border-left: 3px solid var(--c);
+  border-radius: 4px;
+  padding: 4px 10px 4px 8px;
+}
+
+/* ── tabs con ícono (estilo confirmado) ─────────────────────────────── */
+.cat-tabs-blue {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid #E2E8F0;
+}
+.cat-tab-blue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 2px 12px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #64748B;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: -1px;
+}
+.cat-tab-blue i { font-size: 15px; }
+.cat-tab-blue.active {
+  color: #2E6DB4;
+  border-bottom-color: #2E6DB4;
+  font-weight: 600;
+}
+
+/* ── toggle segmentado: variantes B/C ───────────────────────────────── */
+.cat-seg-slide {
+  position: relative;
+  display: flex;
+  border: 1px solid #D6DEE5;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #F8FAFC;
+}
+.cat-seg-slide button {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748B;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color .2s ease;
+}
+.cat-seg-slide button.active { color: #fff; }
+.cat-seg-slide-bg {
+  position: absolute;
+  top: 3px; bottom: 3px; left: 3px;
+  width: calc(50% - 6px);
+  background: #1E3A5F;
+  border-radius: 6px;
+  transition: transform .2s ease;
+}
+.cat-seg-slide-bg.right {
+  transform: translateX(calc(100% + 6px));
+}
+
+.cat-seg-rect {
+  display: flex;
+  border: 1px solid #D6DEE5;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.cat-seg-rect button {
+  flex: 1;
+  border: none;
+  background: #fff;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748B;
+  cursor: pointer;
+  font-family: inherit;
+  border-right: 1px solid #D6DEE5;
+}
+.cat-seg-rect button:last-child { border-right: none; }
+.cat-seg-rect button.active {
+  background: #1E3A5F;
+  color: #fff;
+}
+
+/* ── fecha: patrones D/E/F ───────────────────────────────────────────── */
+.cat-date-seg {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cat-date-seg input {
+  width: 40px;
+  border: 1px solid #D6DEE5;
+  border-radius: 6px;
+  padding: 8px 4px;
+  text-align: center;
+  font-size: 13px;
+  font-family: inherit;
+}
+.cat-date-seg input:nth-child(5) { width: 56px; }
+.cat-date-seg span { color: #94A3B8; }
+
+.cat-date-selects {
+  display: flex;
+  gap: 6px;
+}
+.cat-date-selects select {
+  flex: 1;
+  border: 1px solid #D6DEE5;
+  border-radius: 6px;
+  padding: 8px 4px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: #1E3A5F;
+}
+
+.cat-date-quick {
+  display: flex;
+  gap: 6px;
+}
+.cat-date-quick button {
+  border: 1px solid #D6DEE5;
+  border-radius: 6px;
+  background: #fff;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748B;
+  cursor: pointer;
+  font-family: inherit;
+}
+.cat-date-quick button.active {
+  background: #1E3A5F;
+  border-color: #1E3A5F;
+  color: #fff;
+}
+
+/* ── combobox: autocompletar en línea ───────────────────────────────── */
+.cat-autocomplete-list {
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+.cat-autocomplete-item {
+  padding: 7px 10px;
+  font-size: 13px;
+  border-bottom: 1px solid #F1F5F9;
+}
+.cat-autocomplete-item:last-child { border-bottom: none; }
+.cat-autocomplete-item.hit { background: #F0FBF8; color: #0F6E56; font-weight: 600; }
+.cat-autocomplete-item b { text-decoration: underline; }
+
+/* ── modal: drawer lateral ──────────────────────────────────────────── */
+.cat-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 27, 42, 0.4);
+  z-index: 200;
+  display: flex;
+  justify-content: flex-end;
+}
+.cat-drawer {
+  width: 380px;
+  max-width: 90vw;
+  height: 100%;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 20px rgba(0,0,0,.15);
+  animation: cat-drawer-in .18s ease-out;
+}
+@keyframes cat-drawer-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.cat-drawer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #1E3A5F;
+  border-bottom: 1px solid #E2E8F0;
+}
+.cat-drawer-head i { cursor: pointer; color: #94A3B8; }
+.cat-drawer-body {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+.cat-drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid #E2E8F0;
+}
+
+/* ── checkbox/radio: custom ──────────────────────────────────────────── */
+.cat-cb-custom {
+  width: 18px; height: 18px; border-radius: 4px; border: 2px solid #1E3A5F;
+  display: inline-flex; align-items: center; justify-content: center; margin-right: 4px;
+}
+.cat-cb-custom.on { background: #1E3A5F; }
+.cat-cb-custom.on::after { content: '✓'; color: #fff; font-size: 11px; }
+.cat-ro-custom {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid #1E3A5F;
+  display: inline-flex; align-items: center; justify-content: center; margin-right: 4px;
+}
+.cat-ro-custom.on::after { content: ''; width: 9px; height: 9px; border-radius: 50%; background: #1E3A5F; }
+
+/* ── tablas ERP: 4 patrones ──────────────────────────────────────────── */
+.cat-table-wrap {
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.cat-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cat-tbl th, .cat-tbl td { padding: 8px 12px; text-align: left; }
+
+/* A · SAP Fiori */
+.cat-tbl--fiori thead { background: #F5F6F7; }
+.cat-tbl--fiori th {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: .03em;
+  color: #64748B; font-weight: 600; padding: 6px 12px;
+}
+.cat-tbl--fiori th i { font-size: 11px; margin-left: 3px; color: #94A3B8; }
+.cat-tbl--fiori td { padding: 6px 12px; border-bottom: 1px solid #EEF1F3; font-size: 12.5px; }
+.cat-tbl--fiori tbody tr:hover { background: #F8FAFC; }
+.fiori-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+
+/* B · Odoo */
+.cat-tbl--odoo th {
+  font-weight: 700; color: #1E3A5F; font-size: 12.5px;
+  border-bottom: 2px solid #1E3A5F; padding: 8px 12px;
+}
+.cat-tbl--odoo td { border-bottom: 1px solid #F1F5F9; }
+.cat-tbl--odoo tbody tr:hover { background: #FAFBFC; }
+.odoo-badge { font-size: 10.5px; font-weight: 700; border-radius: 4px; padding: 2px 8px; }
+.cat-tbl-actions { text-align: right; opacity: 0; transition: opacity .15s; }
+.cat-tbl--odoo tbody tr:hover .cat-tbl-actions { opacity: 1; }
+.cat-tbl-actions i { margin-left: 8px; color: #94A3B8; cursor: pointer; font-size: 14px; }
+
+/* C · Oracle/NetSuite */
+.cat-tbl--oracle th, .cat-tbl--oracle td {
+  border: 1px solid #E2E8F0; font-size: 12.5px;
+}
+.cat-tbl--oracle th { background: #F8FAFC; font-weight: 700; color: #1E3A5F; }
+.cat-tbl--oracle .frozen { font-weight: 700; background: #FAFBFC; }
+.cat-tbl--oracle .totals td { font-weight: 700; border-top: 2px solid #1E3A5F; background: #F8FAFC; }
+
+/* D · SaaS moderno (Linear/Notion), header mezclado con el estilo de título de Odoo */
+.cat-tbl--modern th {
+  font-size: 12.5px; font-weight: 700; color: #1E3A5F;
+  padding: 10px 12px; border-bottom: 2px solid #1E3A5F;
+}
+.cat-tbl--modern td { padding: 12px; border-bottom: 1px solid #F1F5F9; font-size: 13px; }
+.cat-tbl--modern td i { color: #94A3B8; margin-right: 6px; }
+.cat-tbl--modern tbody tr:hover { background: #FAFBFC; }
+.cat-tbl-check { opacity: .35; }
+.cat-tbl--modern tbody tr:hover .cat-tbl-check { opacity: 1; }
+.modern-pill {
+  font-size: 11.5px; font-weight: 600; color: var(--c);
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.modern-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+
+.cat-chart-box {
+  height: 160px;
+  position: relative;
+}

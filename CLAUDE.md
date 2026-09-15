@@ -3,7 +3,9 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Sistema de diseño
-Todo componente visual nuevo debe seguir estrictamente DESIGN-VICTOR.md en la raíz del proyecto.
+Todo componente visual nuevo debe seguir estrictamente **SISTEMA-DE-DISENO.md** en la raíz del
+proyecto — es la única fuente de verdad (reemplaza a DESIGN-VICTOR.md, que queda solo como
+historial). Referencia viva en `/catalogo-ui` (componentes reales, no mockups).
 
 ## Commands
 

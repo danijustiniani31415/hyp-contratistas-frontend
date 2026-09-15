@@ -62,9 +62,17 @@ export class SessionRefreshService {
     this.zone.run(() => {
       this.authService.refresh().subscribe({
         next: () => {},
-        // Si el refresh falla (sesión inválida/expirada), el interceptor de 401 se
-        // encargará en la próxima petición; aquí no hacemos nada para no romper el timer.
-        error: () => {},
+        // [REVISADO] Antes esto se ignoraba por completo ("el interceptor de 401 se
+        // encargará"), pero /auth/refresh nunca pasa por ese interceptor (isAuthEndpoint lo
+        // excluye a propósito, para no hacer un refresh de un refresh) — así que un fallo acá
+        // nunca se limpiaba: quedaba reintentando cada 100s para siempre con un session token
+        // inválido/de otro sistema, generando error 500 repetido en el backend sin arreglarse
+        // solo. Ahora si el refresh falla, se cierra la sesión de una — el usuario cae al
+        // login limpio en vez de quedar en un loop de fallos silenciosos.
+        error: () => {
+          this.stop();
+          this.authService.logout();
+        },
       });
     });
   }

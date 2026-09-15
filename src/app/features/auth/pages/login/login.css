@@ -59,7 +59,7 @@
   display: flex;
   gap: 0.35rem;
   margin-bottom: 1.75rem;
-  background: #f1f9ff;
+  background: #EEF1F4;
   border-radius: 9999px;
   padding: 5px;
 }
@@ -78,13 +78,13 @@
 }
 
 .login-tab:hover {
-  color: #00529b;
+  color: #1E3A5F;
 }
 
 .login-tab.active {
-  color: #00529b;
+  color: #1E3A5F;
   background: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 70, 140, 0.12);
+  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.12);
 }
 
 .password-wrapper {
@@ -98,7 +98,7 @@
   transform: translateY(-50%);
   background: transparent;
   border: 0;
-  color: #64bc04;
+  color: #1E3A5F;
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -119,7 +119,7 @@
   border: 0;
   background: transparent;
   padding: 0;
-  color: #00529b;
+  color: #1E3A5F;
   font-weight: 700;
   font-size: 0.78rem;
   letter-spacing: 0.02em;
@@ -159,12 +159,12 @@
   width: 30px;
   height: 30px;
   min-width: 30px;
-  background: #e4f3cd;
+  background: #dbe6ef;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #4a8c00;
+  color: #1E3A5F;
 }
 
 .tutorial-info {
@@ -188,7 +188,7 @@
 }
 
 .tutorial-link {
-  color: #64bc04;
+  color: #1E3A5F;
   font-size: 0.71rem;
   font-weight: 700;
 }

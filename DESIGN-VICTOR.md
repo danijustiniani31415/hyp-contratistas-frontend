@@ -1,5 +1,11 @@
 # Sistema de Diseño — Abril Intranet
 
+> ⚠️ **Superado por `SISTEMA-DE-DISENO.md`** (raíz del proyecto) para HP Constructores / Las
+> Bravas. Este archivo es herencia del fork de Abril-Frontend y queda solo como historial —
+> algunas partes siguen citadas desde el documento nuevo (tipografía, espaciado, el sistema de
+> color del Gantt en la sección 2.2), el resto (paleta general navy/UDP, badges, tablas) fue
+> reemplazado. No lo uses como referencia directa, usa `SISTEMA-DE-DISENO.md`.
+
 > Referencia visual única del proyecto. Cualquier pantalla, componente o feature 
 > nuevo debe seguir esta guía salvo excepción documentada explícitamente.
 

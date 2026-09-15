@@ -1,0 +1,69 @@
+<div class="rp-page">
+  <header class="rp-header">
+    <p class="rp-eyebrow">HP Constructores Generales · Las Bravas</p>
+    <h1>Roles y Permisos</h1>
+    <p class="rp-hint">
+      Cada rol trae consigo un conjunto de permisos. Marca o desmarca qué puede ver/hacer cada rol —
+      todo usuario con ese rol hereda el cambio automáticamente, sin tocarlo persona por persona.
+    </p>
+  </header>
+
+  <div class="rp-layout">
+    <aside class="rp-roles-list">
+      @if (loading()) {
+        <p class="rp-empty">Cargando roles...</p>
+      } @else {
+        @for (rol of roles(); track rol.id) {
+          <button
+            type="button"
+            class="rp-rol-item"
+            [class.active]="rolSeleccionado()?.id === rol.id"
+            (click)="seleccionarRol(rol)"
+          >
+            <span class="rp-rol-nombre">{{ rol.nombre }}</span>
+            <span class="rp-rol-count">{{ rol.cantidadPermisos }} permisos</span>
+          </button>
+        }
+      }
+    </aside>
+
+    <section class="rp-permisos-panel">
+      @if (rolSeleccionado(); as rol) {
+        <div class="rp-panel-header">
+          <div>
+            <h2>{{ rol.nombre }}</h2>
+            @if (rol.descripcion) { <p class="rp-rol-desc">{{ rol.descripcion }}</p> }
+          </div>
+          <button type="button" class="rp-btn" [disabled]="guardando()" (click)="guardar()">
+            {{ guardando() ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+        </div>
+
+        @if (guardadoOk()) { <p class="rp-ok">Cambios guardados. Ya aplican para todos los usuarios con este rol.</p> }
+        @if (error()) { <p class="rp-error">{{ error() }}</p> }
+
+        <div class="rp-modulos">
+          @for (grupo of modulos(); track grupo.modulo) {
+            <div class="rp-modulo-card">
+              <h3>{{ grupo.modulo }}</h3>
+              <div class="rp-permiso-grid">
+                @for (permiso of grupo.items; track permiso.id) {
+                  <label class="rp-permiso-check">
+                    <input
+                      type="checkbox"
+                      [checked]="tienePermiso(permiso.id)"
+                      (change)="toggle(permiso.id)"
+                    />
+                    <span>{{ permiso.descripcion ?? permiso.codigo }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="rp-empty">Selecciona un rol de la lista.</p>
+      }
+    </section>
+  </div>
+</div>

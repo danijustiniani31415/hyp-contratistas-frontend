@@ -1,0 +1,52 @@
+<!-- Misma estructura que el login de Abril (login.html): grid de 2 columnas a pantalla
+     completa, tarjeta de login a la izquierda, mascota grande a la derecha. Sin tabs
+     (Abril/Contratistas/Clínica no aplican aquí), sin botón de Microsoft — solo correo y
+     contraseña. -->
+<section class="lb-login-section">
+  <div class="lb-login-grid">
+
+    <div class="lb-login-card-wrap">
+      <div class="lb-login-card">
+        <div class="lb-login-brand">
+          <img class="lb-login-logo-img" src="/images/inicio/logo.png" alt="HP Constructores Generales" onerror="this.style.display='none'" />
+          <h2>HP Constructores Generales</h2>
+          <p>Inicia sesión para continuar</p>
+        </div>
+
+        <form (ngSubmit)="submit()">
+          <div class="lb-field">
+            <label>Correo</label>
+            <input type="email" name="email" [(ngModel)]="email" placeholder="tu@correo.com" required autocomplete="username" />
+          </div>
+          <div class="lb-field">
+            <label>Contraseña</label>
+            <input type="password" name="password" [(ngModel)]="password" placeholder="Tu contraseña" required autocomplete="current-password" />
+          </div>
+
+          @if (error) { <p class="lb-login-error">{{ error }}</p> }
+
+          <button type="submit" class="lb-login-btn" [disabled]="loading">
+            {{ loading ? 'Ingresando...' : 'INGRESAR' }}
+          </button>
+        </form>
+
+        <div class="lb-login-tutoriales-wrap">
+          <button type="button" class="lb-login-tutoriales">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            Videos tutoriales
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mismo patrón que el perrito de Abril: la mascota entra deslizándose desde la derecha
+         con fade (login-anim-right). Se probó una figura de socavón detrás (arco + vigas) y
+         se descartó por pedido explícito ("feísimo") — se queda solo la mascota. -->
+    <div class="lb-login-mascota-wrap">
+      <img class="lb-login-mascota" src="/images/inicio/minerito-mano-estirada-sinfondo.png" alt="Mascota Las Bravas dando la bienvenida" />
+    </div>
+
+  </div>
+</section>

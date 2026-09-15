@@ -5,6 +5,7 @@ import { Layout } from './shared/components/layout/layout';
 import { authGuard } from './core/guards/auth.guard';
 import { boletinGuard } from './core/guards/boletin.guard';
 import { rootRedirect } from './core/guards/root-redirect';
+import { lbAuthGuard } from './core/guards/lb-auth.guard';
 
 export const routes: Routes = [
   {
@@ -238,6 +239,28 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/paleta-demo/paleta-demo')
       .then(m => m.PaletaDemoComponent)
+  },
+
+  {
+    path: 'catalogo-ui',
+    loadComponent: () =>
+      import('./features/catalogo-ui/catalogo-ui')
+      .then(m => m.CatalogoUi)
+  },
+
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/lb-login/lb-login')
+      .then(m => m.LbLogin)
+  },
+
+  {
+    path: 'personas',
+    canActivate: [lbAuthGuard],
+    loadComponent: () =>
+      import('./features/personas/personas')
+      .then(m => m.Personas)
   },
 
   {
