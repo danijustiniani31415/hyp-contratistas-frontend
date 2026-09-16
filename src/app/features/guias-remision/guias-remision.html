@@ -1,0 +1,256 @@
+<div class="gr-page">
+  <app-lb-nav />
+  <header class="gr-header">
+    <p class="gr-eyebrow">HP Constructores Generales · Las Bravas</p>
+    <h1>Guías de Remisión</h1>
+  </header>
+
+  <div class="gr-toolbar">
+    <div class="abril-field gr-filtro">
+      <label class="abril-field-label">Estado</label>
+      <select class="abril-field-input" [(ngModel)]="estadoFiltro" (ngModelChange)="onFiltroChange()">
+        <option value="">Todos</option>
+        @for (e of estados; track e) { <option [value]="e">{{ e }}</option> }
+      </select>
+    </div>
+  </div>
+
+  <div class="gr-table-wrap">
+    <table class="gr-table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Origen</th>
+          <th>Destino</th>
+          <th>Ítems</th>
+          <th>Estado</th>
+          <th>Fecha traslado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="6" class="gr-empty">Cargando...</td></tr>
+        } @else if (!guias().length) {
+          <tr><td colspan="6" class="gr-empty">Sin guías de remisión todavía.</td></tr>
+        } @else {
+          @for (g of guias(); track g.id) {
+            <tr class="gr-row" (click)="verDetalle(g.id)">
+              <td>{{ g.codigo }}</td>
+              <td>{{ g.almacenOrigenNombre }}</td>
+              <td>{{ g.almacenDestinoNombre ?? '—' }}</td>
+              <td>{{ g.cantidadItems }}</td>
+              <td><span class="gr-estado" [class]="g.estado.toLowerCase()">{{ g.estado }}</span></td>
+              <td>{{ g.fechaTraslado | slice:0:10 }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <app-paginator [totalRecords]="totalRecords()" [currentPage]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+  }
+
+  @if (authService.hasPermiso('GUIA_REMISION_CREAR')) {
+    <app-fab label="Nueva guía de remisión" (clicked)="abrirNuevo()" />
+  }
+
+  <!-- Modal: nueva guía -->
+  @if (showModal()) {
+    <app-base-modal title="Nueva guía de remisión" width="w-[680px]" (closeModal)="cerrarModal()">
+      <div class="abril-field">
+        <label class="gr-toggle">
+          <input type="checkbox" [(ngModel)]="esTrasladoPropio" (ngModelChange)="onTrasladoPropioChange()" />
+          Traslado entre almacenes propios (misma empresa)
+        </label>
+      </div>
+
+      <div class="gr-form-grid">
+        <app-search-select
+          [options]="almacenes()"
+          displayField="nombre"
+          [(value)]="form.almacenOrigenId"
+          label="Almacén de origen"
+          placeholder="Selecciona almacén"
+        />
+        @if (esTrasladoPropio) {
+          <app-search-select
+            [options]="almacenes()"
+            displayField="nombre"
+            [(value)]="form.almacenDestinoId"
+            label="Almacén de destino"
+            placeholder="Selecciona almacén"
+          />
+        } @else {
+          <div class="abril-field">
+            <label class="abril-field-label">RUC destinatario</label>
+            <input class="abril-field-input" [(ngModel)]="form.destinatarioRuc" placeholder="11 dígitos" />
+          </div>
+        }
+      </div>
+
+      @if (!esTrasladoPropio) {
+        <div class="abril-field">
+          <label class="abril-field-label">Razón social destinatario</label>
+          <input class="abril-field-input" [(ngModel)]="form.destinatarioRazonSocial" />
+        </div>
+      }
+
+      <div class="gr-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Motivo de traslado</label>
+          <select class="abril-field-input" [(ngModel)]="form.motivoTraslado">
+            @for (m of motivos; track m.value) { <option [value]="m.value">{{ m.label }}</option> }
+          </select>
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Fecha de traslado</label>
+          <input class="abril-field-input" type="date" [(ngModel)]="form.fechaTraslado" />
+        </div>
+      </div>
+
+      <div class="gr-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Modalidad de traslado</label>
+          <select class="abril-field-input" [(ngModel)]="form.modalidadTraslado" (ngModelChange)="onModalidadChange()">
+            <option value="02">Privado (vehículo propio)</option>
+            <option value="01">Público (empresa de transporte)</option>
+          </select>
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">N.º de bultos (opcional)</label>
+          <input class="abril-field-input" type="number" min="1" [(ngModel)]="form.numBultos" />
+        </div>
+      </div>
+
+      <div class="gr-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Peso bruto total</label>
+          <input class="abril-field-input" type="number" min="0" step="0.001" [(ngModel)]="form.pesoBrutoTotal" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Unidad de peso</label>
+          <select class="abril-field-input" [(ngModel)]="form.pesoBrutoUnidad">
+            <option value="KGM">Kilogramos</option>
+            <option value="TNE">Toneladas</option>
+          </select>
+        </div>
+      </div>
+
+      @if (form.modalidadTraslado === '01') {
+        <div class="gr-form-grid">
+          <div class="abril-field">
+            <label class="abril-field-label">RUC transportista <span class="gr-required">*</span></label>
+            <input class="abril-field-input" [(ngModel)]="form.transportistaRuc" placeholder="11 dígitos" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Razón social transportista</label>
+            <input class="abril-field-input" [(ngModel)]="form.transportistaRazonSocial" />
+          </div>
+        </div>
+      } @else {
+        <div class="gr-form-grid gr-form-grid-3">
+          <div class="abril-field">
+            <label class="abril-field-label">Placa del vehículo <span class="gr-required">*</span></label>
+            <input class="abril-field-input" [(ngModel)]="form.vehiculoPlaca" placeholder="ABC-123" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Nombres del conductor <span class="gr-required">*</span></label>
+            <input class="abril-field-input" [(ngModel)]="form.conductorNombres" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Licencia del conductor <span class="gr-required">*</span></label>
+            <input class="abril-field-input" [(ngModel)]="form.conductorLicencia" />
+          </div>
+        </div>
+        <p class="gr-hint">SUNAT exige nombre y licencia del conductor para que la guía en modalidad privada sea válida.</p>
+      }
+
+      <div class="abril-field">
+        <label class="abril-field-label">Observación (opcional)</label>
+        <textarea class="abril-field-input" rows="2" [(ngModel)]="form.observacion"></textarea>
+      </div>
+
+      <div class="gr-items">
+        <div class="gr-items-header">
+          <h3>Productos a trasladar</h3>
+          <button type="button" class="gr-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
+        </div>
+
+        @for (item of form.items; track $index; let i = $index) {
+          <div class="gr-item-row">
+            <app-search-select
+              [options]="productos()"
+              displayField="nombre"
+              [(value)]="item.productoId"
+              placeholder="Producto"
+            />
+            <input class="abril-field-input gr-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
+            <input class="abril-field-input gr-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidad" placeholder="Cant." />
+            <select class="abril-field-input gr-item-unidad" [(ngModel)]="item.unidadMedida">
+              @for (u of unidades; track u) { <option [value]="u">{{ u }}</option> }
+            </select>
+            @if (form.items.length > 1) {
+              <button type="button" class="gr-item-quitar" (click)="quitarItem(i)">✕</button>
+            }
+          </div>
+        }
+      </div>
+
+      @if (error()) { <p class="gr-error">{{ error() }}</p> }
+
+      <div class="gr-form-actions">
+        <button class="gr-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="gr-btn" [disabled]="guardando() || !formValido" (click)="guardar()">
+          {{ guardando() ? 'Creando...' : 'Crear guía' }}
+        </button>
+      </div>
+    </app-base-modal>
+  }
+
+  <!-- Modal: detalle / envío a SUNAT -->
+  @if (showDetalle() && detalle(); as d) {
+    <app-base-modal [title]="d.codigo" width="w-[600px]" (closeModal)="cerrarDetalle()">
+      <div class="gr-detalle-header">
+        <span class="gr-estado" [class]="d.estado.toLowerCase()">{{ d.estado }}</span>
+        <span class="gr-detalle-meta">{{ d.almacenOrigenNombre }} → {{ d.almacenDestinoNombre ?? d.destinatarioRazonSocial ?? '—' }}</span>
+      </div>
+      <p class="gr-detalle-meta">Creado por {{ d.creadoPorNombre }} el {{ d.creadoEn | slice:0:10 }} · Traslado {{ d.fechaTraslado | slice:0:10 }}</p>
+
+      <table class="gr-table gr-detalle-table">
+        <thead>
+          <tr><th>Producto</th><th>Cantidad</th><th>Unidad</th></tr>
+        </thead>
+        <tbody>
+          @for (it of d.items; track it.id) {
+            <tr>
+              <td>{{ it.productoNombre }} {{ it.talla ? '(' + it.talla + ')' : '' }}</td>
+              <td>{{ it.cantidad }}</td>
+              <td>{{ it.unidadMedida }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (d.estado !== 'BORRADOR') {
+        <p class="gr-detalle-meta">CDR SUNAT: {{ d.cdrCodigoRespuesta }} — {{ d.cdrDescripcion }}</p>
+      }
+
+      @if (d.estado === 'BORRADOR' && authService.hasPermiso('GUIA_REMISION_ENVIAR')) {
+        <div class="gr-form-actions">
+          <button class="gr-btn" [disabled]="enviando()" (click)="enviar()">
+            {{ enviando() ? 'Transmitiendo...' : 'Transmitir a SUNAT' }}
+          </button>
+        </div>
+      }
+      @if (d.estado === 'ENVIADA' && authService.hasPermiso('GUIA_REMISION_ENVIAR')) {
+        <div class="gr-form-actions">
+          <button class="gr-btn ghost" [disabled]="enviando()" (click)="consultarEstado()">
+            {{ enviando() ? 'Consultando...' : 'Consultar estado en SUNAT' }}
+          </button>
+        </div>
+      }
+    </app-base-modal>
+  }
+</div>

@@ -20,6 +20,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       <a routerLink="/epp" routerLinkActive="on">EPP</a>
       <a routerLink="/herramientas" routerLinkActive="on">Herramientas</a>
       <a routerLink="/compras" routerLinkActive="on">Compras</a>
+      <a routerLink="/guias-remision" routerLinkActive="on">Guías de Remisión</a>
     </nav>
   `,
   styles: [`

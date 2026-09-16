@@ -328,6 +328,14 @@ export const routes: Routes = [
   },
 
   {
+    path: 'guias-remision',
+    canActivate: [lbAuthGuard],
+    loadComponent: () =>
+      import('./features/guias-remision/guias-remision')
+      .then(m => m.GuiasRemision)
+  },
+
+  {
     path: '**',
     redirectTo: 'auth/login'
   }
