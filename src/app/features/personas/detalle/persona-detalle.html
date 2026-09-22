@@ -1,16 +1,12 @@
-<div class="pd-page">
+<div class="lb-page">
   <button type="button" class="pd-volver" (click)="volver()">← Volver a Personas</button>
 
   @if (loading() && !persona()) {
     <p class="pd-loading">Cargando...</p>
   } @else if (persona(); as p) {
-    <header class="pd-header">
-      <div>
-        <p class="pd-eyebrow">HP Constructores Generales · Las Bravas</p>
-        <h1>{{ p.nombres }} {{ p.apellidos }}</h1>
-        <p class="pd-sub">{{ p.tipoDocumento }} {{ p.numeroDocumento }}</p>
-      </div>
-    </header>
+    <app-lb-page-header [titulo]="p.apellidos + ' ' + p.nombres" [subtitulo]="p.tipoDocumento + ' ' + p.numeroDocumento">
+      <button type="button" class="lb-btn ghost" (click)="abrirDatos()">Editar datos</button>
+    </app-lb-page-header>
 
     <div class="pd-grid">
       <!-- Datos personales -->
@@ -26,16 +22,17 @@
       <section class="pd-card">
         <h2>Vínculo laboral</h2>
         @if (!p.vinculos.length) {
-          <p class="pd-empty">Sin vínculo registrado.</p>
+          <p class="lb-empty">Sin vínculo registrado.</p>
         } @else {
           @for (v of p.vinculos; track v.id) {
             <div class="pd-vinculo" [class.cesado]="v.estado !== 'ACTIVO'">
               <div class="pd-vinculo-row">
                 <strong>{{ v.tipoVinculoNombre }}</strong>
-                <span class="pd-badge" [class.on]="v.estado === 'ACTIVO'">{{ v.estado }}</span>
+                <span class="lb-badge" [class.on]="v.estado === 'ACTIVO'">{{ v.estado }}</span>
               </div>
               <p class="pd-vinculo-detalle">
                 {{ v.cargoNombre ?? 'Sin cargo' }}
+                @if (v.proyectoNombre) { · {{ v.proyectoNombre }} }
                 @if (v.empresaContratistaNombre) { · {{ v.empresaContratistaNombre }} }
               </p>
               <p class="pd-vinculo-fechas">
@@ -47,29 +44,56 @@
         }
       </section>
 
+      <!-- Datos de planilla -->
+      <section class="pd-card pd-card-wide">
+        <div class="pd-card-header">
+          <h2>Datos de planilla</h2>
+          <button type="button" class="lb-btn ghost" (click)="abrirPlanilla()">Editar</button>
+        </div>
+        @if (!p.planilla) {
+          <p class="lb-empty">Sin datos de planilla todavía.</p>
+        } @else {
+          <dl class="pd-dl pd-dl-grid">
+            <dt>Código de trabajador</dt><dd>{{ p.planilla.codigoTrabajador || '—' }}</dd>
+            <dt>Banco</dt><dd>{{ p.planilla.banco || '—' }}</dd>
+            <dt>Número de cuenta</dt><dd>{{ p.planilla.numeroCuenta || '—' }}</dd>
+            <dt>CUSP</dt><dd>{{ p.planilla.cusp || '—' }}</dd>
+            <dt>Categoría laboral</dt><dd>{{ p.planilla.categoriaLaboral || '—' }}</dd>
+            <dt>Tipo AFP / ONP</dt><dd>{{ p.planilla.tipoAfpOnp || '—' }}</dd>
+            <dt>Sueldo base</dt><dd>{{ p.planilla.sueldoBase ? ('S/ ' + p.planilla.sueldoBase) : '—' }}</dd>
+            <dt>Jornal</dt><dd>{{ p.planilla.jornal ? ('S/ ' + p.planilla.jornal) : '—' }}</dd>
+            <dt>Asignación familiar</dt><dd>{{ p.planilla.asignacionFamiliar ? 'Sí' : 'No' }}</dd>
+            <dt>SCTR</dt><dd>{{ p.planilla.sctr ? 'Sí' : 'No' }}</dd>
+          </dl>
+        }
+      </section>
+
       <!-- Acceso al sistema -->
       <section class="pd-card pd-card-wide">
         <div class="pd-card-header">
           <h2>Acceso al sistema</h2>
           @if (!p.usuarioSistemaId) {
-            <button type="button" class="pd-btn" (click)="abrirInvitar()">Dar acceso</button>
+            <button type="button" class="lb-btn" (click)="abrirInvitar()">Dar acceso</button>
           }
         </div>
 
         @if (!p.usuarioSistemaId) {
-          <p class="pd-empty">Esta persona todavía no tiene acceso al sistema.</p>
+          <p class="lb-empty">Esta persona todavía no tiene acceso al sistema.</p>
         } @else {
-          <p class="pd-login-email">Correo de acceso: <strong>{{ p.emailLogin }}</strong></p>
+          <p class="pd-login-email">
+            Correo de acceso: <strong>{{ p.emailLogin }}</strong>
+            <button type="button" class="pd-cambiar-email-btn" (click)="abrirCambiarEmail()">Cambiar</button>
+          </p>
 
           <div class="pd-card-header pd-asignaciones-header">
             <h3>Roles asignados</h3>
-            <button type="button" class="pd-btn ghost" (click)="abrirAsignar()">+ Asignar rol</button>
+            <button type="button" class="lb-btn ghost" (click)="abrirAsignar()">+ Asignar rol</button>
           </div>
 
           @if (!p.asignaciones.length) {
-            <p class="pd-empty">Sin roles asignados todavía.</p>
+            <p class="lb-empty">Sin roles asignados todavía.</p>
           } @else {
-            <table class="pd-table">
+            <table class="lb-table">
               <thead>
                 <tr>
                   <th>Rol</th>
@@ -99,7 +123,54 @@
       </section>
     </div>
   } @else {
-    <p class="pd-empty">Persona no encontrada.</p>
+    <p class="lb-empty">Persona no encontrada.</p>
+  }
+
+  <!-- Modal: editar datos básicos -->
+  @if (showDatosModal()) {
+    <app-base-modal title="Editar datos" width="w-[480px]" (closeModal)="cerrarDatos()">
+      <div class="pd-form-row">
+        <div class="abril-field">
+          <label class="abril-field-label">Apellidos</label>
+          <input class="abril-field-input" [(ngModel)]="datosForm.apellidos" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Nombres</label>
+          <input class="abril-field-input" [(ngModel)]="datosForm.nombres" />
+        </div>
+      </div>
+      <div class="pd-form-row">
+        <div class="abril-field">
+          <label class="abril-field-label">Tipo de documento</label>
+          <select class="abril-field-input" [(ngModel)]="datosForm.tipoDocumento">
+            <option value="DNI">DNI</option>
+            <option value="CE">Carné de extranjería</option>
+            <option value="PASAPORTE">Pasaporte</option>
+          </select>
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Número de documento</label>
+          <input class="abril-field-input" [(ngModel)]="datosForm.numeroDocumento" />
+        </div>
+      </div>
+      <div class="pd-form-row">
+        <div class="abril-field">
+          <label class="abril-field-label">Teléfono</label>
+          <input class="abril-field-input" [(ngModel)]="datosForm.telefono" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Correo</label>
+          <input class="abril-field-input" type="email" [(ngModel)]="datosForm.emailPersonal" />
+        </div>
+      </div>
+      @if (datosError()) { <p class="pd-error">{{ datosError() }}</p> }
+      <div class="pd-form-actions">
+        <button class="lb-btn ghost" (click)="cerrarDatos()">Cancelar</button>
+        <button class="lb-btn" [disabled]="guardandoDatos()" (click)="guardarDatos()">
+          {{ guardandoDatos() ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </div>
+    </app-base-modal>
   }
 
   <!-- Modal: dar acceso -->
@@ -115,9 +186,30 @@
       </div>
       @if (invitarError()) { <p class="pd-error">{{ invitarError() }}</p> }
       <div class="pd-form-actions">
-        <button class="pd-btn ghost" (click)="cerrarInvitar()">Cancelar</button>
-        <button class="pd-btn" [disabled]="invitando() || !invitarEmail" (click)="enviarInvitacion()">
+        <button class="lb-btn ghost" (click)="cerrarInvitar()">Cancelar</button>
+        <button class="lb-btn" [disabled]="invitando() || !invitarEmail" (click)="enviarInvitacion()">
           {{ invitando() ? 'Enviando...' : 'Enviar invitación' }}
+        </button>
+      </div>
+    </app-base-modal>
+  }
+
+  <!-- Modal: cambiar correo de acceso -->
+  @if (showCambiarEmailModal()) {
+    <app-base-modal title="Cambiar correo de acceso" width="w-[440px]" (closeModal)="cerrarCambiarEmail()">
+      <p class="pd-modal-hint">
+        Se avisará al correo anterior de este cambio, por seguridad — si no fue autorizado, la
+        persona lo verá ahí.
+      </p>
+      <div class="abril-field">
+        <label class="abril-field-label">Nuevo correo</label>
+        <input class="abril-field-input" type="email" [(ngModel)]="nuevoEmail" placeholder="correo@empresa.com" />
+      </div>
+      @if (cambiarEmailError()) { <p class="pd-error">{{ cambiarEmailError() }}</p> }
+      <div class="pd-form-actions">
+        <button class="lb-btn ghost" (click)="cerrarCambiarEmail()">Cancelar</button>
+        <button class="lb-btn" [disabled]="cambiandoEmail() || !nuevoEmail" (click)="guardarCambiarEmail()">
+          {{ cambiandoEmail() ? 'Guardando...' : 'Guardar correo' }}
         </button>
       </div>
     </app-base-modal>
@@ -135,15 +227,15 @@
           placeholder="Selecciona rol"
         />
 
-        @if (!rolSeleccionadoEsGlobal) {
-          <div class="pd-form-row">
-            <app-search-select
-              [options]="cat.proyectos"
-              displayField="nombre"
-              [(value)]="asignarForm.proyectoId"
-              label="Proyecto"
-              placeholder="Buscar proyecto..."
-            />
+        <div class="pd-form-row">
+          <app-search-select
+            [options]="cat.proyectos"
+            displayField="nombre"
+            [(value)]="asignarForm.proyectoId"
+            label="Proyecto (vacío = acceso global, todos los proyectos)"
+            placeholder="Buscar proyecto..."
+          />
+          @if (asignarForm.proyectoId) {
             <app-search-select
               [options]="almacenesDelProyecto"
               displayField="nombre"
@@ -151,16 +243,101 @@
               label="Almacén (opcional)"
               placeholder="Todos los almacenes"
             />
-          </div>
-        }
+          }
+        </div>
       }
       @if (asignarError()) { <p class="pd-error">{{ asignarError() }}</p> }
       <div class="pd-form-actions">
-        <button class="pd-btn ghost" (click)="cerrarAsignar()">Cancelar</button>
-        <button class="pd-btn" [disabled]="asignando() || !asignarForm.rolId" (click)="guardarAsignacion()">
+        <button class="lb-btn ghost" (click)="cerrarAsignar()">Cancelar</button>
+        <button class="lb-btn" [disabled]="asignando() || !asignarForm.rolId" (click)="guardarAsignacion()">
           {{ asignando() ? 'Guardando...' : 'Asignar' }}
         </button>
       </div>
     </app-base-modal>
   }
+
+  <!-- Modal: datos de planilla -->
+  @if (showPlanillaModal()) {
+    <app-base-modal title="Datos de planilla" width="w-[560px]" (closeModal)="cerrarPlanilla()">
+      <div class="pd-form-row">
+        <div class="abril-field">
+          <label class="abril-field-label">
+            Categoría laboral
+            <button type="button" class="pd-gestionar" (click)="abrirCatalogo('CATEGORIA_LABORAL')">Gestionar</button>
+          </label>
+          <select class="abril-field-input" [(ngModel)]="planillaForm.categoriaLaboral">
+            <option value="">Selecciona</option>
+            @for (c of categoriasLaborales(); track c.id) { <option [value]="c.valor">{{ c.valor }}</option> }
+          </select>
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">
+            Banco
+            <button type="button" class="pd-gestionar" (click)="abrirCatalogo('BANCO')">Gestionar</button>
+          </label>
+          <select class="abril-field-input" [(ngModel)]="planillaForm.banco">
+            <option value="">Selecciona banco</option>
+            @for (b of bancos(); track b.id) { <option [value]="b.valor">{{ b.valor }}</option> }
+          </select>
+        </div>
+      </div>
+      <div class="pd-form-row">
+        <div class="abril-field">
+          <label class="abril-field-label">Número de cuenta</label>
+          <input class="abril-field-input" [(ngModel)]="planillaForm.numeroCuenta" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">CUSP</label>
+          <input class="abril-field-input" [(ngModel)]="planillaForm.cusp" placeholder="Código único de pensión" />
+        </div>
+      </div>
+      <div class="pd-form-row">
+        <div class="abril-field">
+          <label class="abril-field-label">
+            Tipo AFP / ONP
+            <button type="button" class="pd-gestionar" (click)="abrirCatalogo('TIPO_AFP_ONP')">Gestionar</button>
+          </label>
+          <select class="abril-field-input" [(ngModel)]="planillaForm.tipoAfpOnp">
+            <option value="">Sin régimen / selecciona</option>
+            @for (t of tiposAfpOnp(); track t.id) { <option [value]="t.valor">{{ t.valor }}</option> }
+          </select>
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Sueldo base (mensual)</label>
+          <input class="abril-field-input" type="number" min="0" step="0.01" [(ngModel)]="planillaForm.sueldoBase" />
+        </div>
+      </div>
+      <div class="pd-form-row">
+        <div class="abril-field">
+          <label class="abril-field-label">Jornal (diario, si aplica)</label>
+          <input class="abril-field-input" type="number" min="0" step="0.01" [(ngModel)]="planillaForm.jornal" />
+        </div>
+        <div class="pd-checkboxes">
+          <label class="pd-checkbox">
+            <input type="checkbox" [(ngModel)]="planillaForm.asignacionFamiliar" />
+            Asignación familiar
+          </label>
+          <label class="pd-checkbox">
+            <input type="checkbox" [(ngModel)]="planillaForm.sctr" />
+            SCTR
+          </label>
+        </div>
+      </div>
+
+      @if (planillaError()) { <p class="pd-error">{{ planillaError() }}</p> }
+      <div class="pd-form-actions">
+        <button class="lb-btn ghost" (click)="cerrarPlanilla()">Cancelar</button>
+        <button class="lb-btn" [disabled]="guardandoPlanilla()" (click)="guardarPlanilla()">
+          {{ guardandoPlanilla() ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </div>
+    </app-base-modal>
+  }
+
+  <app-catalogo-valor-modal
+    [tipo]="catalogoAbierto()"
+    [titulo]="catalogoAbierto() === 'BANCO' ? 'Bancos' : catalogoAbierto() === 'TIPO_AFP_ONP' ? 'Tipo AFP / ONP' : 'Categoría laboral'"
+    [abierto]="!!catalogoAbierto()"
+    (cerrado)="cerrarCatalogo()"
+  />
 </div>

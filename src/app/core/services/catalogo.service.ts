@@ -23,8 +23,13 @@ export interface ProductoListItem {
   categoriaTipo: string;
   unidadMedida: string;
   requiereTalla: boolean;
+  tipoTalla: string | null;
   esRetornable: boolean;
   activo: boolean;
+}
+
+export interface Talla {
+  valor: string;
 }
 
 export interface ProductoListResponse {
@@ -42,6 +47,7 @@ export interface ProductoCreate {
   categoriaId: number;
   unidadMedida: string;
   requiereTalla: boolean;
+  tipoTalla?: string | null;
   esRetornable: boolean;
 }
 
@@ -90,5 +96,10 @@ export class CatalogoService {
   sugerirProductos(nombre: string): Observable<SugerenciaProducto[]> {
     const params = new URLSearchParams({ nombre });
     return this.http.get<SugerenciaProducto[]>(`${this.apiUrl}/productos/sugerencias?${params}`, { headers: this.headers() });
+  }
+
+  listTallas(tipo: string): Observable<Talla[]> {
+    const params = new URLSearchParams({ tipo });
+    return this.http.get<Talla[]>(`${this.apiUrl}/tallas?${params}`, { headers: this.headers() });
   }
 }

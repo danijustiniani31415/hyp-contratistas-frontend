@@ -6,25 +6,26 @@ import { SearchSelect } from '../../shared/components/search-select/search-selec
 import { BaseModal } from '../../shared/components/base-modal/base-modal';
 import { FabButton } from '../../shared/components/fab-button/fab-button';
 import { Paginator } from '../../shared/components/paginator/paginator';
-import { LbNav } from '../../shared/components/lb-nav/lb-nav';
+import { LbPageHeader } from '../../shared/components/lb-page-header/lb-page-header';
 import {
   PedidosService,
   PedidoListItem,
   PedidoDetalle,
   PedidoCreate,
   PedidoItemCreate,
+  PedidoDestinatarios,
 } from '../../core/services/pedidos.service';
 import { PersonasService, CatalogoItem } from '../../core/services/personas.service';
 import { CatalogoService, ProductoListItem } from '../../core/services/catalogo.service';
 import { LbAuthService } from '../../core/services/lb-auth.service';
 
-const ESTADOS = ['PENDIENTE', 'APROBADO', 'RECHAZADO', 'ENTREGADO', 'CANCELADO'];
+const ESTADOS = ['PENDIENTE', 'PENDIENTE_GERENTE', 'APROBADO', 'RECHAZADO', 'ENTREGADO', 'CANCELADO'];
 
 /** [REVISADO] Estado en signals — mismo motivo que personas.ts (Zone.js no parcha fetch()). */
 @Component({
   selector: 'app-pedidos',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, BaseModal, FabButton, Paginator, LbNav],
+  imports: [CommonModule, FormsModule, SearchSelect, BaseModal, FabButton, Paginator, LbPageHeader],
   templateUrl: './pedidos.html',
   styleUrl: './pedidos.css',
 })
@@ -41,11 +42,13 @@ export class Pedidos implements OnInit {
   proyectos = signal<CatalogoItem[]>([]);
   almacenes = signal<CatalogoItem[]>([]);
   productos = signal<ProductoListItem[]>([]);
+  tallasPorTipo = signal<Record<string, string[]>>({});
 
   showModal = signal(false);
   error = signal('');
   guardando = signal(false);
   form: PedidoCreate = this.formVacio();
+  destinatarios = signal<PedidoDestinatarios | null>(null);
 
   showDetalle = signal(false);
   detalle = signal<PedidoDetalle | null>(null);
@@ -65,6 +68,36 @@ export class Pedidos implements OnInit {
       this.almacenes.set(c.almacenes);
     });
     this.catalogoService.listProductos('', 1, 200).subscribe((r) => this.productos.set(r.data));
+    // Catálogo fijo de tallas (ROPA/CALZADO/GUANTES) — chico, se precarga entero de una vez.
+    for (const tipo of ['ROPA', 'CALZADO', 'GUANTES']) {
+      this.catalogoService.listTallas(tipo).subscribe((r) => {
+        this.tallasPorTipo.update((m) => ({ ...m, [tipo]: r.map((t) => t.valor) }));
+      });
+    }
+  }
+
+  productoDe(productoId: number): ProductoListItem | undefined {
+    return this.productos().find((p) => p.id === productoId);
+  }
+
+  requiereTalla(item: PedidoItemCreate): boolean {
+    return !!this.productoDe(item.productoId)?.requiereTalla;
+  }
+
+  tallasDe(item: PedidoItemCreate): string[] {
+    const tipo = this.productoDe(item.productoId)?.tipoTalla;
+    return tipo ? (this.tallasPorTipo()[tipo] ?? []) : [];
+  }
+
+  onProductoChange(item: PedidoItemCreate): void {
+    // Al cambiar de producto, la talla escrita/seleccionada ya no aplica.
+    item.talla = '';
+  }
+
+  onProyectoChange(): void {
+    this.destinatarios.set(null);
+    if (!this.form.proyectoId) return;
+    this.service.getDestinatarios(this.form.proyectoId).subscribe((d) => this.destinatarios.set(d));
   }
 
   cargar(): void {
@@ -94,6 +127,7 @@ export class Pedidos implements OnInit {
   abrirNuevo(): void {
     this.form = this.formVacio();
     this.error.set('');
+    this.destinatarios.set(null);
     this.showModal.set(true);
   }
 
@@ -111,6 +145,11 @@ export class Pedidos implements OnInit {
 
   guardar(): void {
     if (!this.form.proyectoId || !this.form.almacenId || !this.form.items.length) return;
+    const faltaTalla = this.form.items.some((i) => this.requiereTalla(i) && !i.talla);
+    if (faltaTalla) {
+      this.error.set('Selecciona la talla de todos los productos que la requieren.');
+      return;
+    }
     this.error.set('');
     this.guardando.set(true);
     this.service.crear(this.form).subscribe({
@@ -147,6 +186,51 @@ export class Pedidos implements OnInit {
     const d = this.detalle();
     const user = this.authService.getUser();
     return !!d && !!user && d.solicitanteUsuarioSistemaId === user.usuarioSistemaId;
+  }
+
+  visar(): void {
+    const id = this.detalle()?.id;
+    if (!id) return;
+    this.accionando.set(true);
+    this.service.visar(id).subscribe({
+      next: (d) => {
+        this.accionando.set(false);
+        this.detalle.set(d);
+        this.cargar();
+      },
+      error: (err) => {
+        this.accionando.set(false);
+        Swal.fire({ icon: 'error', title: 'Error', text: err?.error?.message ?? 'No se pudo visar.' });
+      },
+    });
+  }
+
+  rechazarVisado(): void {
+    const id = this.detalle()?.id;
+    if (!id) return;
+    Swal.fire({
+      icon: 'question',
+      title: 'Motivo de rechazo',
+      input: 'text',
+      inputPlaceholder: 'Ej: no hay presupuesto este mes',
+      showCancelButton: true,
+      confirmButtonText: 'Rechazar',
+      cancelButtonText: 'Cancelar',
+    }).then((res) => {
+      if (!res.isConfirmed || !res.value) return;
+      this.accionando.set(true);
+      this.service.rechazarVisado(id, res.value).subscribe({
+        next: (d) => {
+          this.accionando.set(false);
+          this.detalle.set(d);
+          this.cargar();
+        },
+        error: (err) => {
+          this.accionando.set(false);
+          Swal.fire({ icon: 'error', title: 'Error', text: err?.error?.message ?? 'No se pudo rechazar.' });
+        },
+      });
+    });
   }
 
   aprobar(): void {

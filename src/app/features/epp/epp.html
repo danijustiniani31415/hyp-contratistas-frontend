@@ -1,12 +1,17 @@
-<div class="ep-page">
-  <app-lb-nav />
-  <header class="ep-header">
-    <p class="ep-eyebrow">HP Constructores Generales · Las Bravas</p>
-    <h1>Entrega de EPP</h1>
-  </header>
+<div class="lb-page lb-page-fill">
+  <app-lb-page-header titulo="Entrega de EPP">
+    <div class="lb-search">
+      <input
+        type="text"
+        placeholder="Buscar por nombre del trabajador..."
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput()"
+      />
+    </div>
+  </app-lb-page-header>
 
-  <div class="ep-table-wrap">
-    <table class="ep-table">
+  <div class="lb-table-wrap">
+    <table class="lb-table">
       <thead>
         <tr>
           <th>Trabajador</th>
@@ -18,9 +23,9 @@
       </thead>
       <tbody>
         @if (loading()) {
-          <tr><td colspan="5" class="ep-empty">Cargando...</td></tr>
+          <tr><td colspan="5" class="lb-empty">Cargando...</td></tr>
         } @else if (!entregas().length) {
-          <tr><td colspan="5" class="ep-empty">Sin entregas registradas todavía.</td></tr>
+          <tr><td colspan="5" class="lb-empty">Sin entregas registradas todavía.</td></tr>
         } @else {
           @for (e of entregas(); track e.id) {
             <tr>
@@ -68,24 +73,24 @@
         <textarea class="abril-field-input" rows="2" [(ngModel)]="form.observacion"></textarea>
       </div>
 
-      <div class="ep-items">
-        <div class="ep-items-header">
+      <div class="lb-items">
+        <div class="lb-items-header">
           <h3>EPP entregado</h3>
-          <button type="button" class="ep-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
+          <button type="button" class="lb-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
         </div>
 
         @for (item of form.items; track $index; let i = $index) {
-          <div class="ep-item-row">
+          <div class="lb-item-row">
             <app-search-select
               [options]="productosEpp()"
               displayField="nombre"
               [(value)]="item.productoId"
               placeholder="Producto EPP"
             />
-            <input class="abril-field-input ep-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
-            <input class="abril-field-input ep-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidad" placeholder="Cant." />
+            <input class="abril-field-input lb-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
+            <input class="abril-field-input lb-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidad" placeholder="Cant." />
             @if (form.items.length > 1) {
-              <button type="button" class="ep-item-quitar" (click)="quitarItem(i)">✕</button>
+              <button type="button" class="lb-item-quitar" (click)="quitarItem(i)">✕</button>
             }
           </div>
         }
@@ -94,8 +99,8 @@
       @if (error()) { <p class="ep-error">{{ error() }}</p> }
 
       <div class="ep-form-actions">
-        <button class="ep-btn ghost" (click)="cerrarModal()">Cancelar</button>
-        <button class="ep-btn" [disabled]="guardando() || !form.personaId || !form.almacenId" (click)="guardar()">
+        <button class="lb-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="lb-btn" [disabled]="guardando() || !form.personaId || !form.almacenId" (click)="guardar()">
           {{ guardando() ? 'Guardando...' : 'Registrar entrega' }}
         </button>
       </div>

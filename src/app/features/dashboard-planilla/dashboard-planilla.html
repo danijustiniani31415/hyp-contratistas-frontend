@@ -1,0 +1,60 @@
+<div class="lb-page lb-page-fill">
+  <app-lb-page-header
+    titulo="Datos faltantes para planilla"
+    subtitulo="Personas con vínculo vigente a las que les falta información para poder calcularles la boleta."
+  />
+
+  @if (loading()) {
+    <p class="lb-empty">Cargando...</p>
+  } @else if (data(); as d) {
+    <div class="dp-stats">
+      <div class="dp-stat">
+        <span class="dp-stat-num">{{ d.totalPersonasActivas }}</span>
+        <span class="dp-stat-label">Personas activas</span>
+      </div>
+      <div class="dp-stat dp-stat-ok">
+        <span class="dp-stat-num">{{ d.totalConDatosCompletos }}</span>
+        <span class="dp-stat-label">Con datos completos</span>
+      </div>
+      <div class="dp-stat dp-stat-warn">
+        <span class="dp-stat-num">{{ d.totalConDatosFaltantes }}</span>
+        <span class="dp-stat-label">Con datos faltantes</span>
+      </div>
+    </div>
+
+    @if (!d.faltantes.length) {
+      <p class="lb-empty">Todas las personas activas tienen sus datos de planilla completos. 🎉</p>
+    } @else {
+      <div class="lb-table-wrap">
+        <table class="lb-table">
+          <thead>
+            <tr>
+              <th>Persona</th>
+              <th>Cargo</th>
+              <th>Proyecto</th>
+              <th>Falta</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of d.faltantes; track p.personaId) {
+              <tr>
+                <td><strong>{{ p.nombreCompleto }}</strong></td>
+                <td>{{ p.cargoNombre ?? '—' }}</td>
+                <td>{{ p.proyectoNombre ?? '—' }}</td>
+                <td>
+                  @for (campo of p.camposFaltantes; track campo) {
+                    <span class="dp-badge">{{ campo }}</span>
+                  }
+                </td>
+                <td class="dp-table-actions">
+                  <a class="dp-link" [routerLink]="['/personas', p.personaId]">Completar →</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

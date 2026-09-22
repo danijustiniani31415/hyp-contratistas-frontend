@@ -1,25 +1,24 @@
-<div class="co-page">
-  <app-lb-nav />
-  <header class="co-header">
-    <p class="co-eyebrow">HP Constructores Generales · Las Bravas</p>
-    <h1>Compras</h1>
-  </header>
-
-  <div class="co-toolbar">
-    <div class="abril-field co-filtro">
-      <label class="abril-field-label">Estado</label>
-      <select class="abril-field-input" [(ngModel)]="estadoFiltro" (ngModelChange)="onFiltroChange()">
-        <option value="">Todos</option>
-        @for (e of estados; track e) { <option [value]="e">{{ e }}</option> }
-      </select>
+<div class="lb-page lb-page-fill">
+  <app-lb-page-header titulo="Compras">
+    <div class="lb-search">
+      <input
+        type="text"
+        placeholder="Buscar por código o proveedor..."
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput()"
+      />
     </div>
+    <select class="abril-field-input co-filtro-select" [(ngModel)]="estadoFiltro" (ngModelChange)="onFiltroChange()">
+      <option value="">Todos los estados</option>
+      @for (e of estados; track e) { <option [value]="e">{{ e }}</option> }
+    </select>
     @if (authService.hasPermiso('COMPRA_CREAR')) {
-      <button type="button" class="co-btn ghost" (click)="abrirNuevoProveedor()">+ Nuevo proveedor</button>
+      <button type="button" class="lb-btn ghost" (click)="abrirNuevoProveedor()">+ Nuevo proveedor</button>
     }
-  </div>
+  </app-lb-page-header>
 
-  <div class="co-table-wrap">
-    <table class="co-table">
+  <div class="lb-table-wrap">
+    <table class="lb-table">
       <thead>
         <tr>
           <th>Código</th>
@@ -32,9 +31,9 @@
       </thead>
       <tbody>
         @if (loading()) {
-          <tr><td colspan="6" class="co-empty">Cargando...</td></tr>
+          <tr><td colspan="6" class="lb-empty">Cargando...</td></tr>
         } @else if (!ordenes().length) {
-          <tr><td colspan="6" class="co-empty">Sin órdenes de compra todavía.</td></tr>
+          <tr><td colspan="6" class="lb-empty">Sin órdenes de compra todavía.</td></tr>
         } @else {
           @for (o of ordenes(); track o.id) {
             <tr class="co-row" (click)="verDetalle(o.id)">
@@ -90,8 +89,8 @@
       @if (proveedorError()) { <p class="co-error">{{ proveedorError() }}</p> }
 
       <div class="co-form-actions">
-        <button class="co-btn ghost" (click)="cerrarProveedorModal()">Cancelar</button>
-        <button class="co-btn" [disabled]="guardandoProveedor() || !proveedorForm.razonSocial" (click)="guardarProveedor()">
+        <button class="lb-btn ghost" (click)="cerrarProveedorModal()">Cancelar</button>
+        <button class="lb-btn" [disabled]="guardandoProveedor() || !proveedorForm.razonSocial" (click)="guardarProveedor()">
           {{ guardandoProveedor() ? 'Guardando...' : 'Guardar' }}
         </button>
       </div>
@@ -123,25 +122,25 @@
         <textarea class="abril-field-input" rows="2" [(ngModel)]="form.observacion"></textarea>
       </div>
 
-      <div class="co-items">
-        <div class="co-items-header">
+      <div class="lb-items">
+        <div class="lb-items-header">
           <h3>Productos a comprar</h3>
-          <button type="button" class="co-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
+          <button type="button" class="lb-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
         </div>
 
         @for (item of form.items; track $index; let i = $index) {
-          <div class="co-item-row">
+          <div class="lb-item-row">
             <app-search-select
               [options]="productos()"
               displayField="nombre"
               [(value)]="item.productoId"
               placeholder="Producto"
             />
-            <input class="abril-field-input co-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
-            <input class="abril-field-input co-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidadSolicitada" placeholder="Cant." />
-            <input class="abril-field-input co-item-costo" type="number" min="0" step="0.01" [(ngModel)]="item.costoUnitario" placeholder="Costo unit." />
+            <input class="abril-field-input lb-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
+            <input class="abril-field-input lb-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidadSolicitada" placeholder="Cant." />
+            <input class="abril-field-input lb-item-costo" type="number" min="0" step="0.01" [(ngModel)]="item.costoUnitario" placeholder="Costo unit." />
             @if (form.items.length > 1) {
-              <button type="button" class="co-item-quitar" (click)="quitarItem(i)">✕</button>
+              <button type="button" class="lb-item-quitar" (click)="quitarItem(i)">✕</button>
             }
           </div>
         }
@@ -150,8 +149,8 @@
       @if (error()) { <p class="co-error">{{ error() }}</p> }
 
       <div class="co-form-actions">
-        <button class="co-btn ghost" (click)="cerrarModal()">Cancelar</button>
-        <button class="co-btn" [disabled]="guardando() || !form.proveedorId || !form.almacenId" (click)="guardar()">
+        <button class="lb-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="lb-btn" [disabled]="guardando() || !form.proveedorId || !form.almacenId" (click)="guardar()">
           {{ guardando() ? 'Creando...' : 'Crear orden' }}
         </button>
       </div>
@@ -167,7 +166,7 @@
       </div>
       <p class="co-detalle-meta">Solicitado por {{ d.solicitadoPorNombre }} el {{ d.creadoEn | slice:0:10 }}</p>
 
-      <table class="co-table co-detalle-table">
+      <table class="lb-table co-detalle-table">
         <thead>
           <tr><th>Producto</th><th>Pedido</th><th>Recibido</th><th>Pendiente</th><th></th></tr>
         </thead>
@@ -190,7 +189,7 @@
 
       @if (d.estado === 'PENDIENTE' && authService.hasPermiso('COMPRA_CREAR')) {
         <div class="co-form-actions">
-          <button class="co-btn ghost danger" (click)="cancelarOrden()">Cancelar orden</button>
+          <button class="lb-btn ghost danger" (click)="cancelarOrden()">Cancelar orden</button>
         </div>
       }
     </app-base-modal>

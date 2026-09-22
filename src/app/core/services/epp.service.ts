@@ -68,8 +68,9 @@ export class EppService {
     return this.http.post<EntregaEppDetalle>(this.apiUrl, dto, { headers: this.headers() });
   }
 
-  list(personaId: number | null, page: number, pageSize: number): Observable<EntregaEppListResponse> {
+  list(search: string, personaId: number | null, page: number, pageSize: number): Observable<EntregaEppListResponse> {
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+    if (search) params.set('search', search);
     if (personaId) params.set('personaId', String(personaId));
     return this.http.get<EntregaEppListResponse>(`${this.apiUrl}?${params}`, { headers: this.headers() });
   }

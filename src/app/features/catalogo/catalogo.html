@@ -1,23 +1,17 @@
-<div class="cp-page">
-  <app-lb-nav />
-  <header class="cp-header">
-    <p class="cp-eyebrow">HP Constructores Generales · Las Bravas</p>
-    <h1>Catálogo Maestro</h1>
-  </header>
+<div class="lb-page lb-page-fill">
+  <app-lb-page-header titulo="Catálogo Maestro">
+    <div class="lb-search">
+      <input
+        type="text"
+        placeholder="Buscar por nombre o código..."
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput()"
+      />
+    </div>
+  </app-lb-page-header>
 
-  <div class="cp-toolbar">
-    <input
-      class="cp-search"
-      type="text"
-      placeholder="Buscar por nombre o código..."
-      [(ngModel)]="search"
-      (keyup.enter)="onSearch()"
-    />
-    <button class="cp-btn" (click)="onSearch()">Buscar</button>
-  </div>
-
-  <div class="cp-table-wrap">
-    <table class="cp-table">
+  <div class="lb-table-wrap">
+    <table class="lb-table">
       <thead>
         <tr>
           <th>Código</th>
@@ -29,9 +23,9 @@
       </thead>
       <tbody>
         @if (loading()) {
-          <tr><td colspan="5" class="cp-empty">Cargando...</td></tr>
+          <tr><td colspan="5" class="lb-empty">Cargando...</td></tr>
         } @else if (!productos().length) {
-          <tr><td colspan="5" class="cp-empty">Sin productos registrados todavía.</td></tr>
+          <tr><td colspan="5" class="lb-empty">Sin productos registrados todavía.</td></tr>
         } @else {
           @for (p of productos(); track p.id) {
             <tr>
@@ -39,7 +33,7 @@
               <td>{{ p.nombre }}</td>
               <td>{{ p.categoriaNombre }}</td>
               <td>{{ p.unidadMedida }}</td>
-              <td><span class="cp-badge" [class.on]="p.activo">{{ p.activo ? 'ACTIVO' : 'INACTIVO' }}</span></td>
+              <td><span class="lb-badge" [class.on]="p.activo">{{ p.activo ? 'ACTIVO' : 'INACTIVO' }}</span></td>
             </tr>
           }
         }
@@ -104,8 +98,8 @@
       @if (error()) { <p class="cp-error">{{ error() }}</p> }
 
       <div class="cp-form-actions">
-        <button class="cp-btn ghost" (click)="cerrarModal()">Cancelar</button>
-        <button class="cp-btn" [disabled]="guardando() || !form.nombre || !form.categoriaId" (click)="guardar()">
+        <button class="lb-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="lb-btn" [disabled]="guardando() || !form.nombre || !form.categoriaId" (click)="guardar()">
           {{ guardando() ? 'Guardando...' : 'Guardar' }}
         </button>
       </div>

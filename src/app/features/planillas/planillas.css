@@ -1,0 +1,24 @@
+/* .lb-page/.lb-page-header/.lb-btn/.lb-table*/.lb-badge/.lb-empty en styles.css. */
+
+.pl-table-actions { text-align: right; }
+.pl-link { color: #1E3A5F; font-weight: 600; font-size: 13px; text-decoration: none; background: transparent; border: 0; cursor: pointer; font-family: inherit; padding: 0; }
+.pl-link:hover { text-decoration: underline; }
+
+.pl-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+.pl-form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 12px; }
+.pl-form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+.pl-error { color: #C0392B; font-size: 12.5px; margin: 8px 0 0; }
+.pl-modal-hint { font-size: 12.5px; color: var(--color-abril-muted, #64748B); margin: 0 0 14px; line-height: 1.4; }
+
+.pl-concepto-form {
+  background: var(--color-abril-bg-alt, #F9FAFB); border: 1px solid var(--color-abril-border, #E5E7EB);
+  border-radius: var(--radius-md, 8px); padding: 14px 16px; margin-bottom: 16px;
+}
+.pl-table-conceptos { font-size: 12.5px; }
+.pl-table-conceptos th { padding: 8px 10px; }
+.pl-table-conceptos td { padding: 8px 10px; }
+.pl-checkbox { display: flex; align-items: center; cursor: pointer; }
+
+@media (max-width: 720px) {
+  .pl-form-row, .pl-form-row-3 { grid-template-columns: 1fr; }
+}

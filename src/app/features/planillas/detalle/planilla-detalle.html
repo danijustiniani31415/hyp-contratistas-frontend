@@ -1,0 +1,81 @@
+<div class="lb-page lb-page-wide">
+  <button type="button" class="pd2-volver" (click)="volver()">← Volver a Planillas</button>
+
+  @if (loading() && !periodo()) {
+    <p class="lb-empty">Cargando...</p>
+  } @else if (periodo(); as p) {
+    <app-lb-page-header [titulo]="nombreMes(p.mes) + ' ' + p.anio" [subtitulo]="p.proyectoNombre ?? 'Todos los proyectos'">
+      @if (p.estado !== 'CERRADO') {
+        <button type="button" class="lb-btn" [disabled]="calculando()" (click)="calcular()">
+          {{ calculando() ? 'Calculando...' : (p.estado === 'CALCULADO' ? 'Recalcular' : 'Calcular planilla') }}
+        </button>
+      }
+      @if (p.estado === 'CALCULADO') {
+        <button type="button" class="lb-btn ghost" [disabled]="cerrando()" (click)="cerrar()">
+          {{ cerrando() ? 'Cerrando...' : 'Cerrar período' }}
+        </button>
+      }
+    </app-lb-page-header>
+
+    <span class="lb-badge" [class.on]="p.estado === 'CALCULADO'" [class.closed]="p.estado === 'CERRADO'">
+      {{ p.estado }}
+    </span>
+
+    @if (p.personasOmitidas.length) {
+      <div class="pd2-warning">
+        <strong>{{ p.personasOmitidas.length }} persona(s) no se pudieron calcular</strong> (falta categoría laboral):
+        {{ p.personasOmitidas.join(', ') }}
+      </div>
+    }
+
+    @if (!p.detalles.length) {
+      <p class="lb-empty">Todavía no se ha calculado este período.</p>
+    } @else {
+      <div class="lb-table-wrap">
+        <table class="lb-table">
+          <thead>
+            <tr>
+              <th>Persona</th>
+              <th>Categoría</th>
+              <th>Días trab.</th>
+              <th>Faltas</th>
+              <th>Ingresos</th>
+              <th>Descuentos</th>
+              <th>Neto a pagar</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of p.detalles; track d.id) {
+              <tr>
+                <td>
+                  <strong>{{ d.personaNombre }}</strong>
+                  @if (d.conceptos.length) {
+                    <div class="pd2-conceptos">
+                      @for (c of d.conceptos; track c.conceptoNombre) {
+                        <span class="pd2-concepto" [class.desc]="c.tipo === 'DESCUENTO'">{{ c.conceptoNombre }}: S/ {{ c.monto.toFixed(2) }}</span>
+                      }
+                    </div>
+                  }
+                </td>
+                <td>{{ d.categoriaLaboral ?? '—' }}</td>
+                <td>{{ d.diasTrabajados }}</td>
+                <td>{{ d.diasFalta }}</td>
+                <td>S/ {{ d.totalIngresos.toFixed(2) }}</td>
+                <td>S/ {{ d.totalDescuentos.toFixed(2) }}</td>
+                <td><strong>S/ {{ d.netoPagar.toFixed(2) }}</strong></td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="6" class="pd2-total-label">Total neto a pagar</td>
+              <td class="pd2-total-value">S/ {{ totalNeto().toFixed(2) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    }
+  } @else {
+    <p class="lb-empty">Período no encontrado.</p>
+  }
+</div>

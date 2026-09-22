@@ -1,0 +1,29 @@
+@if (abierto) {
+  <app-base-modal [title]="titulo" width="w-[420px]" (closeModal)="cerrar()">
+    <div class="cv-nuevo">
+      <input
+        class="abril-field-input"
+        [(ngModel)]="nuevo"
+        placeholder="Valor nuevo"
+        (keyup.enter)="agregar()"
+      />
+      <button class="cv-btn" [disabled]="guardando || !nuevo.trim()" (click)="agregar()">+ Agregar</button>
+    </div>
+
+    @if (error) { <p class="cv-error">{{ error }}</p> }
+
+    <div class="cv-lista">
+      @for (v of valores; track v.id) {
+        <div class="cv-row">
+          <input class="abril-field-input" [(ngModel)]="v.valor" (blur)="guardarFila(v)" />
+          <label class="cv-activo">
+            <input type="checkbox" [(ngModel)]="v.activo" (ngModelChange)="guardarFila(v)" />
+            Activo
+          </label>
+        </div>
+      } @empty {
+        <p class="cv-empty">Sin valores todavía.</p>
+      }
+    </div>
+  </app-base-modal>
+}

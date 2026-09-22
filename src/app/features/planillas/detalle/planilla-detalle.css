@@ -1,0 +1,23 @@
+/* .lb-page/.lb-page-wide/.lb-page-header/.lb-btn/.lb-badge/.lb-table*/.lb-empty en styles.css. */
+
+.pd2-volver {
+  background: transparent; border: 0; color: #64748B;
+  font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 0; margin-bottom: 16px; font-family: inherit;
+}
+.pd2-volver:hover { color: #0D1B2A; }
+
+.lb-badge { margin-bottom: 16px; }
+
+.pd2-warning {
+  background: #FEF3E2; border: 1px solid #FBBF24; color: #92400E;
+  border-radius: var(--radius-md, 8px); padding: 10px 14px; font-size: 12.5px; margin-bottom: 16px;
+}
+
+.lb-table td { vertical-align: top; }
+
+.pd2-conceptos { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.pd2-concepto { font-size: 11px; color: #1B6B3A; }
+.pd2-concepto.desc { color: #C0392B; }
+
+.pd2-total-label { text-align: right; font-weight: 700; padding: 12px 14px; }
+.pd2-total-value { font-weight: 700; font-size: 14px; padding: 12px 14px; color: #1E3A5F; }

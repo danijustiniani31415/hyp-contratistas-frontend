@@ -1,0 +1,45 @@
+/* .lb-page/.lb-page-header/.lb-btn/.lb-empty en styles.css — acá solo lo propio de Tareo
+   (la grilla de días, con su columna de persona fija y celdas por día). */
+
+.tr-toolbar {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.tr-nav-btn {
+  border: 1px solid #D1D5DB; background: #fff;
+  border-radius: 7px; width: 32px; height: 32px; cursor: pointer;
+  font-size: 14px; color: #1E3A5F;
+}
+.tr-nav-btn:hover { background: #F8FAFC; }
+.tr-mes-actual { font-weight: 700; font-size: 14px; min-width: 140px; text-align: center; }
+.tr-leyenda { font-size: 11px; color: #64748B; flex: 1; }
+
+.tr-table-wrap {
+  border: 1px solid #E5E7EB; border-radius: 8px;
+  overflow: auto; max-height: 70vh;
+}
+.tr-table { border-collapse: collapse; font-size: 13px; }
+.tr-table th {
+  position: sticky; top: 0; z-index: 1;
+  background: #1E3A5F; color: #fff;
+  font-weight: 700; padding: 8px 6px; text-align: center; white-space: nowrap;
+}
+.tr-table td { border-bottom: 1px solid #F1F5F9; padding: 2px; }
+
+.tr-col-persona {
+  position: sticky; left: 0; z-index: 2;
+  background: #fff; text-align: left !important; padding: 8px 12px !important;
+  min-width: 200px; max-width: 240px;
+}
+thead .tr-col-persona { z-index: 3; background: #1E3A5F; }
+.tr-col-persona strong { display: block; font-size: 13.5px; }
+.tr-cargo { display: block; font-size: 10.5px; color: #64748B; }
+
+.tr-col-dia { width: 40px; text-align: center; }
+
+.tr-celda {
+  width: 40px; height: 32px; text-align: center; border: 1px solid #E5E7EB;
+  border-radius: 4px; font-size: 13px; font-family: inherit; color: #374151;
+  background: #fff; cursor: pointer; outline: none;
+}
+.tr-celda:focus { border-color: #1E3A5F; }
+.tr-celda-vacia { background: #F9FAFB; color: #9CA3AF; }

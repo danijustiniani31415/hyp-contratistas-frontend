@@ -9,6 +9,23 @@
   touch-action: manipulation;
 }
 
+/* El alto/padding del trigger normal (no compact/dark) DEBE calzar pixel a pixel con
+   .abril-field-input (styles.css) — medido 2026-09-22: el trigger renderizaba ~47px contra
+   ~53px de un <input>/<select> vecino en la misma fila (bug real, visible en cualquier fila con
+   app-search-select + inputs planos, ej. Pedidos/Compras/EPP "Producto + Talla + Cantidad"). Las
+   clases Tailwind arbitrarias del componente (`h-[var(--control-height)]`, `pl-[12px]`, etc. en
+   triggerSizeClasses) no garantizaban el mismo box-model que .abril-field-input. Esta regla, al
+   estar en el CSS propio del componente (encapsulado, más específica que una utilidad Tailwind
+   suelta), gana la cascada y fija el mismo box-sizing/min-height/padding que .abril-field-input,
+   sin tocar las variantes compact/dark (que declaran su propio alto explícito vía Tailwind y no
+   deben calzar con formularios de escritorio). */
+.ss-trigger-standard {
+  box-sizing: border-box;
+  min-height: var(--control-height);
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+}
+
 /* Foco visible por teclado (Tab), no al hacer clic con mouse. Usa el mismo
    acento que ya inyecta el Input `color` (--ss-accent) en vez de un color
    fijo, para que el aro calce con el acento que la página haya elegido
@@ -24,9 +41,13 @@
 }
 
 /* --ss-font-size lo fija el componente (Input compact/dark) — variantes densas de tabla/filtro
-   se quedan chicas a propósito, la variante normal usa 16px para calzar con .abril-field-input. */
+   se quedan chicas a propósito. La variante normal (compact=false, dark=false) ya NO fuerza el
+   valor desde TS (ver fontSizePx en search-select.ts) — cae en el fallback de var(), que apunta
+   al token global --text-abril-base (styles.css: 16px en móvil/tablet, 14px en escritorio,
+   un solo lugar decide el breakpoint). Así el combobox y .abril-field-input siempre miden lo
+   mismo sin que este archivo mantenga su propia copia del breakpoint. */
 .ss-trigger-label {
-  font-size: var(--ss-font-size, 12px);
+  font-size: var(--ss-font-size, var(--text-abril-base, 16px));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -35,7 +56,7 @@
 }
 
 .ss-option {
-  font-size: var(--ss-font-size, 12px);
+  font-size: var(--ss-font-size, var(--text-abril-base, 16px));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

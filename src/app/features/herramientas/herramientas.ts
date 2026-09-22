@@ -6,7 +6,7 @@ import { SearchSelect } from '../../shared/components/search-select/search-selec
 import { BaseModal } from '../../shared/components/base-modal/base-modal';
 import { FabButton } from '../../shared/components/fab-button/fab-button';
 import { Paginator } from '../../shared/components/paginator/paginator';
-import { LbNav } from '../../shared/components/lb-nav/lb-nav';
+import { LbPageHeader } from '../../shared/components/lb-page-header/lb-page-header';
 import {
   HerramientasService,
   PrestamoListItem,
@@ -21,12 +21,13 @@ import { LbAuthService } from '../../core/services/lb-auth.service';
 @Component({
   selector: 'app-herramientas',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, BaseModal, FabButton, Paginator, LbNav],
+  imports: [CommonModule, FormsModule, SearchSelect, BaseModal, FabButton, Paginator, LbPageHeader],
   templateUrl: './herramientas.html',
   styleUrl: './herramientas.css',
 })
 export class Herramientas implements OnInit {
   prestamos = signal<PrestamoListItem[]>([]);
+  search = '';
   soloAbiertos = true;
   page = signal(1);
   pageSize = 20;
@@ -68,7 +69,7 @@ export class Herramientas implements OnInit {
 
   cargar(): void {
     this.loading.set(true);
-    this.service.list(this.soloAbiertos, this.page(), this.pageSize).subscribe({
+    this.service.list(this.search, this.soloAbiertos, this.page(), this.pageSize).subscribe({
       next: (res) => {
         this.prestamos.set(res.data);
         this.totalRecords.set(res.totalRecords);
@@ -82,6 +83,12 @@ export class Herramientas implements OnInit {
   onFiltroChange(): void {
     this.page.set(1);
     this.cargar();
+  }
+
+  private buscarDebounce?: ReturnType<typeof setTimeout>;
+  onSearchInput(): void {
+    clearTimeout(this.buscarDebounce);
+    this.buscarDebounce = setTimeout(() => this.onFiltroChange(), 350);
   }
 
   onPageChange(page: number): void {

@@ -1,18 +1,5 @@
-.rp-page {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 32px 24px 100px;
-  font-family: system-ui, sans-serif;
-  color: #1E3A5F;
-}
-
-.rp-header { margin-bottom: 24px; }
-.rp-eyebrow {
-  font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
-  color: #64748B; margin: 0 0 6px;
-}
-.rp-header h1 { font-size: 24px; margin: 0 0 6px; }
-.rp-hint { font-size: 13px; color: #64748B; max-width: 640px; margin: 0; line-height: 1.5; }
+/* .lb-page/.lb-page-header/.lb-btn/.lb-empty ya viven en styles.css — esta pantalla es la
+   referencia de esas clases, no las redefine acá. */
 
 .rp-layout {
   display: grid;
@@ -20,8 +7,6 @@
   gap: 20px;
   align-items: start;
 }
-
-.rp-empty { text-align: center; color: #94A3B8; padding: 24px 0; }
 
 /* ── Lista de roles (sidebar) ───────────────────────────────────────── */
 .rp-roles-list {
@@ -75,13 +60,6 @@
 }
 .rp-panel-header h2 { font-size: 17px; margin: 0; }
 .rp-rol-desc { font-size: 12.5px; color: #64748B; margin: 4px 0 0; }
-
-.rp-btn {
-  border-radius: 6px; padding: 9px 16px; font-weight: 600; font-size: 13px;
-  border: 1px solid transparent; background: #1E3A5F; color: #fff; cursor: pointer;
-  font-family: inherit; white-space: nowrap;
-}
-.rp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .rp-ok {
   background: #F0FDF4; border: 1px solid #BBF7D0; color: #1B6B3A;

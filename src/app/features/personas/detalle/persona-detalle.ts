@@ -5,19 +5,24 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
 import { SearchSelect } from '../../../shared/components/search-select/search-select';
 import { BaseModal } from '../../../shared/components/base-modal/base-modal';
+import { CatalogoValorModal } from '../../../shared/components/catalogo-valor-modal/catalogo-valor-modal';
+import { LbPageHeader } from '../../../shared/components/lb-page-header/lb-page-header';
+import { CatalogoValorService, CatalogoValor } from '../../../core/services/catalogo-valor.service';
 import {
   PersonasService,
   PersonaDetalle,
+  PersonaUpdate,
   CatalogosPersonas,
   AlmacenCatalogoItem,
   NuevaAsignacion,
+  PersonaPlanilla,
 } from '../../../core/services/personas.service';
 
 /** [REVISADO] Estado en signals — mismo motivo que personas.ts (Zone.js no parcha fetch()). */
 @Component({
   selector: 'app-persona-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SearchSelect, BaseModal],
+  imports: [CommonModule, FormsModule, RouterLink, SearchSelect, BaseModal, CatalogoValorModal, LbPageHeader],
   templateUrl: './persona-detalle.html',
   styleUrl: './persona-detalle.css',
 })
@@ -31,15 +36,36 @@ export class PersonaDetalleComponent implements OnInit {
   invitarError = signal('');
   invitando = signal(false);
 
+  showCambiarEmailModal = signal(false);
+  nuevoEmail = '';
+  cambiarEmailError = signal('');
+  cambiandoEmail = signal(false);
+
   showAsignarModal = signal(false);
   asignarForm: NuevaAsignacion = { rolId: 0, proyectoId: null, almacenId: null };
   asignarError = signal('');
   asignando = signal(false);
 
+  showDatosModal = signal(false);
+  datosForm: PersonaUpdate = this.datosVacio();
+  datosError = signal('');
+  guardandoDatos = signal(false);
+
+  showPlanillaModal = signal(false);
+  planillaForm: PersonaPlanilla = this.planillaVacia();
+  planillaError = signal('');
+  guardandoPlanilla = signal(false);
+
+  bancos = signal<CatalogoValor[]>([]);
+  tiposAfpOnp = signal<CatalogoValor[]>([]);
+  categoriasLaborales = signal<CatalogoValor[]>([]);
+  catalogoAbierto = signal<'' | 'BANCO' | 'TIPO_AFP_ONP' | 'CATEGORIA_LABORAL'>('');
+
   private personaId!: number;
 
   constructor(
     private route: ActivatedRoute,
+    private catalogoValorService: CatalogoValorService,
     private router: Router,
     private service: PersonasService,
   ) {}
@@ -48,6 +74,7 @@ export class PersonaDetalleComponent implements OnInit {
     this.personaId = Number(this.route.snapshot.paramMap.get('id'));
     this.cargar();
     this.service.getCatalogos().subscribe((c) => this.catalogos.set(c));
+    this.cargarCatalogosValor();
   }
 
   cargar(): void {
@@ -94,12 +121,43 @@ export class PersonaDetalleComponent implements OnInit {
     });
   }
 
-  // ── Asignar rol ─────────────────────────────────────────────────────
-  get rolSeleccionadoEsGlobal(): boolean {
-    const rol = this.catalogos()?.roles.find((r) => r.id === this.asignarForm.rolId);
-    return rol?.esGlobal ?? true;
+  // ── Cambiar correo de un usuario ya activo ──────────────────────────
+  abrirCambiarEmail(): void {
+    this.nuevoEmail = this.persona()?.emailLogin ?? '';
+    this.cambiarEmailError.set('');
+    this.showCambiarEmailModal.set(true);
   }
 
+  cerrarCambiarEmail(): void {
+    this.showCambiarEmailModal.set(false);
+  }
+
+  guardarCambiarEmail(): void {
+    if (!this.nuevoEmail) return;
+    this.cambiandoEmail.set(true);
+    this.cambiarEmailError.set('');
+    this.service.cambiarEmail(this.personaId, this.nuevoEmail).subscribe({
+      next: (p) => {
+        this.persona.set(p);
+        this.cambiandoEmail.set(false);
+        this.showCambiarEmailModal.set(false);
+        Swal.fire({
+          icon: 'success',
+          title: 'Correo actualizado',
+          text: `Se avisó al correo anterior del cambio. Ahora inicia sesión con ${this.nuevoEmail}.`,
+        });
+      },
+      error: (err) => {
+        this.cambiandoEmail.set(false);
+        this.cambiarEmailError.set(err?.error?.message ?? 'No se pudo cambiar el correo.');
+      },
+    });
+  }
+
+  // ── Asignar rol ─────────────────────────────────────────────────────
+  // El scope (global vs. un solo proyecto) lo decide quien otorga el acceso, no el rol — el
+  // mismo rol puede ser global para una persona y de un solo proyecto para otra (ej. "Logística"
+  // en Lima vs. "Logística" en Las Bravas). El selector de Proyecto siempre se muestra, opcional.
   get almacenesDelProyecto(): AlmacenCatalogoItem[] {
     const almacenes = this.catalogos()?.almacenes ?? [];
     if (!this.asignarForm.proyectoId) return almacenes.filter((a) => a.proyectoId === null);
@@ -118,10 +176,6 @@ export class PersonaDetalleComponent implements OnInit {
 
   guardarAsignacion(): void {
     if (!this.asignarForm.rolId) return;
-    if (!this.rolSeleccionadoEsGlobal && !this.asignarForm.proyectoId) {
-      this.asignarError.set('Este rol requiere un proyecto.');
-      return;
-    }
     this.asignando.set(true);
     this.asignarError.set('');
     this.service.nuevaAsignacion(this.personaId, this.asignarForm).subscribe({
@@ -158,5 +212,102 @@ export class PersonaDetalleComponent implements OnInit {
 
   volver(): void {
     this.router.navigate(['/personas']);
+  }
+
+  private cargarCatalogosValor(): void {
+    this.catalogoValorService.list('BANCO').subscribe((v) => this.bancos.set(v.filter((x) => x.activo)));
+    this.catalogoValorService.list('TIPO_AFP_ONP').subscribe((v) => this.tiposAfpOnp.set(v.filter((x) => x.activo)));
+    this.catalogoValorService.list('CATEGORIA_LABORAL').subscribe((v) => this.categoriasLaborales.set(v.filter((x) => x.activo)));
+  }
+
+  abrirCatalogo(tipo: 'BANCO' | 'TIPO_AFP_ONP' | 'CATEGORIA_LABORAL'): void {
+    this.catalogoAbierto.set(tipo);
+  }
+
+  cerrarCatalogo(): void {
+    this.catalogoAbierto.set('');
+    this.cargarCatalogosValor();
+  }
+
+  // ── Datos básicos (nombres, documento, contacto) ─────────────────────
+  private datosVacio(): PersonaUpdate {
+    return { nombres: '', apellidos: '', tipoDocumento: 'DNI', numeroDocumento: '', telefono: '', emailPersonal: '' };
+  }
+
+  abrirDatos(): void {
+    const p = this.persona();
+    if (!p) return;
+    this.datosForm = {
+      nombres: p.nombres,
+      apellidos: p.apellidos,
+      tipoDocumento: p.tipoDocumento,
+      numeroDocumento: p.numeroDocumento,
+      telefono: p.telefono ?? '',
+      emailPersonal: p.emailPersonal ?? '',
+    };
+    this.datosError.set('');
+    this.showDatosModal.set(true);
+  }
+
+  cerrarDatos(): void {
+    this.showDatosModal.set(false);
+  }
+
+  guardarDatos(): void {
+    this.guardandoDatos.set(true);
+    this.datosError.set('');
+    this.service.actualizarDatos(this.personaId, this.datosForm).subscribe({
+      next: (p) => {
+        this.persona.set(p);
+        this.guardandoDatos.set(false);
+        this.showDatosModal.set(false);
+      },
+      error: (err) => {
+        this.guardandoDatos.set(false);
+        this.datosError.set(err?.error?.message ?? 'No se pudieron guardar los datos.');
+      },
+    });
+  }
+
+  // ── Datos de planilla (Fase 1 del motor de Planillas) ────────────────
+  private planillaVacia(): PersonaPlanilla {
+    return {
+      banco: '',
+      numeroCuenta: '',
+      cusp: '',
+      tipoAfpOnp: '',
+      categoriaLaboral: '',
+      sueldoBase: null,
+      jornal: null,
+      asignacionFamiliar: false,
+      sctr: false,
+    };
+  }
+
+  abrirPlanilla(): void {
+    const actual = this.persona()?.planilla;
+    this.planillaForm = actual ? { ...actual } : this.planillaVacia();
+    this.planillaError.set('');
+    this.showPlanillaModal.set(true);
+  }
+
+  cerrarPlanilla(): void {
+    this.showPlanillaModal.set(false);
+  }
+
+  guardarPlanilla(): void {
+    this.guardandoPlanilla.set(true);
+    this.planillaError.set('');
+    this.service.actualizarPlanilla(this.personaId, this.planillaForm).subscribe({
+      next: (p) => {
+        this.persona.set(p);
+        this.guardandoPlanilla.set(false);
+        this.showPlanillaModal.set(false);
+      },
+      error: (err) => {
+        this.guardandoPlanilla.set(false);
+        this.planillaError.set(err?.error?.message ?? 'No se pudo guardar la planilla.');
+      },
+    });
   }
 }

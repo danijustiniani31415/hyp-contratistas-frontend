@@ -80,8 +80,9 @@ export class HerramientasService {
     return this.http.post<PrestamoDetalle>(this.apiUrl, dto, { headers: this.headers() });
   }
 
-  list(soloAbiertos: boolean, page: number, pageSize: number): Observable<PrestamoListResponse> {
+  list(search: string, soloAbiertos: boolean, page: number, pageSize: number): Observable<PrestamoListResponse> {
     const params = new URLSearchParams({ soloAbiertos: String(soloAbiertos), page: String(page), pageSize: String(pageSize) });
+    if (search) params.set('search', search);
     return this.http.get<PrestamoListResponse>(`${this.apiUrl}?${params}`, { headers: this.headers() });
   }
 

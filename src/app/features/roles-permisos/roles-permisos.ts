@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LbNav } from '../../shared/components/lb-nav/lb-nav';
+import { LbPageHeader } from '../../shared/components/lb-page-header/lb-page-header';
 import {
   RolesPermisosService,
   RolListItem,
@@ -15,7 +15,7 @@ import {
 @Component({
   selector: 'app-roles-permisos',
   standalone: true,
-  imports: [CommonModule, LbNav],
+  imports: [CommonModule, LbPageHeader],
   templateUrl: './roles-permisos.html',
   styleUrl: './roles-permisos.css',
 })

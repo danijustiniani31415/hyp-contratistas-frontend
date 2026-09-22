@@ -106,8 +106,9 @@ export class GuiasRemisionService {
     return this.http.post<GuiaRemisionDetalle>(this.apiUrl, dto, { headers: this.headers() });
   }
 
-  list(estado: string, page: number, pageSize: number): Observable<GuiaRemisionListResponse> {
+  list(search: string, estado: string, page: number, pageSize: number): Observable<GuiaRemisionListResponse> {
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+    if (search) params.set('search', search);
     if (estado) params.set('estado', estado);
     return this.http.get<GuiaRemisionListResponse>(`${this.apiUrl}?${params}`, { headers: this.headers() });
   }

@@ -99,8 +99,9 @@ export class ComprasService {
     return this.http.post<OrdenCompraDetalle>(`${this.apiUrl}/ordenes`, dto, { headers: this.headers() });
   }
 
-  list(estado: string, page: number, pageSize: number): Observable<OrdenCompraListResponse> {
+  list(search: string, estado: string, page: number, pageSize: number): Observable<OrdenCompraListResponse> {
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+    if (search) params.set('search', search);
     if (estado) params.set('estado', estado);
     return this.http.get<OrdenCompraListResponse>(`${this.apiUrl}/ordenes?${params}`, { headers: this.headers() });
   }

@@ -1,43 +1,15 @@
-.am-page {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 32px 24px 100px;
-  font-family: system-ui, sans-serif;
-  color: #1E3A5F;
+/* .lb-page/.lb-page-header/.lb-btn/.lb-table*/.lb-empty en styles.css. */
+
+/* Filtro y buscador ahora viven en la fila del título (ver app-lb-page-header) — sin label,
+   compactos, para no gastar una fila completa aparte. */
+.am-filtro-select { width: 190px; }
+.am-filtro-select app-search-select { margin-top: 0; }
+
+@media (max-width: 720px) {
+  .am-filtro-select { width: 100%; }
 }
 
-.am-header { margin-bottom: 24px; }
-.am-eyebrow {
-  font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
-  color: #64748B; margin: 0 0 6px;
-}
-.am-header h1 { font-size: 24px; margin: 0; }
-
-.am-toolbar { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; }
-.am-toolbar app-search-select { min-width: 220px; }
-.am-search {
-  flex: 1; min-width: 200px; max-width: 320px; border: 1px solid #D6DEE5; border-radius: 6px;
-  padding: 9px 12px; font-size: 13.5px; font-family: inherit; height: 44px; box-sizing: border-box;
-}
-
-.am-btn {
-  border-radius: 6px; padding: 8px 16px; font-weight: 600; font-size: 13.5px;
-  border: 1px solid transparent; background: #1E3A5F; color: #fff; cursor: pointer;
-  font-family: inherit; height: 44px;
-}
-.am-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.am-btn.ghost { background: transparent; color: #1E3A5F; border-color: #D6DEE5; }
-
-.am-table-wrap { border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; }
-.am-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.am-table th {
-  font-size: 12.5px; font-weight: 700; color: #1E3A5F;
-  padding: 10px 14px; border-bottom: 2px solid #1E3A5F; text-align: left;
-}
-.am-table td { padding: 12px 14px; border-bottom: 1px solid #F1F5F9; }
-.am-table tbody tr:hover { background: #FAFBFC; }
-.am-table tbody tr.bajo { background: #FEF2F2; }
-.am-empty { text-align: center; color: #94A3B8; padding: 32px 0 !important; }
+.lb-table tbody tr.bajo { background: #FEF2F2; }
 
 .am-codigo { color: #94A3B8; font-size: 11.5px; margin-left: 6px; }
 

@@ -1,0 +1,25 @@
+.lb-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 24px;
+  border-bottom: 1px solid #E2E8F0;
+  background: #fff;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.lb-tabs-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748B;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.lb-tabs-item i { font-size: 15px; }
+.lb-tabs-item:hover { color: #1E3A5F; }
+.lb-tabs-item.active { color: #1E3A5F; border-bottom-color: #1E3A5F; }

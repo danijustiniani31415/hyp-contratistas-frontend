@@ -1,22 +1,13 @@
-<div class="pd-page">
-  <app-lb-nav />
-  <header class="pd-header">
-    <p class="pd-eyebrow">HP Constructores Generales · Las Bravas</p>
-    <h1>Pedidos</h1>
-  </header>
+<div class="lb-page lb-page-fill">
+  <app-lb-page-header titulo="Pedidos">
+    <select class="abril-field-input pd-filtro-select" [(ngModel)]="estadoFiltro" (ngModelChange)="onFiltroChange()">
+      <option value="">Todos los estados</option>
+      @for (e of estados; track e) { <option [value]="e">{{ e }}</option> }
+    </select>
+  </app-lb-page-header>
 
-  <div class="pd-toolbar">
-    <div class="abril-field pd-filtro">
-      <label class="abril-field-label">Estado</label>
-      <select class="abril-field-input" [(ngModel)]="estadoFiltro" (ngModelChange)="onFiltroChange()">
-        <option value="">Todos</option>
-        @for (e of estados; track e) { <option [value]="e">{{ e }}</option> }
-      </select>
-    </div>
-  </div>
-
-  <div class="pd-table-wrap">
-    <table class="pd-table">
+  <div class="lb-table-wrap">
+    <table class="lb-table">
       <thead>
         <tr>
           <th>Código</th>
@@ -29,9 +20,9 @@
       </thead>
       <tbody>
         @if (loading()) {
-          <tr><td colspan="6" class="pd-empty">Cargando...</td></tr>
+          <tr><td colspan="6" class="lb-empty">Cargando...</td></tr>
         } @else if (!pedidos().length) {
-          <tr><td colspan="6" class="pd-empty">Sin pedidos todavía.</td></tr>
+          <tr><td colspan="6" class="lb-empty">Sin pedidos todavía.</td></tr>
         } @else {
           @for (p of pedidos(); track p.id) {
             <tr class="pd-row" (click)="verDetalle(p.id)">
@@ -64,6 +55,7 @@
           [options]="proyectos()"
           displayField="nombre"
           [(value)]="form.proyectoId"
+          (valueChange)="onProyectoChange()"
           label="Proyecto"
           placeholder="Buscar proyecto..."
         />
@@ -76,29 +68,46 @@
         />
       </div>
 
+      @if (destinatarios(); as dest) {
+        <div class="pd-destinatarios">
+          <p class="pd-destinatarios-title">Este pedido notificará por correo a:</p>
+          <p><strong>Visado:</strong> {{ dest.visadores.length ? dest.visadores.join(', ') : 'nadie — falta asignar PEDIDO_VISAR en este proyecto' }}</p>
+          <p><strong>Aprobación:</strong> {{ dest.aprobadores.length ? dest.aprobadores.join(', ') : 'nadie — falta asignar PEDIDO_APROBAR en este proyecto' }}</p>
+          <p><strong>Entrega:</strong> {{ dest.entregadores.length ? dest.entregadores.join(', ') : 'nadie — falta asignar PEDIDO_ENTREGAR en este proyecto' }}</p>
+        </div>
+      }
+
       <div class="abril-field">
         <label class="abril-field-label">Observación (opcional)</label>
         <textarea class="abril-field-input" rows="2" [(ngModel)]="form.observacion"></textarea>
       </div>
 
-      <div class="pd-items">
-        <div class="pd-items-header">
+      <div class="lb-items">
+        <div class="lb-items-header">
           <h3>Productos</h3>
-          <button type="button" class="pd-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
+          <button type="button" class="lb-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
         </div>
 
         @for (item of form.items; track $index; let i = $index) {
-          <div class="pd-item-row">
+          <div class="lb-item-row">
             <app-search-select
               [options]="productos()"
               displayField="nombre"
               [(value)]="item.productoId"
+              (valueChange)="onProductoChange(item)"
               placeholder="Producto"
             />
-            <input class="abril-field-input pd-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
-            <input class="abril-field-input pd-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidadSolicitada" placeholder="Cant." />
+            @if (requiereTalla(item)) {
+              <select class="abril-field-input lb-item-talla" [(ngModel)]="item.talla">
+                <option value="" disabled>Talla</option>
+                @for (t of tallasDe(item); track t) { <option [value]="t">{{ t }}</option> }
+              </select>
+            } @else {
+              <input class="abril-field-input lb-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
+            }
+            <input class="abril-field-input lb-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidadSolicitada" placeholder="Cant." />
             @if (form.items.length > 1) {
-              <button type="button" class="pd-item-quitar" (click)="quitarItem(i)">✕</button>
+              <button type="button" class="lb-item-quitar" (click)="quitarItem(i)">✕</button>
             }
           </div>
         }
@@ -107,8 +116,8 @@
       @if (error()) { <p class="pd-error">{{ error() }}</p> }
 
       <div class="pd-form-actions">
-        <button class="pd-btn ghost" (click)="cerrarModal()">Cancelar</button>
-        <button class="pd-btn" [disabled]="guardando() || !form.proyectoId || !form.almacenId" (click)="guardar()">
+        <button class="lb-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="lb-btn" [disabled]="guardando() || !form.proyectoId || !form.almacenId" (click)="guardar()">
           {{ guardando() ? 'Enviando...' : 'Enviar pedido' }}
         </button>
       </div>
@@ -125,7 +134,7 @@
       <p class="pd-detalle-meta">Solicitado por {{ d.solicitanteNombre }} el {{ d.creadoEn | slice:0:10 }}</p>
       @if (d.observacion) { <p class="pd-detalle-obs">"{{ d.observacion }}"</p> }
 
-      <table class="pd-table pd-detalle-table">
+      <table class="lb-table pd-detalle-table">
         <thead>
           <tr><th>Producto</th><th>Talla</th><th>Cant.</th></tr>
         </thead>
@@ -143,6 +152,9 @@
       @if (d.motivoRechazo) {
         <p class="pd-error">Rechazado: {{ d.motivoRechazo }}</p>
       }
+      @if (d.visadoPorNombre) {
+        <p class="pd-detalle-meta">Visado por {{ d.visadoPorNombre }} el {{ d.visadoEn | slice:0:10 }}</p>
+      }
       @if (d.aprobadoPorNombre) {
         <p class="pd-detalle-meta">Aprobado por {{ d.aprobadoPorNombre }} el {{ d.aprobadoEn | slice:0:10 }}</p>
       }
@@ -152,14 +164,18 @@
 
       <div class="pd-form-actions">
         @if (d.estado === 'PENDIENTE' && esMiPedido) {
-          <button class="pd-btn ghost danger" [disabled]="accionando()" (click)="cancelar()">Cancelar pedido</button>
+          <button class="lb-btn ghost danger" [disabled]="accionando()" (click)="cancelar()">Cancelar pedido</button>
         }
-        @if (d.estado === 'PENDIENTE' && authService.hasPermiso('PEDIDO_APROBAR')) {
-          <button class="pd-btn ghost danger" [disabled]="accionando()" (click)="rechazar()">Rechazar</button>
-          <button class="pd-btn" [disabled]="accionando()" (click)="aprobar()">Aprobar</button>
+        @if (d.estado === 'PENDIENTE' && authService.hasPermiso('PEDIDO_VISAR')) {
+          <button class="lb-btn ghost danger" [disabled]="accionando()" (click)="rechazarVisado()">Rechazar</button>
+          <button class="lb-btn" [disabled]="accionando()" (click)="visar()">Visar</button>
+        }
+        @if (d.estado === 'PENDIENTE_GERENTE' && authService.hasPermiso('PEDIDO_APROBAR')) {
+          <button class="lb-btn ghost danger" [disabled]="accionando()" (click)="rechazar()">Rechazar</button>
+          <button class="lb-btn" [disabled]="accionando()" (click)="aprobar()">Aprobar</button>
         }
         @if (d.estado === 'APROBADO' && authService.hasPermiso('PEDIDO_ENTREGAR')) {
-          <button class="pd-btn" [disabled]="accionando()" (click)="entregar()">Marcar como entregado</button>
+          <button class="lb-btn" [disabled]="accionando()" (click)="entregar()">Marcar como entregado</button>
         }
       </div>
     </app-base-modal>

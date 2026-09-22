@@ -1,53 +1,44 @@
-.pp-page {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 32px 24px 100px;
-  font-family: system-ui, sans-serif;
-  color: #1E3A5F;
-}
+/* Page/header/card/tabla/btn/badge/empty ahora son las clases globales .lb-* de styles.css
+   (fuente de verdad: Roles y Permisos) — NO se redefinen acá. Esta hoja solo tiene lo que es
+   propio de Personas: buscador, formularios, gestión de cargos. */
 
-.pp-header { margin-bottom: 24px; }
-.pp-eyebrow {
-  font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
-  color: #64748B; margin: 0 0 6px;
-}
-.pp-header h1 { font-size: 24px; margin: 0; }
 
-.pp-toolbar { display: flex; gap: 10px; margin-bottom: 20px; }
-.pp-search {
-  flex: 1; max-width: 360px; border: 1px solid #D6DEE5; border-radius: 6px;
-  padding: 9px 12px; font-size: 13.5px; font-family: inherit;
-}
-
-.pp-btn {
-  border-radius: 6px; padding: 9px 16px; font-weight: 600; font-size: 13.5px;
-  border: 1px solid transparent; background: #1E3A5F; color: #fff; cursor: pointer;
-  font-family: inherit;
-}
-.pp-btn.ghost { background: transparent; color: #1E3A5F; border-color: #D6DEE5; }
-
-/* Tabla: patrón D (SaaS moderno) + título estilo Odoo — confirmado en SISTEMA-DE-DISENO.md */
-.pp-table-wrap { border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; }
-.pp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.pp-table th {
-  font-size: 12.5px; font-weight: 700; color: #1E3A5F;
-  padding: 10px 14px; border-bottom: 2px solid #1E3A5F; text-align: left;
-}
-.pp-table td { padding: 12px 14px; border-bottom: 1px solid #F1F5F9; }
 .pp-row { cursor: pointer; }
-.pp-table tbody tr:hover { background: #FAFBFC; }
-.pp-empty { text-align: center; color: #94A3B8; padding: 32px 0 !important; }
-
-.pp-badge {
-  font-size: 10.5px; font-weight: 700; border-radius: 20px; padding: 3px 10px;
-  border: 1.5px solid #94A3B8; color: #64748B;
-}
-.pp-badge.on { border-color: #1B6B3A; color: #1B6B3A; }
 
 .pp-form-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px;
+  display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; row-gap: 8px; margin-bottom: 4px;
+}
+@media (max-width: 640px) {
+  .pp-form-grid { grid-template-columns: 1fr; }
 }
 .pp-form-actions {
   display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;
 }
 .pp-error { color: #C0392B; font-size: 12.5px; margin: 4px 0 0; }
+.pp-required { color: #C0392B; }
+.pp-gestionar {
+  float: right; border: 0; background: transparent; cursor: pointer; padding: 0;
+  font-size: var(--text-abril-2xs); font-weight: 600; color: var(--color-abril-standard);
+  text-decoration: underline;
+}
+.pp-section-title {
+  font-size: var(--text-abril-sm); font-weight: 700; color: var(--color-abril-standard);
+  margin: 18px 0 4px; padding-top: 12px; border-top: 1px solid var(--color-abril-border, #E5E7EB);
+}
+.pp-section-note { font-weight: 400; color: var(--color-abril-muted, #64748B); text-transform: none; letter-spacing: normal; }
+.pp-checkboxes { display: flex; align-items: center; gap: 16px; margin-top: 12px; }
+.pp-checkbox {
+  display: flex; align-items: center; gap: 6px; font-size: var(--text-abril-base);
+  color: var(--color-abril-body, #374151); cursor: pointer;
+}
+
+.pp-cargo-nuevo { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.pp-cargo-nuevo .abril-field-input { flex: 1; }
+.pp-cargo-lista { display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; }
+.pp-cargo-row { display: flex; gap: 10px; align-items: center; }
+.pp-cargo-row .abril-field-input { flex: 1; }
+.pp-cargo-activo {
+  display: flex; align-items: center; gap: 6px; font-size: var(--text-abril-sm);
+  color: var(--color-abril-muted, #4B5563); white-space: nowrap; cursor: pointer;
+}
+.pp-dni-loading { font-size: var(--text-abril-2xs); color: var(--color-abril-muted, #4B5563); margin-top: 2px; display: block; }

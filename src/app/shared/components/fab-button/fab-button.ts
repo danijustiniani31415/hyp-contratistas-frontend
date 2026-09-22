@@ -21,7 +21,11 @@ import { CommonModule } from '@angular/common';
       position: fixed;
       bottom: 24px;
       right: 24px;
-      z-index: 100;
+      /* Antes 100: más alto que el fondo oscuro de app-base-modal (z-50), así que el FAB quedaba
+         "encima" del overlay y seguía siendo clickeable con cualquier modal abierto — bug real,
+         no cosmético. 30 lo deja por encima del contenido normal de la página pero por debajo de
+         cualquier modal (backdrop 50, tarjeta 1001). */
+      z-index: 30;
       background: #1b3a2d;
       color: #fff;
       border: none;

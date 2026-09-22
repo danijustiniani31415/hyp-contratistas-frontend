@@ -7,6 +7,35 @@ Todo componente visual nuevo debe seguir estrictamente **SISTEMA-DE-DISENO.md** 
 proyecto — es la única fuente de verdad (reemplaza a DESIGN-VICTOR.md, que queda solo como
 historial). Referencia viva en `/catalogo-ui` (componentes reales, no mockups).
 
+## Las Bravas / HP Constructores — layout de páginas (`shared/components/lb-nav/`)
+
+Toda pantalla de Las Bravas (Personas, Tareo, Planillas, Pedidos, EPP, Herramientas, Compras, Guías
+de Remisión, Almacén, Catálogo, Roles y Permisos, Datos Faltantes, ...) comparte `<app-lb-nav />`.
+**Regla obligatoria, sin excepciones**: `<app-lb-nav />` va como hermano ANTES del `<div
+class="xx-page">` de la página, nunca anidado dentro de él.
+
+```html
+<!-- Correcto -->
+<app-lb-nav />
+<div class="xx-page">
+  ...
+</div>
+
+<!-- Incorrecto — NO hacer esto -->
+<div class="xx-page">
+  <app-lb-nav />
+  ...
+</div>
+```
+
+**Por qué**: cada página define su propio `max-width` en `.xx-page` (la mayoría 1080px, Tareo
+100% porque su grilla lo necesita). Si el nav queda anidado dentro de ese wrapper, hereda ese
+`max-width` y se ve con distinto ancho según la página — bug real detectado 2026-09-21 (Personas
+se veía a 3/4 de pantalla, Tareo a ancho completo, con el MISMO componente). Poniendo el nav
+siempre afuera, su ancho es independiente del `max-width` que cada página use para su contenido.
+
+Antes de dar por terminada cualquier página nueva de Las Bravas: verificar que sigue este patrón.
+
 ## Commands
 
 - `npm start` — dev server at `http://localhost:4200` (alias for `ng serve --port 4200`).

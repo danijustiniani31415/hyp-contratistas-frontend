@@ -1,9 +1,10 @@
-<div class="relative" [ngClass]="showLabel && label ? 'mt-[9px]' : ''" [style.--ss-accent]="color" [style.--ss-font-size]="fontSizePx">
+<div class="relative" [ngClass]="{'mt-[8px]': showLabel && label}" [style.--ss-accent]="color" [style.--ss-font-size]="fontSizePx">
 
-  <!-- Label opcional: se posiciona sobre el borde superior del combobox, "cortándolo" -->
+  <!-- Label normal arriba del combobox, sin cortar el borde (mismo tratamiento que
+       .abril-field-label en styles.css — un solo origen de verdad para el look del label). -->
   <label *ngIf="showLabel && label"
-    class="absolute -top-[8px] left-[9px] z-[1] px-[4px] text-[11px] font-semibold text-gray-600 pointer-events-none leading-none"
-    [ngClass]="dark ? 'bg-[#1B3A6B] text-white' : 'bg-white'">
+    class="abril-field-label"
+    [style.color]="dark ? '#fff' : null">
     {{ label }}<span *ngIf="required" class="text-red-500"> *</span>
   </label>
 
@@ -18,6 +19,7 @@
       (click)="onTriggerClick($event)"
       [disabled]="disabled"
       class="ss-trigger w-full flex items-center justify-between focus:outline-none transition-colors"
+      [class.ss-trigger-standard]="!compact && !dark"
       [class.cursor-pointer]="!disabled"
       [class.cursor-not-allowed]="disabled"
       [class.opacity-60]="disabled"
@@ -29,15 +31,15 @@
         'border border-[rgba(255,255,255,0.2)]',
         isOpen ? 'bg-[#2a4a71]' : 'bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)]'
       ] : [
-        triggerSizeClasses, 'rounded-[7px] font-medium border focus:ring-1 focus:ring-[var(--ss-accent)]/20',
+        triggerSizeClasses, 'rounded-[7px] font-normal border focus:ring-1 focus:ring-[var(--ss-accent)]/20',
         badgeStyle ? '' : 'bg-white',
-        isOpen && !badgeStyle ? 'border-[var(--ss-accent)] ring-1 ring-[var(--ss-accent)]/30' : (badgeStyle ? '' : 'border-[#e2e8f0]')
+        isOpen && !badgeStyle ? 'border-[var(--ss-accent)] ring-1 ring-[var(--ss-accent)]/30' : (badgeStyle ? '' : 'border-[color:var(--color-abril-border-strong,#D1D5DB)]')
       ]"
     >
       <span
         class="ss-trigger-label"
         [class.ss-full]="fullText"
-        [ngClass]="badgeStyle ? '' : (dark ? 'text-white' : (hasValue ? 'text-gray-800' : 'text-gray-500'))"
+        [ngClass]="badgeStyle ? '' : (dark ? 'text-white' : (hasValue ? 'text-[color:var(--color-abril-body)]' : 'text-gray-500'))"
       >
         {{ selectedLabel }}
       </span>

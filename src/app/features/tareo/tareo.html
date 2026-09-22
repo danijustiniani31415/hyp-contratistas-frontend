@@ -1,0 +1,57 @@
+<div class="lb-page lb-page-full">
+  <app-lb-page-header titulo="Tareo" />
+
+  <div class="tr-toolbar">
+    <button type="button" class="tr-nav-btn" (click)="cambiarMes(-1)">←</button>
+    <span class="tr-mes-actual">{{ meses[mes() - 1] }} {{ anio() }}</span>
+    <button type="button" class="tr-nav-btn" (click)="cambiarMes(1)">→</button>
+
+    <span class="tr-leyenda">
+      8 = normal · DL = descanso libre · F = falta · P = permiso · VC = vacaciones · DM = descanso médico
+    </span>
+
+    <button type="button" class="lb-btn" [disabled]="guardando() || loading()" (click)="guardar()">
+      {{ guardando() ? 'Guardando...' : 'Guardar tareo del mes' }}
+    </button>
+  </div>
+
+  @if (loading()) {
+    <p class="lb-empty">Cargando...</p>
+  } @else if (!personas().length) {
+    <p class="lb-empty">No hay personas con vínculo vigente para tarear.</p>
+  } @else {
+    <div class="tr-table-wrap">
+      <table class="tr-table">
+        <thead>
+          <tr>
+            <th class="tr-col-persona">Persona</th>
+            @for (d of dias(); track d) { <th class="tr-col-dia">{{ d }}</th> }
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of personas(); track p.personaId) {
+            <tr>
+              <td class="tr-col-persona">
+                <strong>{{ p.nombreCompleto }}</strong>
+                <span class="tr-cargo">{{ p.cargoNombre ?? '—' }}</span>
+              </td>
+              @for (celda of p.dias; track celda.dia) {
+                <td class="tr-col-dia">
+                  <select
+                    class="tr-celda"
+                    [class.tr-celda-vacia]="!codigoDe(celda)"
+                    [ngModel]="codigoDe(celda)"
+                    (ngModelChange)="setCodigo(celda, $event)"
+                  >
+                    <option value=""></option>
+                    @for (c of codigos; track c) { <option [value]="c">{{ c }}</option> }
+                  </select>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

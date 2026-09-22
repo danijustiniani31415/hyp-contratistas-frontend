@@ -1,31 +1,27 @@
-<div class="am-page">
-  <app-lb-nav />
-  <header class="am-header">
-    <p class="am-eyebrow">HP Constructores Generales · Las Bravas</p>
-    <h1>Almacén / Kardex</h1>
-  </header>
+<div class="lb-page">
+  <app-lb-page-header titulo="Almacén / Kardex">
+    <div class="am-filtro-select">
+      <app-search-select
+        [options]="almacenes()"
+        displayField="nombre"
+        [(value)]="almacenFiltro"
+        [showLabel]="false"
+        placeholder="Todos los almacenes"
+        (valueChange)="onFiltroChange()"
+      />
+    </div>
+    <div class="lb-search">
+      <input
+        type="text"
+        placeholder="Buscar producto por nombre o código..."
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput()"
+      />
+    </div>
+  </app-lb-page-header>
 
-  <div class="am-toolbar">
-    <app-search-select
-      [options]="almacenes()"
-      displayField="nombre"
-      [(value)]="almacenFiltro"
-      label="Almacén"
-      placeholder="Todos los almacenes"
-      (valueChange)="onFiltroChange()"
-    />
-    <input
-      class="am-search"
-      type="text"
-      placeholder="Buscar producto..."
-      [(ngModel)]="search"
-      (keyup.enter)="onSearch()"
-    />
-    <button class="am-btn" (click)="onSearch()">Buscar</button>
-  </div>
-
-  <div class="am-table-wrap">
-    <table class="am-table">
+  <div class="lb-table-wrap">
+    <table class="lb-table">
       <thead>
         <tr>
           <th>Producto</th>
@@ -37,9 +33,9 @@
       </thead>
       <tbody>
         @if (loading()) {
-          <tr><td colspan="5" class="am-empty">Cargando...</td></tr>
+          <tr><td colspan="5" class="lb-empty">Cargando...</td></tr>
         } @else if (!stock().length) {
-          <tr><td colspan="5" class="am-empty">Sin stock registrado todavía.</td></tr>
+          <tr><td colspan="5" class="lb-empty">Sin stock registrado todavía.</td></tr>
         } @else {
           @for (s of stock(); track s.id) {
             <tr [class.bajo]="s.bajoMinimo">
@@ -65,9 +61,9 @@
   <section class="am-kardex">
     <h2>Movimientos recientes</h2>
     @if (!movimientos().length) {
-      <p class="am-empty">Sin movimientos todavía.</p>
+      <p class="lb-empty">Sin movimientos todavía.</p>
     } @else {
-      <table class="am-table">
+      <table class="lb-table">
         <thead>
           <tr>
             <th>Fecha</th>
@@ -140,8 +136,8 @@
       @if (error()) { <p class="am-error">{{ error() }}</p> }
 
       <div class="am-form-actions">
-        <button class="am-btn ghost" (click)="cerrarModal()">Cancelar</button>
-        <button class="am-btn" [disabled]="guardando() || !form.almacenId || !form.productoId || !form.cantidad" (click)="guardar()">
+        <button class="lb-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="lb-btn" [disabled]="guardando() || !form.almacenId || !form.productoId || !form.cantidad" (click)="guardar()">
           {{ guardando() ? 'Guardando...' : 'Registrar' }}
         </button>
       </div>

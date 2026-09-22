@@ -6,7 +6,7 @@ import { SearchSelect } from '../../shared/components/search-select/search-selec
 import { BaseModal } from '../../shared/components/base-modal/base-modal';
 import { FabButton } from '../../shared/components/fab-button/fab-button';
 import { Paginator } from '../../shared/components/paginator/paginator';
-import { LbNav } from '../../shared/components/lb-nav/lb-nav';
+import { LbPageHeader } from '../../shared/components/lb-page-header/lb-page-header';
 import {
   ComprasService,
   Proveedor,
@@ -25,12 +25,13 @@ const ESTADOS = ['PENDIENTE', 'RECIBIDA_PARCIAL', 'RECIBIDA', 'CANCELADA'];
 @Component({
   selector: 'app-compras',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, BaseModal, FabButton, Paginator, LbNav],
+  imports: [CommonModule, FormsModule, SearchSelect, BaseModal, FabButton, Paginator, LbPageHeader],
   templateUrl: './compras.html',
   styleUrl: './compras.css',
 })
 export class Compras implements OnInit {
   ordenes = signal<OrdenCompraListItem[]>([]);
+  search = '';
   estadoFiltro = '';
   estados = ESTADOS;
   page = signal(1);
@@ -72,7 +73,7 @@ export class Compras implements OnInit {
 
   cargar(): void {
     this.loading.set(true);
-    this.service.list(this.estadoFiltro, this.page(), this.pageSize).subscribe({
+    this.service.list(this.search, this.estadoFiltro, this.page(), this.pageSize).subscribe({
       next: (res) => {
         this.ordenes.set(res.data);
         this.totalRecords.set(res.totalRecords);
@@ -90,6 +91,12 @@ export class Compras implements OnInit {
   onFiltroChange(): void {
     this.page.set(1);
     this.cargar();
+  }
+
+  private buscarDebounce?: ReturnType<typeof setTimeout>;
+  onSearchInput(): void {
+    clearTimeout(this.buscarDebounce);
+    this.buscarDebounce = setTimeout(() => this.onFiltroChange(), 350);
   }
 
   onPageChange(page: number): void {

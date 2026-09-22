@@ -236,10 +236,16 @@ export class SearchSelect implements OnDestroy {
       return this.fullText ? 'min-h-[26px] py-[3px] text-[11px] pl-[8px] pr-[6px]' : 'h-[26px] text-[11px] pl-[8px] pr-[6px]';
     }
     if (this.dark) return this.fullText ? 'min-h-[30px] py-[5px] text-[11px] pl-[10px] pr-[8px]' : 'h-[30px] text-[11px] pl-[10px] pr-[8px]';
-    // Variante por defecto (formulario normal, no tabla/filtro denso): 44px + 16px, mismo
-    // estándar que .abril-field-input y el login — target táctil + sin riesgo de que iOS haga
-    // zoom (ese bug es de <input>/<textarea>, no de este botón, pero igual se pareja la letra).
-    return this.fullText ? 'min-h-[44px] py-[10px] text-[16px] pl-[12px] pr-[10px]' : 'h-[44px] text-[16px] pl-[12px] pr-[10px]';
+    // Variante por defecto (formulario normal, no tabla/filtro denso): el alto/padding vertical
+    // NO se declara acá como clase Tailwind — lo fija exclusivamente `.ss-trigger-standard` en
+    // search-select.css (box-sizing/min-height/padding-top/bottom, calcado de .abril-field-input).
+    // Antes esta variante también traía su propia `h-[var(--control-height)]`/`py-[10px]` Tailwind,
+    // y con ambas reglas presentes a la vez el resultado dependía de cuál generara/ganara la
+    // cascada — se midió 2026-09-22 un trigger de 47px contra un input vecino de 53px en la misma
+    // fila. Con una sola fuente para el alto (el CSS del componente) no hay ambigüedad posible.
+    return this.fullText
+      ? `text-[length:var(--text-abril-base)] pl-[12px] pr-[10px]`
+      : `text-[length:var(--text-abril-base)] pl-[12px] pr-[10px]`;
   }
 
   /**
@@ -248,10 +254,13 @@ export class SearchSelect implements OnDestroy {
    * `.ss-trigger-label`/`.ss-option` tienen su propio font-size fijo en search-select.css que
    * ignoraría el tamaño del botón por herencia. Misma lógica de tamaños que triggerSizeClasses.
    */
-  get fontSizePx(): string {
+  get fontSizePx(): string | null {
     if (this.compact) return this.dark ? '10px' : '11px';
     if (this.dark) return '11px';
-    return '16px';
+    // Variante por defecto: no forzar un valor fijo acá — el fallback de var() en
+    // search-select.css apunta al token global --text-abril-base (styles.css), que ya es
+    // responsivo (16px móvil/tablet, 14px escritorio). Mismo token que .abril-field-input.
+    return null;
   }
 
   get hasValue(): boolean {

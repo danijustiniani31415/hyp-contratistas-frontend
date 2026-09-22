@@ -5,7 +5,7 @@ import { SearchSelect } from '../../shared/components/search-select/search-selec
 import { BaseModal } from '../../shared/components/base-modal/base-modal';
 import { FabButton } from '../../shared/components/fab-button/fab-button';
 import { Paginator } from '../../shared/components/paginator/paginator';
-import { LbNav } from '../../shared/components/lb-nav/lb-nav';
+import { LbPageHeader } from '../../shared/components/lb-page-header/lb-page-header';
 import {
   CatalogoService,
   ProductoListItem,
@@ -20,7 +20,7 @@ const UNIDADES_MEDIDA = ['UND', 'PAR', 'KG', 'GAL', 'M', 'M2', 'M3', 'L', 'ROLLO
 @Component({
   selector: 'app-catalogo',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, BaseModal, FabButton, Paginator, LbNav],
+  imports: [CommonModule, FormsModule, SearchSelect, BaseModal, FabButton, Paginator, LbPageHeader],
   templateUrl: './catalogo.html',
   styleUrl: './catalogo.css',
 })
@@ -67,6 +67,12 @@ export class Catalogo implements OnInit {
   onSearch(): void {
     this.page.set(1);
     this.cargar();
+  }
+
+  private buscarDebounce?: ReturnType<typeof setTimeout>;
+  onSearchInput(): void {
+    clearTimeout(this.buscarDebounce);
+    this.buscarDebounce = setTimeout(() => this.onSearch(), 350);
   }
 
   onPageChange(page: number): void {

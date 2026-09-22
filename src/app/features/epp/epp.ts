@@ -5,7 +5,7 @@ import { SearchSelect } from '../../shared/components/search-select/search-selec
 import { BaseModal } from '../../shared/components/base-modal/base-modal';
 import { FabButton } from '../../shared/components/fab-button/fab-button';
 import { Paginator } from '../../shared/components/paginator/paginator';
-import { LbNav } from '../../shared/components/lb-nav/lb-nav';
+import { LbPageHeader } from '../../shared/components/lb-page-header/lb-page-header';
 import {
   EppService,
   EntregaEppListItem,
@@ -19,12 +19,13 @@ import { LbAuthService } from '../../core/services/lb-auth.service';
 @Component({
   selector: 'app-epp',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, BaseModal, FabButton, Paginator, LbNav],
+  imports: [CommonModule, FormsModule, SearchSelect, BaseModal, FabButton, Paginator, LbPageHeader],
   templateUrl: './epp.html',
   styleUrl: './epp.css',
 })
 export class Epp implements OnInit {
   entregas = signal<EntregaEppListItem[]>([]);
+  search = '';
   page = signal(1);
   pageSize = 20;
   totalRecords = signal(0);
@@ -58,7 +59,7 @@ export class Epp implements OnInit {
 
   cargar(): void {
     this.loading.set(true);
-    this.service.list(null, this.page(), this.pageSize).subscribe({
+    this.service.list(this.search, null, this.page(), this.pageSize).subscribe({
       next: (res) => {
         this.entregas.set(res.data);
         this.totalRecords.set(res.totalRecords);
@@ -67,6 +68,17 @@ export class Epp implements OnInit {
       },
       error: () => this.loading.set(false),
     });
+  }
+
+  onSearch(): void {
+    this.page.set(1);
+    this.cargar();
+  }
+
+  private buscarDebounce?: ReturnType<typeof setTimeout>;
+  onSearchInput(): void {
+    clearTimeout(this.buscarDebounce);
+    this.buscarDebounce = setTimeout(() => this.onSearch(), 350);
   }
 
   onPageChange(page: number): void {

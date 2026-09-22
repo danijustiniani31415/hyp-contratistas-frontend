@@ -1,0 +1,15 @@
+@if (grupoActivo) {
+  <nav class="lb-tabs">
+    @for (item of grupoActivo.items; track item.route) {
+      <a
+        class="lb-tabs-item"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: false }"
+      >
+        <i class="ti {{ item.icon }}"></i>
+        {{ item.label }}
+      </a>
+    }
+  </nav>
+}

@@ -137,6 +137,55 @@
   --radius-lg:   14px;
   --radius-xl:   20px;
   --radius-pill: 999px;
+
+  /* ── Escala tipográfica ──────────────────────────────
+     Mobile-first: estos son los valores de base (celular/tablet, <1024px).
+     Un solo origen de verdad — nueva pantalla nueva referencia var(--text-abril-*),
+     nunca un px/rem suelto. Ver el bloque "@media (min-width: 1024px)" más abajo
+     (fuera de @theme) para los valores de escritorio de cada paso que cambia.
+     Nomenclatura: mismo prefijo "abril" que --color-abril-* (evita pisar la
+     escala text-xs/text-sm/... por defecto de Tailwind, que sigue libre para
+     lo que no sea parte de este sistema). */
+  --text-abril-2xs:  10px;  /* eyebrows, badges chicos */
+  --text-abril-xs:   11px;  /* labels flotantes, th de tabla */
+  --text-abril-sm:   12.5px; /* texto secundario, mensajes de error */
+  --text-abril-base: 16px;  /* cuerpo, inputs, botones, celdas de tabla — 16px en
+                                móvil evita el zoom automático de iOS Safari */
+  --text-abril-md:   16px;  /* texto enfatizado, subtítulos */
+  --text-abril-lg:   18px;  /* h3 / encabezado de sección */
+  --text-abril-xl:   22px;  /* h1 de página */
+  --text-abril-2xl:  28px;  /* números grandes de dashboard */
+
+  /* ── Escala de espaciado (grilla de 4px) ─────────────
+     Todo padding/margin/gap nuevo se arma sumando estos pasos, nunca un valor
+     suelto (evita el "¿12 o 14px?" que no se puede justificar ante nadie). */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Alto estándar de controles (input/select/botón/combobox) — 44px en móvil/tablet
+     (mínimo táctil de Apple/Material), 38px en escritorio (ver media query de abajo). */
+  --control-height: 44px;
+}
+
+/* Escritorio (mouse, ≥1024px, sin riesgo de zoom de iOS): los pasos de texto que
+   existen sobre todo para no perder toque/legibilidad en celular se compactan acá,
+   en el ÚNICO lugar que los redefine — todo lo que use var(--text-abril-*) (CSS
+   propio y utilidades de Tailwind generadas desde @theme) hereda el cambio solo,
+   sin que cada componente tenga que declarar su propio @media. */
+@media (min-width: 1024px) {
+  :root {
+    --text-abril-sm:   11.5px;
+    --text-abril-base: 12.5px;
+    --text-abril-md:   13px;
+    --control-height:  32px;
+  }
 }
 
 /* ── Cards ──────────────────────────────────────────────────── */
@@ -151,10 +200,10 @@
 
 /* ── Botón primario ─────────────────────────────────────────── */
 .btn-primary {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 0 16px; height: 38px;
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: 0 var(--space-4); height: 38px;
   background: var(--color-abril-primary);
-  color: #fff; font-size: 0.875rem; font-weight: 500;
+  color: #fff; font-size: var(--text-abril-base); font-weight: 500;
   border-radius: var(--radius-md); border: none; cursor: pointer;
   transition: background 0.15s ease;
 }
@@ -163,10 +212,10 @@
 
 /* ── Botón ghost ────────────────────────────────────────────── */
 .btn-ghost {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 0 14px; height: 38px;
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: 0 var(--space-4); height: 38px;
   background: transparent;
-  color: var(--color-abril-primary); font-size: 0.875rem; font-weight: 500;
+  color: var(--color-abril-primary); font-size: var(--text-abril-base); font-weight: 500;
   border-radius: var(--radius-md);
   border: 1.5px solid var(--color-abril-primary);
   cursor: pointer; transition: background 0.15s ease;
@@ -175,10 +224,10 @@
 
 /* ── Botón accent ───────────────────────────────────────────── */
 .btn-accent {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 0 16px; height: 38px;
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: 0 var(--space-4); height: 38px;
   background: var(--color-abril-accent);
-  color: #fff; font-size: 0.875rem; font-weight: 500;
+  color: #fff; font-size: var(--text-abril-base); font-weight: 500;
   border-radius: var(--radius-md); border: none; cursor: pointer;
   transition: background 0.15s ease;
 }
@@ -187,8 +236,8 @@
 /* ── Badges de estado ───────────────────────────────────────── */
 .badge {
   display: inline-flex; align-items: center;
-  padding: 2px 10px; border-radius: var(--radius-pill);
-  font-size: 0.72rem; font-weight: 600; white-space: nowrap;
+  padding: 2px var(--space-3); border-radius: var(--radius-pill);
+  font-size: var(--text-abril-2xs); font-weight: 600; white-space: nowrap;
 }
 .badge-success  { background: var(--color-abril-success-light);  color: var(--color-abril-success-dark); }
 .badge-warning  { background: var(--color-abril-warning-light);  color: var(--color-abril-warning-dark); }
@@ -203,14 +252,14 @@
    ".thead tr" tiene más especificidad que ".thead" y le ganaba siempre,
    pintando el encabezado verde (--color-abril-primary) en vez de teal en
    TODA tabla de la app, sin importar el orden de las reglas en el archivo. */
-.abril-table { width: 100%; font-size: 0.875rem; border-collapse: collapse; }
+.abril-table { width: 100%; font-size: var(--text-abril-base); border-collapse: collapse; }
 .abril-table th {
-  text-align: left; padding: 10px 16px;
-  font-weight: 600; font-size: 0.8rem;
+  text-align: left; padding: var(--space-3) var(--space-4);
+  font-weight: 600; font-size: var(--text-abril-xs);
   text-transform: uppercase; letter-spacing: 0.04em;
   white-space: nowrap;
 }
-.abril-table td { padding: 10px 16px; border-bottom: 1px solid var(--color-abril-border); color: var(--color-abril-body); }
+.abril-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-abril-border); color: var(--color-abril-body); }
 .abril-table tbody tr { transition: background 0.1s; cursor: pointer; }
 
 /* ── Wrapper de tabla estándar ──────────────────────────────────────
@@ -237,10 +286,10 @@
 
 /* ── Input estándar ─────────────────────────────────────────── */
 .abril-input {
-  height: 38px; padding: 0 12px; width: 100%;
+  height: 38px; padding: 0 var(--space-3); width: 100%;
   border: 1.5px solid var(--color-abril-border-strong);
   border-radius: var(--radius-md);
-  font-size: 0.875rem; color: var(--color-abril-ink);
+  font-size: var(--text-abril-base); color: var(--color-abril-ink);
   background: var(--color-abril-surface);
   transition: border-color 0.15s, box-shadow 0.15s;
   outline: none;
@@ -253,46 +302,39 @@
 
 /* ── Label ──────────────────────────────────────────────────── */
 .abril-label {
-  display: block; margin-bottom: 4px;
-  font-size: 0.78rem; font-weight: 600;
+  display: block; margin-bottom: var(--space-1);
+  font-size: var(--text-abril-xs); font-weight: 600;
   color: var(--color-abril-primary-dark);
   text-transform: uppercase; letter-spacing: 0.04em;
 }
 
-/* ── Campo de wizard estándar (2026): label flotante que corta el borde
-   superior del input, mismo tratamiento visual que ya usa app-search-select
-   internamente. Único origen de verdad — no reimplementar esto por página
-   (era el bug: RAC/OPT/Inspección/Accidentes tenían 4 copias locales
-   ligeramente distintas, una de ellas con position:relative faltante).
+/* ── Campo de wizard estándar (2026-09, v2): label normal ARRIBA del campo, sin cortar el
+   borde (reemplaza el label flotante anterior — decisión explícita del usuario, "debe estar
+   encima, no en medio"). Único origen de verdad — no reimplementar esto por página.
    Uso: <div class="abril-field"><label class="abril-field-label">X</label>
    <input class="abril-field-input" ...></div>. Funciona con <input>,
-   <select> y <textarea>. ──────────────────────────────────────────── */
-.abril-field { position: relative; margin-top: 9px; }
+   <select> y <textarea>. Mismo tratamiento en app-search-select (ver search-select.html). ──── */
+.abril-field { margin-top: var(--space-2); }
 
 .abril-field-label {
-  position: absolute;
-  top: -8px;
-  left: 9px;
-  z-index: 1;
-  background: var(--color-abril-surface, #fff);
-  padding: 0 4px;
-  font-size: 11px;
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-abril-xs);
   font-weight: 600;
   color: var(--color-abril-muted, #4B5563);
-  line-height: 1;
-  pointer-events: none;
-  white-space: nowrap;
+  line-height: 1.2;
 }
 
 .abril-field-input {
   width: 100%;
-  min-height: 44px;
-  padding: 9px 11px;
+  min-height: var(--control-height);
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-abril-border-strong, #D1D5DB);
   border-radius: var(--radius-standard, 7px);
-  /* 16px: evita el zoom automático de iOS Safari en <input>/<textarea>/<select> con letra
-     chica, y de paso calza con app-search-select (misma variante, ver search-select.css). */
-  font-size: 16px;
+  /* var(--text-abril-base): 16px en móvil/tablet (evita el zoom automático de iOS Safari),
+     14px en escritorio — un solo lugar decide esto, ver el @media de --text-abril-* arriba.
+     De paso calza con app-search-select (misma variante, ver search-select.css). */
+  font-size: var(--text-abril-base);
   color: var(--color-abril-body, #374151);
   background: var(--color-abril-surface, #fff);
   box-sizing: border-box;
@@ -303,7 +345,17 @@
 .abril-field-input:focus { border-color: var(--color-abril-standard); }
 .abril-field-input::placeholder { color: var(--color-abril-placeholder, #9CA3AF); }
 textarea.abril-field-input { resize: vertical; }
-select.abril-field-input { cursor: pointer; }
+/* Flecha propia en vez de la nativa del navegador (distinta por SO/navegador y visualmente
+   desalineada con el resto de combos del sistema, que son app-search-select con su propio ícono). */
+select.abril-field-input {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
 
 /* ── Footer de app-abril-modal-panel / app-base-modal ─────────────────
    Global (no scoped) a propósito: el contenido de [modalFooter] se proyecta
@@ -781,3 +833,169 @@ app-layout .full-page-wrapper app-header .sm\:hidden {
 .swal-udp-popup .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
   background-color: #C0392B !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Las Bravas / HP Constructores — estilo ÚNICO para TODAS las pantallas.
+   Fuente de verdad: Roles y Permisos (la pantalla de referencia, confirmada
+   por el usuario 2026-09-22). Ninguna pantalla nueva reinventa su propio
+   header/página — usa <app-lb-page-header> + estas clases, siempre.
+   ══════════════════════════════════════════════════════════════════════ */
+.lb-page {
+  max-width: 1600px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+  /* Antes 100px abajo "por si acaso" el FAB tapaba algo — el FAB flota con position:fixed y no
+     debería nunca reservar espacio de layout; ese padding solo restaba alto útil a la tabla. */
+  padding: 24px 28px;
+  font-family: system-ui, sans-serif;
+  color: #1E3A5F;
+}
+/* El host de <app-fab> no debe contar como caja de layout (ni sumar al `gap` de
+   .lb-page-fill) — el botón real adentro ya es position:fixed y flota encima, no en el flujo. */
+app-fab { display: contents; }
+
+/* Filtros en Las Bravas: solo el ícono, sin la palabra "Filtros" — pedido explícito del usuario
+   2026-09-22, con una referencia visual tipo botón cuadrado. Se sobreescribe acá, con selector
+   acotado a .lb-shell, para NO tocar el componente compartido (`app-filter-trigger`) que también
+   usa Plataforma Abril con su versión normal (ícono + texto). */
+.lb-shell .filter-trigger-btn { padding: 9px; gap: 0; }
+.lb-shell .filter-trigger-btn .btn-label { display: none; }
+
+/* Buscador tipo píldora con lupa adentro — mismo criterio: clase nueva, no toca `.abril-*`.
+   Ancho fijo ACÁ, una sola vez: antes cada página traía su propio wrapper (cp-search-wrap,
+   pp-search-wrap, am-search-field, etc.) con un ancho distinto (280-320px) elegido a ojo, y el
+   placeholder más largo ("Buscar por destinatario o almacén...") se cortaba en varias pantallas —
+   bug real, detectado 2026-09-22. 340px es suficiente para el placeholder más largo del sistema
+   con el font-size de escritorio; en móvil el input ya se estira a 100% vía max-width. */
+.lb-search { position: relative; width: 340px; max-width: 100%; flex-shrink: 0; }
+.lb-search input {
+  width: 100%; height: var(--control-height); box-sizing: border-box;
+  border: 1px solid #D1D5DB; border-radius: 999px;
+  padding: 0 16px 0 38px; font-size: var(--text-abril-base); font-family: inherit;
+  outline: none; transition: border-color 0.15s;
+}
+.lb-search input:focus { border-color: #1E3A5F; }
+.lb-search::before {
+  content: ''; position: absolute; left: 14px; top: 50%; width: 14px; height: 14px;
+  transform: translateY(-50%);
+  background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+.lb-page-wide { max-width: 1200px; }
+/* Excepción real, no capricho: la grilla de Tareo necesita una columna por día del mes —
+   forzarla a 1080px la deja casi ilegible, con scroll horizontal desde el día 10. */
+.lb-page-full { max-width: 100%; }
+
+.lb-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.lb-page-header-actions { display: flex; align-items: center; gap: 10px; }
+.lb-page-header-actions { display: flex; gap: 10px; flex-shrink: 0; }
+.lb-eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+  color: #64748B; margin: 0 0 6px;
+}
+.lb-page-header h1 { font-size: 24px; margin: 0; font-weight: 700; }
+.lb-hint { font-size: 13px; color: #64748B; max-width: 640px; margin: 4px 0 0; line-height: 1.5; }
+
+.lb-card {
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 20px 22px;
+  background: #fff;
+}
+
+.lb-btn {
+  border-radius: 6px; padding: 9px 16px; font-weight: 600; font-size: 13px;
+  border: 1px solid transparent; background: #1E3A5F; color: #fff; cursor: pointer;
+  font-family: inherit; white-space: nowrap; transition: background 0.15s ease;
+}
+.lb-btn:hover:not(:disabled) { background: #16304D; }
+.lb-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.lb-btn.ghost { background: transparent; color: #1E3A5F; border-color: #D6DEE5; }
+.lb-btn.ghost:hover { background: #F8FAFC; }
+.lb-btn.danger { color: #C0392B; border-color: #F5C6C6; }
+.lb-btn.small { padding: 5px 10px; font-size: 12.5px; }
+
+/* Fila de "producto + talla + cantidad [+ costo/unidad] + quitar" en los modals de crear
+   Pedido/Compra/EPP/Herramienta/Guía — única fuente de verdad. Antes cada módulo tenía su propia
+   copia casi idéntica (pd-item-row, co-item-row, ep-item-row, he-item-row, gr-item-row) con su
+   propio padding fijo que rompía el alto compartido con app-search-select (--control-height) —
+   bug real, detectado 2026-09-22. Flexbox en vez de grid-template-columns fijo: cada módulo agrega
+   0-2 campos extra (costo, unidad) sin tener que redeclarar el número de columnas. */
+.lb-items { margin-top: 14px; }
+.lb-items-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.lb-items-header h3 { font-size: 13px; margin: 0; color: #39536B; }
+
+.lb-item-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.lb-item-row > app-search-select { flex: 1 1 auto; min-width: 0; }
+.lb-item-talla { width: 90px; flex-shrink: 0; }
+.lb-item-cant { width: 80px; flex-shrink: 0; }
+.lb-item-costo, .lb-item-unidad { width: 90px; flex-shrink: 0; }
+.lb-item-quitar {
+  background: transparent; border: 0; color: #C0392B; cursor: pointer;
+  font-size: 14px; padding: 0; font-family: inherit; flex-shrink: 0;
+}
+
+.lb-table-wrap {
+  border: 1px solid #E5E7EB; border-radius: 8px; overflow: hidden;
+  margin-top: 20px;
+}
+
+/* ── Página de lista "a full alto" ──────────────────────────────────────
+   Un solo contenedor flex con un solo `gap` — antes header/toolbar tenían su
+   propio margin-bottom Y la tabla su propio margin-top: se sumaban (espacio
+   doblado, justo el bug reportado 2026-09-22). Acá el gap es la ÚNICA fuente
+   de espaciado entre header/toolbar/tabla, y la tabla se estira para llenar
+   el alto disponible con su propio scroll interno — nunca un bloque corto
+   con hueco vacío debajo, nunca doble margen.
+   Uso: <div class="lb-page lb-page-fill"> en vez de solo <div class="lb-page">. */
+.lb-page-fill {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 16px;
+}
+.lb-page-fill .lb-page-header,
+.lb-page-fill > .pp-toolbar, .lb-page-fill > .pd-toolbar, .lb-page-fill > .co-toolbar,
+.lb-page-fill > .gr-toolbar, .lb-page-fill > .he-toolbar, .lb-page-fill > .cp-toolbar,
+.lb-page-fill > .am-toolbar, .lb-page-fill > .ep-toolbar {
+  flex-shrink: 0;
+  margin: 0;
+}
+.lb-page-fill .lb-table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: 0;
+}
+.lb-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.lb-table th {
+  position: sticky; top: 0; z-index: 1;
+  background: #fff;
+  font-size: 11px; font-weight: 700; color: #1E3A5F;
+  text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 10px 14px; border-bottom: 2px solid #1E3A5F; text-align: left;
+}
+.lb-table td { padding: 12px 14px; border-bottom: 1px solid #F1F5F9; }
+.lb-table tbody tr:hover { background: #FAFBFC; }
+
+.lb-empty { text-align: center; color: #94A3B8; padding: 24px 0; }
+
+.lb-badge {
+  font-size: 10.5px; font-weight: 700; border-radius: 20px; padding: 3px 10px;
+  border: 1.5px solid #94A3B8; color: #64748B;
+}
+.lb-badge.on { border-color: #1B6B3A; color: #1B6B3A; }
+.lb-badge.closed { border-color: #64748B; color: #64748B; background: #F1F5F9; }

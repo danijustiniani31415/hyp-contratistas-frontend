@@ -23,37 +23,40 @@
     </button>
   </div>
 } @else {
+<!--
+  El fondo (backdrop) NUNCA scrollea — cubre exactamente el viewport (fixed inset-0) y solo centra
+  la tarjeta con flex. Antes el backdrop tenía su propio overflow-y-auto + un wrapper interno
+  min-h-screen/py-10: con un modal de contenido alto (ej. "Gestionar cargos"), ESE backdrop se
+  volvía scrolleable — como cubre toda la pantalla, esa barra se veía pegada al borde de la
+  ventana, indistinguible de un scroll de página — y coexistía con el scroll interno de la propia
+  tarjeta/lista, dando la sensación real de "doble scroll" y de modal descentrado. Ahora solo la
+  TARJETA scrollea (max-h-[90vh] overflow-y-auto): un único scroll, y el modal se mantiene
+  centrado siempre porque el backdrop en sí nunca se mueve.
+-->
 <div
-  class="fixed inset-0 bg-black/40 z-[50]"
-  [class.overflow-y-auto]="!height"
-  [class.overflow-hidden]="!!height"
-  [class.flex]="!!height"
-  [class.items-center]="!!height"
-  [class.justify-center]="!!height"
+  class="fixed inset-0 bg-black/40 z-[50] flex items-center justify-center overflow-hidden"
   (mousedown)="onBackdropMousedown()"
   (click)="onBackdropClick()">
 
-  <div [class]="height ? '' : 'min-h-screen flex items-center justify-center py-10'">
+  <div
+    [class]="'base-modal-card ' + (height ? '' : 'm-5 ') + 'bg-white rounded-lg shadow-xl relative z-[1001] ' + width + (height ? ' ' + height + ' flex flex-col overflow-hidden' : ' max-h-[90vh] overflow-y-auto')"
+    (mousedown)="$event.stopPropagation()"
+    (click)="$event.stopPropagation()">
+
     <div
-      [class]="'base-modal-card ' + (height ? '' : 'm-5 ') + 'bg-white rounded-lg shadow-xl relative z-[1001] ' + width + (height ? ' ' + height + ' flex flex-col overflow-hidden' : '')"
-      (mousedown)="$event.stopPropagation()"
-      (click)="$event.stopPropagation()">
-
-      <div
-        [class]="height ? 'px-5 pt-3 pb-0 flex flex-col flex-1 min-h-0 overflow-hidden' : 'p-[20px] flex flex-col'"
-        (input)="markDirty()"
-        (change)="markDirty()"
-        (modalfieldchange)="markDirty()">
-        <h1 [class]="(height ? 'text-base mb-2' : 'text-lg mb-3') + ' font-bold text-center flex-shrink-0 pr-6'" style="color:var(--color-abril-standard)">{{ title }}</h1>
-        <ng-container *ngTemplateOutlet="projectedContent"></ng-container>
-      </div>
-
-      <button class="absolute top-3 right-4 cursor-pointer" (click)="close()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20 20L4 4M20 4L4 20" [attr.stroke]="closeColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
-      </button>
+      [class]="height ? 'px-5 pt-3 pb-0 flex flex-col flex-1 min-h-0 overflow-hidden' : 'p-[20px] flex flex-col'"
+      (input)="markDirty()"
+      (change)="markDirty()"
+      (modalfieldchange)="markDirty()">
+      <h1 [class]="(height ? 'text-base mb-2' : 'text-lg mb-3') + ' font-bold text-center flex-shrink-0 pr-6'" style="color:var(--color-abril-standard)">{{ title }}</h1>
+      <ng-container *ngTemplateOutlet="projectedContent"></ng-container>
     </div>
+
+    <button class="absolute top-3 right-4 cursor-pointer" (click)="close()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 20L4 4M20 4L4 20" [attr.stroke]="closeColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+    </button>
   </div>
 </div>
 }

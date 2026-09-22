@@ -1,18 +1,13 @@
-<div class="rp-page">
-  <app-lb-nav />
-  <header class="rp-header">
-    <p class="rp-eyebrow">HP Constructores Generales · Las Bravas</p>
-    <h1>Roles y Permisos</h1>
-    <p class="rp-hint">
-      Cada rol trae consigo un conjunto de permisos. Marca o desmarca qué puede ver/hacer cada rol —
-      todo usuario con ese rol hereda el cambio automáticamente, sin tocarlo persona por persona.
-    </p>
-  </header>
+<div class="lb-page">
+  <app-lb-page-header
+    titulo="Roles y Permisos"
+    subtitulo="Cada rol trae consigo un conjunto de permisos. Marca o desmarca qué puede ver/hacer cada rol — todo usuario con ese rol hereda el cambio automáticamente, sin tocarlo persona por persona."
+  />
 
   <div class="rp-layout">
     <aside class="rp-roles-list">
       @if (loading()) {
-        <p class="rp-empty">Cargando roles...</p>
+        <p class="lb-empty">Cargando roles...</p>
       } @else {
         @for (rol of roles(); track rol.id) {
           <button
@@ -35,7 +30,7 @@
             <h2>{{ rol.nombre }}</h2>
             @if (rol.descripcion) { <p class="rp-rol-desc">{{ rol.descripcion }}</p> }
           </div>
-          <button type="button" class="rp-btn" [disabled]="guardando()" (click)="guardar()">
+          <button type="button" class="lb-btn" [disabled]="guardando()" (click)="guardar()">
             {{ guardando() ? 'Guardando...' : 'Guardar cambios' }}
           </button>
         </div>
@@ -63,7 +58,7 @@
           }
         </div>
       } @else {
-        <p class="rp-empty">Selecciona un rol de la lista.</p>
+        <p class="lb-empty">Selecciona un rol de la lista.</p>
       }
     </section>
   </div>

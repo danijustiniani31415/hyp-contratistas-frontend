@@ -1,0 +1,35 @@
+<aside class="lb-sb">
+  <div class="lb-sb-logo">
+    <div class="lb-sb-logo-mark">H&P</div>
+    <div class="lb-sb-logo-text">
+      <strong>H&amp;P Constructores</strong>
+      <span>Las Bravas · Proyecto</span>
+    </div>
+  </div>
+
+  <nav class="lb-sb-nav">
+    @for (grupo of grupos; track grupo.key) {
+      <button type="button" class="lb-sb-item" [class.active]="grupoActivoKey === grupo.key" (click)="irAGrupo(grupo)">
+        <i class="ti {{ grupo.icon }}"></i>
+        <span>{{ grupo.label }}</span>
+      </button>
+    }
+  </nav>
+
+  <div class="lb-sb-profile" [class.menu-open]="accountMenuOpen" (click)="toggleAccountMenu()">
+    <div class="lb-sb-avatar">{{ userIniciales }}</div>
+    <div class="lb-sb-profile-info">
+      <span class="lb-sb-profile-name">{{ userNombre ?? 'Usuario' }}</span>
+      <span class="lb-sb-profile-role">{{ userRoles }}</span>
+    </div>
+    <i class="ti ti-chevron-up lb-sb-chev" [class.rotated]="!accountMenuOpen"></i>
+
+    @if (accountMenuOpen) {
+      <div class="lb-sb-account-menu">
+        <button type="button" class="lb-sb-logout" (click)="logout()">
+          <i class="ti ti-logout-2"></i> Cerrar sesión
+        </button>
+      </div>
+    }
+  </div>
+</aside>

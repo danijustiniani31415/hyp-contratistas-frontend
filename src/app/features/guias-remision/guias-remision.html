@@ -1,22 +1,21 @@
-<div class="gr-page">
-  <app-lb-nav />
-  <header class="gr-header">
-    <p class="gr-eyebrow">HP Constructores Generales · Las Bravas</p>
-    <h1>Guías de Remisión</h1>
-  </header>
-
-  <div class="gr-toolbar">
-    <div class="abril-field gr-filtro">
-      <label class="abril-field-label">Estado</label>
-      <select class="abril-field-input" [(ngModel)]="estadoFiltro" (ngModelChange)="onFiltroChange()">
-        <option value="">Todos</option>
-        @for (e of estados; track e) { <option [value]="e">{{ e }}</option> }
-      </select>
+<div class="lb-page lb-page-fill">
+  <app-lb-page-header titulo="Guías de Remisión">
+    <div class="lb-search">
+      <input
+        type="text"
+        placeholder="Buscar por destinatario o almacén..."
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput()"
+      />
     </div>
-  </div>
+    <select class="abril-field-input gr-filtro-select" [(ngModel)]="estadoFiltro" (ngModelChange)="onFiltroChange()">
+      <option value="">Todos los estados</option>
+      @for (e of estados; track e) { <option [value]="e">{{ e }}</option> }
+    </select>
+  </app-lb-page-header>
 
-  <div class="gr-table-wrap">
-    <table class="gr-table">
+  <div class="lb-table-wrap">
+    <table class="lb-table">
       <thead>
         <tr>
           <th>Código</th>
@@ -29,9 +28,9 @@
       </thead>
       <tbody>
         @if (loading()) {
-          <tr><td colspan="6" class="gr-empty">Cargando...</td></tr>
+          <tr><td colspan="6" class="lb-empty">Cargando...</td></tr>
         } @else if (!guias().length) {
-          <tr><td colspan="6" class="gr-empty">Sin guías de remisión todavía.</td></tr>
+          <tr><td colspan="6" class="lb-empty">Sin guías de remisión todavía.</td></tr>
         } @else {
           @for (g of guias(); track g.id) {
             <tr class="gr-row" (click)="verDetalle(g.id)">
@@ -172,27 +171,27 @@
         <textarea class="abril-field-input" rows="2" [(ngModel)]="form.observacion"></textarea>
       </div>
 
-      <div class="gr-items">
-        <div class="gr-items-header">
+      <div class="lb-items">
+        <div class="lb-items-header">
           <h3>Productos a trasladar</h3>
-          <button type="button" class="gr-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
+          <button type="button" class="lb-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
         </div>
 
         @for (item of form.items; track $index; let i = $index) {
-          <div class="gr-item-row">
+          <div class="lb-item-row">
             <app-search-select
               [options]="productos()"
               displayField="nombre"
               [(value)]="item.productoId"
               placeholder="Producto"
             />
-            <input class="abril-field-input gr-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
-            <input class="abril-field-input gr-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidad" placeholder="Cant." />
-            <select class="abril-field-input gr-item-unidad" [(ngModel)]="item.unidadMedida">
+            <input class="abril-field-input lb-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
+            <input class="abril-field-input lb-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidad" placeholder="Cant." />
+            <select class="abril-field-input lb-item-unidad" [(ngModel)]="item.unidadMedida">
               @for (u of unidades; track u) { <option [value]="u">{{ u }}</option> }
             </select>
             @if (form.items.length > 1) {
-              <button type="button" class="gr-item-quitar" (click)="quitarItem(i)">✕</button>
+              <button type="button" class="lb-item-quitar" (click)="quitarItem(i)">✕</button>
             }
           </div>
         }
@@ -201,8 +200,8 @@
       @if (error()) { <p class="gr-error">{{ error() }}</p> }
 
       <div class="gr-form-actions">
-        <button class="gr-btn ghost" (click)="cerrarModal()">Cancelar</button>
-        <button class="gr-btn" [disabled]="guardando() || !formValido" (click)="guardar()">
+        <button class="lb-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="lb-btn" [disabled]="guardando() || !formValido" (click)="guardar()">
           {{ guardando() ? 'Creando...' : 'Crear guía' }}
         </button>
       </div>
@@ -218,7 +217,7 @@
       </div>
       <p class="gr-detalle-meta">Creado por {{ d.creadoPorNombre }} el {{ d.creadoEn | slice:0:10 }} · Traslado {{ d.fechaTraslado | slice:0:10 }}</p>
 
-      <table class="gr-table gr-detalle-table">
+      <table class="lb-table gr-detalle-table">
         <thead>
           <tr><th>Producto</th><th>Cantidad</th><th>Unidad</th></tr>
         </thead>
@@ -239,14 +238,14 @@
 
       @if (d.estado === 'BORRADOR' && authService.hasPermiso('GUIA_REMISION_ENVIAR')) {
         <div class="gr-form-actions">
-          <button class="gr-btn" [disabled]="enviando()" (click)="enviar()">
+          <button class="lb-btn" [disabled]="enviando()" (click)="enviar()">
             {{ enviando() ? 'Transmitiendo...' : 'Transmitir a SUNAT' }}
           </button>
         </div>
       }
       @if (d.estado === 'ENVIADA' && authService.hasPermiso('GUIA_REMISION_ENVIAR')) {
         <div class="gr-form-actions">
-          <button class="gr-btn ghost" [disabled]="enviando()" (click)="consultarEstado()">
+          <button class="lb-btn ghost" [disabled]="enviando()" (click)="consultarEstado()">
             {{ enviando() ? 'Consultando...' : 'Consultar estado en SUNAT' }}
           </button>
         </div>

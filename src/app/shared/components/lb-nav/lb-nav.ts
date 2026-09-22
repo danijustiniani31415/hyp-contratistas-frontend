@@ -13,6 +13,9 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   template: `
     <nav class="lb-nav">
       <a routerLink="/personas" routerLinkActive="on" [routerLinkActiveOptions]="{exact: false}">Personas</a>
+      <a routerLink="/tareo" routerLinkActive="on">Tareo</a>
+      <a routerLink="/planillas" routerLinkActive="on">Planillas</a>
+      <a routerLink="/dashboard-planilla" routerLinkActive="on">Datos Faltantes</a>
       <a routerLink="/roles-permisos" routerLinkActive="on">Roles y Permisos</a>
       <a routerLink="/catalogo" routerLinkActive="on">Catálogo Maestro</a>
       <a routerLink="/almacen" routerLinkActive="on">Almacén / Kardex</a>
@@ -28,8 +31,8 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       display: flex;
       gap: 4px;
       margin-bottom: 20px;
+      padding: 0 24px;
       border-bottom: 1px solid #E2E8F0;
-      padding-bottom: 0;
     }
     .lb-nav a {
       padding: 8px 14px;

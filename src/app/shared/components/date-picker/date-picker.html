@@ -1,8 +1,10 @@
-<div class="flex flex-col" [ngClass]="floatingLabel ? 'gap-0' : 'gap-[6px]'" [style.--dp-accent]="color">
-  <!-- Label encima del campo (por defecto) -->
+<div class="flex flex-col mt-[8px]" [style.--dp-accent]="color">
+  <!-- Label encima del campo (por defecto) — mismo look que .abril-field-label (styles.css) y el
+       label de app-search-select, para que un date-picker no se vea distinto a los demás campos
+       de un formulario. -->
   <label
     *ngIf="showLabel && label && !floatingLabel"
-    class="text-sm text-[var(--dp-accent)] font-medium"
+    class="abril-field-label"
   >
     {{ label }}<span *ngIf="required" class="text-red-500"> *</span>
   </label>
@@ -29,7 +31,7 @@
     >
       <input
         type="text"
-        class="w-full min-w-0 bg-transparent focus:outline-none text-gray-800 placeholder-gray-400 disabled:text-gray-400 disabled:cursor-not-allowed"
+        class="w-full min-w-0 bg-transparent focus:outline-none text-[color:var(--color-abril-body,#374151)] placeholder-gray-400 disabled:text-gray-400 disabled:cursor-not-allowed"
         [placeholder]="placeholder"
         [ngModel]="texto"
         (ngModelChange)="onTextoChange($event)"

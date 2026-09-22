@@ -56,12 +56,20 @@ export interface PedidoDetalle {
   estado: string;
   observacion: string | null;
   motivoRechazo: string | null;
+  visadoPorNombre: string | null;
+  visadoEn: string | null;
   aprobadoPorNombre: string | null;
   aprobadoEn: string | null;
   entregadoPorNombre: string | null;
   entregadoEn: string | null;
   creadoEn: string;
   items: PedidoItemDetalle[];
+}
+
+export interface PedidoDestinatarios {
+  visadores: string[];
+  aprobadores: string[];
+  entregadores: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -89,6 +97,14 @@ export class PedidosService {
     return this.http.get<PedidoDetalle>(`${this.apiUrl}/${id}`, { headers: this.headers() });
   }
 
+  visar(id: number): Observable<PedidoDetalle> {
+    return this.http.post<PedidoDetalle>(`${this.apiUrl}/${id}/visar`, {}, { headers: this.headers() });
+  }
+
+  rechazarVisado(id: number, motivoRechazo: string): Observable<PedidoDetalle> {
+    return this.http.post<PedidoDetalle>(`${this.apiUrl}/${id}/rechazar-visado`, { motivoRechazo }, { headers: this.headers() });
+  }
+
   aprobar(id: number): Observable<PedidoDetalle> {
     return this.http.post<PedidoDetalle>(`${this.apiUrl}/${id}/aprobar`, {}, { headers: this.headers() });
   }
@@ -103,5 +119,11 @@ export class PedidosService {
 
   cancelar(id: number): Observable<PedidoDetalle> {
     return this.http.post<PedidoDetalle>(`${this.apiUrl}/${id}/cancelar`, {}, { headers: this.headers() });
+  }
+
+  getDestinatarios(proyectoId: number): Observable<PedidoDestinatarios> {
+    return this.http.get<PedidoDestinatarios>(`${this.apiUrl}/destinatarios?proyectoId=${proyectoId}`, {
+      headers: this.headers(),
+    });
   }
 }

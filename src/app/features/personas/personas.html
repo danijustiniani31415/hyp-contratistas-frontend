@@ -1,23 +1,49 @@
-<div class="pp-page">
-  <app-lb-nav />
-  <header class="pp-header">
-    <p class="pp-eyebrow">HP Constructores Generales · Las Bravas</p>
-    <h1>Personas</h1>
-  </header>
+<div class="lb-page lb-page-fill">
+  <app-lb-page-header titulo="Personas">
+    <div class="lb-search">
+      <input
+        type="text"
+        placeholder="Buscar por nombre o documento..."
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput()"
+      />
+    </div>
+    <app-filter-trigger [count]="filtrosActivos" (open)="abrirFiltros()" />
+    <button class="lb-btn ghost" (click)="abrirCargos()">Gestionar cargos</button>
+  </app-lb-page-header>
 
-  <div class="pp-toolbar">
-    <input
-      class="pp-search"
-      type="text"
-      placeholder="Buscar por nombre o documento..."
-      [(ngModel)]="search"
-      (keyup.enter)="onSearch()"
-    />
-    <button class="pp-btn" (click)="onSearch()">Buscar</button>
-  </div>
+  @if (showFiltros()) {
+    <app-filter-modal (closeModal)="cerrarFiltros()" (clear)="limpiarFiltros()">
+      @if (catalogos(); as cat) {
+        <app-search-select
+          [options]="cat.cargos"
+          displayField="nombre"
+          [(value)]="filtros.cargoId"
+          (valueChange)="onSearch()"
+          label="Cargo"
+          placeholder="Todos los cargos"
+        />
+        <app-search-select
+          [options]="cat.tiposVinculo"
+          displayField="nombre"
+          [(value)]="filtros.tipoVinculoId"
+          (valueChange)="onSearch()"
+          label="Tipo de vínculo"
+          placeholder="Todos los vínculos"
+        />
+      }
+      <div class="abril-field">
+        <label class="abril-field-label">Estado</label>
+        <select class="abril-field-input" [(ngModel)]="filtros.estado" (ngModelChange)="onSearch()">
+          <option value="">Todos</option>
+          @for (e of estadosVinculo; track e) { <option [value]="e">{{ e }}</option> }
+        </select>
+      </div>
+    </app-filter-modal>
+  }
 
-  <div class="pp-table-wrap">
-    <table class="pp-table">
+  <div class="lb-table-wrap">
+    <table class="lb-table">
       <thead>
         <tr>
           <th>Nombre</th>
@@ -30,9 +56,9 @@
       </thead>
       <tbody>
         @if (loading()) {
-          <tr><td colspan="6" class="pp-empty">Cargando...</td></tr>
+          <tr><td colspan="6" class="lb-empty">Cargando...</td></tr>
         } @else if (!personas().length) {
-          <tr><td colspan="6" class="pp-empty">Sin personas registradas todavía.</td></tr>
+          <tr><td colspan="6" class="lb-empty">Sin personas registradas todavía.</td></tr>
         } @else {
           @for (p of personas(); track p.id) {
             <tr class="pp-row" [routerLink]="['/personas', p.id]">
@@ -41,7 +67,7 @@
               <td>{{ p.tipoVinculoNombre ?? '—' }}</td>
               <td>{{ p.cargoNombre ?? '—' }}</td>
               <td>
-                <span class="pp-badge" [class.on]="p.estadoVinculo === 'ACTIVO'">{{ p.estadoVinculo }}</span>
+                <span class="lb-badge" [class.on]="p.estadoVinculo === 'ACTIVO'">{{ p.estadoVinculo }}</span>
               </td>
               <td>{{ p.tieneUsuario ? 'Sí' : 'No' }}</td>
             </tr>
@@ -59,16 +85,6 @@
     <app-base-modal title="Nueva persona" width="w-[560px]" (closeModal)="cerrarModal()">
       <div class="pp-form-grid">
         <div class="abril-field">
-          <label class="abril-field-label">Nombres</label>
-          <input class="abril-field-input" [(ngModel)]="form.nombres" />
-        </div>
-        <div class="abril-field">
-          <label class="abril-field-label">Apellidos</label>
-          <input class="abril-field-input" [(ngModel)]="form.apellidos" />
-        </div>
-      </div>
-      <div class="pp-form-grid">
-        <div class="abril-field">
           <label class="abril-field-label">Tipo de documento</label>
           <select class="abril-field-input" [(ngModel)]="form.tipoDocumento">
             <option value="DNI">DNI</option>
@@ -78,7 +94,33 @@
         </div>
         <div class="abril-field">
           <label class="abril-field-label">Número de documento</label>
-          <input class="abril-field-input" [(ngModel)]="form.numeroDocumento" />
+          <input
+            class="abril-field-input"
+            [(ngModel)]="form.numeroDocumento"
+            (blur)="onDniBlur()"
+            [maxlength]="form.tipoDocumento === 'DNI' ? 8 : 20"
+          />
+          @if (buscandoDni()) { <span class="pp-dni-loading">Buscando en RENIEC...</span> }
+        </div>
+      </div>
+      <div class="pp-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Apellidos <span class="pp-required">*</span></label>
+          <input class="abril-field-input" [(ngModel)]="form.apellidos" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Nombres <span class="pp-required">*</span></label>
+          <input class="abril-field-input" [(ngModel)]="form.nombres" />
+        </div>
+      </div>
+      <div class="pp-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Teléfono <span class="pp-section-note">(opcional)</span></label>
+          <input class="abril-field-input" [(ngModel)]="form.telefono" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Correo <span class="pp-section-note">(opcional)</span></label>
+          <input class="abril-field-input" type="email" [(ngModel)]="form.emailPersonal" placeholder="correo@ejemplo.com" />
         </div>
       </div>
 
@@ -88,6 +130,8 @@
             [options]="cat.tiposVinculo"
             displayField="nombre"
             [(value)]="form.tipoVinculoId"
+            (valueChange)="onTipoVinculoChange()"
+            [required]="true"
             label="Tipo de vínculo"
             placeholder="Selecciona tipo de vínculo"
           />
@@ -95,33 +139,157 @@
             [options]="cat.cargos"
             displayField="nombre"
             [(value)]="form.cargoId"
+            [required]="true"
             label="Cargo"
             placeholder="Selecciona cargo"
           />
         </div>
         <div class="pp-form-grid">
           <app-search-select
-            [options]="cat.empresasContratistas"
+            [options]="cat.proyectos"
             displayField="nombre"
-            [(value)]="form.empresaContratistaId"
-            label="Empresa contratista"
-            placeholder="Solo si aplica (CONTRATISTA)"
+            [(value)]="form.proyectoId"
+            [required]="true"
+            label="Sede / Proyecto"
+            placeholder="Selecciona sede"
           />
-          <div class="abril-field">
-            <label class="abril-field-label">Fecha de inicio</label>
-            <input class="abril-field-input" type="date" [(ngModel)]="form.fechaInicio" />
-          </div>
+          <app-date-picker
+            [(value)]="form.fechaInicio"
+            label="Fecha de inicio *"
+            [dense]="true"
+            color="var(--color-abril-standard)"
+          />
         </div>
+        @if (requiereEmpresaContratista) {
+          <div class="pp-form-grid">
+            <app-search-select
+              [options]="cat.empresasContratistas"
+              displayField="nombre"
+              [(value)]="form.empresaContratistaId"
+              label="Empresa contratista"
+              placeholder="Buscar empresa..."
+            />
+          </div>
+        }
       }
+
+      <p class="pp-section-title">Datos de planilla <span class="pp-section-note">(opcional — se puede completar después; el código de trabajador se asigna solo al guardar)</span></p>
+      <div class="pp-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">
+            Categoría laboral
+            <button type="button" class="pp-gestionar" (click)="abrirCatalogo('CATEGORIA_LABORAL')">Gestionar</button>
+          </label>
+          <select class="abril-field-input" [(ngModel)]="form.planilla!.categoriaLaboral">
+            <option value="">Selecciona</option>
+            @for (c of categoriasLaborales(); track c.id) { <option [value]="c.valor">{{ c.valor }}</option> }
+          </select>
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">
+            Banco
+            <button type="button" class="pp-gestionar" (click)="abrirCatalogo('BANCO')">Gestionar</button>
+          </label>
+          <select class="abril-field-input" [(ngModel)]="form.planilla!.banco">
+            <option value="">Selecciona banco</option>
+            @for (b of bancos(); track b.id) { <option [value]="b.valor">{{ b.valor }}</option> }
+          </select>
+        </div>
+      </div>
+      <div class="pp-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Número de cuenta</label>
+          <input class="abril-field-input" [(ngModel)]="form.planilla!.numeroCuenta" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">CUSP</label>
+          <input class="abril-field-input" [(ngModel)]="form.planilla!.cusp" placeholder="Código único de pensión" />
+        </div>
+      </div>
+      <div class="pp-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">
+            Tipo AFP / ONP
+            <button type="button" class="pp-gestionar" (click)="abrirCatalogo('TIPO_AFP_ONP')">Gestionar</button>
+          </label>
+          <select class="abril-field-input" [(ngModel)]="form.planilla!.tipoAfpOnp">
+            <option value="">Sin régimen / selecciona</option>
+            @for (t of tiposAfpOnp(); track t.id) { <option [value]="t.valor">{{ t.valor }}</option> }
+          </select>
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Sueldo base (mensual)</label>
+          <input class="abril-field-input" type="number" min="0" step="0.01" [(ngModel)]="form.planilla!.sueldoBase" />
+        </div>
+      </div>
+      <div class="pp-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Jornal (diario, si aplica)</label>
+          <input class="abril-field-input" type="number" min="0" step="0.01" [(ngModel)]="form.planilla!.jornal" />
+        </div>
+        <div class="pp-checkboxes">
+          <label class="pp-checkbox">
+            <input type="checkbox" [(ngModel)]="form.planilla!.asignacionFamiliar" />
+            Asignación familiar
+          </label>
+          <label class="pp-checkbox">
+            <input type="checkbox" [(ngModel)]="form.planilla!.sctr" />
+            SCTR
+          </label>
+        </div>
+      </div>
 
       @if (error()) { <p class="pp-error">{{ error() }}</p> }
 
       <div class="pp-form-actions">
-        <button class="pp-btn ghost" (click)="cerrarModal()">Cancelar</button>
-        <button class="pp-btn" (click)="guardar()">Guardar</button>
+        <button class="lb-btn ghost" (click)="cerrarModal()">Cancelar</button>
+        <button class="lb-btn" [disabled]="!formValido" (click)="guardar()">Guardar</button>
       </div>
     </app-base-modal>
   }
+
+  @if (showCargosModal()) {
+    <app-base-modal title="Gestionar cargos" width="w-[480px]" (closeModal)="cerrarCargos()">
+      <div class="pp-cargo-nuevo">
+        <input
+          class="abril-field-input"
+          [(ngModel)]="cargoNuevo"
+          placeholder="Nombre del cargo nuevo"
+          (keyup.enter)="agregarCargo()"
+        />
+        <button class="lb-btn" [disabled]="guardandoCargo() || !cargoNuevo.trim()" (click)="agregarCargo()">
+          + Agregar
+        </button>
+      </div>
+
+      @if (cargoError()) { <p class="pp-error">{{ cargoError() }}</p> }
+
+      <div class="pp-cargo-lista">
+        @for (c of cargos(); track c.id) {
+          <div class="pp-cargo-row">
+            <input
+              class="abril-field-input"
+              [(ngModel)]="c.nombre"
+              (blur)="guardarCargo(c)"
+            />
+            <label class="pp-cargo-activo">
+              <input type="checkbox" [(ngModel)]="c.activo" (ngModelChange)="guardarCargo(c)" />
+              Activo
+            </label>
+          </div>
+        } @empty {
+          <p class="lb-empty">Sin cargos todavía.</p>
+        }
+      </div>
+    </app-base-modal>
+  }
+
+  <app-catalogo-valor-modal
+    [tipo]="catalogoAbierto()"
+    [titulo]="catalogoAbierto() === 'BANCO' ? 'Bancos' : catalogoAbierto() === 'TIPO_AFP_ONP' ? 'Tipo AFP / ONP' : 'Categoría laboral'"
+    [abierto]="!!catalogoAbierto()"
+    (cerrado)="cerrarCatalogo()"
+  />
 
   <app-fab label="Nueva persona" (clicked)="abrirNuevo()" />
 </div>

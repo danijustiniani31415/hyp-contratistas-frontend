@@ -1,54 +1,7 @@
-.ep-page {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 32px 24px 100px;
-  font-family: system-ui, sans-serif;
-  color: #1E3A5F;
-}
+/* .lb-page/.lb-page-header/.lb-btn/.lb-table*/.lb-empty en styles.css. */
 
-.ep-header { margin-bottom: 24px; }
-.ep-eyebrow {
-  font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
-  color: #64748B; margin: 0 0 6px;
-}
-.ep-header h1 { font-size: 24px; margin: 0; }
-
-.ep-table-wrap { border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; }
-.ep-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.ep-table th {
-  font-size: 12.5px; font-weight: 700; color: #1E3A5F;
-  padding: 10px 14px; border-bottom: 2px solid #1E3A5F; text-align: left;
-}
-.ep-table td { padding: 12px 14px; border-bottom: 1px solid #F1F5F9; }
-.ep-table tbody tr:hover { background: #FAFBFC; }
-.ep-empty { text-align: center; color: #94A3B8; padding: 32px 0 !important; }
-
-.ep-btn {
-  border-radius: 6px; padding: 8px 16px; font-weight: 600; font-size: 13px;
-  border: 1px solid transparent; background: #1E3A5F; color: #fff; cursor: pointer;
-  font-family: inherit;
-}
-.ep-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.ep-btn.ghost { background: transparent; color: #1E3A5F; border-color: #D6DEE5; }
-.ep-btn.small { padding: 5px 10px; font-size: 12px; }
 
 .ep-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px; }
 .ep-form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
 .ep-error { color: #C0392B; font-size: 12.5px; margin: 4px 0 0; }
 
-.ep-items { margin-top: 14px; }
-.ep-items-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.ep-items-header h3 { font-size: 13px; margin: 0; color: #39536B; }
-
-.ep-item-row {
-  display: grid;
-  grid-template-columns: 1fr 90px 80px 28px;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 8px;
-}
-.ep-item-talla, .ep-item-cant { padding: 9px 10px !important; }
-.ep-item-quitar {
-  background: transparent; border: 0; color: #C0392B; cursor: pointer;
-  font-size: 14px; padding: 0; font-family: inherit;
-}
