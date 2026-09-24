@@ -13,6 +13,7 @@
       @for (e of estados; track e) { <option [value]="e">{{ e }}</option> }
     </select>
     @if (authService.hasPermiso('COMPRA_CREAR')) {
+      <button type="button" class="lb-btn ghost" (click)="abrirPendientes()">Pendientes de compra</button>
       <button type="button" class="lb-btn ghost" (click)="abrirNuevoProveedor()">+ Nuevo proveedor</button>
     }
   </app-lb-page-header>
@@ -137,6 +138,7 @@
               placeholder="Producto"
             />
             <input class="abril-field-input lb-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
+            <input class="abril-field-input lb-item-talla" [(ngModel)]="item.color" placeholder="Color" />
             <input class="abril-field-input lb-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidadSolicitada" placeholder="Cant." />
             <input class="abril-field-input lb-item-costo" type="number" min="0" step="0.01" [(ngModel)]="item.costoUnitario" placeholder="Costo unit." />
             @if (form.items.length > 1) {
@@ -168,12 +170,13 @@
 
       <table class="lb-table co-detalle-table">
         <thead>
-          <tr><th>Producto</th><th>Pedido</th><th>Recibido</th><th>Pendiente</th><th></th></tr>
+          <tr><th>Producto</th><th>Pedido origen</th><th>Solicitado</th><th>Recibido</th><th>Pendiente</th><th></th></tr>
         </thead>
         <tbody>
           @for (it of d.items; track it.id) {
             <tr>
-              <td>{{ it.productoNombre }} {{ it.talla ? '(' + it.talla + ')' : '' }}</td>
+              <td>{{ it.productoNombre }} {{ it.talla ? '(' + it.talla + ')' : '' }} {{ it.color ? '[' + it.color + ']' : '' }}</td>
+              <td>{{ it.pedidoCodigo ?? '—' }}</td>
               <td>{{ it.cantidadSolicitada }}</td>
               <td>{{ it.cantidadRecibida }}</td>
               <td>{{ it.cantidadPendiente }}</td>
@@ -181,8 +184,23 @@
                 @if (it.cantidadPendiente > 0 && d.estado !== 'CANCELADA' && authService.hasPermiso('COMPRA_RECIBIR')) {
                   <button type="button" class="co-link" (click)="recibir(it.id, it.cantidadPendiente)">Recibir</button>
                 }
+                @if (it.cantidadRecibida > 0 && authService.hasPermiso('COMPRA_RECIBIR')) {
+                  <button type="button" class="co-link co-link-danger" (click)="devolver(it.id, it.cantidadRecibida)">Devolver</button>
+                }
               </td>
             </tr>
+            @if (it.recepciones.length) {
+              <tr>
+                <td colspan="6" class="co-recepciones">
+                  @for (r of it.recepciones; track r.id) {
+                    <div>
+                      {{ r.creadoEn | slice:0:10 }} · {{ r.cantidad }} recibido por {{ r.recibidoPorNombre }}
+                      @if (r.facturaNumero) { · Factura {{ r.facturaNumero }} @if (r.facturaMonto) { (S/ {{ r.facturaMonto }}) } }
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
           }
         </tbody>
       </table>
@@ -190,6 +208,136 @@
       @if (d.estado === 'PENDIENTE' && authService.hasPermiso('COMPRA_CREAR')) {
         <div class="co-form-actions">
           <button class="lb-btn ghost danger" (click)="cancelarOrden()">Cancelar orden</button>
+        </div>
+      }
+    </app-base-modal>
+  }
+
+  <!-- Modal: pendientes de compra (panel de Logística) -->
+  @if (showPendientesModal()) {
+    <app-base-modal title="Pendientes de compra" width="w-[820px]" (closeModal)="cerrarPendientes()">
+      <p class="co-detalle-meta">Ítems de pedidos APROBADOS que todavía no están cubiertos por una orden de compra.</p>
+
+      @if (cargandoPendientes()) {
+        <p class="lb-empty">Cargando...</p>
+      } @else {
+        @if (!pendientes().length) {
+          <p class="lb-empty">No hay pedidos pendientes de compra ahora mismo.</p>
+        } @else {
+          <table class="co-pendientes-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Pedido</th>
+                <th>Proyecto</th>
+                <th>Producto</th>
+                <th>Pendiente</th>
+                <th>Costo unit.</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of pendientes(); track p.pedidoItemId) {
+                <tr>
+                  <td><input type="checkbox" [checked]="seleccionados.has(p.pedidoItemId)" (change)="toggleSeleccionado(p.pedidoItemId)" /></td>
+                  <td>{{ p.pedidoCodigo }}</td>
+                  <td>{{ p.proyectoNombre }}</td>
+                  <td>{{ p.productoNombre }} {{ p.talla ? '(' + p.talla + ')' : '' }} {{ p.color ? '[' + p.color + ']' : '' }}</td>
+                  <td>{{ p.cantidadPendienteDeCompra }}</td>
+                  <td>
+                    <input
+                      class="abril-field-input co-costo-input"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      [(ngModel)]="costosPorItem[p.pedidoItemId]"
+                      placeholder="0.00"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (reposiciones().length) {
+          <p class="co-detalle-meta">Reposición sugerida (stock bajo el mínimo, sin pedido de por medio):</p>
+          <table class="co-pendientes-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Almacén</th>
+                <th>Producto</th>
+                <th>Actual / Mínimo</th>
+                <th>Cantidad a pedir</th>
+                <th>Costo unit.</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of reposiciones(); track claveReposicion(r)) {
+                <tr>
+                  <td><input type="checkbox" [checked]="seleccionadosReposicion.has(claveReposicion(r))" (change)="toggleSeleccionadoReposicion(claveReposicion(r))" /></td>
+                  <td>{{ r.almacenNombre }}</td>
+                  <td>{{ r.productoNombre }} {{ r.talla ? '(' + r.talla + ')' : '' }} {{ r.color ? '[' + r.color + ']' : '' }}</td>
+                  <td>{{ r.cantidadActual }} / {{ r.stockMinimo }}</td>
+                  <td>
+                    <input
+                      class="abril-field-input co-costo-input"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      [(ngModel)]="cantidadesReposicion[claveReposicion(r)]"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      class="abril-field-input co-costo-input"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      [(ngModel)]="costosReposicion[claveReposicion(r)]"
+                      placeholder="0.00"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (haySeleccionados) {
+          <div class="co-form-grid">
+            <app-search-select
+              [options]="proveedores()"
+              displayField="razonSocial"
+              [(value)]="generarForm.proveedorId"
+              label="Proveedor"
+              placeholder="Buscar empresa..."
+            />
+            <app-search-select
+              [options]="almacenes()"
+              displayField="nombre"
+              [(value)]="generarForm.almacenId"
+              label="Almacén de destino"
+              placeholder="Selecciona almacén"
+            />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Observación (opcional)</label>
+            <textarea class="abril-field-input" rows="2" [(ngModel)]="generarForm.observacion"></textarea>
+          </div>
+        }
+
+        @if (generarError()) { <p class="co-error">{{ generarError() }}</p> }
+
+        <div class="co-form-actions">
+          <button class="lb-btn ghost" (click)="cerrarPendientes()">Cancelar</button>
+          <button
+            class="lb-btn"
+            [disabled]="generando() || !haySeleccionados || !generarForm.proveedorId || !generarForm.almacenId"
+            (click)="generarOrdenDesdePendientes()"
+          >
+            {{ generando() ? 'Generando...' : 'Generar orden de compra' }}
+          </button>
         </div>
       }
     </app-base-modal>

@@ -118,6 +118,7 @@ export interface AsignacionDetalle {
   proyectoNombre: string | null;
   almacenNombre: string | null;
   fechaInicio: string;
+  notificar: boolean;
 }
 
 export interface PersonaDetalle {
@@ -133,6 +134,7 @@ export interface PersonaDetalle {
   vinculos: VinculoLaboral[];
   usuarioSistemaId: number | null;
   emailLogin: string | null;
+  estadoUsuario: string | null;
   asignaciones: AsignacionDetalle[];
 }
 
@@ -149,6 +151,7 @@ export interface NuevaAsignacion {
   rolId: number;
   proyectoId?: number | null;
   almacenId?: number | null;
+  notificar: boolean;
 }
 
 export interface PersonaDatoFaltante {
@@ -240,11 +243,21 @@ export class PersonasService {
     return this.http.put<PersonaDetalle>(`${this.apiUrl}/${personaId}/usuario/email`, { nuevoEmail }, { headers: this.headers() });
   }
 
+  /** Un solo botón para (re)mandar el enlace de contraseña, ya sea que nunca activó o ya activó y lo perdió. */
+  reenviarCredenciales(personaId: number): Observable<PersonaDetalle> {
+    return this.http.post<PersonaDetalle>(`${this.apiUrl}/${personaId}/usuario/reenviar-credenciales`, {}, { headers: this.headers() });
+  }
+
   nuevaAsignacion(personaId: number, dto: NuevaAsignacion): Observable<PersonaDetalle> {
     return this.http.post<PersonaDetalle>(`${this.apiUrl}/${personaId}/asignaciones`, dto, { headers: this.headers() });
   }
 
   revocarAsignacion(personaId: number, asignacionId: number): Observable<PersonaDetalle> {
     return this.http.post<PersonaDetalle>(`${this.apiUrl}/${personaId}/asignaciones/${asignacionId}/revocar`, {}, { headers: this.headers() });
+  }
+
+  /** Tener el rol (acceso) y que te notifiquen por correo son cosas separadas — este toggle es solo lo segundo. */
+  toggleNotificarAsignacion(personaId: number, asignacionId: number, notificar: boolean): Observable<PersonaDetalle> {
+    return this.http.put<PersonaDetalle>(`${this.apiUrl}/${personaId}/asignaciones/${asignacionId}/notificar`, { notificar }, { headers: this.headers() });
   }
 }

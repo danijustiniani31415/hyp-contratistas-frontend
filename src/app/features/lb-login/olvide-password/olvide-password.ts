@@ -20,7 +20,7 @@ export class OlvidePassword {
   constructor(private authService: LbAuthService) {}
 
   submit(): void {
-    if (!this.email) return;
+    if (!this.email || this.loading) return;
     this.loading = true;
     this.error = '';
     this.authService.solicitarReset(this.email).subscribe({

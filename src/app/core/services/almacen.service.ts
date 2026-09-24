@@ -13,10 +13,26 @@ export interface StockListItem {
   productoCodigo: string | null;
   unidadMedida: string;
   talla: string;
+  color: string;
   cantidadActual: number;
+  costoPromedio: number;
+  valorTotal: number;
   stockMinimo: number;
   stockMaximo: number | null;
   bajoMinimo: boolean;
+}
+
+export interface ReposicionSugerida {
+  almacenId: number;
+  almacenNombre: string;
+  productoId: number;
+  productoNombre: string;
+  talla: string;
+  color: string;
+  cantidadActual: number;
+  stockMinimo: number;
+  stockMaximo: number | null;
+  cantidadSugerida: number;
 }
 
 export interface StockListResponse {
@@ -32,6 +48,7 @@ export interface MovimientoListItem {
   almacenNombre: string;
   productoNombre: string;
   talla: string;
+  color: string;
   tipoMovimiento: string;
   cantidad: number;
   costoUnitario: number | null;
@@ -51,6 +68,7 @@ export interface RegistrarMovimiento {
   almacenId: number;
   productoId: number;
   talla: string;
+  color?: string;
   tipoMovimiento: 'INGRESO' | 'SALIDA';
   cantidad: number;
   costoUnitario?: number | null;
@@ -60,6 +78,7 @@ export interface AjustarUmbrales {
   almacenId: number;
   productoId: number;
   talla: string;
+  color?: string;
   stockMinimo: number;
   stockMaximo?: number | null;
 }
@@ -93,5 +112,10 @@ export class AlmacenService {
 
   ajustarUmbrales(dto: AjustarUmbrales): Observable<any> {
     return this.http.post(`${this.apiUrl}/umbrales`, dto, { headers: this.headers() });
+  }
+
+  listReposicionSugerida(almacenId?: number | null): Observable<ReposicionSugerida[]> {
+    const params = almacenId ? `?almacenId=${almacenId}` : '';
+    return this.http.get<ReposicionSugerida[]>(`${this.apiUrl}/reposicion-sugerida${params}`, { headers: this.headers() });
   }
 }

@@ -174,7 +174,12 @@
       <div class="lb-items">
         <div class="lb-items-header">
           <h3>Productos a trasladar</h3>
-          <button type="button" class="lb-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
+          <div class="gr-items-header-actions">
+            @if (esTrasladoPropio) {
+              <button type="button" class="lb-btn ghost small" (click)="abrirDespacharPedido()">Despachar pedido</button>
+            }
+            <button type="button" class="lb-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
+          </div>
         </div>
 
         @for (item of form.items; track $index; let i = $index) {
@@ -186,6 +191,7 @@
               placeholder="Producto"
             />
             <input class="abril-field-input lb-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
+            <input class="abril-field-input lb-item-talla" [(ngModel)]="item.color" placeholder="Color" />
             <input class="abril-field-input lb-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidad" placeholder="Cant." />
             <select class="abril-field-input lb-item-unidad" [(ngModel)]="item.unidadMedida">
               @for (u of unidades; track u) { <option [value]="u">{{ u }}</option> }
@@ -194,6 +200,9 @@
               <button type="button" class="lb-item-quitar" (click)="quitarItem(i)">✕</button>
             }
           </div>
+          @if (item.pedidoItemId) {
+            <p class="gr-item-pedido-tag">↳ despacha el pedido {{ codigosPedidoPorItem[item.pedidoItemId] ?? ('#' + item.pedidoItemId) }}</p>
+          }
         }
       </div>
 
@@ -219,13 +228,22 @@
 
       <table class="lb-table gr-detalle-table">
         <thead>
-          <tr><th>Producto</th><th>Cantidad</th><th>Unidad</th></tr>
+          <tr><th>Producto</th><th>Pedido</th><th>Despachado</th><th>Confirmado</th><th>Unidad</th></tr>
         </thead>
         <tbody>
           @for (it of d.items; track it.id) {
             <tr>
-              <td>{{ it.productoNombre }} {{ it.talla ? '(' + it.talla + ')' : '' }}</td>
+              <td>{{ it.productoNombre }} {{ it.talla ? '(' + it.talla + ')' : '' }} {{ it.color ? '[' + it.color + ']' : '' }}</td>
+              <td>{{ it.pedidoCodigo ?? '—' }}</td>
               <td>{{ it.cantidad }}</td>
+              <td>
+                @if (it.confirmadoEn) {
+                  {{ it.cantidadConfirmada }}
+                  @if (it.cantidadConfirmada! < it.cantidad) { <span class="gr-discrepancia">(faltó {{ it.cantidad - it.cantidadConfirmada! }})</span> }
+                } @else {
+                  <span class="gr-pendiente-confirmar">Pendiente</span>
+                }
+              </td>
               <td>{{ it.unidadMedida }}</td>
             </tr>
           }
@@ -234,6 +252,9 @@
 
       @if (d.estado !== 'BORRADOR') {
         <p class="gr-detalle-meta">CDR SUNAT: {{ d.cdrCodigoRespuesta }} — {{ d.cdrDescripcion }}</p>
+      }
+      @if (d.items[0]?.confirmadoEn) {
+        <p class="gr-detalle-meta">Recepción confirmada por {{ d.items[0].confirmadoPorNombre }} el {{ d.items[0].confirmadoEn | slice:0:10 }}</p>
       }
 
       @if (d.estado === 'BORRADOR' && authService.hasPermiso('GUIA_REMISION_ENVIAR')) {
@@ -247,6 +268,50 @@
         <div class="gr-form-actions">
           <button class="lb-btn ghost" [disabled]="enviando()" (click)="consultarEstado()">
             {{ enviando() ? 'Consultando...' : 'Consultar estado en SUNAT' }}
+          </button>
+        </div>
+      }
+      @if (d.confirmacionPendiente && authService.hasPermiso('GUIA_REMISION_CONFIRMAR')) {
+        <div class="gr-form-actions">
+          <button class="lb-btn" [disabled]="confirmando()" (click)="confirmarRecepcion()">
+            {{ confirmando() ? 'Confirmando...' : 'Confirmar recepción en destino' }}
+          </button>
+        </div>
+      }
+    </app-base-modal>
+  }
+
+  <!-- Modal: despachar pedido (dentro del flujo de nueva guía) -->
+  @if (showDespacharModal()) {
+    <app-base-modal title="Despachar pedido" width="w-[680px]" (closeModal)="cerrarDespacharPedido()">
+      <p class="gr-detalle-meta">Pedidos APROBADOS ya recibidos en este almacén, listos para despachar con guía.</p>
+
+      @if (cargandoDespacho()) {
+        <p class="lb-empty">Cargando...</p>
+      } @else if (!pendientesDespacho().length) {
+        <p class="lb-empty">No hay pedidos pendientes de despacho desde este almacén.</p>
+      } @else {
+        <table class="co-pendientes-table">
+          <thead>
+            <tr><th></th><th>Pedido</th><th>Proyecto</th><th>Producto</th><th>Pendiente</th></tr>
+          </thead>
+          <tbody>
+            @for (p of pendientesDespacho(); track p.pedidoItemId) {
+              <tr>
+                <td><input type="checkbox" [checked]="seleccionadosDespacho.has(p.pedidoItemId)" (change)="toggleSeleccionadoDespacho(p.pedidoItemId)" /></td>
+                <td>{{ p.pedidoCodigo }}</td>
+                <td>{{ p.proyectoNombre }}</td>
+                <td>{{ p.productoNombre }} {{ p.talla ? '(' + p.talla + ')' : '' }}</td>
+                <td>{{ p.cantidadPendienteDeDespacho }} {{ p.unidadMedida }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <div class="gr-form-actions">
+          <button class="lb-btn ghost" (click)="cerrarDespacharPedido()">Cancelar</button>
+          <button class="lb-btn" [disabled]="!haySeleccionadosDespacho" (click)="agregarSeleccionadosAlaGuia()">
+            Agregar a la guía
           </button>
         </div>
       }

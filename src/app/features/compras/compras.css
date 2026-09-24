@@ -25,3 +25,10 @@
 .co-detalle-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .co-detalle-meta { font-size: 12.5px; color: #64748B; margin: 4px 0; }
 .co-detalle-table { margin: 12px 0; }
+.co-recepciones { font-size: 11.5px; color: #64748B; background: #F8FAFC; padding: 4px 8px !important; }
+
+.co-pendientes-table { width: 100%; margin: 10px 0; font-size: 13px; }
+.co-pendientes-table th, .co-pendientes-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid #E2E8F0; }
+.co-pendientes-table input[type="checkbox"] { cursor: pointer; }
+.co-costo-input { width: 90px; }
+.co-link-danger { color: #C0392B; margin-left: 10px; }

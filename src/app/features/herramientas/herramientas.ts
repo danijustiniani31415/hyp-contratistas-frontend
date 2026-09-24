@@ -62,7 +62,7 @@ export class Herramientas implements OnInit {
       this.almacenes.set(c.almacenes);
       this.proyectos.set(c.proyectos);
     });
-    this.catalogoService.listProductos('', 1, 200).subscribe((r) => {
+    this.catalogoService.listProductos('', 1, 5000).subscribe((r) => {
       this.productosRetornables.set(r.data.filter((p) => p.esRetornable));
     });
   }

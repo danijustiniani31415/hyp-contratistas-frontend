@@ -17,6 +17,7 @@ import {
 } from '../../core/services/pedidos.service';
 import { PersonasService, CatalogoItem } from '../../core/services/personas.service';
 import { CatalogoService, ProductoListItem } from '../../core/services/catalogo.service';
+import { CatalogoValorService } from '../../core/services/catalogo-valor.service';
 import { LbAuthService } from '../../core/services/lb-auth.service';
 
 const ESTADOS = ['PENDIENTE', 'PENDIENTE_GERENTE', 'APROBADO', 'RECHAZADO', 'ENTREGADO', 'CANCELADO'];
@@ -43,6 +44,7 @@ export class Pedidos implements OnInit {
   almacenes = signal<CatalogoItem[]>([]);
   productos = signal<ProductoListItem[]>([]);
   tallasPorTipo = signal<Record<string, string[]>>({});
+  colores = signal<string[]>([]);
 
   showModal = signal(false);
   error = signal('');
@@ -58,6 +60,7 @@ export class Pedidos implements OnInit {
     private service: PedidosService,
     private personasService: PersonasService,
     private catalogoService: CatalogoService,
+    private catalogoValorService: CatalogoValorService,
     public authService: LbAuthService,
   ) {}
 
@@ -67,13 +70,14 @@ export class Pedidos implements OnInit {
       this.proyectos.set(c.proyectos);
       this.almacenes.set(c.almacenes);
     });
-    this.catalogoService.listProductos('', 1, 200).subscribe((r) => this.productos.set(r.data));
+    this.catalogoService.listProductos('', 1, 5000).subscribe((r) => this.productos.set(r.data));
     // Catálogo fijo de tallas (ROPA/CALZADO/GUANTES) — chico, se precarga entero de una vez.
     for (const tipo of ['ROPA', 'CALZADO', 'GUANTES']) {
       this.catalogoService.listTallas(tipo).subscribe((r) => {
         this.tallasPorTipo.update((m) => ({ ...m, [tipo]: r.map((t) => t.valor) }));
       });
     }
+    this.catalogoValorService.list('COLOR').subscribe((r) => this.colores.set(r.map((c) => c.valor)));
   }
 
   productoDe(productoId: number): ProductoListItem | undefined {
@@ -89,9 +93,14 @@ export class Pedidos implements OnInit {
     return tipo ? (this.tallasPorTipo()[tipo] ?? []) : [];
   }
 
+  requiereColor(item: PedidoItemCreate): boolean {
+    return !!this.productoDe(item.productoId)?.requiereColor;
+  }
+
   onProductoChange(item: PedidoItemCreate): void {
-    // Al cambiar de producto, la talla escrita/seleccionada ya no aplica.
+    // Al cambiar de producto, la talla/color escritos ya no aplican.
     item.talla = '';
+    item.color = '';
   }
 
   onProyectoChange(): void {
@@ -136,7 +145,7 @@ export class Pedidos implements OnInit {
   }
 
   agregarItem(): void {
-    this.form.items.push({ productoId: 0, talla: '', cantidadSolicitada: 1 });
+    this.form.items.push({ productoId: 0, talla: '', color: '', cantidadSolicitada: 1 });
   }
 
   quitarItem(i: number): void {
@@ -148,6 +157,11 @@ export class Pedidos implements OnInit {
     const faltaTalla = this.form.items.some((i) => this.requiereTalla(i) && !i.talla);
     if (faltaTalla) {
       this.error.set('Selecciona la talla de todos los productos que la requieren.');
+      return;
+    }
+    const faltaColor = this.form.items.some((i) => this.requiereColor(i) && !i.color);
+    if (faltaColor) {
+      this.error.set('Selecciona el color de todos los productos que lo requieren.');
       return;
     }
     this.error.set('');
@@ -167,7 +181,7 @@ export class Pedidos implements OnInit {
   }
 
   private formVacio(): PedidoCreate {
-    return { proyectoId: 0, almacenId: 0, observacion: '', items: [{ productoId: 0, talla: '', cantidadSolicitada: 1 }] };
+    return { proyectoId: 0, almacenId: 0, observacion: '', items: [{ productoId: 0, talla: '', color: '', cantidadSolicitada: 1 }] };
   }
 
   // ── Detalle y acciones ──────────────────────────────────────────────

@@ -33,6 +33,7 @@ export class RestablecerPassword implements OnInit {
   }
 
   submit(): void {
+    if (this.loading) return;
     this.error = '';
     if (this.password.length < 6) {
       this.error = 'La contraseña debe tener al menos 6 caracteres.';

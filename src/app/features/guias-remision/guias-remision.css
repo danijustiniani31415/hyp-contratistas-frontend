@@ -30,3 +30,12 @@
 .gr-detalle-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .gr-detalle-meta { font-size: 12.5px; color: #64748B; margin: 4px 0; }
 .gr-detalle-table { margin: 12px 0; }
+.gr-discrepancia { color: #C0392B; font-size: 11px; margin-left: 4px; }
+.gr-pendiente-confirmar { color: #94A3B8; font-style: italic; font-size: 12px; }
+
+.gr-items-header-actions { display: flex; gap: 8px; }
+.gr-item-pedido-tag { font-size: 11px; color: #64748B; margin: -6px 0 8px 4px; }
+
+.co-pendientes-table { width: 100%; margin: 10px 0; font-size: 13px; }
+.co-pendientes-table th, .co-pendientes-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid #E2E8F0; }
+.co-pendientes-table input[type="checkbox"] { cursor: pointer; }

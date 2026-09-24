@@ -105,6 +105,12 @@
             } @else {
               <input class="abril-field-input lb-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
             }
+            @if (requiereColor(item)) {
+              <select class="abril-field-input lb-item-talla" [(ngModel)]="item.color">
+                <option value="" disabled>Color</option>
+                @for (c of colores(); track c) { <option [value]="c">{{ c }}</option> }
+              </select>
+            }
             <input class="abril-field-input lb-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidadSolicitada" placeholder="Cant." />
             @if (form.items.length > 1) {
               <button type="button" class="lb-item-quitar" (click)="quitarItem(i)">✕</button>
@@ -136,14 +142,26 @@
 
       <table class="lb-table pd-detalle-table">
         <thead>
-          <tr><th>Producto</th><th>Talla</th><th>Cant.</th></tr>
+          @if (d.estado === 'APROBADO' || d.estado === 'ENTREGADO') {
+            <tr><th>Producto</th><th>Talla</th><th>Solicitado</th><th>En compra</th><th>En almacén</th><th>Despachado</th><th>Confirmado mina</th></tr>
+          } @else {
+            <tr><th>Producto</th><th>Talla</th><th>Cant.</th></tr>
+          }
         </thead>
         <tbody>
           @for (it of d.items; track it.id) {
             <tr>
               <td>{{ it.productoNombre }}</td>
               <td>{{ it.talla || '—' }}</td>
-              <td>{{ it.cantidadSolicitada }} {{ it.unidadMedida }}</td>
+              @if (d.estado === 'APROBADO' || d.estado === 'ENTREGADO') {
+                <td>{{ it.cantidadSolicitada }} {{ it.unidadMedida }}</td>
+                <td>{{ it.cantidadEnCompra }}</td>
+                <td>{{ it.cantidadRecibidaAlmacen }}</td>
+                <td>{{ it.cantidadDespachada }}</td>
+                <td>{{ it.cantidadConfirmadaMina }}</td>
+              } @else {
+                <td>{{ it.cantidadSolicitada }} {{ it.unidadMedida }}</td>
+              }
             </tr>
           }
         </tbody>

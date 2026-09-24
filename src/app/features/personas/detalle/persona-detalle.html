@@ -74,6 +74,10 @@
           <h2>Acceso al sistema</h2>
           @if (!p.usuarioSistemaId) {
             <button type="button" class="lb-btn" (click)="abrirInvitar()">Dar acceso</button>
+          } @else {
+            <button type="button" class="lb-btn ghost" [disabled]="reenviando()" (click)="reenviarCredenciales()">
+              {{ reenviando() ? 'Enviando...' : 'Reenviar credenciales' }}
+            </button>
           }
         </div>
 
@@ -99,6 +103,7 @@
                   <th>Rol</th>
                   <th>Alcance</th>
                   <th>Desde</th>
+                  <th>Notificar</th>
                   <th></th>
                 </tr>
               </thead>
@@ -111,6 +116,11 @@
                       @else { {{ a.proyectoNombre ?? '—' }}@if (a.almacenNombre) { · {{ a.almacenNombre }} } }
                     </td>
                     <td>{{ a.fechaInicio }}</td>
+                    <td>
+                      <label class="pd-checkbox-inline">
+                        <input type="checkbox" [checked]="a.notificar" (change)="toggleNotificar(a.id, !a.notificar)" />
+                      </label>
+                    </td>
                     <td class="pd-table-actions">
                       <button type="button" class="pd-link-danger" (click)="revocar(a.id)">Revocar</button>
                     </td>
@@ -245,6 +255,16 @@
             />
           }
         </div>
+
+        <label class="pd-checkbox-inline" style="margin-top: 14px">
+          <input type="checkbox" [(ngModel)]="asignarForm.notificar" />
+          Notificarle por correo los eventos de este rol
+        </label>
+        <p class="pd-modal-hint">
+          Desmárcalo si es un rol de acceso/mantenimiento (por ejemplo, sistemas con un rol
+          operativo solo para soporte) — igual va a poder actuar, pero no le van a llegar los
+          correos de cada evento real de ese rol.
+        </p>
       }
       @if (asignarError()) { <p class="pd-error">{{ asignarError() }}</p> }
       <div class="pd-form-actions">

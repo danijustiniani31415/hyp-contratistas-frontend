@@ -12,9 +12,11 @@ import {
   GuiaRemisionListItem,
   GuiaRemisionDetalle,
   GuiaRemisionCreate,
+  ConfirmarRecepcionItem,
 } from '../../core/services/guias-remision.service';
 import { PersonasService, AlmacenCatalogoItem } from '../../core/services/personas.service';
 import { CatalogoService, ProductoListItem } from '../../core/services/catalogo.service';
+import { PedidosService, PendienteDespacho } from '../../core/services/pedidos.service';
 import { LbAuthService } from '../../core/services/lb-auth.service';
 
 const ESTADOS = ['BORRADOR', 'ENVIADA', 'ACEPTADA', 'RECHAZADA', 'ANULADA'];
@@ -58,18 +60,27 @@ export class GuiasRemision implements OnInit {
   showDetalle = signal(false);
   detalle = signal<GuiaRemisionDetalle | null>(null);
   enviando = signal(false);
+  confirmando = signal(false);
+
+  // ── Despachar pedido (liga los ítems de la guía a un pedido) ────────
+  showDespacharModal = signal(false);
+  pendientesDespacho = signal<PendienteDespacho[]>([]);
+  cargandoDespacho = signal(false);
+  seleccionadosDespacho = new Set<number>();
+  codigosPedidoPorItem: Record<number, string> = {};
 
   constructor(
     private service: GuiasRemisionService,
     private personasService: PersonasService,
     private catalogoService: CatalogoService,
+    private pedidosService: PedidosService,
     public authService: LbAuthService,
   ) {}
 
   ngOnInit(): void {
     this.cargar();
     this.personasService.getCatalogos().subscribe((c) => this.almacenes.set(c.almacenes));
-    this.catalogoService.listProductos('', 1, 200).subscribe((r) => this.productos.set(r.data));
+    this.catalogoService.listProductos('', 1, 5000).subscribe((r) => this.productos.set(r.data));
   }
 
   cargar(): void {
@@ -105,6 +116,7 @@ export class GuiasRemision implements OnInit {
   abrirNuevo(): void {
     this.form = this.formVacio();
     this.esTrasladoPropio = true;
+    this.codigosPedidoPorItem = {};
     this.error.set('');
     this.showModal.set(true);
   }
@@ -136,11 +148,64 @@ export class GuiasRemision implements OnInit {
   }
 
   agregarItem(): void {
-    this.form.items.push({ productoId: 0, talla: '', cantidad: 1, unidadMedida: 'NIU' });
+    this.form.items.push({ productoId: 0, talla: '', color: '', cantidad: 1, unidadMedida: 'NIU' });
   }
 
   quitarItem(i: number): void {
     this.form.items.splice(i, 1);
+  }
+
+  // ── Despachar pedido ──────────────────────────────────────────────────
+  abrirDespacharPedido(): void {
+    if (!this.form.almacenOrigenId) {
+      Swal.fire({ icon: 'info', title: 'Selecciona primero el almacén de origen', text: 'Así solo te muestro los pedidos que se despachan desde ahí.' });
+      return;
+    }
+    this.seleccionadosDespacho.clear();
+    this.cargandoDespacho.set(true);
+    this.showDespacharModal.set(true);
+    this.pedidosService.listPendientesDeDespacho().subscribe({
+      next: (data) => {
+        this.pendientesDespacho.set(data.filter((p) => p.almacenId === this.form.almacenOrigenId));
+        this.cargandoDespacho.set(false);
+      },
+      error: () => this.cargandoDespacho.set(false),
+    });
+  }
+
+  cerrarDespacharPedido(): void {
+    this.showDespacharModal.set(false);
+  }
+
+  toggleSeleccionadoDespacho(pedidoItemId: number): void {
+    if (this.seleccionadosDespacho.has(pedidoItemId)) this.seleccionadosDespacho.delete(pedidoItemId);
+    else this.seleccionadosDespacho.add(pedidoItemId);
+  }
+
+  get haySeleccionadosDespacho(): boolean {
+    return this.seleccionadosDespacho.size > 0;
+  }
+
+  agregarSeleccionadosAlaGuia(): void {
+    const seleccionados = this.pendientesDespacho().filter((p) => this.seleccionadosDespacho.has(p.pedidoItemId));
+    if (!seleccionados.length) return;
+
+    // El primer ítem que agrega el form vacío es descartable si nunca se tocó.
+    const primeroVacio = this.form.items.length === 1 && !this.form.items[0].productoId && !this.form.items[0].pedidoItemId;
+    if (primeroVacio) this.form.items = [];
+
+    for (const p of seleccionados) {
+      this.form.items.push({
+        productoId: p.productoId,
+        talla: p.talla,
+        color: p.color,
+        cantidad: p.cantidadPendienteDeDespacho,
+        unidadMedida: p.unidadMedida === 'UND' || !p.unidadMedida ? 'NIU' : p.unidadMedida,
+        pedidoItemId: p.pedidoItemId,
+      });
+      this.codigosPedidoPorItem[p.pedidoItemId] = p.pedidoCodigo;
+    }
+    this.showDespacharModal.set(false);
   }
 
   /** SUNAT exige transportista (público) o vehículo+conductor (privado) para que la guía sea válida. */
@@ -177,7 +242,7 @@ export class GuiasRemision implements OnInit {
       pesoBrutoUnidad: 'KGM',
       almacenOrigenId: 0,
       observacion: '',
-      items: [{ productoId: 0, talla: '', cantidad: 1, unidadMedida: 'NIU' }],
+      items: [{ productoId: 0, talla: '', color: '', cantidad: 1, unidadMedida: 'NIU' }],
     };
   }
 
@@ -246,6 +311,60 @@ export class GuiasRemision implements OnInit {
         this.enviando.set(false);
         Swal.fire({ icon: 'error', title: 'No se pudo consultar', text: err?.error?.message ?? 'Error al conectar con SUNAT.' });
       },
+    });
+  }
+
+  // ── Confirmación de recepción en destino (mina) ─────────────────────
+  confirmarRecepcion(): void {
+    const d = this.detalle();
+    if (!d) return;
+
+    const camposHtml = d.items
+      .map(
+        (it, idx) => `
+        <label style="display:block;text-align:left;font-size:12px;margin:8px 0 2px">
+          ${it.productoNombre}${it.talla ? ' (' + it.talla + ')' : ''} — despachado: ${it.cantidad}
+        </label>
+        <input id="swal-confirmar-${idx}" type="number" class="swal2-input" style="margin:0" min="0" max="${it.cantidad}" step="0.01" value="${it.cantidad}">
+      `,
+      )
+      .join('');
+
+    Swal.fire({
+      title: 'Confirmar recepción en destino',
+      html: `<p style="font-size:12.5px;color:#64748B;margin-bottom:8px">Indica cuánto llegó realmente de cada ítem — si llega menos, la diferencia se ajusta sola.</p>${camposHtml}`,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Confirmar recepción',
+      cancelButtonText: 'Cancelar',
+      preConfirm: () => {
+        const items: ConfirmarRecepcionItem[] = [];
+        for (let idx = 0; idx < d.items.length; idx++) {
+          const input = document.getElementById(`swal-confirmar-${idx}`) as HTMLInputElement;
+          const cantidadConfirmada = Number(input.value);
+          if (cantidadConfirmada < 0 || cantidadConfirmada > d.items[idx].cantidad) {
+            Swal.showValidationMessage(`La cantidad de "${d.items[idx].productoNombre}" debe estar entre 0 y ${d.items[idx].cantidad}`);
+            return false;
+          }
+          items.push({ itemId: d.items[idx].id, cantidadConfirmada });
+        }
+        return items;
+      },
+    }).then((res) => {
+      if (!res.isConfirmed || !res.value) return;
+      this.confirmando.set(true);
+      this.service.confirmarRecepcion(d.id, res.value).subscribe({
+        next: (detalle) => {
+          this.confirmando.set(false);
+          this.detalle.set(detalle);
+          this.cargar();
+          Swal.fire({ icon: 'success', title: 'Recepción confirmada' });
+        },
+        error: (err) => {
+          this.confirmando.set(false);
+          Swal.fire({ icon: 'error', title: 'No se pudo confirmar', text: err?.error?.message ?? 'Error al confirmar la recepción.' });
+        },
+      });
     });
   }
 }

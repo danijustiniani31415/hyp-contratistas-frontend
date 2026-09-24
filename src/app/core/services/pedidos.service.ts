@@ -3,10 +3,26 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LbAuthService } from './lb-auth.service';
+import { PendienteCompra } from './compras.service';
+
+export interface PendienteDespacho {
+  pedidoItemId: number;
+  pedidoId: number;
+  pedidoCodigo: string;
+  proyectoNombre: string;
+  almacenId: number;
+  productoId: number;
+  productoNombre: string;
+  talla: string;
+  color: string;
+  unidadMedida: string;
+  cantidadPendienteDeDespacho: number;
+}
 
 export interface PedidoItemCreate {
   productoId: number;
   talla: string;
+  color: string;
   cantidadSolicitada: number;
 }
 
@@ -42,8 +58,13 @@ export interface PedidoItemDetalle {
   productoCodigo: string | null;
   unidadMedida: string;
   talla: string;
+  color: string;
   cantidadSolicitada: number;
   cantidadEntregada: number | null;
+  cantidadEnCompra: number;
+  cantidadRecibidaAlmacen: number;
+  cantidadDespachada: number;
+  cantidadConfirmadaMina: number;
 }
 
 export interface PedidoDetalle {
@@ -119,6 +140,14 @@ export class PedidosService {
 
   cancelar(id: number): Observable<PedidoDetalle> {
     return this.http.post<PedidoDetalle>(`${this.apiUrl}/${id}/cancelar`, {}, { headers: this.headers() });
+  }
+
+  listPendientesDeCompra(): Observable<PendienteCompra[]> {
+    return this.http.get<PendienteCompra[]>(`${this.apiUrl}/pendientes-compra`, { headers: this.headers() });
+  }
+
+  listPendientesDeDespacho(): Observable<PendienteDespacho[]> {
+    return this.http.get<PendienteDespacho[]>(`${this.apiUrl}/pendientes-despacho`, { headers: this.headers() });
   }
 
   getDestinatarios(proyectoId: number): Observable<PedidoDestinatarios> {

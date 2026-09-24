@@ -52,7 +52,7 @@ export class Epp implements OnInit {
     this.cargar();
     this.personasService.list('', 1, 200).subscribe((r) => this.personas.set(r.data));
     this.personasService.getCatalogos().subscribe((c) => this.almacenes.set(c.almacenes));
-    this.catalogoService.listProductos('', 1, 200).subscribe((r) => {
+    this.catalogoService.listProductos('', 1, 5000).subscribe((r) => {
       this.productosEpp.set(r.data.filter((p) => p.categoriaTipo === 'EPP'));
     });
   }
@@ -97,7 +97,7 @@ export class Epp implements OnInit {
   }
 
   agregarItem(): void {
-    this.form.items.push({ productoId: 0, talla: '', cantidad: 1 });
+    this.form.items.push({ productoId: 0, talla: '', color: '', cantidad: 1 });
   }
 
   quitarItem(i: number): void {
@@ -123,6 +123,6 @@ export class Epp implements OnInit {
   }
 
   private formVacio(): EntregaEppCreate {
-    return { personaId: 0, almacenId: 0, observacion: '', items: [{ productoId: 0, talla: '', cantidad: 1 }] };
+    return { personaId: 0, almacenId: 0, observacion: '', items: [{ productoId: 0, talla: '', color: '', cantidad: 1 }] };
   }
 }

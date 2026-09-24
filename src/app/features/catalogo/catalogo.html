@@ -19,13 +19,14 @@
           <th>Categoría</th>
           <th>Unidad</th>
           <th>Estado</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
         @if (loading()) {
-          <tr><td colspan="5" class="lb-empty">Cargando...</td></tr>
+          <tr><td colspan="6" class="lb-empty">Cargando...</td></tr>
         } @else if (!productos().length) {
-          <tr><td colspan="5" class="lb-empty">Sin productos registrados todavía.</td></tr>
+          <tr><td colspan="6" class="lb-empty">Sin productos registrados todavía.</td></tr>
         } @else {
           @for (p of productos(); track p.id) {
             <tr>
@@ -34,6 +35,7 @@
               <td>{{ p.categoriaNombre }}</td>
               <td>{{ p.unidadMedida }}</td>
               <td><span class="lb-badge" [class.on]="p.activo">{{ p.activo ? 'ACTIVO' : 'INACTIVO' }}</span></td>
+              <td><button type="button" class="cp-link" (click)="abrirEditar(p)">Editar</button></td>
             </tr>
           }
         }
@@ -46,7 +48,7 @@
   }
 
   @if (showModal()) {
-    <app-base-modal title="Nuevo producto" width="w-[560px]" (closeModal)="cerrarModal()">
+    <app-base-modal [title]="editandoId() ? 'Editar producto' : 'Nuevo producto'" width="w-[560px]" (closeModal)="cerrarModal()">
       <div class="cp-form-grid">
         <div class="abril-field">
           <label class="abril-field-label">Nombre</label>
@@ -92,7 +94,20 @@
 
       <div class="cp-checkboxes">
         <label class="cp-checkbox"><input type="checkbox" [(ngModel)]="form.requiereTalla" /> Requiere talla (EPP)</label>
+        @if (form.requiereTalla) {
+          <div class="abril-field">
+            <label class="abril-field-label">Tipo de talla</label>
+            <select class="abril-field-input" [(ngModel)]="form.tipoTalla">
+              <option [value]="null" disabled>Selecciona tipo</option>
+              @for (t of tiposTalla; track t) { <option [value]="t">{{ t }}</option> }
+            </select>
+          </div>
+        }
+        <label class="cp-checkbox"><input type="checkbox" [(ngModel)]="form.requiereColor" /> Requiere color (pintura, chalecos, etc.)</label>
         <label class="cp-checkbox"><input type="checkbox" [(ngModel)]="form.esRetornable" /> Es retornable (herramienta/equipo en préstamo)</label>
+        @if (editandoId()) {
+          <label class="cp-checkbox"><input type="checkbox" [(ngModel)]="editandoActivo" /> Activo</label>
+        }
       </div>
 
       @if (error()) { <p class="cp-error">{{ error() }}</p> }

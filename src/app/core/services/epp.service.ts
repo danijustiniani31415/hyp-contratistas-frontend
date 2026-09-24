@@ -7,6 +7,7 @@ import { LbAuthService } from './lb-auth.service';
 export interface EntregaEppItemCreate {
   productoId: number;
   talla: string;
+  color: string;
   cantidad: number;
 }
 
@@ -39,6 +40,7 @@ export interface EntregaEppItemDetalle {
   productoNombre: string;
   productoCodigo: string | null;
   talla: string;
+  color: string;
   cantidad: number;
 }
 

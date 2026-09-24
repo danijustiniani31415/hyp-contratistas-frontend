@@ -51,7 +51,7 @@ export class AlmacenComponent implements OnInit {
 
   ngOnInit(): void {
     this.personasService.getCatalogos().subscribe((c) => this.almacenes.set(c.almacenes));
-    this.catalogoService.listProductos('', 1, 200).subscribe((r) => this.productos.set(r.data));
+    this.catalogoService.listProductos('', 1, 5000).subscribe((r) => this.productos.set(r.data));
     this.cargar();
     this.cargarMovimientos();
   }

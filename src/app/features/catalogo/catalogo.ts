@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import Swal from 'sweetalert2';
 import { SearchSelect } from '../../shared/components/search-select/search-select';
 import { BaseModal } from '../../shared/components/base-modal/base-modal';
 import { FabButton } from '../../shared/components/fab-button/fab-button';
@@ -15,6 +16,7 @@ import {
 } from '../../core/services/catalogo.service';
 
 const UNIDADES_MEDIDA = ['UND', 'PAR', 'KG', 'GAL', 'M', 'M2', 'M3', 'L', 'ROLLO', 'CAJA'];
+const TIPOS_TALLA = ['ROPA', 'CALZADO', 'GUANTES'];
 
 /** [REVISADO] Estado en signals — mismo motivo que personas.ts (Zone.js no parcha fetch()). */
 @Component({
@@ -35,6 +37,7 @@ export class Catalogo implements OnInit {
 
   categorias = signal<Categoria[]>([]);
   unidades = UNIDADES_MEDIDA;
+  tiposTalla = TIPOS_TALLA;
   showModal = signal(false);
   error = signal('');
   guardando = signal(false);
@@ -43,6 +46,9 @@ export class Catalogo implements OnInit {
   private sugerenciasTimer: ReturnType<typeof setTimeout> | null = null;
 
   form: ProductoCreate = this.formVacio();
+  /** null = creando un producto nuevo; con valor = editando ese producto. */
+  editandoId = signal<number | null>(null);
+  editandoActivo = true;
 
   constructor(private service: CatalogoService) {}
 
@@ -82,9 +88,36 @@ export class Catalogo implements OnInit {
 
   abrirNuevo(): void {
     this.form = this.formVacio();
+    this.editandoId.set(null);
     this.error.set('');
     this.sugerencias.set([]);
     this.showModal.set(true);
+  }
+
+  abrirEditar(p: ProductoListItem): void {
+    this.error.set('');
+    this.sugerencias.set([]);
+    this.service.getProducto(p.id).subscribe({
+      next: (d) => {
+        this.form = {
+          codigo: d.codigo,
+          nombre: d.nombre,
+          descripcion: d.descripcion,
+          categoriaId: d.categoriaId,
+          unidadMedida: d.unidadMedida,
+          requiereTalla: d.requiereTalla,
+          tipoTalla: d.tipoTalla,
+          requiereColor: d.requiereColor,
+          esRetornable: d.esRetornable,
+        };
+        this.editandoActivo = d.activo;
+        this.editandoId.set(d.id);
+        this.showModal.set(true);
+      },
+      error: (err) => {
+        Swal.fire({ icon: 'error', title: 'Error', text: err?.error?.message ?? 'No se pudo cargar el producto.' });
+      },
+    });
   }
 
   cerrarModal(): void {
@@ -108,9 +141,19 @@ export class Catalogo implements OnInit {
   }
 
   guardar(): void {
+    if (this.form.requiereTalla && !this.form.tipoTalla) {
+      this.error.set('Si requiere talla, indica el tipo (ROPA, CALZADO o GUANTES).');
+      return;
+    }
     this.error.set('');
     this.guardando.set(true);
-    this.service.crearProducto(this.form).subscribe({
+
+    const editandoId = this.editandoId();
+    const guardado$ = editandoId
+      ? this.service.actualizarProducto(editandoId, { ...this.form, activo: this.editandoActivo })
+      : this.service.crearProducto(this.form);
+
+    guardado$.subscribe({
       next: () => {
         this.guardando.set(false);
         this.showModal.set(false);
@@ -130,6 +173,7 @@ export class Catalogo implements OnInit {
       categoriaId: 0,
       unidadMedida: 'UND',
       requiereTalla: false,
+      requiereColor: false,
       esRetornable: false,
     };
   }

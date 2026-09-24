@@ -24,6 +24,7 @@ export interface ProductoListItem {
   unidadMedida: string;
   requiereTalla: boolean;
   tipoTalla: string | null;
+  requiereColor: boolean;
   esRetornable: boolean;
   activo: boolean;
 }
@@ -48,11 +49,17 @@ export interface ProductoCreate {
   unidadMedida: string;
   requiereTalla: boolean;
   tipoTalla?: string | null;
+  requiereColor: boolean;
   esRetornable: boolean;
 }
 
 export interface ProductoUpdate extends ProductoCreate {
   activo: boolean;
+}
+
+export interface ProductoDetalle extends ProductoUpdate {
+  id: number;
+  categoriaNombre: string;
 }
 
 export interface SugerenciaProducto {
@@ -87,6 +94,10 @@ export class CatalogoService {
 
   crearProducto(dto: ProductoCreate): Observable<any> {
     return this.http.post(`${this.apiUrl}/productos`, dto, { headers: this.headers() });
+  }
+
+  getProducto(id: number): Observable<ProductoDetalle> {
+    return this.http.get<ProductoDetalle>(`${this.apiUrl}/productos/${id}`, { headers: this.headers() });
   }
 
   actualizarProducto(id: number, dto: ProductoUpdate): Observable<any> {

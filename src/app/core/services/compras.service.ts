@@ -24,8 +24,10 @@ export interface ProveedorCreate {
 export interface OrdenCompraItemCreate {
   productoId: number;
   talla: string;
+  color: string;
   cantidadSolicitada: number;
   costoUnitario: number;
+  pedidoItemId?: number | null;
 }
 
 export interface OrdenCompraCreate {
@@ -33,6 +35,37 @@ export interface OrdenCompraCreate {
   almacenId: number;
   observacion?: string;
   items: OrdenCompraItemCreate[];
+}
+
+export interface PendienteCompra {
+  pedidoItemId: number;
+  pedidoId: number;
+  pedidoCodigo: string;
+  proyectoNombre: string;
+  productoId: number;
+  productoNombre: string;
+  talla: string;
+  color: string;
+  cantidadSolicitada: number;
+  cantidadEnCompra: number;
+  cantidadPendienteDeCompra: number;
+  pedidoCreadoEn: string;
+}
+
+export interface GenerarDesdePedidosItem {
+  pedidoItemId?: number | null;
+  productoId?: number | null;
+  talla?: string;
+  color?: string;
+  cantidad?: number | null;
+  costoUnitario: number;
+}
+
+export interface GenerarOrdenCompraDesdePedidos {
+  proveedorId: number;
+  almacenId: number;
+  observacion?: string;
+  items: GenerarDesdePedidosItem[];
 }
 
 export interface OrdenCompraListItem {
@@ -53,15 +86,48 @@ export interface OrdenCompraListResponse {
   totalPages: number;
 }
 
+export interface OrdenCompraRecepcionDetalle {
+  id: number;
+  cantidad: number;
+  facturaNumero: string | null;
+  facturaMonto: number | null;
+  recibidoPorNombre: string;
+  creadoEn: string;
+}
+
 export interface OrdenCompraItemDetalle {
   id: number;
   productoNombre: string;
   productoCodigo: string | null;
   talla: string;
+  color: string;
   cantidadSolicitada: number;
   costoUnitario: number;
   cantidadRecibida: number;
   cantidadPendiente: number;
+  pedidoItemId: number | null;
+  pedidoCodigo: string | null;
+  recepciones: OrdenCompraRecepcionDetalle[];
+}
+
+export interface DevolverItem {
+  cantidad: number;
+  modalidadTraslado: string;
+  fechaTraslado: string;
+  pesoBrutoTotal: number;
+  pesoBrutoUnidad: string;
+  numBultos?: number | null;
+  transportistaRuc?: string;
+  transportistaRazonSocial?: string;
+  vehiculoPlaca?: string;
+  conductorNombres?: string;
+  conductorLicencia?: string;
+  observacion?: string;
+}
+
+export interface DevolverItemResultado {
+  orden: OrdenCompraDetalle;
+  guiaCodigo: string;
 }
 
 export interface OrdenCompraDetalle {
@@ -99,6 +165,10 @@ export class ComprasService {
     return this.http.post<OrdenCompraDetalle>(`${this.apiUrl}/ordenes`, dto, { headers: this.headers() });
   }
 
+  generarDesdePedidos(dto: GenerarOrdenCompraDesdePedidos): Observable<OrdenCompraDetalle> {
+    return this.http.post<OrdenCompraDetalle>(`${this.apiUrl}/ordenes/desde-pedidos`, dto, { headers: this.headers() });
+  }
+
   list(search: string, estado: string, page: number, pageSize: number): Observable<OrdenCompraListResponse> {
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
     if (search) params.set('search', search);
@@ -110,15 +180,29 @@ export class ComprasService {
     return this.http.get<OrdenCompraDetalle>(`${this.apiUrl}/ordenes/${id}`, { headers: this.headers() });
   }
 
-  recibirItem(ordenId: number, itemId: number, cantidad: number): Observable<OrdenCompraDetalle> {
+  recibirItem(
+    ordenId: number,
+    itemId: number,
+    cantidad: number,
+    facturaNumero?: string,
+    facturaMonto?: number,
+  ): Observable<OrdenCompraDetalle> {
     return this.http.post<OrdenCompraDetalle>(
       `${this.apiUrl}/ordenes/${ordenId}/items/${itemId}/recibir`,
-      { cantidad },
+      { cantidad, facturaNumero: facturaNumero || null, facturaMonto: facturaMonto ?? null },
       { headers: this.headers() },
     );
   }
 
   cancelar(id: number): Observable<OrdenCompraDetalle> {
     return this.http.post<OrdenCompraDetalle>(`${this.apiUrl}/ordenes/${id}/cancelar`, {}, { headers: this.headers() });
+  }
+
+  devolverItem(ordenId: number, itemId: number, dto: DevolverItem): Observable<DevolverItemResultado> {
+    return this.http.post<DevolverItemResultado>(
+      `${this.apiUrl}/ordenes/${ordenId}/items/${itemId}/devolver`,
+      dto,
+      { headers: this.headers() },
+    );
   }
 }

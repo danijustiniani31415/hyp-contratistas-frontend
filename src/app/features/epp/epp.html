@@ -88,6 +88,7 @@
               placeholder="Producto EPP"
             />
             <input class="abril-field-input lb-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
+            <input class="abril-field-input lb-item-talla" [(ngModel)]="item.color" placeholder="Color" />
             <input class="abril-field-input lb-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidad" placeholder="Cant." />
             @if (form.items.length > 1) {
               <button type="button" class="lb-item-quitar" (click)="quitarItem(i)">✕</button>

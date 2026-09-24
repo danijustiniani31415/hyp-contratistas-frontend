@@ -35,6 +35,7 @@ export class PersonaDetalleComponent implements OnInit {
   invitarEmail = '';
   invitarError = signal('');
   invitando = signal(false);
+  reenviando = signal(false);
 
   showCambiarEmailModal = signal(false);
   nuevoEmail = '';
@@ -42,7 +43,7 @@ export class PersonaDetalleComponent implements OnInit {
   cambiandoEmail = signal(false);
 
   showAsignarModal = signal(false);
-  asignarForm: NuevaAsignacion = { rolId: 0, proyectoId: null, almacenId: null };
+  asignarForm: NuevaAsignacion = { rolId: 0, proyectoId: null, almacenId: null, notificar: true };
   asignarError = signal('');
   asignando = signal(false);
 
@@ -90,7 +91,8 @@ export class PersonaDetalleComponent implements OnInit {
 
   // ── Dar acceso al sistema ──────────────────────────────────────────
   abrirInvitar(): void {
-    this.invitarEmail = this.persona()?.emailPersonal ?? '';
+    const p = this.persona();
+    this.invitarEmail = p?.emailLogin ?? p?.emailPersonal ?? '';
     this.invitarError.set('');
     this.showInvitarModal.set(true);
   }
@@ -117,6 +119,29 @@ export class PersonaDetalleComponent implements OnInit {
       error: (err) => {
         this.invitando.set(false);
         this.invitarError.set(err?.error?.message ?? 'No se pudo enviar la invitación.');
+      },
+    });
+  }
+
+  reenviarCredenciales(): void {
+    this.reenviando.set(true);
+    this.service.reenviarCredenciales(this.personaId).subscribe({
+      next: (p) => {
+        this.persona.set(p);
+        this.reenviando.set(false);
+        Swal.fire({
+          icon: 'success',
+          title: 'Credenciales reenviadas',
+          text: `Se envió un correo a ${p.emailLogin} con un enlace para (re)crear su contraseña.`,
+        });
+      },
+      error: (err) => {
+        this.reenviando.set(false);
+        Swal.fire({
+          icon: 'error',
+          title: 'No se pudo reenviar',
+          text: err?.error?.message ?? 'Ocurrió un error al reenviar las credenciales.',
+        });
       },
     });
   }
@@ -165,7 +190,7 @@ export class PersonaDetalleComponent implements OnInit {
   }
 
   abrirAsignar(): void {
-    this.asignarForm = { rolId: 0, proyectoId: null, almacenId: null };
+    this.asignarForm = { rolId: 0, proyectoId: null, almacenId: null, notificar: true };
     this.asignarError.set('');
     this.showAsignarModal.set(true);
   }
@@ -207,6 +232,15 @@ export class PersonaDetalleComponent implements OnInit {
           Swal.fire({ icon: 'error', title: 'Error', text: err?.error?.message ?? 'No se pudo revocar.' });
         },
       });
+    });
+  }
+
+  toggleNotificar(asignacionId: number, notificar: boolean): void {
+    this.service.toggleNotificarAsignacion(this.personaId, asignacionId, notificar).subscribe({
+      next: (p) => this.persona.set(p),
+      error: (err) => {
+        Swal.fire({ icon: 'error', title: 'Error', text: err?.error?.message ?? 'No se pudo actualizar.' });
+      },
     });
   }
 

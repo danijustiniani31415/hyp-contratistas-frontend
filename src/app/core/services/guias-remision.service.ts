@@ -7,8 +7,10 @@ import { LbAuthService } from './lb-auth.service';
 export interface GuiaRemisionItemCreate {
   productoId: number;
   talla: string;
+  color: string;
   cantidad: number;
   unidadMedida: string;
+  pedidoItemId?: number | null;
 }
 
 export interface GuiaRemisionCreate {
@@ -55,8 +57,19 @@ export interface GuiaRemisionItemDetalle {
   productoNombre: string;
   productoCodigo: string | null;
   talla: string;
+  color: string;
   cantidad: number;
   unidadMedida: string;
+  pedidoItemId: number | null;
+  pedidoCodigo: string | null;
+  cantidadConfirmada: number | null;
+  confirmadoEn: string | null;
+  confirmadoPorNombre: string | null;
+}
+
+export interface ConfirmarRecepcionItem {
+  itemId: number;
+  cantidadConfirmada: number;
 }
 
 export interface GuiaRemisionDetalle {
@@ -88,6 +101,7 @@ export interface GuiaRemisionDetalle {
   cdrDescripcion: string | null;
   enviadoEn: string | null;
   respondidoEn: string | null;
+  confirmacionPendiente: boolean;
   items: GuiaRemisionItemDetalle[];
 }
 
@@ -123,5 +137,9 @@ export class GuiasRemisionService {
 
   consultarEstado(id: number): Observable<GuiaRemisionDetalle> {
     return this.http.post<GuiaRemisionDetalle>(`${this.apiUrl}/${id}/consultar-estado`, {}, { headers: this.headers() });
+  }
+
+  confirmarRecepcion(id: number, items: ConfirmarRecepcionItem[]): Observable<GuiaRemisionDetalle> {
+    return this.http.post<GuiaRemisionDetalle>(`${this.apiUrl}/${id}/confirmar-recepcion`, { items }, { headers: this.headers() });
   }
 }
