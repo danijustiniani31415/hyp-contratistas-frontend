@@ -102,8 +102,6 @@
                 <option value="" disabled>Talla</option>
                 @for (t of tallasDe(item); track t) { <option [value]="t">{{ t }}</option> }
               </select>
-            } @else {
-              <input class="abril-field-input lb-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
             }
             @if (requiereColor(item)) {
               <select class="abril-field-input lb-item-talla" [(ngModel)]="item.color">
@@ -112,6 +110,7 @@
               </select>
             }
             <input class="abril-field-input lb-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidadSolicitada" placeholder="Cant." />
+            <input class="abril-field-input lb-item-obs" [(ngModel)]="item.observacion" placeholder="Observación (opcional)" />
             @if (form.items.length > 1) {
               <button type="button" class="lb-item-quitar" (click)="quitarItem(i)">✕</button>
             }
@@ -151,7 +150,11 @@
         <tbody>
           @for (it of d.items; track it.id) {
             <tr>
-              <td>{{ it.productoNombre }}</td>
+              <td>
+                {{ it.productoNombre }}
+                @if (it.color) { <span class="pd-item-color">· {{ it.color }}</span> }
+                @if (it.observacion) { <br /><span class="pd-item-obs">{{ it.observacion }}</span> }
+              </td>
               <td>{{ it.talla || '—' }}</td>
               @if (d.estado === 'APROBADO' || d.estado === 'ENTREGADO') {
                 <td>{{ it.cantidadSolicitada }} {{ it.unidadMedida }}</td>

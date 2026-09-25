@@ -23,6 +23,7 @@ export interface PedidoItemCreate {
   productoId: number;
   talla: string;
   color: string;
+  observacion?: string;
   cantidadSolicitada: number;
 }
 
@@ -59,6 +60,7 @@ export interface PedidoItemDetalle {
   unidadMedida: string;
   talla: string;
   color: string;
+  observacion: string | null;
   cantidadSolicitada: number;
   cantidadEntregada: number | null;
   cantidadEnCompra: number;

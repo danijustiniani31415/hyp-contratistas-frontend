@@ -33,3 +33,5 @@
 .pd-detalle-meta { font-size: 12.5px; color: #64748B; margin: 4px 0; }
 .pd-detalle-obs { font-size: 13px; color: #39536B; font-style: italic; margin: 8px 0; }
 .pd-detalle-table { margin: 12px 0; }
+.pd-item-color { font-size: 12px; color: #64748B; }
+.pd-item-obs { font-size: 12px; color: #64748B; font-style: italic; }

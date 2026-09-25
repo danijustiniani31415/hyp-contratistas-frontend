@@ -145,7 +145,7 @@ export class Pedidos implements OnInit {
   }
 
   agregarItem(): void {
-    this.form.items.push({ productoId: 0, talla: '', color: '', cantidadSolicitada: 1 });
+    this.form.items.push({ productoId: 0, talla: '', color: '', observacion: '', cantidadSolicitada: 1 });
   }
 
   quitarItem(i: number): void {
@@ -181,7 +181,7 @@ export class Pedidos implements OnInit {
   }
 
   private formVacio(): PedidoCreate {
-    return { proyectoId: 0, almacenId: 0, observacion: '', items: [{ productoId: 0, talla: '', color: '', cantidadSolicitada: 1 }] };
+    return { proyectoId: 0, almacenId: 0, observacion: '', items: [{ productoId: 0, talla: '', color: '', observacion: '', cantidadSolicitada: 1 }] };
   }
 
   // ── Detalle y acciones ──────────────────────────────────────────────
