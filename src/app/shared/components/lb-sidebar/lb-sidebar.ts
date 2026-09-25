@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { LbAuthService } from '../../../core/services/lb-auth.service';
-import { LB_NAV_GROUPS, LbNavGroup, findGrupoActivo } from '../../nav/lb-nav-groups';
+import { LB_NAV_GROUPS, LbNavGroup, findGrupoActivo, itemsVisibles } from '../../nav/lb-nav-groups';
 
 /**
  * Sidebar de Las Bravas — SOLO las categorías principales (3), no los 12 ítems sueltos. Al entrar
@@ -19,7 +19,8 @@ import { LB_NAV_GROUPS, LbNavGroup, findGrupoActivo } from '../../nav/lb-nav-gro
   styleUrl: './lb-sidebar.css',
 })
 export class LbSidebar {
-  grupos: LbNavGroup[] = LB_NAV_GROUPS;
+  /** Solo grupos con al menos un item al que el usuario realmente pueda entrar. */
+  grupos: LbNavGroup[];
   grupoActivoKey: string | undefined;
 
   accountMenuOpen = false;
@@ -39,6 +40,11 @@ export class LbSidebar {
   };
 
   constructor(private authService: LbAuthService, private router: Router) {
+    const hasPermiso = (codigo: string) => this.authService.hasPermiso(codigo);
+    this.grupos = LB_NAV_GROUPS
+      .map((g) => ({ ...g, items: itemsVisibles(g, hasPermiso) }))
+      .filter((g) => g.items.length > 0);
+
     const user = this.authService.getUser();
     this.userNombre = user?.nombreCompleto ?? null;
     this.userIniciales = this.computeIniciales(this.userNombre);

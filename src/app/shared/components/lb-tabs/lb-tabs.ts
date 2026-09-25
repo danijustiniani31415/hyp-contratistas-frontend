@@ -2,7 +2,8 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { LB_NAV_GROUPS, LbNavGroup, findGrupoActivo } from '../../nav/lb-nav-groups';
+import { LB_NAV_GROUPS, LbNavGroup, findGrupoActivo, itemsVisibles } from '../../nav/lb-nav-groups';
+import { LbAuthService } from '../../../core/services/lb-auth.service';
 
 /**
  * Barra de tabs horizontal con las sub-páginas del grupo activo (Personas/Tareo/Planillas/... si
@@ -19,10 +20,16 @@ import { LB_NAV_GROUPS, LbNavGroup, findGrupoActivo } from '../../nav/lb-nav-gro
 export class LbTabs {
   grupoActivo: LbNavGroup | undefined;
 
-  constructor(private router: Router) {
-    this.grupoActivo = findGrupoActivo(this.router.url) ?? LB_NAV_GROUPS[0];
+  constructor(private router: Router, private authService: LbAuthService) {
+    this.grupoActivo = this.filtrarGrupo(findGrupoActivo(this.router.url) ?? LB_NAV_GROUPS[0]);
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => {
-      this.grupoActivo = findGrupoActivo(this.router.url) ?? this.grupoActivo;
+      this.grupoActivo = this.filtrarGrupo(findGrupoActivo(this.router.url)) ?? this.grupoActivo;
     });
+  }
+
+  private filtrarGrupo(grupo: LbNavGroup | undefined): LbNavGroup | undefined {
+    if (!grupo) return undefined;
+    const hasPermiso = (codigo: string) => this.authService.hasPermiso(codigo);
+    return { ...grupo, items: itemsVisibles(grupo, hasPermiso) };
   }
 }
