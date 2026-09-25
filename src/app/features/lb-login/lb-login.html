@@ -29,10 +29,10 @@
             <a routerLink="/auth/olvide-password" class="lb-forgot-link">¿Olvidaste tu contraseña?</a>
           </div>
 
-          @if (error) { <p class="lb-login-error">{{ error }}</p> }
+          @if (error()) { <p class="lb-login-error">{{ error() }}</p> }
 
-          <button type="submit" class="lb-login-btn" [disabled]="loading">
-            {{ loading ? 'Ingresando...' : 'INGRESAR' }}
+          <button type="submit" class="lb-login-btn" [disabled]="loading()">
+            {{ loading() ? 'Ingresando...' : 'INGRESAR' }}
           </button>
         </form>
 
