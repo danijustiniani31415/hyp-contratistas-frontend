@@ -154,5 +154,7 @@
     </app-base-modal>
   }
 
-  <app-fab label="Registrar movimiento" (clicked)="abrirNuevo()" />
+  @if (authService.hasPermiso('ALMACEN_AJUSTAR')) {
+    <app-fab label="Registrar movimiento" (clicked)="abrirNuevo()" />
+  }
 </div>

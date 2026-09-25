@@ -19,6 +19,7 @@ import {
   PersonaCreate,
   CargoDetalle,
 } from '../../core/services/personas.service';
+import { LbAuthService } from '../../core/services/lb-auth.service';
 
 /**
  * [REVISADO] Estado en signals, no en campos de clase planos. Esta app usa
@@ -73,7 +74,7 @@ export class Personas implements OnInit {
   categoriasLaborales = signal<CatalogoValor[]>([]);
   catalogoAbierto = signal<'' | 'BANCO' | 'TIPO_AFP_ONP' | 'CATEGORIA_LABORAL'>('');
 
-  constructor(private service: PersonasService, private catalogoValorService: CatalogoValorService) {}
+  constructor(private service: PersonasService, private catalogoValorService: CatalogoValorService, public authService: LbAuthService) {}
 
   ngOnInit(): void {
     this.cargar();

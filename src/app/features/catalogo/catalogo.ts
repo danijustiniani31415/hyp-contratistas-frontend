@@ -14,6 +14,7 @@ import {
   Categoria,
   SugerenciaProducto,
 } from '../../core/services/catalogo.service';
+import { LbAuthService } from '../../core/services/lb-auth.service';
 
 const UNIDADES_MEDIDA = ['UND', 'PAR', 'KG', 'GAL', 'M', 'M2', 'M3', 'L', 'ROLLO', 'CAJA'];
 const TIPOS_TALLA = ['ROPA', 'CALZADO', 'GUANTES'];
@@ -50,7 +51,7 @@ export class Catalogo implements OnInit {
   editandoId = signal<number | null>(null);
   editandoActivo = true;
 
-  constructor(private service: CatalogoService) {}
+  constructor(private service: CatalogoService, public authService: LbAuthService) {}
 
   ngOnInit(): void {
     this.cargar();

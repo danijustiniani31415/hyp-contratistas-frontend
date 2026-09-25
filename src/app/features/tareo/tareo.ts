@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { LbPageHeader } from '../../shared/components/lb-page-header/lb-page-header';
 import { TareoService, TareoCelda, TareoPersona } from '../../core/services/tareo.service';
+import { LbAuthService } from '../../core/services/lb-auth.service';
 
 const CODIGOS = ['8', 'DL', 'F', 'P', 'VC', 'DM'];
 
@@ -29,7 +30,7 @@ export class Tareo implements OnInit {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
   ];
 
-  constructor(private service: TareoService) {}
+  constructor(private service: TareoService, public authService: LbAuthService) {}
 
   ngOnInit(): void {
     this.cargar();

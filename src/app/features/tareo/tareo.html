@@ -10,9 +10,11 @@
       8 = normal · DL = descanso libre · F = falta · P = permiso · VC = vacaciones · DM = descanso médico
     </span>
 
-    <button type="button" class="lb-btn" [disabled]="guardando() || loading()" (click)="guardar()">
-      {{ guardando() ? 'Guardando...' : 'Guardar tareo del mes' }}
-    </button>
+    @if (authService.hasPermiso('TAREO_REGISTRAR')) {
+      <button type="button" class="lb-btn" [disabled]="guardando() || loading()" (click)="guardar()">
+        {{ guardando() ? 'Guardando...' : 'Guardar tareo del mes' }}
+      </button>
+    }
   </div>
 
   @if (loading()) {
@@ -42,6 +44,7 @@
                     [class.tr-celda-vacia]="!codigoDe(celda)"
                     [ngModel]="codigoDe(celda)"
                     (ngModelChange)="setCodigo(celda, $event)"
+                    [disabled]="!authService.hasPermiso('TAREO_REGISTRAR')"
                   >
                     <option value=""></option>
                     @for (c of codigos; track c) { <option [value]="c">{{ c }}</option> }

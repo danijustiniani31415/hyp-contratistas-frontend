@@ -35,7 +35,11 @@
               <td>{{ p.categoriaNombre }}</td>
               <td>{{ p.unidadMedida }}</td>
               <td><span class="lb-badge" [class.on]="p.activo">{{ p.activo ? 'ACTIVO' : 'INACTIVO' }}</span></td>
-              <td><button type="button" class="cp-link" (click)="abrirEditar(p)">Editar</button></td>
+              <td>
+                @if (authService.hasPermiso('CATALOGO_GESTIONAR')) {
+                  <button type="button" class="cp-link" (click)="abrirEditar(p)">Editar</button>
+                }
+              </td>
             </tr>
           }
         }
@@ -121,5 +125,7 @@
     </app-base-modal>
   }
 
-  <app-fab label="Nuevo producto" (clicked)="abrirNuevo()" />
+  @if (authService.hasPermiso('CATALOGO_GESTIONAR')) {
+    <app-fab label="Nuevo producto" (clicked)="abrirNuevo()" />
+  }
 </div>

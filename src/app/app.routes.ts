@@ -6,6 +6,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { boletinGuard } from './core/guards/boletin.guard';
 import { rootRedirect } from './core/guards/root-redirect';
 import { lbAuthGuard } from './core/guards/lb-auth.guard';
+import { lbPermisoGuard } from './core/guards/lb-permiso.guard';
 
 export const routes: Routes = [
   {
@@ -288,18 +289,24 @@ export const routes: Routes = [
       },
       {
         path: 'planillas',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['PLANILLA_CALCULAR', 'PLANILLA_CONFIGURAR'] },
         loadComponent: () =>
           import('./features/planillas/planillas')
           .then(m => m.Planillas)
       },
       {
         path: 'planillas/:id',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['PLANILLA_CALCULAR', 'PLANILLA_CONFIGURAR'] },
         loadComponent: () =>
           import('./features/planillas/detalle/planilla-detalle')
           .then(m => m.PlanillaDetalleComponent)
       },
       {
         path: 'roles-permisos',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['ROLES_GESTIONAR'] },
         loadComponent: () =>
           import('./features/roles-permisos/roles-permisos')
           .then(m => m.RolesPermisos)
@@ -318,30 +325,40 @@ export const routes: Routes = [
       },
       {
         path: 'pedidos',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['PEDIDO_CREAR', 'PEDIDO_APROBAR', 'PEDIDO_ENTREGAR', 'PEDIDO_VER_TODOS', 'PEDIDO_VISAR'] },
         loadComponent: () =>
           import('./features/pedidos/pedidos')
           .then(m => m.Pedidos)
       },
       {
         path: 'epp',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['EPP_ENTREGAR'] },
         loadComponent: () =>
           import('./features/epp/epp')
           .then(m => m.Epp)
       },
       {
         path: 'herramientas',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['HERRAMIENTA_PRESTAR', 'HERRAMIENTA_DEVOLVER'] },
         loadComponent: () =>
           import('./features/herramientas/herramientas')
           .then(m => m.Herramientas)
       },
       {
         path: 'compras',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['COMPRA_CREAR', 'COMPRA_RECIBIR'] },
         loadComponent: () =>
           import('./features/compras/compras')
           .then(m => m.Compras)
       },
       {
         path: 'guias-remision',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['GUIA_REMISION_VER', 'GUIA_REMISION_CREAR', 'GUIA_REMISION_ENVIAR', 'GUIA_REMISION_CONFIRMAR'] },
         loadComponent: () =>
           import('./features/guias-remision/guias-remision')
           .then(m => m.GuiasRemision)

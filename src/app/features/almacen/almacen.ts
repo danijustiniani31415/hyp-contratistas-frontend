@@ -14,6 +14,7 @@ import {
 } from '../../core/services/almacen.service';
 import { PersonasService, AlmacenCatalogoItem } from '../../core/services/personas.service';
 import { CatalogoService, ProductoListItem } from '../../core/services/catalogo.service';
+import { LbAuthService } from '../../core/services/lb-auth.service';
 
 /** [REVISADO] Estado en signals — mismo motivo que personas.ts (Zone.js no parcha fetch()). */
 @Component({
@@ -47,6 +48,7 @@ export class AlmacenComponent implements OnInit {
     private service: AlmacenService,
     private personasService: PersonasService,
     private catalogoService: CatalogoService,
+    public authService: LbAuthService,
   ) {}
 
   ngOnInit(): void {

@@ -291,5 +291,7 @@
     (cerrado)="cerrarCatalogo()"
   />
 
-  <app-fab label="Nueva persona" (clicked)="abrirNuevo()" />
+  @if (authService.hasPermiso('PERSONA_GESTIONAR')) {
+    <app-fab label="Nueva persona" (clicked)="abrirNuevo()" />
+  }
 </div>
