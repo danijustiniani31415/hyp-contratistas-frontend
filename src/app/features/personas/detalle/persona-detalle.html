@@ -5,7 +5,9 @@
     <p class="pd-loading">Cargando...</p>
   } @else if (persona(); as p) {
     <app-lb-page-header [titulo]="p.apellidos + ' ' + p.nombres" [subtitulo]="p.tipoDocumento + ' ' + p.numeroDocumento">
-      <button type="button" class="lb-btn ghost" (click)="abrirDatos()">Editar datos</button>
+      @if (authService.hasPermiso('PERSONA_GESTIONAR')) {
+        <button type="button" class="lb-btn ghost" (click)="abrirDatos()">Editar datos</button>
+      }
     </app-lb-page-header>
 
     <div class="pd-grid">
@@ -48,7 +50,9 @@
       <section class="pd-card pd-card-wide">
         <div class="pd-card-header">
           <h2>Datos de planilla</h2>
-          <button type="button" class="lb-btn ghost" (click)="abrirPlanilla()">Editar</button>
+          @if (authService.hasPermiso('PERSONA_GESTIONAR')) {
+            <button type="button" class="lb-btn ghost" (click)="abrirPlanilla()">Editar</button>
+          }
         </div>
         @if (!p.planilla) {
           <p class="lb-empty">Sin datos de planilla todavía.</p>
@@ -72,12 +76,14 @@
       <section class="pd-card pd-card-wide">
         <div class="pd-card-header">
           <h2>Acceso al sistema</h2>
-          @if (!p.usuarioSistemaId) {
-            <button type="button" class="lb-btn" (click)="abrirInvitar()">Dar acceso</button>
-          } @else {
-            <button type="button" class="lb-btn ghost" [disabled]="reenviando()" (click)="reenviarCredenciales()">
-              {{ reenviando() ? 'Enviando...' : 'Reenviar credenciales' }}
-            </button>
+          @if (authService.hasPermiso('PERSONA_GESTIONAR')) {
+            @if (!p.usuarioSistemaId) {
+              <button type="button" class="lb-btn" (click)="abrirInvitar()">Dar acceso</button>
+            } @else {
+              <button type="button" class="lb-btn ghost" [disabled]="reenviando()" (click)="reenviarCredenciales()">
+                {{ reenviando() ? 'Enviando...' : 'Reenviar credenciales' }}
+              </button>
+            }
           }
         </div>
 
@@ -86,12 +92,16 @@
         } @else {
           <p class="pd-login-email">
             Correo de acceso: <strong>{{ p.emailLogin }}</strong>
-            <button type="button" class="pd-cambiar-email-btn" (click)="abrirCambiarEmail()">Cambiar</button>
+            @if (authService.hasPermiso('PERSONA_GESTIONAR')) {
+              <button type="button" class="pd-cambiar-email-btn" (click)="abrirCambiarEmail()">Cambiar</button>
+            }
           </p>
 
           <div class="pd-card-header pd-asignaciones-header">
             <h3>Roles asignados</h3>
-            <button type="button" class="lb-btn ghost" (click)="abrirAsignar()">+ Asignar rol</button>
+            @if (authService.hasPermiso('PERSONA_GESTIONAR')) {
+              <button type="button" class="lb-btn ghost" (click)="abrirAsignar()">+ Asignar rol</button>
+            }
           </div>
 
           @if (!p.asignaciones.length) {
@@ -118,11 +128,13 @@
                     <td>{{ a.fechaInicio }}</td>
                     <td>
                       <label class="pd-checkbox-inline">
-                        <input type="checkbox" [checked]="a.notificar" (change)="toggleNotificar(a.id, !a.notificar)" />
+                        <input type="checkbox" [checked]="a.notificar" [disabled]="!authService.hasPermiso('PERSONA_GESTIONAR')" (change)="toggleNotificar(a.id, !a.notificar)" />
                       </label>
                     </td>
                     <td class="pd-table-actions">
-                      <button type="button" class="pd-link-danger" (click)="revocar(a.id)">Revocar</button>
+                      @if (authService.hasPermiso('PERSONA_GESTIONAR')) {
+                        <button type="button" class="pd-link-danger" (click)="revocar(a.id)">Revocar</button>
+                      }
                     </td>
                   </tr>
                 }

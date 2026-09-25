@@ -17,6 +17,7 @@ import {
   NuevaAsignacion,
   PersonaPlanilla,
 } from '../../../core/services/personas.service';
+import { LbAuthService } from '../../../core/services/lb-auth.service';
 
 /** [REVISADO] Estado en signals — mismo motivo que personas.ts (Zone.js no parcha fetch()). */
 @Component({
@@ -69,6 +70,7 @@ export class PersonaDetalleComponent implements OnInit {
     private catalogoValorService: CatalogoValorService,
     private router: Router,
     private service: PersonasService,
+    public authService: LbAuthService,
   ) {}
 
   ngOnInit(): void {
