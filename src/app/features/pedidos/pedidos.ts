@@ -152,6 +152,20 @@ export class Pedidos implements OnInit {
     this.form.items.splice(i, 1);
   }
 
+  editarObservacionItem(item: PedidoItemCreate): void {
+    Swal.fire({
+      title: 'Observación del producto',
+      input: 'textarea',
+      inputValue: item.observacion ?? '',
+      inputPlaceholder: 'Ej. cualquier marca, urgente...',
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+    }).then((res) => {
+      if (res.isConfirmed) item.observacion = (res.value ?? '').trim();
+    });
+  }
+
   guardar(): void {
     if (!this.form.proyectoId || !this.form.almacenId || !this.form.items.length) return;
     const faltaTalla = this.form.items.some((i) => this.requiereTalla(i) && !i.talla);
