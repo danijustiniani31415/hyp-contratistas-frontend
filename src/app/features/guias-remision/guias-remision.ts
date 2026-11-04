@@ -61,6 +61,7 @@ export class GuiasRemision implements OnInit {
   detalle = signal<GuiaRemisionDetalle | null>(null);
   enviando = signal(false);
   confirmando = signal(false);
+  eliminando = signal(false);
 
   // ── Despachar pedido (liga los ítems de la guía a un pedido) ────────
   showDespacharModal = signal(false);
@@ -285,6 +286,34 @@ export class GuiasRemision implements OnInit {
         error: (err) => {
           this.enviando.set(false);
           Swal.fire({ icon: 'error', title: 'No se pudo transmitir', text: err?.error?.message ?? 'Error al conectar con SUNAT.' });
+        },
+      });
+    });
+  }
+
+  eliminar(): void {
+    const id = this.detalle()?.id;
+    if (!id) return;
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar este borrador?',
+      text: 'Se devuelve el stock que movió la guía y se borra el borrador. No se puede deshacer.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Volver',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.eliminando.set(true);
+      this.service.eliminar(id).subscribe({
+        next: () => {
+          this.eliminando.set(false);
+          this.showDetalle.set(false);
+          this.cargar();
+          Swal.fire({ icon: 'success', title: 'Borrador eliminado' });
+        },
+        error: (err) => {
+          this.eliminando.set(false);
+          Swal.fire({ icon: 'error', title: 'No se pudo eliminar', text: err?.error?.message ?? 'Error del servidor.' });
         },
       });
     });

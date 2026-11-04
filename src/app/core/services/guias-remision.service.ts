@@ -135,6 +135,10 @@ export class GuiasRemisionService {
     return this.http.post<GuiaRemisionDetalle>(`${this.apiUrl}/${id}/enviar`, {}, { headers: this.headers() });
   }
 
+  eliminar(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers: this.headers() });
+  }
+
   consultarEstado(id: number): Observable<GuiaRemisionDetalle> {
     return this.http.post<GuiaRemisionDetalle>(`${this.apiUrl}/${id}/consultar-estado`, {}, { headers: this.headers() });
   }

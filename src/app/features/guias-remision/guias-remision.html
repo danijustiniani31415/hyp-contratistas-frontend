@@ -264,6 +264,13 @@
           </button>
         </div>
       }
+      @if (d.estado === 'BORRADOR' && authService.hasPermiso('GUIA_REMISION_CREAR')) {
+        <div class="gr-form-actions">
+          <button class="lb-btn ghost" [disabled]="eliminando() || enviando()" (click)="eliminar()">
+            {{ eliminando() ? 'Eliminando...' : 'Eliminar borrador' }}
+          </button>
+        </div>
+      }
       @if (d.estado === 'ENVIADA' && authService.hasPermiso('GUIA_REMISION_ENVIAR')) {
         <div class="gr-form-actions">
           <button class="lb-btn ghost" [disabled]="enviando()" (click)="consultarEstado()">
