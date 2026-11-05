@@ -24,7 +24,7 @@ import { LbAuthService } from '../../core/services/lb-auth.service';
 import { generarPdfGuia } from './guia-remision-pdf';
 import { AlmacenService, StockListItem } from '../../core/services/almacen.service';
 import { extraerTalla, leerExcel } from './guia-excel-import';
-import { buscarProducto, marcasConocidas, separarColor, separarMarca } from './producto-matching';
+import { AliasProducto, buscarPorAlias, buscarProducto, marcasConocidas, separarColor, separarMarca } from './producto-matching';
 import { DocumentosService } from '../../core/services/documentos.service';
 import { CatalogoValorService } from '../../core/services/catalogo-valor.service';
 
@@ -195,6 +195,7 @@ export class GuiasRemision implements OnInit {
     this.catalogoService.listProductos('', 1, 5000).subscribe((r) => this.productos.set(r.data));
     this.cargarMaestros();
     this.catalogoValorService.list('COLOR').subscribe((v) => this.colores.set(v.filter((x) => x.activo).map((x) => x.valor)));
+    this.catalogoService.listAlias().subscribe((a) => this.aliasLista.set(a));
   }
 
   // ── Datos maestros de transporte (se eligen al crear la guía y rellenan sus campos) ──
@@ -458,6 +459,7 @@ export class GuiasRemision implements OnInit {
   importCargando = signal(false);
   /** Lista de colores del sistema (editable): para detectar el color en el Excel. */
   colores = signal<string[]>([]);
+  aliasLista = signal<AliasProducto[]>([]);
   private stockOrigen: StockListItem[] = [];
 
   async onExcelElegido(ev: Event): Promise<void> {
@@ -497,7 +499,10 @@ export class GuiasRemision implements OnInit {
         // La marca cuenta para reconocer el producto: «Flexómetro Truper» no es «Flexómetro Stanley».
         const { color, base: sinColor } = separarColor(sinTalla, this.colores());
         const { marca, base } = separarMarca(sinColor, conocidas);
-        const { exacto: productoId, sugerido } = buscarProducto(base, marca, catalogo, conocidas);
+        const porAlias = buscarPorAlias(sinColor, this.aliasLista());
+        const m = buscarProducto(base, marca, catalogo, conocidas);
+        const productoId = porAlias ?? m.exacto;
+        const sugerido = porAlias ? null : m.sugerido;
         const fila: FilaImport = {
           incluir: true, cantidad: f.cantidad, descripcion: f.descripcion, talla, color,
           productoId, libre: productoId === null, disponible: null, sugerido,

@@ -20,7 +20,7 @@ import Swal from 'sweetalert2';
 import { Categoria } from '../../core/services/catalogo.service';
 import { CargaMasivaFila } from '../../core/services/almacen.service';
 import { adivinarTipoTalla, adivinarUnidad, extraerTalla, leerExcel } from '../guias-remision/guia-excel-import';
-import { buscarProducto, marcasConocidas, separarColor, separarMarca } from '../guias-remision/producto-matching';
+import { AliasProducto, buscarPorAlias, buscarProducto, marcasConocidas, separarColor, separarMarca } from '../guias-remision/producto-matching';
 import { CatalogoValorService } from '../../core/services/catalogo-valor.service';
 
 /** Fila del Excel de stock, antes de cargarla al almacén. */
@@ -29,6 +29,8 @@ interface FilaCarga {
   cantidad: number;
   /** Nombre SIN la marca: la marca va en su propio campo y el sistema la une al nombre al crear el producto. */
   nombre: string;
+  /** Texto original del Excel (sin talla ni color): si la fila se vincula a un producto, se aprende como alias. */
+  textoOriginal: string;
   marca: string;
   /** Variante de color (de la lista de colores del sistema): igual que la talla, el producto es el mismo. */
   color: string;
@@ -77,6 +79,8 @@ export class AlmacenComponent implements OnInit {
   categorias = signal<Categoria[]>([]);
   /** Lista de colores del sistema (editable): se usa para detectar el color en el Excel y elegirlo a mano. */
   colores = signal<string[]>([]);
+  /** Alias que el sistema ya aprendió: «arcosierra», «Respirador original»… apuntan a su producto. */
+  aliasLista = signal<AliasProducto[]>([]);
   cargaAlmacenId: number | null = null;
   cargaCategoriaId: number | null = null;
   cargaLeyendo = signal(false);
@@ -104,12 +108,16 @@ export class AlmacenComponent implements OnInit {
           // El color es variante (como la talla): se separa del nombre y se guarda aparte.
           const { color, base: sinColor } = separarColor(sinTalla, this.colores());
           const { marca, base } = separarMarca(sinColor, conocidas);
-          const { exacto: productoId, sugerido } = buscarProducto(base, marca, catalogo, conocidas);
+          const porAlias = buscarPorAlias(sinColor, this.aliasLista());
+          const m = buscarProducto(base, marca, catalogo, conocidas);
+          const productoId = porAlias ?? m.exacto;
+          const sugerido = porAlias ? null : m.sugerido;
           const existente = catalogo.find((p) => p.id === productoId);
           return {
             incluir: true,
             cantidad: f.cantidad,
             nombre: base,
+            textoOriginal: sinColor.trim(),
             marca,
             color,
             talla,
@@ -249,6 +257,7 @@ export class AlmacenComponent implements OnInit {
               requiereColor: !!f.color,
               tipoTalla: f.tipoTalla || null,
             },
+        alias: f.productoId ? f.textoOriginal : null,
         talla: f.talla.trim(),
         color: f.color,
         cantidad: f.cantidad,
@@ -308,6 +317,7 @@ export class AlmacenComponent implements OnInit {
     this.personasService.getCatalogos().subscribe((c) => this.almacenes.set(c.almacenes));
     this.catalogoService.listProductos('', 1, 5000).subscribe((r) => this.productos.set(r.data));
     this.catalogoValorService.list('COLOR').subscribe((v) => this.colores.set(v.filter((x) => x.activo).map((x) => x.valor)));
+    this.catalogoService.listAlias().subscribe((a) => this.aliasLista.set(a));
     this.cargar();
     this.cargarMovimientos();
   }

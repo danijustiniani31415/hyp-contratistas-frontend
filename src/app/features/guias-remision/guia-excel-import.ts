@@ -11,7 +11,14 @@ export function normalizar(s: string): string {
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
-    .replace(/[^a-z0-9\s/"]/g, ' ')
+    // Medidas: «24"», «24 pulgadas» y «24pulg» son lo mismo; «72 mm» y «72mm» también.
+    .replace(/(\d)\s*(?:"|''|pulgadas?\b|pulg\.?(?=\s|$)|in\b)/g, '$1pulg')
+    .replace(/(\d)\s+(mm|cm|mts?|m|kgs?|lts?|l|gal|gln|gl|pies|pie|v|w|hp|psi)\b/g, '$1$2')
+    .replace(/(\d)(mts|mt)\b/g, '$1m')
+    .replace(/(\d)kgs\b/g, '$1kg')
+    .replace(/(\d)(lts|lt)\b/g, '$1l')
+    .replace(/(\d)(gln|gl)\b/g, '$1gal')
+    .replace(/[^a-z0-9\s/]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -98,7 +105,8 @@ export function adivinarTipoTalla(nombre: string, talla: string): '' | 'ROPA' | 
   return 'ROPA';
 }
 
-const PALABRAS_VACIAS = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'para', 'con', 'y', 'en', 'por', 'un', 'una']);
+// «original» / «genuino» no distinguen un producto de otro: describen que es de la marca, no qué es.
+const PALABRAS_VACIAS = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'para', 'con', 'y', 'en', 'por', 'un', 'una', 'original', 'originales', 'genuino', 'genuina']);
 const singular = (t: string) => (t.length > 3 && t.endsWith('s') ? t.slice(0, -1) : t);
 export const tokens = (s: string): string[] =>
   normalizar(s).split(' ').filter((t) => t.length > 1 && !PALABRAS_VACIAS.has(t)).map(singular);

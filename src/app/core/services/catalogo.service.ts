@@ -48,6 +48,8 @@ export interface ProductoCreate {
   nombre: string;
   /** Opcional: si el nombre no la menciona, el sistema la agrega al final del nombre. */
   marca?: string | null;
+  /** Otras formas de escribir el nombre (el sistema las aprende). En una edición reemplaza la lista. */
+  alias?: string[] | null;
   descripcion?: string | null;
   categoriaId: number;
   unidadMedida: string;
@@ -111,6 +113,20 @@ export class CatalogoService {
   sugerirProductos(nombre: string): Observable<SugerenciaProducto[]> {
     const params = new URLSearchParams({ nombre });
     return this.http.get<SugerenciaProducto[]>(`${this.apiUrl}/productos/sugerencias?${params}`, { headers: this.headers() });
+  }
+
+  listAlias(): Observable<{ productoId: number; alias: string }[]> {
+    return this.http.get<{ productoId: number; alias: string }[]>(`${this.apiUrl}/productos/alias`, { headers: this.headers() });
+  }
+
+  /** Ids de los productos con alguna referencia (stock, movimientos, pedidos, compras, guías, EPP, préstamos). */
+  listUso(): Observable<number[]> {
+    return this.http.get<number[]>(`${this.apiUrl}/productos/uso`, { headers: this.headers() });
+  }
+
+  resolverDuplicados(principalId: number, duplicadoIds: number[]): Observable<{ desactivados: number; omitidos: string[] }> {
+    return this.http.post<{ desactivados: number; omitidos: string[] }>(
+      `${this.apiUrl}/productos/duplicados/resolver`, { principalId, duplicadoIds }, { headers: this.headers() });
   }
 
   listTallas(tipo: string): Observable<Talla[]> {

@@ -87,6 +87,8 @@ export interface AjustarUmbrales {
 
 export interface CargaMasivaFila {
   productoId?: number | null;
+  /** Texto original del Excel: si la fila se vinculó a un producto, el sistema lo aprende como alias. */
+  alias?: string | null;
   nuevoProducto?: { nombre: string; marca?: string | null; categoriaId: number; unidadMedida: string; requiereTalla: boolean; tipoTalla?: string | null } | null;
   talla: string;
   color: string;

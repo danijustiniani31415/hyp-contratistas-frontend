@@ -159,3 +159,71 @@ export function buscarProducto(
       : null,
   };
 }
+
+export interface AliasProducto {
+  productoId: number;
+  alias: string;
+}
+
+const compacto = (s: string) => normalizar(s).replace(/\s+/g, '');
+
+/**
+ * Producto cuyo alias coincide EXACTAMENTE (sin tildes, espacios ni signos) con el texto: el sistema lo aprendió
+ * antes de una persona («arcosierra», «Respirador original»). Si el mismo alias apuntara a dos productos, no decide.
+ */
+export function buscarPorAlias(texto: string, alias: AliasProducto[]): number | null {
+  const clave = compacto(texto);
+  if (clave.length < 3) return null;
+  const ids = new Set(alias.filter((a) => compacto(a.alias) === clave).map((a) => a.productoId));
+  return ids.size === 1 ? [...ids][0] : null;
+}
+
+/**
+ * Agrupa los productos que parecen ser el mismo escrito de distinta forma («ARCO DE SIERRA», «ARCO SIERRA»,
+ * «ARCOSIERRA»). Dos productos solo se agrupan si tienen la misma marca y las mismas medidas; así «34mm» y «36mm»
+ * o dos marcas distintas nunca se juntan.
+ */
+export function agruparDuplicados(productos: ProductoParaCoincidir[], conocidas: string[]): ProductoParaCoincidir[][] {
+  interface Info { p: ProductoParaCoincidir; marca: string; tokens: string[]; firma: string; pegado: string }
+  const infos: Info[] = productos
+    .map((p) => {
+      const propia = (p.marca ?? '').trim();
+      const sep = propia ? separarMarca(p.nombre, [propia]) : separarMarca(p.nombre, conocidas);
+      const t = tokens(sep.base);
+      return { p, marca: normalizar(propia || sep.marca), tokens: t, firma: t.filter((x) => /\d/.test(x)).sort().join('|'), pegado: compacto(sep.base) };
+    })
+    .filter((i) => i.tokens.length > 0);
+
+  const cubetas = new Map<string, Info[]>();
+  for (const i of infos) {
+    const k = `${i.marca}#${i.firma}`;
+    const lista = cubetas.get(k) ?? [];
+    lista.push(i);
+    cubetas.set(k, lista);
+  }
+
+  const grupos: ProductoParaCoincidir[][] = [];
+  for (const lista of cubetas.values()) {
+    if (lista.length < 2) continue;
+    const padre = lista.map((_, i) => i);
+    const raiz = (i: number): number => (padre[i] === i ? i : (padre[i] = raiz(padre[i])));
+    for (let i = 0; i < lista.length; i++) {
+      for (let j = i + 1; j < lista.length; j++) {
+        const a = lista[i];
+        const b = lista[j];
+        const mismas = [...a.tokens].sort().join(' ') === [...b.tokens].sort().join(' ');
+        const parecidas = 1 - distancia(a.pegado, b.pegado) / Math.max(a.pegado.length, b.pegado.length, 1) >= 0.9;
+        if (mismas || parecidas) padre[raiz(i)] = raiz(j);
+      }
+    }
+    const porRaiz = new Map<number, ProductoParaCoincidir[]>();
+    lista.forEach((info, i) => {
+      const r = raiz(i);
+      const g = porRaiz.get(r) ?? [];
+      g.push(info.p);
+      porRaiz.set(r, g);
+    });
+    for (const g of porRaiz.values()) if (g.length > 1) grupos.push(g);
+  }
+  return grupos;
+}

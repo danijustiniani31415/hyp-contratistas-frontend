@@ -8,6 +8,9 @@
         (ngModelChange)="onSearchInput()"
       />
     </div>
+    @if (authService.hasPermiso('CATALOGO_GESTIONAR')) {
+      <button class="lb-btn ghost" (click)="abrirDuplicados()">Revisar duplicados</button>
+    }
   </app-lb-page-header>
 
   <div class="lb-table-wrap">
@@ -118,6 +121,21 @@
         }
       </div>
 
+      @if (editandoId()) {
+        <div class="abril-field">
+          <label class="abril-field-label">Otros nombres de este producto (alias)</label>
+          <div class="cp-alias">
+            @for (a of form.alias ?? []; track a) {
+              <span class="cp-chip">{{ a }} <button type="button" (click)="quitarAlias(a)" title="Quitar">✕</button></span>
+            } @empty { <span class="cp-hint">Ninguno todavía. El sistema los aprende al cargar Excel.</span> }
+          </div>
+          <div class="cp-alias-add">
+            <input class="abril-field-input" [(ngModel)]="aliasNuevo" (keydown.enter)="agregarAlias()" placeholder="Ej: ARCOSIERRA" />
+            <button type="button" class="lb-btn ghost small" (click)="agregarAlias()">+ Agregar</button>
+          </div>
+        </div>
+      }
+
       @if (error()) { <p class="cp-error">{{ error() }}</p> }
 
       <div class="cp-form-actions">
@@ -125,6 +143,43 @@
         <button class="lb-btn" [disabled]="guardando() || !form.nombre || !form.categoriaId" (click)="guardar()">
           {{ guardando() ? 'Guardando...' : 'Guardar' }}
         </button>
+      </div>
+    </app-base-modal>
+  }
+
+  <!-- Modal: revisar duplicados -->
+  @if (showDuplicados()) {
+    <app-base-modal title="Revisar duplicados" width="w-[760px]" (closeModal)="cerrarDuplicados()">
+      <p class="cp-hint">
+        Productos que parecen ser el mismo escrito de distinta forma. Elige el que se conserva: los demás se
+        <b>desactivan</b> (no se borran) y su nombre pasa a ser <b>alias</b> del que conservas, para que se reconozca solo
+        en próximas cargas. Los que ya tienen stock o historial no se tocan.
+      </p>
+      @if (cargandoDup()) { <p class="cp-hint">Revisando el catálogo...</p> }
+      @else if (!gruposDup().length) { <p class="cp-hint">No se encontraron más duplicados.</p> }
+      @if (mensajeDup()) { <p class="cp-hint"><b>{{ mensajeDup() }}</b></p> }
+      <div class="cp-dup-wrap">
+        @for (g of gruposDup(); track g.principalId) {
+          <div class="cp-dup-grupo">
+            @for (m of g.miembros; track m.id) {
+              <div class="cp-dup-fila">
+                <label>
+                  <input type="radio" [name]="'dup' + g.principalId" [checked]="g.principalId === m.id" (change)="elegirPrincipal(g, m.id)" />
+                  {{ m.nombre }}
+                </label>
+                @if (m.enUso) { <span class="cp-chip">en uso</span> }
+                @else if (g.principalId !== m.id) {
+                  <label class="cp-dup-des"><input type="checkbox" [(ngModel)]="m.desactivar" /> desactivar</label>
+                } @else { <span class="cp-chip ok">se conserva</span> }
+              </div>
+            }
+            <div class="cp-form-actions">
+              <button class="lb-btn small" [disabled]="g.aplicando" (click)="aplicarGrupo(g)">
+                {{ g.aplicando ? 'Aplicando...' : 'Aplicar' }}
+              </button>
+            </div>
+          </div>
+        }
       </div>
     </app-base-modal>
   }

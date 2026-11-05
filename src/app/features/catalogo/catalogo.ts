@@ -1,4 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
+import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
@@ -15,6 +16,11 @@ import {
   SugerenciaProducto,
 } from '../../core/services/catalogo.service';
 import { LbAuthService } from '../../core/services/lb-auth.service';
+import { agruparDuplicados, marcasConocidas } from '../guias-remision/producto-matching';
+
+/** Un producto dentro de un grupo de posibles duplicados. */
+interface MiembroDup { id: number; nombre: string; enUso: boolean; desactivar: boolean }
+interface GrupoDup { principalId: number; miembros: MiembroDup[]; aplicando: boolean }
 
 const UNIDADES_MEDIDA = ['UND', 'PAR', 'KG', 'GAL', 'M', 'M2', 'M3', 'L', 'ROLLO', 'CAJA'];
 const TIPOS_TALLA = ['ROPA', 'CALZADO', 'GUANTES'];
@@ -95,6 +101,83 @@ export class Catalogo implements OnInit {
     this.showModal.set(true);
   }
 
+  // ── Alias (otras formas de escribir el nombre) ──
+  aliasNuevo = '';
+
+  agregarAlias(): void {
+    const texto = this.aliasNuevo.trim();
+    if (!texto) return;
+    const lista = this.form.alias ?? [];
+    if (!lista.some((a) => a.toLowerCase() === texto.toLowerCase())) this.form.alias = [...lista, texto];
+    this.aliasNuevo = '';
+  }
+
+  quitarAlias(alias: string): void {
+    this.form.alias = (this.form.alias ?? []).filter((a) => a !== alias);
+  }
+
+  // ── Revisar duplicados ──
+  showDuplicados = signal(false);
+  gruposDup = signal<GrupoDup[]>([]);
+  cargandoDup = signal(false);
+  mensajeDup = signal('');
+
+  abrirDuplicados(): void {
+    this.showDuplicados.set(true);
+    this.cargandoDup.set(true);
+    this.mensajeDup.set('');
+    forkJoin({ prods: this.service.listProductos('', 1, 5000), uso: this.service.listUso() }).subscribe({
+      next: ({ prods, uso }) => {
+        const enUso = new Set(uso);
+        const grupos = agruparDuplicados(prods.data, marcasConocidas(prods.data)).map((g) => {
+          const miembros: MiembroDup[] = g.map((p) => ({ id: p.id, nombre: p.nombre, enUso: enUso.has(p.id), desactivar: false }));
+          // Se conserva por defecto el que ya se usa; si no, el de nombre más completo.
+          const principal = [...miembros].sort((a, b) =>
+            Number(b.enUso) - Number(a.enUso) ||
+            b.nombre.split(/\s+/).length - a.nombre.split(/\s+/).length ||
+            a.nombre.localeCompare(b.nombre))[0];
+          miembros.forEach((m) => (m.desactivar = m.id !== principal.id && !m.enUso));
+          return { principalId: principal.id, miembros, aplicando: false } as GrupoDup;
+        }).sort((a, b) => a.miembros[0].nombre.localeCompare(b.miembros[0].nombre));
+        this.gruposDup.set(grupos);
+        this.cargandoDup.set(false);
+      },
+      error: () => {
+        this.cargandoDup.set(false);
+        this.mensajeDup.set('No se pudo revisar el catálogo. Intenta de nuevo.');
+      },
+    });
+  }
+
+  elegirPrincipal(g: GrupoDup, id: number): void {
+    g.principalId = id;
+    g.miembros.forEach((m) => (m.desactivar = m.id !== id && !m.enUso));
+    this.gruposDup.update((l) => [...l]);
+  }
+
+  aplicarGrupo(g: GrupoDup): void {
+    const ids = g.miembros.filter((m) => m.desactivar && m.id !== g.principalId && !m.enUso).map((m) => m.id);
+    if (!ids.length) return;
+    g.aplicando = true;
+    this.gruposDup.update((l) => [...l]);
+    this.service.resolverDuplicados(g.principalId, ids).subscribe({
+      next: (r) => {
+        this.gruposDup.update((l) => l.filter((x) => x !== g));
+        this.mensajeDup.set(`${r.desactivados} duplicados desactivados.` + (r.omitidos.length ? ` ${r.omitidos.join(' ')}` : ''));
+        this.cargar();
+      },
+      error: (err) => {
+        g.aplicando = false;
+        this.gruposDup.update((l) => [...l]);
+        this.mensajeDup.set(err?.error?.message ?? 'No se pudo aplicar.');
+      },
+    });
+  }
+
+  cerrarDuplicados(): void {
+    this.showDuplicados.set(false);
+  }
+
   abrirEditar(p: ProductoListItem): void {
     this.error.set('');
     this.sugerencias.set([]);
@@ -104,6 +187,7 @@ export class Catalogo implements OnInit {
           codigo: d.codigo,
           nombre: d.nombre,
           marca: d.marca,
+          alias: d.alias ?? [],
           descripcion: d.descripcion,
           categoriaId: d.categoriaId,
           unidadMedida: d.unidadMedida,
