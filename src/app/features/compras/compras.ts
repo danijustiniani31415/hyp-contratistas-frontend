@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
@@ -17,6 +17,7 @@ import {
   PendienteCompra,
 } from '../../core/services/compras.service';
 import { PersonasService, AlmacenCatalogoItem } from '../../core/services/personas.service';
+import { DocumentosService } from '../../core/services/documentos.service';
 import { CatalogoService, ProductoListItem } from '../../core/services/catalogo.service';
 import { PedidosService } from '../../core/services/pedidos.service';
 import { AlmacenService, ReposicionSugerida } from '../../core/services/almacen.service';
@@ -84,8 +85,36 @@ export class Compras implements OnInit {
     private catalogoService: CatalogoService,
     private pedidosService: PedidosService,
     private almacenService: AlmacenService,
+    private documentosService: DocumentosService,
+    private cdr: ChangeDetectorRef,
     public authService: LbAuthService,
   ) {}
+
+  // ── Reconocimiento del proveedor por RUC: razón social automática (SUNAT, o lo ya registrado) ──
+  rucBuscando = signal(false);
+  rucAviso = signal('');
+
+  onRucProveedor(ruc: string): void {
+    if (!/^\d{11}$/.test(ruc)) {
+      this.rucAviso.set('');
+      return;
+    }
+    this.rucBuscando.set(true);
+    this.rucAviso.set('');
+    this.documentosService.buscarRuc(ruc).subscribe({
+      next: (e) => {
+        if (e.razonSocial) this.proveedorForm.razonSocial = e.razonSocial;
+        this.rucBuscando.set(false);
+        this.rucAviso.set(e.origen === 'SUNAT' ? 'Razón social obtenida de SUNAT.' : (e.aviso ?? 'Ya está registrado.'));
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.rucBuscando.set(false);
+        this.rucAviso.set(err?.error?.message ?? 'No se pudo consultar el RUC: escribe la razón social.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
 
   ngOnInit(): void {
     this.cargar();

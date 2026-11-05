@@ -69,13 +69,15 @@
       <div class="co-form-grid">
         <div class="abril-field">
           <label class="abril-field-label">RUC</label>
-          <input class="abril-field-input" [(ngModel)]="proveedorForm.ruc" placeholder="11 dígitos" />
+          <input class="abril-field-input" maxlength="11" [(ngModel)]="proveedorForm.ruc" (ngModelChange)="onRucProveedor($event)" placeholder="11 dígitos: busca en SUNAT" />
         </div>
         <div class="abril-field">
           <label class="abril-field-label">Contacto</label>
           <input class="abril-field-input" [(ngModel)]="proveedorForm.contacto" placeholder="Nombre del contacto" />
         </div>
       </div>
+      @if (rucBuscando()) { <p class="co-hint">Consultando SUNAT...</p> }
+      @else if (rucAviso()) { <p class="co-hint">{{ rucAviso() }}</p> }
       <div class="co-form-grid">
         <div class="abril-field">
           <label class="abril-field-label">Teléfono</label>

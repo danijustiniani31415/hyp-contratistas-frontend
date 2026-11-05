@@ -140,7 +140,7 @@ export interface GuiaRemisionDetalle {
 /** Datos maestros de transporte: se registran una vez y rellenan el formulario de la guía. */
 export interface Transportista { id: number; ruc: string; razonSocial: string; nroMtc: string | null; activo: boolean }
 export interface Vehiculo { id: number; placa: string; nroCirculacion: string | null; activo: boolean }
-export interface Conductor { id: number; numDoc: string; nombres: string; apellidos: string; licencia: string; activo: boolean }
+export interface Conductor { id: number; numDoc: string; nombres: string; apellidos: string; licencia: string; personaId?: number | null; activo: boolean }
 
 @Injectable({ providedIn: 'root' })
 export class GuiasRemisionService {

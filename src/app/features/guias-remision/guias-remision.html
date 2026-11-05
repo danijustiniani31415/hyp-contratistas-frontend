@@ -87,7 +87,7 @@
         } @else {
           <div class="abril-field">
             <label class="abril-field-label">RUC destinatario</label>
-            <input class="abril-field-input" [(ngModel)]="form.destinatarioRuc" placeholder="11 dígitos" />
+            <input class="abril-field-input" maxlength="11" [(ngModel)]="form.destinatarioRuc" (ngModelChange)="onRucDestinatarioGuia($event)" placeholder="11 dígitos: busca en SUNAT" />
           </div>
         }
       </div>
@@ -104,6 +104,8 @@
           <label class="abril-field-label">Razón social destinatario</label>
           <input class="abril-field-input" [(ngModel)]="form.destinatarioRazonSocial" />
         </div>
+        @if (rucBuscando()) { <p class="gr-hint">Consultando SUNAT...</p> }
+        @else if (rucAviso()) { <p class="gr-hint">{{ rucAviso() }}</p> }
       }
 
       <div class="gr-form-grid">
@@ -161,13 +163,15 @@
         <div class="gr-form-grid">
           <div class="abril-field">
             <label class="abril-field-label">RUC transportista <span class="gr-required">*</span></label>
-            <input class="abril-field-input" [(ngModel)]="form.transportistaRuc" placeholder="11 dígitos" />
+            <input class="abril-field-input" maxlength="11" [(ngModel)]="form.transportistaRuc" (ngModelChange)="onRucTransportistaGuia($event)" placeholder="11 dígitos: busca en SUNAT" />
           </div>
           <div class="abril-field">
             <label class="abril-field-label">Razón social transportista</label>
             <input class="abril-field-input" [(ngModel)]="form.transportistaRazonSocial" />
           </div>
         </div>
+        @if (rucBuscando()) { <p class="gr-hint">Consultando SUNAT...</p> }
+        @else if (rucAviso()) { <p class="gr-hint">{{ rucAviso() }}</p> }
       } @else {
         @if (vehiculoOpts().length || conductorOpts().length) {
           <div class="gr-form-grid">
@@ -517,7 +521,7 @@
               <tbody>
                 @for (c of conductores(); track c.id) {
                   <tr [class.gr-inactivo]="!c.activo">
-                    <td>{{ c.apellidos }} {{ c.nombres }}</td><td>{{ c.numDoc }}</td><td>{{ c.licencia }}</td>
+                    <td>{{ c.apellidos }} {{ c.nombres }}@if (c.personaId) { <span class="gr-tag">trabajador</span> }</td><td>{{ c.numDoc }}</td><td>{{ c.licencia }}</td>
                     <td class="gr-acciones">
                       <button class="lb-btn ghost small" (click)="editarConductor(c)">Editar</button>
                       <button class="lb-btn ghost small" (click)="alternarActivo('conductor', c)">{{ c.activo ? 'Desactivar' : 'Activar' }}</button>
@@ -578,10 +582,12 @@
           }
           @default {
             <div class="gr-form-grid">
-              <div class="abril-field"><label class="abril-field-label">RUC</label><input class="abril-field-input" maxlength="11" [(ngModel)]="fTransportista.ruc" /></div>
+              <div class="abril-field"><label class="abril-field-label">RUC</label><input class="abril-field-input" maxlength="11" [(ngModel)]="fTransportista.ruc" (ngModelChange)="onRucTransportistaMaestro($event)" placeholder="11 dígitos: busca en SUNAT" /></div>
               <div class="abril-field"><label class="abril-field-label">Razón social</label><input class="abril-field-input" [(ngModel)]="fTransportista.razonSocial" /></div>
             </div>
             <div class="abril-field"><label class="abril-field-label">Registro MTC (opcional)</label><input class="abril-field-input" [(ngModel)]="fTransportista.nroMtc" /></div>
+            @if (rucBuscando()) { <p class="gr-hint">Consultando SUNAT...</p> }
+            @else if (rucAviso()) { <p class="gr-hint">{{ rucAviso() }}</p> }
           }
         }
         @if (maestroError()) { <p class="gr-error">{{ maestroError() }}</p> }

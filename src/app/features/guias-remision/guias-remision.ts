@@ -24,6 +24,7 @@ import { LbAuthService } from '../../core/services/lb-auth.service';
 import { generarPdfGuia } from './guia-remision-pdf';
 import { AlmacenService, StockListItem } from '../../core/services/almacen.service';
 import { buscarProducto, extraerTalla, leerExcel } from './guia-excel-import';
+import { DocumentosService } from '../../core/services/documentos.service';
 
 /** Fila del listado importado desde Excel, antes de pasar a la guía. */
 interface FilaImport {
@@ -95,6 +96,7 @@ export class GuiasRemision implements OnInit {
     private catalogoService: CatalogoService,
     private pedidosService: PedidosService,
     private almacenService: AlmacenService,
+    private documentosService: DocumentosService,
     public authService: LbAuthService,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -111,19 +113,61 @@ export class GuiasRemision implements OnInit {
     }
     this.reniecBuscando.set(true);
     this.reniecAviso.set('');
-    this.personasService.buscarPorDni(dni).subscribe({
+    // Primero entre los trabajadores registrados; si no es uno, consulta RENIEC.
+    this.documentosService.buscarDni(dni).subscribe({
       next: (p) => {
-        aplicar(p.apellidos.trim().toUpperCase(), p.nombres.trim().toUpperCase());
+        aplicar((p.apellidos ?? '').trim().toUpperCase(), (p.nombres ?? '').trim().toUpperCase());
         this.reniecBuscando.set(false);
-        this.reniecAviso.set('Datos obtenidos de RENIEC.');
+        this.reniecAviso.set(
+          (p.origen === 'TRABAJADOR' ? 'Es trabajador registrado: datos tomados de Personas.' : 'Datos obtenidos de RENIEC.') +
+            (p.aviso ? ` ${p.aviso}` : ''),
+        );
         this.cdr.detectChanges();
       },
       error: () => {
         this.reniecBuscando.set(false);
-        this.reniecAviso.set('No se pudo consultar RENIEC: escribe los apellidos y nombres.');
+        this.reniecAviso.set('No se pudo consultar el DNI: escribe los apellidos y nombres.');
         this.cdr.detectChanges();
       },
     });
+  }
+
+  // ── Reconocimiento de empresas por RUC (transportista y destinatario): razón social automática ──
+  rucBuscando = signal(false);
+  rucAviso = signal('');
+
+  private consultarRuc(ruc: string, aplicar: (razonSocial: string) => void): void {
+    if (!/^\d{11}$/.test(ruc)) {
+      this.rucAviso.set('');
+      return;
+    }
+    this.rucBuscando.set(true);
+    this.rucAviso.set('');
+    this.documentosService.buscarRuc(ruc).subscribe({
+      next: (e) => {
+        aplicar((e.razonSocial ?? '').trim());
+        this.rucBuscando.set(false);
+        this.rucAviso.set(e.origen === 'SUNAT' ? 'Razón social obtenida de SUNAT.' : (e.aviso ?? 'Razón social tomada de tus registros.'));
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.rucBuscando.set(false);
+        this.rucAviso.set(err?.error?.message ?? 'No se pudo consultar el RUC: escribe la razón social.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  onRucTransportistaGuia(ruc: string): void {
+    this.consultarRuc(ruc, (r) => (this.form.transportistaRazonSocial = r));
+  }
+
+  onRucDestinatarioGuia(ruc: string): void {
+    this.consultarRuc(ruc, (r) => (this.form.destinatarioRazonSocial = r));
+  }
+
+  onRucTransportistaMaestro(ruc: string): void {
+    this.consultarRuc(ruc, (r) => (this.fTransportista.razonSocial = r));
   }
 
   onDniConductorGuia(dni: string): void {
