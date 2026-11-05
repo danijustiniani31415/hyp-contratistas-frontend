@@ -84,6 +84,7 @@
             <th>Producto</th>
             <th>Almacén</th>
             <th>Cantidad</th>
+            <th>Motivo</th>
             <th>Usuario</th>
           </tr>
         </thead>
@@ -95,6 +96,7 @@
               <td>{{ m.productoNombre }}</td>
               <td>{{ m.almacenNombre }}</td>
               <td>{{ m.cantidad }}</td>
+              <td>{{ motivoMovimiento(m.referenciaTipo) }}</td>
               <td>{{ m.usuarioNombre ?? '—' }}</td>
             </tr>
           }

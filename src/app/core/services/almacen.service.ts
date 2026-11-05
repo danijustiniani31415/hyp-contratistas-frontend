@@ -52,6 +52,8 @@ export interface MovimientoListItem {
   tipoMovimiento: string;
   cantidad: number;
   costoUnitario: number | null;
+  /** Por qué se movió el stock (GUIA_REMISION, CARGA_EXCEL…); null = ajuste manual. */
+  referenciaTipo: string | null;
   usuarioNombre: string | null;
   creadoEn: string;
 }

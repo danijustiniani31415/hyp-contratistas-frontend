@@ -324,6 +324,23 @@ export class AlmacenComponent implements OnInit {
     this.cargar();
   }
 
+  /** Nombre legible del motivo de un movimiento: de dónde salió o por qué entró ese stock. */
+  motivoMovimiento(tipo: string | null): string {
+    switch (tipo) {
+      case null: return 'Ajuste manual';
+      case 'GUIA_REMISION': return 'Guía de remisión aceptada';
+      case 'GUIA_REMISION_ANULACION': return 'Reversa de guía (anulada o eliminada)';
+      case 'GUIA_REMISION_AJUSTE': return 'Faltante al recibir una guía';
+      case 'CARGA_EXCEL': return 'Carga desde Excel';
+      case 'COMPRA': return 'Compra';
+      case 'ORDEN_COMPRA': return 'Orden de compra';
+      case 'PEDIDO': return 'Pedido';
+      case 'ENTREGA_EPP': return 'Entrega de EPP';
+      case 'PRESTAMO_HERRAMIENTA': return 'Préstamo de herramienta';
+      default: return tipo;
+    }
+  }
+
   abrirNuevo(): void {
     this.form = this.formVacio();
     if (this.almacenFiltro) this.form.almacenId = this.almacenFiltro;
