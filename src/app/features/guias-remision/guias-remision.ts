@@ -49,7 +49,13 @@ const MOTIVOS = [
   { value: '02', label: 'Compra (devolución a proveedor)' },
   { value: '13', label: 'Otros' },
 ];
-const UNIDADES = ['NIU', 'KGM', 'MTR', 'ZZ'];
+const UNIDADES = ['NIU', 'PR', 'KGM', 'MTR', 'LTR', 'GLL', 'BX', 'ZZ'];
+
+/** Unidad del producto → código del catálogo 03 de SUNAT (PAR = PR, KG = KGM…). Lo desconocido va como NIU. */
+function unidadSunat(um: string | null | undefined): string {
+  const m: Record<string, string> = { UND: 'NIU', NIU: 'NIU', PAR: 'PR', PR: 'PR', KG: 'KGM', KGM: 'KGM', M: 'MTR', MTR: 'MTR', L: 'LTR', LTR: 'LTR', GAL: 'GLL', GLL: 'GLL', CAJA: 'BX', BX: 'BX' };
+  return m[(um ?? '').toUpperCase()] ?? 'NIU';
+}
 
 /** [REVISADO] Estado en signals — mismo motivo que compras.ts (Zone.js no parcha fetch()). */
 @Component({
@@ -548,8 +554,14 @@ export class GuiasRemision implements OnInit {
     this.showImport.set(false);
   }
 
+  /** Al elegir un producto a mano, la unidad SUNAT sale de la del producto (pares → PR). */
+  ponerUnidadDelProducto(item: GuiaRemisionCreate['items'][number]): void {
+    const p = this.productos().find((x) => x.id === item.productoId);
+    if (p) item.unidadMedida = unidadSunat(p.unidadMedida);
+  }
+
   agregarImportadas(): void {
-    const unidad = (um: string | undefined) => (um === 'KG' || um === 'KGM' ? 'KGM' : 'NIU');
+    const unidad = unidadSunat;
     const nuevas: GuiaRemisionCreate['items'] = [];
     for (const f of this.importFilas().filter((x) => x.incluir && x.cantidad > 0)) {
       const p = f.productoId ? this.productos().find((x) => x.id === f.productoId) : undefined;
@@ -626,7 +638,7 @@ export class GuiasRemision implements OnInit {
         talla: p.talla,
         color: p.color,
         cantidad: p.cantidadPendienteDeDespacho,
-        unidadMedida: p.unidadMedida === 'UND' || !p.unidadMedida ? 'NIU' : p.unidadMedida,
+        unidadMedida: unidadSunat(p.unidadMedida),
         pedidoItemId: p.pedidoItemId,
       });
       this.codigosPedidoPorItem[p.pedidoItemId] = p.pedidoCodigo;

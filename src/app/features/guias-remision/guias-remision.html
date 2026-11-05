@@ -292,6 +292,7 @@
                 [options]="productos()"
                 displayField="nombre"
                 [(value)]="item.productoId"
+                (valueChange)="ponerUnidadDelProducto(item)"
                 placeholder="Producto"
               />
               <input class="abril-field-input lb-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
