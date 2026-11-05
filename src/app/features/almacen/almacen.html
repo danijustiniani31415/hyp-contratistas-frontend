@@ -184,7 +184,7 @@
             [options]="categorias()"
             displayField="nombre"
             [(value)]="cargaCategoriaId"
-            label="Categoría de los productos nuevos"
+            label="Categoría por defecto de los nuevos (puedes cambiarla en cada fila)"
             placeholder="Selecciona categoría"
           />
         }
@@ -192,13 +192,20 @@
       <div class="am-carga-wrap">
         <table class="lb-table">
           <thead>
-            <tr><th></th><th>Cant.</th><th>Nombre del producto</th><th>Marca</th><th>Talla</th><th>Color</th><th>¿Ya existe en el catálogo?</th><th>Unidad</th><th>Tipo de talla</th><th>Costo unit.</th></tr>
+            <tr><th></th><th>Cant.</th><th>Viene en</th><th>Nombre del producto</th><th>Marca</th><th>Talla</th><th>Color</th><th>¿Ya existe en el catálogo?</th><th>Categoría</th><th>Unidad</th><th>Tipo de talla</th><th>Costo unit.</th></tr>
           </thead>
           <tbody>
             @for (f of cargaFilas(); track $index) {
               <tr [style.opacity]="f.incluir ? 1 : 0.45">
                 <td><input type="checkbox" [(ngModel)]="f.incluir" /></td>
                 <td><input class="abril-field-input am-carga-cant" type="number" min="0.01" step="0.01" [(ngModel)]="f.cantidad" /></td>
+                <td class="am-carga-pres">
+                  <input class="abril-field-input am-carga-pres-nombre" [(ngModel)]="f.presentacion" placeholder="Unidades" title="Paquete, caja, docena… (vacío = ya viene en unidades)" />
+                  @if (f.presentacion.trim()) {
+                    <input class="abril-field-input am-carga-cant" type="number" min="2" step="1" [(ngModel)]="f.factor" placeholder="¿Cuántas trae?" />
+                    @if (f.factor && f.factor > 1) { <div class="am-sugerencia">= {{ totalUnidades(f) }} und al stock</div> }
+                  }
+                </td>
                 <td><input class="abril-field-input am-carga-nombre" [(ngModel)]="f.nombre" (ngModelChange)="reevaluarFila(f)" [disabled]="!!f.productoId" [title]="f.nombre" /></td>
                 <td><input class="abril-field-input am-carga-marca" [(ngModel)]="f.marca" (ngModelChange)="onMarcaCargaCambiada(f)" [disabled]="!!f.productoId" placeholder="Sin marca" /></td>
                 <td><input class="abril-field-input am-carga-talla" [(ngModel)]="f.talla" /></td>
@@ -231,6 +238,14 @@
                       </button>
                     </div>
                   }
+                </td>
+                <td>
+                  @if (!f.productoId) {
+                    <select class="abril-field-input am-carga-cat" [ngModel]="categoriaDeFila(f)" (ngModelChange)="elegirCategoriaFila(f, $event)">
+                      <option [ngValue]="null" disabled>Elige…</option>
+                      @for (c of categorias(); track c.id) { <option [ngValue]="c.id">{{ c.nombre }}</option> }
+                    </select>
+                  } @else { <span class="am-sugerencia">—</span> }
                 </td>
                 <td>
                   <select class="abril-field-input" [(ngModel)]="f.unidad" [disabled]="!!f.productoId">

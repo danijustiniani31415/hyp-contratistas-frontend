@@ -195,6 +195,8 @@ export class Catalogo implements OnInit {
           tipoTalla: d.tipoTalla,
           requiereColor: d.requiereColor,
           esRetornable: d.esRetornable,
+          presentacion: d.presentacion,
+          unidadesPorPresentacion: d.unidadesPorPresentacion,
         };
         this.editandoActivo = d.activo;
         this.editandoId.set(d.id);

@@ -28,6 +28,9 @@ export interface ProductoListItem {
   tipoTalla: string | null;
   requiereColor: boolean;
   esRetornable: boolean;
+  /** Cómo viene en la factura (PAQUETE, CAJA…) y cuántas unidades trae; el stock va en unidades. */
+  presentacion?: string | null;
+  unidadesPorPresentacion?: number | null;
   activo: boolean;
 }
 
@@ -57,6 +60,8 @@ export interface ProductoCreate {
   tipoTalla?: string | null;
   requiereColor: boolean;
   esRetornable: boolean;
+  presentacion?: string | null;
+  unidadesPorPresentacion?: number | null;
 }
 
 export interface ProductoUpdate extends ProductoCreate {

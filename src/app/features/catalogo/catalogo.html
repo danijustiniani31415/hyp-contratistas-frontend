@@ -98,6 +98,18 @@
         </div>
       </div>
 
+      <div class="cp-form-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Viene en la factura como (opcional)</label>
+          <input class="abril-field-input" [(ngModel)]="form.presentacion" placeholder="Ej: Paquete, Caja, Docena" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Unidades que trae</label>
+          <input class="abril-field-input" type="number" min="2" step="1" [(ngModel)]="form.unidadesPorPresentacion" placeholder="Ej: 100" />
+        </div>
+      </div>
+      <p class="cp-hint">El stock siempre se lleva en {{ form.unidadMedida }}. Si la factura trae «paquete» y el almacenero entrega sueltas, indica cuántas trae y el sistema convierte solo al cargar.</p>
+
       <div class="abril-field">
         <label class="abril-field-label">Descripción (opcional)</label>
         <textarea class="abril-field-input" rows="2" [(ngModel)]="form.descripcion"></textarea>

@@ -521,8 +521,9 @@ export class GuiasRemision implements OnInit {
     }
     const p = this.productos().find((x) => x.id === f.productoId);
     const talla = p?.requiereTalla ? f.talla : '';
+    const color = p?.requiereColor ? f.color : '';
     f.disponible = this.stockOrigen
-      .filter((s) => s.productoId === f.productoId && (s.talla || '') === talla && !s.color)
+      .filter((s) => s.productoId === f.productoId && (s.talla || '') === talla && (s.color || '') === color)
       .reduce((acc, s) => acc + s.cantidadActual, 0);
   }
 

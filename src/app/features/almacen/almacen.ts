@@ -41,6 +41,11 @@ interface FilaCarga {
   unidad: string;
   tipoTalla: '' | 'ROPA' | 'CALZADO' | 'GUANTES';
   costo: number | null;
+  /** La factura lo trae por paquete/caja/docena: cuántas unidades trae cada una (null = ya viene en unidades). */
+  presentacion: string;
+  factor: number | null;
+  /** Categoría del producto nuevo; null = la sugerida por un producto parecido o la «por defecto» de arriba. */
+  categoriaId: number | null;
   /** Producto parecido (no idéntico) del catálogo: se ofrece, pero no se asigna solo. */
   sugerido: { id: number; nombre: string; porcentaje: number; otraMarca: boolean; alternativas: string[] } | null;
 }
@@ -103,7 +108,9 @@ export class AlmacenComponent implements OnInit {
       const conocidas = marcasConocidas(catalogo);
       this.cargaFilas.set(
         filas.map((f) => {
-          const { base: sinTalla, talla } = extraerTalla(f.descripcion);
+          // «Paquete de mica A4» → producto «mica A4» que viene en paquete: la cantidad se convierte a unidades.
+          const pres = detectarPresentacion(f.descripcion);
+          const { base: sinTalla, talla } = extraerTalla(pres ? pres.resto : f.descripcion);
           // La marca es un dato propio: se separa del nombre y cuenta para decidir si el producto ya existe.
           // El color es variante (como la talla): se separa del nombre y se guarda aparte.
           const { color, base: sinColor } = separarColor(sinTalla, this.colores());
@@ -126,6 +133,9 @@ export class AlmacenComponent implements OnInit {
             unidad: existente?.unidadMedida ?? adivinarUnidad(base),
             tipoTalla: adivinarTipoTalla(base, talla),
             costo: null,
+            categoriaId: null,
+            presentacion: pres?.presentacion ?? '',
+            factor: pres ? (pres.factor ?? existente?.unidadesPorPresentacion ?? null) : null,
             sugerido,
           } as FilaCarga;
         }),
@@ -144,6 +154,22 @@ export class AlmacenComponent implements OnInit {
   private categoriasCargar(): void {
     if (this.categorias().length) return;
     this.catalogoService.listCategorias().subscribe((c) => this.categorias.set(c));
+  }
+
+  /** Categoría que se usará para crear la fila: la elegida, la de un producto parecido, o la «por defecto». */
+  categoriaDeFila(f: FilaCarga): number | null {
+    if (f.categoriaId) return f.categoriaId;
+    if (f.sugerido) {
+      const nombre = this.productos().find((p) => p.id === f.sugerido!.id)?.categoriaNombre;
+      const c = nombre ? this.categorias().find((x) => x.nombre === nombre) : undefined;
+      if (c) return c.id;
+    }
+    return this.cargaCategoriaId;
+  }
+
+  elegirCategoriaFila(f: FilaCarga, id: number | null): void {
+    f.categoriaId = id;
+    this.cargaFilas.update((l) => [...l]);
   }
 
   get cargaNuevos(): number {
@@ -181,8 +207,20 @@ export class AlmacenComponent implements OnInit {
 
   onProductoCargaCambiado(f: FilaCarga): void {
     const p = this.productos().find((x) => x.id === f.productoId);
-    if (p) f.unidad = p.unidadMedida;
+    if (p) {
+      f.unidad = p.unidadMedida;
+      if (f.presentacion && p.unidadesPorPresentacion && !f.factor) f.factor = p.unidadesPorPresentacion;
+    }
     this.cargaFilas.update((l) => [...l]);
+  }
+
+  private convierte(f: FilaCarga): boolean {
+    return !!f.presentacion.trim() && !!f.factor && f.factor > 1;
+  }
+
+  /** Cantidad total en unidades (lo que entra al stock) cuando la fila viene por paquete/caja. */
+  totalUnidades(f: FilaCarga): number {
+    return f.cantidad * (this.convierte(f) ? f.factor! : 1);
   }
 
   /** Si escribe una marca que ya está dentro del nombre, la saca del nombre y vuelve a buscar el producto. */
@@ -218,13 +256,19 @@ export class AlmacenComponent implements OnInit {
       Swal.fire({ icon: 'info', title: 'Elige el almacén al que ingresan' });
       return;
     }
-    if (this.cargaNuevos > 0 && !this.cargaCategoriaId) {
-      Swal.fire({ icon: 'info', title: 'Elige la categoría', text: `Hay ${this.cargaNuevos} productos nuevos y hace falta una categoría para crearlos.` });
+    const sinCategoria = filas.filter((f) => !f.productoId && !this.categoriaDeFila(f));
+    if (sinCategoria.length) {
+      Swal.fire({ icon: 'info', title: 'Falta la categoría', text: `${sinCategoria.length} productos nuevos no tienen categoría (por ejemplo «${sinCategoria[0].nombre}»). Elígela en su columna «Categoría», o pon una por defecto arriba.` });
       return;
     }
     const sinColor = filas.find((f) => this.exigeColor(f) && !f.color);
     if (sinColor) {
       Swal.fire({ icon: 'warning', title: 'Falta el color', text: `«${sinColor.nombre}» se maneja por color y la fila no lo trae: elígelo en su columna.` });
+      return;
+    }
+    const sinFactor = filas.find((f) => f.presentacion.trim() && !(f.factor && f.factor > 1));
+    if (sinFactor) {
+      Swal.fire({ icon: 'warning', title: 'Falta cuántas unidades trae', text: `«${sinFactor.nombre}» viene en ${sinFactor.presentacion.toLowerCase()}: indica cuántas unidades trae cada una, o borra la presentación si ya está en unidades.` });
       return;
     }
     const invalida = filas.find((f) => f.cantidad <= 0 || (!f.productoId && !f.nombre.trim()) || (f.tipoTalla && !f.talla.trim()));
@@ -251,17 +295,20 @@ export class AlmacenComponent implements OnInit {
           : {
               nombre: f.nombre.trim(),
               marca: f.marca.trim() || null,
-              categoriaId: this.cargaCategoriaId!,
+              categoriaId: this.categoriaDeFila(f)!,
               unidadMedida: f.unidad,
               requiereTalla: !!f.tipoTalla,
               requiereColor: !!f.color,
               tipoTalla: f.tipoTalla || null,
+              presentacion: this.convierte(f) ? f.presentacion.trim() : null,
+              unidadesPorPresentacion: this.convierte(f) ? f.factor : null,
             },
         alias: f.productoId ? f.textoOriginal : null,
         talla: f.talla.trim(),
         color: f.color,
-        cantidad: f.cantidad,
-        costoUnitario: f.costo,
+        cantidad: this.totalUnidades(f),
+        // El costo que se escribe es por paquete/caja: al stock entra el costo por unidad.
+        costoUnitario: f.costo != null && this.convierte(f) ? Math.round((f.costo / f.factor!) * 10000) / 10000 : f.costo,
       }));
       this.cargaEnviando.set(true);
       this.service.cargaMasiva(this.cargaAlmacenId!, payload).subscribe({
@@ -495,4 +542,25 @@ export class AlmacenComponent implements OnInit {
       costoUnitario: null,
     };
   }
+}
+
+const PRESENTACIONES: { patron: string; nombre: string; factor: number | null }[] = [
+  { patron: 'paquetes?|paq\\.?', nombre: 'Paquete', factor: null },
+  { patron: 'cajas?', nombre: 'Caja', factor: null },
+  { patron: 'bolsas?', nombre: 'Bolsa', factor: null },
+  { patron: 'docenas?', nombre: 'Docena', factor: 12 },
+  { patron: 'cientos?', nombre: 'Ciento', factor: 100 },
+  { patron: 'millar(?:es)?', nombre: 'Millar', factor: 1000 },
+];
+
+/**
+ * «Paquete de mica A4», «Caja de tornillos»: la factura cuenta por presentación pero el almacenero
+ * entrega sueltas. Devuelve la presentación, su factor si es fija (docena = 12) y el nombre sin ella.
+ */
+function detectarPresentacion(texto: string): { presentacion: string; factor: number | null; resto: string } | null {
+  for (const p of PRESENTACIONES) {
+    const m = texto.trim().match(new RegExp('^(?:un[ao]?\\s+)?(?:' + p.patron + ')\\s+(?:de\\s+)?(.+)$', 'i'));
+    if (m) return { presentacion: p.nombre, factor: p.factor, resto: m[1] };
+  }
+  return null;
 }

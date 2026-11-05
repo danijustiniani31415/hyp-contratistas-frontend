@@ -48,3 +48,9 @@
 .am-carga-wrap select.abril-field-input { min-width: 96px; }
 .am-carga-wrap app-search-select { display: block; min-width: 230px; }
 .am-carga-color { min-width: 110px; }
+
+.am-carga-pres { min-width: 110px; }
+.am-carga-pres-nombre { width: 110px; }
+.am-carga-pres .am-carga-cant { margin-top: 4px; width: 110px; }
+
+.am-carga-cat { min-width: 150px; }
