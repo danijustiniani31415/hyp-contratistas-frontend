@@ -59,6 +59,10 @@
           <input class="abril-field-input" [(ngModel)]="form.nombre" (ngModelChange)="onNombreChange()" placeholder="Ej: Casco de seguridad blanco" />
         </div>
         <div class="abril-field">
+          <label class="abril-field-label">Marca (opcional)</label>
+          <input class="abril-field-input" [(ngModel)]="form.marca" placeholder="Ej: Truper, 3M, Stanley" />
+        </div>
+        <div class="abril-field">
           <label class="abril-field-label">Código (opcional)</label>
           <input class="abril-field-input" [(ngModel)]="form.codigo" placeholder="Autogenerado si lo dejas vacío" />
         </div>

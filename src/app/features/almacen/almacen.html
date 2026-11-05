@@ -163,11 +163,11 @@
 
   <!-- Modal: cargar stock desde Excel -->
   @if (showCarga()) {
-    <app-base-modal title="Cargar stock desde Excel" width="w-[1000px]" (closeModal)="cerrarCarga()">
+    <app-base-modal title="Cargar stock desde Excel" width="w-[1280px]" (closeModal)="cerrarCarga()">
       <p class="am-hint">
-        Revisa cada fila: lo que coincide con tu catálogo suma stock a ese producto; lo demás se <b>crea como producto nuevo</b>
-        con el nombre que ves (la talla se detecta de textos como «T/39»). Marca, medida o modelo van dentro del nombre,
-        porque cada uno es un producto distinto con su propio stock.
+        Revisa cada fila: lo que coincide con tu catálogo (mismo nombre <b>y misma marca</b>) suma stock a ese producto;
+        lo demás se <b>crea como producto nuevo</b>. La talla se detecta de textos como «T/39» y la marca de las que ya
+        conoce el sistema; si no la detectó, escríbela en su columna. Cada marca es un producto distinto con su propio stock.
       </p>
       <div class="am-form-grid">
         <app-search-select
@@ -190,14 +190,15 @@
       <div class="am-carga-wrap">
         <table class="lb-table">
           <thead>
-            <tr><th></th><th>Cant.</th><th>Nombre del producto</th><th>Talla</th><th>¿Ya existe en el catálogo?</th><th>Unidad</th><th>Tipo de talla</th><th>Costo unit.</th></tr>
+            <tr><th></th><th>Cant.</th><th>Nombre del producto</th><th>Marca</th><th>Talla</th><th>¿Ya existe en el catálogo?</th><th>Unidad</th><th>Tipo de talla</th><th>Costo unit.</th></tr>
           </thead>
           <tbody>
             @for (f of cargaFilas(); track $index) {
               <tr [style.opacity]="f.incluir ? 1 : 0.45">
                 <td><input type="checkbox" [(ngModel)]="f.incluir" /></td>
                 <td><input class="abril-field-input am-carga-cant" type="number" min="0.01" step="0.01" [(ngModel)]="f.cantidad" /></td>
-                <td><input class="abril-field-input" [(ngModel)]="f.nombre" [disabled]="!!f.productoId" /></td>
+                <td><input class="abril-field-input am-carga-nombre" [(ngModel)]="f.nombre" (ngModelChange)="reevaluarFila(f)" [disabled]="!!f.productoId" [title]="f.nombre" /></td>
+                <td><input class="abril-field-input am-carga-marca" [(ngModel)]="f.marca" (ngModelChange)="onMarcaCargaCambiada(f)" [disabled]="!!f.productoId" placeholder="Sin marca" /></td>
                 <td><input class="abril-field-input am-carga-talla" [(ngModel)]="f.talla" /></td>
                 <td>
                   <app-search-select
@@ -205,13 +206,19 @@
                     displayField="nombre"
                     [showLabel]="false"
                     [value]="f.productoId"
-                    (valueChange)="f.productoId = $event; onProductoCargaCambiado(f)"
+                    (valueChange)="f.productoId = $event; onProductoElegidoCarga(f)"
                     placeholder="No — crear nuevo"
                   />
                   @if (f.sugerido && !f.productoId) {
                     <div class="am-sugerencia">
-                      ¿Será «{{ f.sugerido.nombre }}» ({{ f.sugerido.porcentaje }}%)?
-                      <button type="button" class="lb-btn ghost small" (click)="usarSugeridoCarga(f)">Sí, usar</button>
+                      @if (f.sugerido.otraMarca) {
+                        Existe «{{ f.sugerido.nombre }}» pero de <b>otra marca</b> (o sin marca): es otro producto.
+                      } @else {
+                        ¿Será «{{ f.sugerido.nombre }}» ({{ f.sugerido.porcentaje }}%)?
+                      }
+                      <button type="button" class="lb-btn ghost small" (click)="usarSugeridoCarga(f)">
+                        {{ f.sugerido.otraMarca ? 'Es el mismo, usar' : 'Sí, usar' }}
+                      </button>
                     </div>
                   }
                 </td>

@@ -103,6 +103,7 @@ export class Catalogo implements OnInit {
         this.form = {
           codigo: d.codigo,
           nombre: d.nombre,
+          marca: d.marca,
           descripcion: d.descripcion,
           categoriaId: d.categoriaId,
           unidadMedida: d.unidadMedida,

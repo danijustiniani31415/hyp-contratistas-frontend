@@ -23,7 +23,8 @@ import { PedidosService, PendienteDespacho } from '../../core/services/pedidos.s
 import { LbAuthService } from '../../core/services/lb-auth.service';
 import { generarPdfGuia } from './guia-remision-pdf';
 import { AlmacenService, StockListItem } from '../../core/services/almacen.service';
-import { buscarProducto, extraerTalla, leerExcel } from './guia-excel-import';
+import { extraerTalla, leerExcel } from './guia-excel-import';
+import { buscarProducto, marcasConocidas, separarMarca } from './producto-matching';
 import { DocumentosService } from '../../core/services/documentos.service';
 
 /** Fila del listado importado desde Excel, antes de pasar a la guía. */
@@ -36,7 +37,7 @@ interface FilaImport {
   libre: boolean;
   disponible: number | null;
   /** Producto parecido (no idéntico) del catálogo: se ofrece pero no se asigna solo. */
-  sugerido: { id: number; nombre: string; porcentaje: number } | null;
+  sugerido: { id: number; nombre: string; porcentaje: number; otraMarca: boolean } | null;
 }
 
 const ESTADOS = ['BORRADOR', 'ENVIADA', 'ACEPTADA', 'RECHAZADA', 'ANULADA'];
@@ -482,10 +483,13 @@ export class GuiasRemision implements OnInit {
   private prepararImport(filas: { cantidad: number; descripcion: string }[], stock: StockListItem[]): void {
     this.stockOrigen = stock;
     const catalogo = this.productos();
+    const conocidas = marcasConocidas(catalogo);
     this.importFilas.set(
       filas.map((f) => {
-        const { base, talla } = extraerTalla(f.descripcion);
-        const { exacto: productoId, sugerido } = buscarProducto(base, catalogo);
+        const { base: sinTalla, talla } = extraerTalla(f.descripcion);
+        // La marca cuenta para reconocer el producto: «Flexómetro Truper» no es «Flexómetro Stanley».
+        const { marca, base } = separarMarca(sinTalla, conocidas);
+        const { exacto: productoId, sugerido } = buscarProducto(base, marca, catalogo, conocidas);
         const fila: FilaImport = {
           incluir: true, cantidad: f.cantidad, descripcion: f.descripcion, talla,
           productoId, libre: productoId === null, disponible: null, sugerido,

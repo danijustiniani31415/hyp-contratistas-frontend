@@ -480,8 +480,13 @@
                     placeholder="Sin coincidencia"
                   />
                   @if (f.sugerido && !f.productoId) {
-                    <span class="gr-tag tercero">¿Será «{{ f.sugerido.nombre }}» ({{ f.sugerido.porcentaje }}%)?</span>
-                    <button type="button" class="lb-btn ghost small" (click)="usarSugerido(f)">Sí, usar</button>
+                    <span class="gr-tag tercero">
+                      @if (f.sugerido.otraMarca) { Existe «{{ f.sugerido.nombre }}» pero de otra marca }
+                      @else { ¿Será «{{ f.sugerido.nombre }}» ({{ f.sugerido.porcentaje }}%)? }
+                    </span>
+                    <button type="button" class="lb-btn ghost small" (click)="usarSugerido(f)">
+                      {{ f.sugerido.otraMarca ? 'Es el mismo, usar' : 'Sí, usar' }}
+                    </button>
                   }
                 </td>
                 <td><input type="checkbox" [(ngModel)]="f.libre" [disabled]="!f.productoId" /></td>

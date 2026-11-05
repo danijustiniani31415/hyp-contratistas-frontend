@@ -85,7 +85,7 @@ export interface AjustarUmbrales {
 
 export interface CargaMasivaFila {
   productoId?: number | null;
-  nuevoProducto?: { nombre: string; categoriaId: number; unidadMedida: string; requiereTalla: boolean; tipoTalla?: string | null } | null;
+  nuevoProducto?: { nombre: string; marca?: string | null; categoriaId: number; unidadMedida: string; requiereTalla: boolean; tipoTalla?: string | null } | null;
   talla: string;
   color: string;
   cantidad: number;

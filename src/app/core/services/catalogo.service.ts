@@ -19,6 +19,8 @@ export interface ProductoListItem {
   id: number;
   codigo: string | null;
   nombre: string;
+  /** Marca como dato propio (el nombre ya la incluye). */
+  marca?: string | null;
   categoriaNombre: string;
   categoriaTipo: string;
   unidadMedida: string;
@@ -44,6 +46,8 @@ export interface ProductoListResponse {
 export interface ProductoCreate {
   codigo?: string | null;
   nombre: string;
+  /** Opcional: si el nombre no la menciona, el sistema la agrega al final del nombre. */
+  marca?: string | null;
   descripcion?: string | null;
   categoriaId: number;
   unidadMedida: string;

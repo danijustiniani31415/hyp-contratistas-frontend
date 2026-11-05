@@ -19,20 +19,25 @@ import { LbAuthService } from '../../core/services/lb-auth.service';
 import Swal from 'sweetalert2';
 import { Categoria } from '../../core/services/catalogo.service';
 import { CargaMasivaFila } from '../../core/services/almacen.service';
-import { adivinarTipoTalla, adivinarUnidad, buscarProducto, extraerTalla, leerExcel } from '../guias-remision/guia-excel-import';
+import { adivinarTipoTalla, adivinarUnidad, extraerTalla, leerExcel } from '../guias-remision/guia-excel-import';
+import { buscarProducto, marcasConocidas, separarMarca } from '../guias-remision/producto-matching';
 
 /** Fila del Excel de stock, antes de cargarla al almacén. */
 interface FilaCarga {
   incluir: boolean;
   cantidad: number;
+  /** Nombre SIN la marca: la marca va en su propio campo y el sistema la une al nombre al crear el producto. */
   nombre: string;
+  marca: string;
   talla: string;
   productoId: number | null;
+  /** true si una persona eligió o descartó el producto: ya no se reasigna solo al editar nombre o marca. */
+  manual: boolean;
   unidad: string;
   tipoTalla: '' | 'ROPA' | 'CALZADO' | 'GUANTES';
   costo: number | null;
   /** Producto parecido (no idéntico) del catálogo: se ofrece, pero no se asigna solo. */
-  sugerido: { id: number; nombre: string; porcentaje: number } | null;
+  sugerido: { id: number; nombre: string; porcentaje: number; otraMarca: boolean } | null;
 }
 
 /** [REVISADO] Estado en signals — mismo motivo que personas.ts (Zone.js no parcha fetch()). */
@@ -86,17 +91,22 @@ export class AlmacenComponent implements OnInit {
         return;
       }
       const catalogo = this.productos();
+      const conocidas = marcasConocidas(catalogo);
       this.cargaFilas.set(
         filas.map((f) => {
-          const { base, talla } = extraerTalla(f.descripcion);
-          const { exacto: productoId, sugerido } = buscarProducto(base, catalogo);
+          const { base: sinTalla, talla } = extraerTalla(f.descripcion);
+          // La marca es un dato propio: se separa del nombre y cuenta para decidir si el producto ya existe.
+          const { marca, base } = separarMarca(sinTalla, conocidas);
+          const { exacto: productoId, sugerido } = buscarProducto(base, marca, catalogo, conocidas);
           const existente = catalogo.find((p) => p.id === productoId);
           return {
             incluir: true,
             cantidad: f.cantidad,
             nombre: base,
+            marca,
             talla,
             productoId,
+            manual: false,
             unidad: existente?.unidadMedida ?? adivinarUnidad(base),
             tipoTalla: adivinarTipoTalla(base, talla),
             costo: null,
@@ -132,12 +142,42 @@ export class AlmacenComponent implements OnInit {
     if (!f.sugerido) return;
     f.productoId = f.sugerido.id;
     f.sugerido = null;
+    f.manual = true;
+    this.onProductoCargaCambiado(f);
+  }
+
+  /** El usuario eligió (o quitó) el producto a mano: se respeta aunque después edite el nombre o la marca. */
+  onProductoElegidoCarga(f: FilaCarga): void {
+    f.manual = true;
     this.onProductoCargaCambiado(f);
   }
 
   onProductoCargaCambiado(f: FilaCarga): void {
     const p = this.productos().find((x) => x.id === f.productoId);
     if (p) f.unidad = p.unidadMedida;
+    this.cargaFilas.update((l) => [...l]);
+  }
+
+  /** Si escribe una marca que ya está dentro del nombre, la saca del nombre y vuelve a buscar el producto. */
+  onMarcaCargaCambiada(f: FilaCarga): void {
+    const m = f.marca.trim();
+    if (m) {
+      const sep = separarMarca(f.nombre, [m]);
+      if (sep.marca) f.nombre = sep.base;
+    }
+    this.reevaluarFila(f);
+  }
+
+  /** Vuelve a buscar en el catálogo con el nombre y la marca actuales, salvo que una persona ya eligiera. */
+  reevaluarFila(f: FilaCarga): void {
+    if (!f.manual) {
+      const catalogo = this.productos();
+      const m = buscarProducto(f.nombre.trim(), f.marca.trim(), catalogo, marcasConocidas(catalogo));
+      f.productoId = m.exacto;
+      f.sugerido = m.exacto ? null : m.sugerido;
+      const p = catalogo.find((x) => x.id === f.productoId);
+      if (p) f.unidad = p.unidadMedida;
+    }
     this.cargaFilas.update((l) => [...l]);
   }
 
@@ -178,6 +218,7 @@ export class AlmacenComponent implements OnInit {
           ? null
           : {
               nombre: f.nombre.trim(),
+              marca: f.marca.trim() || null,
               categoriaId: this.cargaCategoriaId!,
               unidadMedida: f.unidad,
               requiereTalla: !!f.tipoTalla,
