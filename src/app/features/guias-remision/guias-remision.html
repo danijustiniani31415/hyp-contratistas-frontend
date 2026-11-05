@@ -257,7 +257,7 @@
         <p class="gr-detalle-meta">Recepción confirmada por {{ d.items[0].confirmadoPorNombre }} el {{ d.items[0].confirmadoEn | slice:0:10 }}</p>
       }
 
-      @if (d.estado === 'BORRADOR' && authService.hasPermiso('GUIA_REMISION_ENVIAR')) {
+      @if ((d.estado === 'BORRADOR' || d.estado === 'RECHAZADA') && authService.hasPermiso('GUIA_REMISION_ENVIAR')) {
         <div class="gr-form-actions">
           <button class="lb-btn" [disabled]="enviando()" (click)="enviar()">
             {{ enviando() ? 'Transmitiendo...' : 'Transmitir a SUNAT' }}
