@@ -88,9 +88,11 @@ export function extraerTalla(descripcion: string): { base: string; talla: string
   return { base: descripcion, talla: '' };
 }
 
-/** Unidad de medida probable: calzado y guantes se cuentan por par, el resto por unidad. */
+/** Unidad de medida probable: calzado, guantes y cartuchos/filtros de respirador por par; trapos por kilo; el resto por unidad. */
 export function adivinarUnidad(nombre: string): string {
-  return /\b(bota|botas|guante|guantes|zapato|zapatos|zapatilla)\b/i.test(normalizar(nombre)) ? 'PAR' : 'UND';
+  const n = normalizar(nombre);
+  if (/\b(trapo|trapos)\b/i.test(n)) return 'KG';
+  return /\b(bota|botas|guante|guantes|zapato|zapatos|zapatilla|cartucho|cartuchos|filtro|filtros)\b/i.test(n) ? 'PAR' : 'UND';
 }
 
 /**
