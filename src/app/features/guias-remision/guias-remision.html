@@ -469,7 +469,7 @@
               <tr [class.gr-inactivo]="!f.incluir">
                 <td><input type="checkbox" [(ngModel)]="f.incluir" /></td>
                 <td><input class="abril-field-input lb-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="f.cantidad" /></td>
-                <td>{{ f.descripcion }}@if (f.talla) { <span class="gr-tag">talla {{ f.talla }}</span> }</td>
+                <td>{{ f.descripcion }}@if (f.talla) { <span class="gr-tag">talla {{ f.talla }}</span> }@if (f.color) { <span class="gr-tag">color {{ f.color }}</span> }</td>
                 <td>
                   <app-search-select
                     [options]="productos()"
@@ -484,6 +484,7 @@
                       @if (f.sugerido.otraMarca) { Existe «{{ f.sugerido.nombre }}» pero de otra marca }
                       @else { ¿Será «{{ f.sugerido.nombre }}» ({{ f.sugerido.porcentaje }}%)? }
                     </span>
+                    @if (f.sugerido.alternativas.length) { <div class="gr-hint">También parecido: {{ f.sugerido.alternativas.join(', ') }}</div> }
                     <button type="button" class="lb-btn ghost small" (click)="usarSugerido(f)">
                       {{ f.sugerido.otraMarca ? 'Es el mismo, usar' : 'Sí, usar' }}
                     </button>

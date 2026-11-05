@@ -33,6 +33,25 @@ export function separarMarca(texto: string, conocidas: string[]): { marca: strin
   return { marca: '', base: texto.trim() };
 }
 
+/**
+ * Detecta en el texto UN color de la lista del sistema (rojo, roja, rojos…, «color amarillo») y lo separa del nombre.
+ * Si aparecen varios colores es un pack («2 negros y 2 rojos»), no una variante: no se separa nada.
+ */
+export function separarColor(texto: string, colores: string[]): { color: string; base: string } {
+  const hallados: { color: string; re: RegExp }[] = [];
+  for (const c of colores) {
+    const n = normalizar(c);
+    if (!n) continue;
+    const termina = /[oa]$/.test(n);
+    const raiz = escapar(termina ? n.slice(0, -1) : n);
+    const forma = termina ? `${raiz}[oa]s?` : `${raiz}(?:es)?`;
+    const re = new RegExp(`(?<![\\p{L}\\p{N}])(?:color\\s+)?${forma}(?![\\p{L}\\p{N}])`, 'iu');
+    if (re.test(texto)) hallados.push({ color: c, re });
+  }
+  if (hallados.length !== 1) return { color: '', base: texto.trim() };
+  return { color: hallados[0].color, base: texto.replace(hallados[0].re, ' ').replace(/\s+/g, ' ').trim() };
+}
+
 export interface CoincidenciaProducto {
   /** Producto con el mismo nombre Y la misma marca (ignorando mayúsculas, tildes, plurales y orden): se asigna solo. */
   exacto: number | null;
@@ -40,7 +59,7 @@ export interface CoincidenciaProducto {
    * Producto parecido: solo se sugiere, lo confirma una persona. `otraMarca` indica que el nombre coincide
    * pero la marca no (o uno de los dos no tiene), que es otro producto con su propio stock.
    */
-  sugerido: { id: number; nombre: string; porcentaje: number; otraMarca: boolean } | null;
+  sugerido: { id: number; nombre: string; porcentaje: number; otraMarca: boolean; alternativas: string[] } | null;
 }
 
 /**
@@ -64,10 +83,12 @@ export function buscarProducto(
   const pegado = (s: string) => normalizar(s).replace(/\s+/g, '');
   const aPegado = pegado(base);
 
-  const exactos: number[] = [];
+  const exactos: { id: number; nombre: string }[] = [];
   // `as` evita que TypeScript fije el tipo en `null` y lo deje en `never` dentro del bucle.
   let mejor = null as { id: number; nombre: string; score: number; otraMarca: boolean } | null;
-  let empate = false;
+  // Otros productos igual de parecidos (catálogo con duplicados: «ARCO DE SIERRA» y «ARCO SIERRA»): se muestran
+  // todos para que una persona elija, en vez de callarse por el empate.
+  let alternativas: string[] = [];
 
   for (const p of productos) {
     // Marca del producto: la de su campo o, si es un producto anterior al campo, la que se detecte en su nombre.
@@ -100,7 +121,7 @@ export function buscarProducto(
     const mismaMarca = marcaA === marcaP;
     if (identicas === a.length && a.length === b.length) {
       if (mismaMarca) {
-        exactos.push(p.id);
+        exactos.push({ id: p.id, nombre: p.nombre });
         continue;
       }
     }
@@ -117,18 +138,24 @@ export function buscarProducto(
       || (mismaMarca === !actual.otraMarca && score > actual.score)
     ) {
       mejor = { id: p.id, nombre: p.nombre, score, otraMarca: !mismaMarca };
-      empate = false;
+      alternativas = [];
     } else if (mismaMarca === !actual.otraMarca && score === actual.score) {
-      empate = true;
+      alternativas.push(p.nombre);
     }
   }
 
-  if (exactos.length === 1) return { exacto: exactos[0], sugerido: null };
-  if (exactos.length > 1) return { exacto: null, sugerido: null }; // nombres repetidos en el catálogo: que elija una persona
+  if (exactos.length === 1) return { exacto: exactos[0].id, sugerido: null };
+  if (exactos.length > 1) {
+    // Catálogo con el mismo producto repetido («ARCO DE SIERRA» / «ARCO SIERRA»): no se elige solo, se muestran todos.
+    return {
+      exacto: null,
+      sugerido: { id: exactos[0].id, nombre: exactos[0].nombre, porcentaje: 100, otraMarca: false, alternativas: exactos.slice(1, 4).map((e) => e.nombre) },
+    };
+  }
   return {
     exacto: null,
-    sugerido: mejor && mejor.score >= 0.6 && !empate
-      ? { id: mejor.id, nombre: mejor.nombre, porcentaje: Math.round(mejor.score * 100), otraMarca: mejor.otraMarca }
+    sugerido: mejor && mejor.score >= 0.6
+      ? { id: mejor.id, nombre: mejor.nombre, porcentaje: Math.round(mejor.score * 100), otraMarca: mejor.otraMarca, alternativas: alternativas.slice(0, 3) }
       : null,
   };
 }

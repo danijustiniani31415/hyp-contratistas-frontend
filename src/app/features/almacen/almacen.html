@@ -192,7 +192,7 @@
       <div class="am-carga-wrap">
         <table class="lb-table">
           <thead>
-            <tr><th></th><th>Cant.</th><th>Nombre del producto</th><th>Marca</th><th>Talla</th><th>¿Ya existe en el catálogo?</th><th>Unidad</th><th>Tipo de talla</th><th>Costo unit.</th></tr>
+            <tr><th></th><th>Cant.</th><th>Nombre del producto</th><th>Marca</th><th>Talla</th><th>Color</th><th>¿Ya existe en el catálogo?</th><th>Unidad</th><th>Tipo de talla</th><th>Costo unit.</th></tr>
           </thead>
           <tbody>
             @for (f of cargaFilas(); track $index) {
@@ -202,6 +202,13 @@
                 <td><input class="abril-field-input am-carga-nombre" [(ngModel)]="f.nombre" (ngModelChange)="reevaluarFila(f)" [disabled]="!!f.productoId" [title]="f.nombre" /></td>
                 <td><input class="abril-field-input am-carga-marca" [(ngModel)]="f.marca" (ngModelChange)="onMarcaCargaCambiada(f)" [disabled]="!!f.productoId" placeholder="Sin marca" /></td>
                 <td><input class="abril-field-input am-carga-talla" [(ngModel)]="f.talla" /></td>
+                <td>
+                  <select class="abril-field-input am-carga-color" [(ngModel)]="f.color">
+                    <option value="">—</option>
+                    @for (c of colores(); track c) { <option [value]="c">{{ c }}</option> }
+                  </select>
+                  @if (colorIgnorado(f)) { <div class="am-sugerencia">Este producto no maneja color: no se guardará.</div> }
+                </td>
                 <td>
                   <app-search-select
                     [options]="productos()"
@@ -218,6 +225,7 @@
                       } @else {
                         ¿Será «{{ f.sugerido.nombre }}» ({{ f.sugerido.porcentaje }}%)?
                       }
+                      @if (f.sugerido.alternativas.length) { <div>También parecido: {{ f.sugerido.alternativas.join(', ') }}</div> }
                       <button type="button" class="lb-btn ghost small" (click)="usarSugeridoCarga(f)">
                         {{ f.sugerido.otraMarca ? 'Es el mismo, usar' : 'Sí, usar' }}
                       </button>

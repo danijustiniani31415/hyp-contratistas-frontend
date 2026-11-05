@@ -20,7 +20,8 @@ import Swal from 'sweetalert2';
 import { Categoria } from '../../core/services/catalogo.service';
 import { CargaMasivaFila } from '../../core/services/almacen.service';
 import { adivinarTipoTalla, adivinarUnidad, extraerTalla, leerExcel } from '../guias-remision/guia-excel-import';
-import { buscarProducto, marcasConocidas, separarMarca } from '../guias-remision/producto-matching';
+import { buscarProducto, marcasConocidas, separarColor, separarMarca } from '../guias-remision/producto-matching';
+import { CatalogoValorService } from '../../core/services/catalogo-valor.service';
 
 /** Fila del Excel de stock, antes de cargarla al almacén. */
 interface FilaCarga {
@@ -29,6 +30,8 @@ interface FilaCarga {
   /** Nombre SIN la marca: la marca va en su propio campo y el sistema la une al nombre al crear el producto. */
   nombre: string;
   marca: string;
+  /** Variante de color (de la lista de colores del sistema): igual que la talla, el producto es el mismo. */
+  color: string;
   talla: string;
   productoId: number | null;
   /** true si una persona eligió o descartó el producto: ya no se reasigna solo al editar nombre o marca. */
@@ -37,7 +40,7 @@ interface FilaCarga {
   tipoTalla: '' | 'ROPA' | 'CALZADO' | 'GUANTES';
   costo: number | null;
   /** Producto parecido (no idéntico) del catálogo: se ofrece, pero no se asigna solo. */
-  sugerido: { id: number; nombre: string; porcentaje: number; otraMarca: boolean } | null;
+  sugerido: { id: number; nombre: string; porcentaje: number; otraMarca: boolean; alternativas: string[] } | null;
 }
 
 /** [REVISADO] Estado en signals — mismo motivo que personas.ts (Zone.js no parcha fetch()). */
@@ -72,6 +75,8 @@ export class AlmacenComponent implements OnInit {
   showCarga = signal(false);
   cargaFilas = signal<FilaCarga[]>([]);
   categorias = signal<Categoria[]>([]);
+  /** Lista de colores del sistema (editable): se usa para detectar el color en el Excel y elegirlo a mano. */
+  colores = signal<string[]>([]);
   cargaAlmacenId: number | null = null;
   cargaCategoriaId: number | null = null;
   cargaLeyendo = signal(false);
@@ -96,7 +101,9 @@ export class AlmacenComponent implements OnInit {
         filas.map((f) => {
           const { base: sinTalla, talla } = extraerTalla(f.descripcion);
           // La marca es un dato propio: se separa del nombre y cuenta para decidir si el producto ya existe.
-          const { marca, base } = separarMarca(sinTalla, conocidas);
+          // El color es variante (como la talla): se separa del nombre y se guarda aparte.
+          const { color, base: sinColor } = separarColor(sinTalla, this.colores());
+          const { marca, base } = separarMarca(sinColor, conocidas);
           const { exacto: productoId, sugerido } = buscarProducto(base, marca, catalogo, conocidas);
           const existente = catalogo.find((p) => p.id === productoId);
           return {
@@ -104,6 +111,7 @@ export class AlmacenComponent implements OnInit {
             cantidad: f.cantidad,
             nombre: base,
             marca,
+            color,
             talla,
             productoId,
             manual: false,
@@ -136,6 +144,17 @@ export class AlmacenComponent implements OnInit {
 
   get cargaIncluidas(): number {
     return this.cargaFilas().filter((f) => f.incluir).length;
+  }
+
+  /** El producto existente se maneja por color: la fila debe traerlo. */
+  exigeColor(f: FilaCarga): boolean {
+    return !!f.productoId && !!this.productos().find((x) => x.id === f.productoId)?.requiereColor;
+  }
+
+  /** La fila trae un color pero el producto elegido no lo maneja: ese color no se guardaría. */
+  colorIgnorado(f: FilaCarga): boolean {
+    const p = f.productoId ? this.productos().find((x) => x.id === f.productoId) : undefined;
+    return !!p && !p.requiereColor && !!f.color;
   }
 
   usarSugeridoCarga(f: FilaCarga): void {
@@ -195,6 +214,11 @@ export class AlmacenComponent implements OnInit {
       Swal.fire({ icon: 'info', title: 'Elige la categoría', text: `Hay ${this.cargaNuevos} productos nuevos y hace falta una categoría para crearlos.` });
       return;
     }
+    const sinColor = filas.find((f) => this.exigeColor(f) && !f.color);
+    if (sinColor) {
+      Swal.fire({ icon: 'warning', title: 'Falta el color', text: `«${sinColor.nombre}» se maneja por color y la fila no lo trae: elígelo en su columna.` });
+      return;
+    }
     const invalida = filas.find((f) => f.cantidad <= 0 || (!f.productoId && !f.nombre.trim()) || (f.tipoTalla && !f.talla.trim()));
     if (invalida) {
       Swal.fire({ icon: 'warning', title: 'Revisa las filas', text: `Hay una fila con datos incompletos: «${invalida.nombre || '(sin nombre)'}» (cantidad, nombre o talla).` });
@@ -222,10 +246,11 @@ export class AlmacenComponent implements OnInit {
               categoriaId: this.cargaCategoriaId!,
               unidadMedida: f.unidad,
               requiereTalla: !!f.tipoTalla,
+              requiereColor: !!f.color,
               tipoTalla: f.tipoTalla || null,
             },
         talla: f.talla.trim(),
-        color: '',
+        color: f.color,
         cantidad: f.cantidad,
         costoUnitario: f.costo,
       }));
@@ -275,12 +300,14 @@ export class AlmacenComponent implements OnInit {
     private service: AlmacenService,
     private personasService: PersonasService,
     private catalogoService: CatalogoService,
+    private catalogoValorService: CatalogoValorService,
     public authService: LbAuthService,
   ) {}
 
   ngOnInit(): void {
     this.personasService.getCatalogos().subscribe((c) => this.almacenes.set(c.almacenes));
     this.catalogoService.listProductos('', 1, 5000).subscribe((r) => this.productos.set(r.data));
+    this.catalogoValorService.list('COLOR').subscribe((v) => this.colores.set(v.filter((x) => x.activo).map((x) => x.valor)));
     this.cargar();
     this.cargarMovimientos();
   }

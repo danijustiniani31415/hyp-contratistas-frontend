@@ -24,8 +24,9 @@ import { LbAuthService } from '../../core/services/lb-auth.service';
 import { generarPdfGuia } from './guia-remision-pdf';
 import { AlmacenService, StockListItem } from '../../core/services/almacen.service';
 import { extraerTalla, leerExcel } from './guia-excel-import';
-import { buscarProducto, marcasConocidas, separarMarca } from './producto-matching';
+import { buscarProducto, marcasConocidas, separarColor, separarMarca } from './producto-matching';
 import { DocumentosService } from '../../core/services/documentos.service';
+import { CatalogoValorService } from '../../core/services/catalogo-valor.service';
 
 /** Fila del listado importado desde Excel, antes de pasar a la guía. */
 interface FilaImport {
@@ -33,11 +34,13 @@ interface FilaImport {
   cantidad: number;
   descripcion: string;
   talla: string;
+  /** Color detectado en el texto (variante, como la talla); solo se usa si el producto elegido maneja color. */
+  color: string;
   productoId: number | null;
   libre: boolean;
   disponible: number | null;
   /** Producto parecido (no idéntico) del catálogo: se ofrece pero no se asigna solo. */
-  sugerido: { id: number; nombre: string; porcentaje: number; otraMarca: boolean } | null;
+  sugerido: { id: number; nombre: string; porcentaje: number; otraMarca: boolean; alternativas: string[] } | null;
 }
 
 const ESTADOS = ['BORRADOR', 'ENVIADA', 'ACEPTADA', 'RECHAZADA', 'ANULADA'];
@@ -98,6 +101,7 @@ export class GuiasRemision implements OnInit {
     private pedidosService: PedidosService,
     private almacenService: AlmacenService,
     private documentosService: DocumentosService,
+    private catalogoValorService: CatalogoValorService,
     public authService: LbAuthService,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -190,6 +194,7 @@ export class GuiasRemision implements OnInit {
     this.personasService.getCatalogos().subscribe((c) => this.almacenes.set(c.almacenes));
     this.catalogoService.listProductos('', 1, 5000).subscribe((r) => this.productos.set(r.data));
     this.cargarMaestros();
+    this.catalogoValorService.list('COLOR').subscribe((v) => this.colores.set(v.filter((x) => x.activo).map((x) => x.valor)));
   }
 
   // ── Datos maestros de transporte (se eligen al crear la guía y rellenan sus campos) ──
@@ -451,6 +456,8 @@ export class GuiasRemision implements OnInit {
   showImport = signal(false);
   importFilas = signal<FilaImport[]>([]);
   importCargando = signal(false);
+  /** Lista de colores del sistema (editable): para detectar el color en el Excel. */
+  colores = signal<string[]>([]);
   private stockOrigen: StockListItem[] = [];
 
   async onExcelElegido(ev: Event): Promise<void> {
@@ -488,10 +495,11 @@ export class GuiasRemision implements OnInit {
       filas.map((f) => {
         const { base: sinTalla, talla } = extraerTalla(f.descripcion);
         // La marca cuenta para reconocer el producto: «Flexómetro Truper» no es «Flexómetro Stanley».
-        const { marca, base } = separarMarca(sinTalla, conocidas);
+        const { color, base: sinColor } = separarColor(sinTalla, this.colores());
+        const { marca, base } = separarMarca(sinColor, conocidas);
         const { exacto: productoId, sugerido } = buscarProducto(base, marca, catalogo, conocidas);
         const fila: FilaImport = {
-          incluir: true, cantidad: f.cantidad, descripcion: f.descripcion, talla,
+          incluir: true, cantidad: f.cantidad, descripcion: f.descripcion, talla, color,
           productoId, libre: productoId === null, disponible: null, sugerido,
         };
         this.actualizarDisponible(fila);
@@ -542,7 +550,7 @@ export class GuiasRemision implements OnInit {
       if (f.libre || !p) {
         nuevas.push({ productoId: null, libre: true, descripcion: f.descripcion, esBienTercero: false, talla: '', color: '', cantidad: f.cantidad, unidadMedida: 'NIU' });
       } else {
-        nuevas.push({ productoId: p.id, talla: p.requiereTalla ? f.talla : '', color: '', cantidad: f.cantidad, unidadMedida: unidad(p.unidadMedida) });
+        nuevas.push({ productoId: p.id, talla: p.requiereTalla ? f.talla : '', color: p.requiereColor ? f.color : '', cantidad: f.cantidad, unidadMedida: unidad(p.unidadMedida) });
       }
     }
     if (!nuevas.length) return;

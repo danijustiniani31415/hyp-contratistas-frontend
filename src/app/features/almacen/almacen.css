@@ -44,6 +44,7 @@
 .am-acciones { white-space: nowrap; text-align: right; }
 .am-carga-nombre { min-width: 280px; }
 .am-carga-marca { min-width: 120px; }
-.am-carga-wrap table { min-width: 1180px; }
+.am-carga-wrap table { min-width: 1300px; }
 .am-carga-wrap select.abril-field-input { min-width: 96px; }
 .am-carga-wrap app-search-select { display: block; min-width: 230px; }
+.am-carga-color { min-width: 110px; }
