@@ -35,6 +35,7 @@ export interface GuiaRemisionCreate {
   conductorNombres?: string;
   conductorLicencia?: string;
   conductorDni?: string;
+  conductorApellidos?: string;
   observacion?: string;
   items: GuiaRemisionItemCreate[];
 }
@@ -103,6 +104,7 @@ export interface GuiaRemisionDetalle {
   conductorNombres: string | null;
   conductorLicencia: string | null;
   conductorDni: string | null;
+  conductorApellidos: string | null;
   emisorRuc: string;
   emisorRazonSocial: string;
   almacenOrigenDireccion: string | null;
@@ -120,6 +122,11 @@ export interface GuiaRemisionDetalle {
   confirmacionPendiente: boolean;
   items: GuiaRemisionItemDetalle[];
 }
+
+/** Datos maestros de transporte: se registran una vez y rellenan el formulario de la guía. */
+export interface Transportista { id: number; ruc: string; razonSocial: string; nroMtc: string | null; activo: boolean }
+export interface Vehiculo { id: number; placa: string; nroCirculacion: string | null; activo: boolean }
+export interface Conductor { id: number; numDoc: string; nombres: string; apellidos: string; licencia: string; activo: boolean }
 
 @Injectable({ providedIn: 'root' })
 export class GuiasRemisionService {
@@ -153,6 +160,35 @@ export class GuiasRemisionService {
 
   eliminar(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers: this.headers() });
+  }
+
+  // ── Datos maestros de transporte ──
+  listTransportistas(): Observable<Transportista[]> {
+    return this.http.get<Transportista[]>(`${this.apiUrl}/maestros/transportistas`, { headers: this.headers() });
+  }
+  guardarTransportista(id: number | null, dto: Omit<Transportista, 'id'>): Observable<Transportista> {
+    const url = `${this.apiUrl}/maestros/transportistas`;
+    return id
+      ? this.http.put<Transportista>(`${url}/${id}`, dto, { headers: this.headers() })
+      : this.http.post<Transportista>(url, dto, { headers: this.headers() });
+  }
+  listVehiculos(): Observable<Vehiculo[]> {
+    return this.http.get<Vehiculo[]>(`${this.apiUrl}/maestros/vehiculos`, { headers: this.headers() });
+  }
+  guardarVehiculo(id: number | null, dto: Omit<Vehiculo, 'id'>): Observable<Vehiculo> {
+    const url = `${this.apiUrl}/maestros/vehiculos`;
+    return id
+      ? this.http.put<Vehiculo>(`${url}/${id}`, dto, { headers: this.headers() })
+      : this.http.post<Vehiculo>(url, dto, { headers: this.headers() });
+  }
+  listConductores(): Observable<Conductor[]> {
+    return this.http.get<Conductor[]>(`${this.apiUrl}/maestros/conductores`, { headers: this.headers() });
+  }
+  guardarConductor(id: number | null, dto: Omit<Conductor, 'id'>): Observable<Conductor> {
+    const url = `${this.apiUrl}/maestros/conductores`;
+    return id
+      ? this.http.put<Conductor>(`${url}/${id}`, dto, { headers: this.headers() })
+      : this.http.post<Conductor>(url, dto, { headers: this.headers() });
   }
 
   anular(id: number): Observable<unknown> {

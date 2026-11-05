@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
@@ -13,6 +13,9 @@ import {
   GuiaRemisionDetalle,
   GuiaRemisionCreate,
   ConfirmarRecepcionItem,
+  Transportista,
+  Vehiculo,
+  Conductor,
 } from '../../core/services/guias-remision.service';
 import { PersonasService, AlmacenCatalogoItem } from '../../core/services/personas.service';
 import { CatalogoService, ProductoListItem } from '../../core/services/catalogo.service';
@@ -83,6 +86,146 @@ export class GuiasRemision implements OnInit {
     this.cargar();
     this.personasService.getCatalogos().subscribe((c) => this.almacenes.set(c.almacenes));
     this.catalogoService.listProductos('', 1, 5000).subscribe((r) => this.productos.set(r.data));
+    this.cargarMaestros();
+  }
+
+  // ── Datos maestros de transporte (se eligen al crear la guía y rellenan sus campos) ──
+  transportistas = signal<Transportista[]>([]);
+  vehiculos = signal<Vehiculo[]>([]);
+  conductores = signal<Conductor[]>([]);
+  transportistaOpts = computed(() =>
+    this.transportistas().filter((t) => t.activo).map((t) => ({ id: t.id, label: `${t.razonSocial} (${t.ruc})` })));
+  vehiculoOpts = computed(() =>
+    this.vehiculos().filter((v) => v.activo).map((v) => ({ id: v.id, label: v.placa })));
+  conductorOpts = computed(() =>
+    this.conductores().filter((c) => c.activo).map((c) => ({ id: c.id, label: `${c.apellidos} ${c.nombres} - DNI ${c.numDoc}` })));
+  transportistaSel: number | null = null;
+  vehiculoSel: number | null = null;
+  conductorSel: number | null = null;
+
+  cargarMaestros(): void {
+    // Sin permiso de lectura el backend responde 403: simplemente no hay listas para elegir.
+    this.service.listTransportistas().subscribe({ next: (r) => this.transportistas.set(r), error: () => {} });
+    this.service.listVehiculos().subscribe({ next: (r) => this.vehiculos.set(r), error: () => {} });
+    this.service.listConductores().subscribe({ next: (r) => this.conductores.set(r), error: () => {} });
+  }
+
+  elegirTransportista(id: number | null): void {
+    const t = this.transportistas().find((x) => x.id === id);
+    if (!t) return;
+    this.form.transportistaRuc = t.ruc;
+    this.form.transportistaRazonSocial = t.razonSocial;
+  }
+
+  elegirVehiculo(id: number | null): void {
+    const v = this.vehiculos().find((x) => x.id === id);
+    if (v) this.form.vehiculoPlaca = v.placa;
+  }
+
+  elegirConductor(id: number | null): void {
+    const c = this.conductores().find((x) => x.id === id);
+    if (!c) return;
+    this.form.conductorApellidos = c.apellidos;
+    this.form.conductorNombres = c.nombres;
+    this.form.conductorDni = c.numDoc;
+    this.form.conductorLicencia = c.licencia;
+  }
+
+  // ── Gestionar datos maestros ──
+  showMaestros = signal(false);
+  maestroTab = signal<'conductores' | 'vehiculos' | 'transportistas'>('conductores');
+  maestroEditando = signal<number | null | 'nuevo'>(null);
+  maestroError = signal('');
+  maestroGuardando = signal(false);
+  fConductor = { numDoc: '', nombres: '', apellidos: '', licencia: '', activo: true };
+  fVehiculo = { placa: '', nroCirculacion: '', activo: true };
+  fTransportista = { ruc: '', razonSocial: '', nroMtc: '', activo: true };
+
+  abrirMaestros(): void {
+    this.maestroEditando.set(null);
+    this.maestroError.set('');
+    this.showMaestros.set(true);
+  }
+
+  cerrarMaestros(): void {
+    this.showMaestros.set(false);
+    this.cargarMaestros();
+  }
+
+  cambiarTabMaestro(tab: 'conductores' | 'vehiculos' | 'transportistas'): void {
+    this.maestroTab.set(tab);
+    this.maestroEditando.set(null);
+    this.maestroError.set('');
+  }
+
+  nuevoMaestro(): void {
+    this.fConductor = { numDoc: '', nombres: '', apellidos: '', licencia: '', activo: true };
+    this.fVehiculo = { placa: '', nroCirculacion: '', activo: true };
+    this.fTransportista = { ruc: '', razonSocial: '', nroMtc: '', activo: true };
+    this.maestroError.set('');
+    this.maestroEditando.set('nuevo');
+  }
+
+  editarConductor(c: Conductor): void {
+    this.fConductor = { numDoc: c.numDoc, nombres: c.nombres, apellidos: c.apellidos, licencia: c.licencia, activo: c.activo };
+    this.maestroError.set('');
+    this.maestroEditando.set(c.id);
+  }
+
+  editarVehiculo(v: Vehiculo): void {
+    this.fVehiculo = { placa: v.placa, nroCirculacion: v.nroCirculacion ?? '', activo: v.activo };
+    this.maestroError.set('');
+    this.maestroEditando.set(v.id);
+  }
+
+  editarTransportista(t: Transportista): void {
+    this.fTransportista = { ruc: t.ruc, razonSocial: t.razonSocial, nroMtc: t.nroMtc ?? '', activo: t.activo };
+    this.maestroError.set('');
+    this.maestroEditando.set(t.id);
+  }
+
+  guardarMaestro(): void {
+    const ed = this.maestroEditando();
+    if (ed === null) return;
+    const id = ed === 'nuevo' ? null : ed;
+    this.maestroError.set('');
+    this.maestroGuardando.set(true);
+    const fin = {
+      next: () => {
+        this.maestroGuardando.set(false);
+        this.maestroEditando.set(null);
+        this.cargarMaestros();
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.maestroGuardando.set(false);
+        this.maestroError.set(err?.error?.message ?? 'No se pudo guardar.');
+      },
+    };
+    switch (this.maestroTab()) {
+      case 'conductores':
+        this.service.guardarConductor(id, this.fConductor).subscribe(fin);
+        break;
+      case 'vehiculos':
+        this.service.guardarVehiculo(id, { ...this.fVehiculo, nroCirculacion: this.fVehiculo.nroCirculacion || null }).subscribe(fin);
+        break;
+      default:
+        this.service.guardarTransportista(id, { ...this.fTransportista, nroMtc: this.fTransportista.nroMtc || null }).subscribe(fin);
+    }
+  }
+
+  /** Activar/desactivar sin borrar: las guías ya emitidas conservan su copia de los datos. */
+  alternarActivo(tipo: 'conductor' | 'vehiculo' | 'transportista', item: Conductor | Vehiculo | Transportista): void {
+    const fin = { next: () => this.cargarMaestros(), error: () => {} };
+    if (tipo === 'conductor') {
+      const { id, ...c } = item as Conductor;
+      this.service.guardarConductor(id, { ...c, activo: !c.activo }).subscribe(fin);
+    } else if (tipo === 'vehiculo') {
+      const { id, ...v } = item as Vehiculo;
+      this.service.guardarVehiculo(id, { ...v, activo: !v.activo }).subscribe(fin);
+    } else {
+      const { id, ...t } = item as Transportista;
+      this.service.guardarTransportista(id, { ...t, activo: !t.activo }).subscribe(fin);
+    }
   }
 
   cargar(): void {
@@ -117,6 +260,7 @@ export class GuiasRemision implements OnInit {
   // ── Nueva guía ───────────────────────────────────────────────────────
   abrirNuevo(): void {
     this.form = this.formVacio();
+    this.transportistaSel = this.vehiculoSel = this.conductorSel = null;
     this.esTrasladoPropio = true;
     this.codigosPedidoPorItem = {};
     this.error.set('');
@@ -144,7 +288,10 @@ export class GuiasRemision implements OnInit {
       this.form.conductorNombres = '';
       this.form.conductorLicencia = '';
       this.form.conductorDni = '';
+      this.form.conductorApellidos = '';
+      this.vehiculoSel = this.conductorSel = null;
     } else {
+      this.transportistaSel = null;
       this.form.transportistaRuc = '';
       this.form.transportistaRazonSocial = '';
     }
@@ -225,8 +372,8 @@ export class GuiasRemision implements OnInit {
       i.cantidad > 0 && (i.libre ? !!i.descripcion?.trim() : !!i.productoId));
     if (!itemsOk) return false;
     if (this.form.modalidadTraslado === '01') return !!this.form.transportistaRuc;
-    return !!this.form.vehiculoPlaca && !!this.form.conductorNombres && !!this.form.conductorLicencia
-      && /^\d{8}$/.test(this.form.conductorDni ?? '');
+    return !!this.form.vehiculoPlaca && !!this.form.conductorNombres?.trim() && !!this.form.conductorApellidos?.trim()
+      && !!this.form.conductorLicencia && /^\d{8}$/.test(this.form.conductorDni ?? '');
   }
 
   guardar(): void {

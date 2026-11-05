@@ -108,7 +108,9 @@ export async function generarPdfGuia(d: GuiaRemisionDetalle): Promise<void> {
     fila('Transportista:', `${d.transportistaRazonSocial ?? '—'}${d.transportistaRuc ? ` - RUC N° ${d.transportistaRuc}` : ''}`);
   } else {
     fila('Número de placa:', d.vehiculoPlaca ?? '—');
-    fila('Conductor principal:', `${d.conductorNombres ?? '—'}${d.conductorDni ? ` - DNI N° ${d.conductorDni}` : ''}`);
+    // Guías nuevas traen apellidos aparte; las antiguas traen "Apellidos Nombres" juntos en conductorNombres.
+    const conductor = d.conductorApellidos ? `${d.conductorApellidos} ${d.conductorNombres ?? ''}`.trim() : (d.conductorNombres ?? '—');
+    fila('Conductor principal:', `${conductor}${d.conductorDni ? ` - DNI N° ${d.conductorDni}` : ''}`);
     fila('Número de licencia de conducir:', d.conductorLicencia ?? '—');
   }
   if (d.observacion) fila('Observaciones:', d.observacion);

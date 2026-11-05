@@ -122,6 +122,7 @@ export interface DevolverItem {
   vehiculoPlaca?: string;
   conductorNombres?: string;
   conductorLicencia?: string;
+  conductorDni?: string;
   observacion?: string;
 }
 

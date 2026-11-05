@@ -12,6 +12,9 @@
       <option value="">Todos los estados</option>
       @for (e of estados; track e) { <option [value]="e">{{ e }}</option> }
     </select>
+    @if (authService.hasPermiso('GUIA_REMISION_CREAR')) {
+      <button class="lb-btn ghost" (click)="abrirMaestros()">Datos de transporte</button>
+    }
   </app-lb-page-header>
 
   <div class="lb-table-wrap">
@@ -138,6 +141,16 @@
       </div>
 
       @if (form.modalidadTraslado === '01') {
+        @if (transportistaOpts().length) {
+          <app-search-select
+            [options]="transportistaOpts()"
+            displayField="label"
+            [(value)]="transportistaSel"
+            (valueChange)="elegirTransportista($event)"
+            label="Transportista guardado"
+            placeholder="Elige uno o escribe los datos abajo"
+          />
+        }
         <div class="gr-form-grid">
           <div class="abril-field">
             <label class="abril-field-label">RUC transportista <span class="gr-required">*</span></label>
@@ -149,27 +162,51 @@
           </div>
         </div>
       } @else {
-        <div class="gr-form-grid gr-form-grid-3">
+        @if (vehiculoOpts().length || conductorOpts().length) {
+          <div class="gr-form-grid">
+            <app-search-select
+              [options]="vehiculoOpts()"
+              displayField="label"
+              [(value)]="vehiculoSel"
+              (valueChange)="elegirVehiculo($event)"
+              label="Vehículo guardado"
+              placeholder="Elige uno o escribe la placa"
+            />
+            <app-search-select
+              [options]="conductorOpts()"
+              displayField="label"
+              [(value)]="conductorSel"
+              (valueChange)="elegirConductor($event)"
+              label="Conductor guardado"
+              placeholder="Elige uno o escribe los datos"
+            />
+          </div>
+        }
+        <div class="gr-form-grid">
           <div class="abril-field">
             <label class="abril-field-label">Placa del vehículo <span class="gr-required">*</span></label>
-            <input class="abril-field-input" [(ngModel)]="form.vehiculoPlaca" placeholder="ABC-123" />
-          </div>
-          <div class="abril-field">
-            <label class="abril-field-label">Apellidos y nombres del conductor <span class="gr-required">*</span></label>
-            <input class="abril-field-input" [(ngModel)]="form.conductorNombres" placeholder="Ej: FLORES VILCA MELVIN NEBER" />
+            <input class="abril-field-input" [(ngModel)]="form.vehiculoPlaca" placeholder="ABC123" />
           </div>
           <div class="abril-field">
             <label class="abril-field-label">DNI del conductor <span class="gr-required">*</span></label>
             <input class="abril-field-input" maxlength="8" [(ngModel)]="form.conductorDni" placeholder="8 dígitos" />
           </div>
         </div>
-        <div class="gr-form-grid">
+        <div class="gr-form-grid gr-form-grid-3">
+          <div class="abril-field">
+            <label class="abril-field-label">Apellidos del conductor <span class="gr-required">*</span></label>
+            <input class="abril-field-input" [(ngModel)]="form.conductorApellidos" placeholder="Ej: FLORES VILCA" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Nombres del conductor <span class="gr-required">*</span></label>
+            <input class="abril-field-input" [(ngModel)]="form.conductorNombres" placeholder="Ej: MELVIN NEBER" />
+          </div>
           <div class="abril-field">
             <label class="abril-field-label">Licencia del conductor <span class="gr-required">*</span></label>
             <input class="abril-field-input" [(ngModel)]="form.conductorLicencia" />
           </div>
         </div>
-        <p class="gr-hint">SUNAT exige apellidos y nombres, DNI y licencia del conductor para que la guía en modalidad privada sea válida.</p>
+        <p class="gr-hint">SUNAT exige apellidos y nombres por separado, DNI y licencia del conductor. Guarda los que usas seguido en «Datos de transporte».</p>
       }
 
       <div class="abril-field">
@@ -351,6 +388,99 @@
           <button class="lb-btn" [disabled]="!haySeleccionadosDespacho" (click)="agregarSeleccionadosAlaGuia()">
             Agregar a la guía
           </button>
+        </div>
+      }
+    </app-base-modal>
+  }
+
+  <!-- Modal: datos maestros de transporte -->
+  @if (showMaestros()) {
+    <app-base-modal title="Datos de transporte" width="w-[680px]" (closeModal)="cerrarMaestros()">
+      <div class="gr-tabs">
+        <button type="button" [class.activo]="maestroTab() === 'conductores'" (click)="cambiarTabMaestro('conductores')">Conductores</button>
+        <button type="button" [class.activo]="maestroTab() === 'vehiculos'" (click)="cambiarTabMaestro('vehiculos')">Vehículos</button>
+        <button type="button" [class.activo]="maestroTab() === 'transportistas'" (click)="cambiarTabMaestro('transportistas')">Transportistas</button>
+      </div>
+      <p class="gr-hint">Se registran una vez y se eligen al crear cada guía. Editarlos no cambia las guías ya creadas.</p>
+
+      @if (maestroEditando() === null) {
+        <div class="gr-form-actions" style="margin: 0 0 8px"><button class="lb-btn small" (click)="nuevoMaestro()">+ Nuevo</button></div>
+        <table class="lb-table">
+          @switch (maestroTab()) {
+            @case ('conductores') {
+              <thead><tr><th>Conductor</th><th>DNI</th><th>Licencia</th><th></th></tr></thead>
+              <tbody>
+                @for (c of conductores(); track c.id) {
+                  <tr [class.gr-inactivo]="!c.activo">
+                    <td>{{ c.apellidos }} {{ c.nombres }}</td><td>{{ c.numDoc }}</td><td>{{ c.licencia }}</td>
+                    <td class="gr-acciones">
+                      <button class="lb-btn ghost small" (click)="editarConductor(c)">Editar</button>
+                      <button class="lb-btn ghost small" (click)="alternarActivo('conductor', c)">{{ c.activo ? 'Desactivar' : 'Activar' }}</button>
+                    </td>
+                  </tr>
+                } @empty { <tr><td colspan="4" class="lb-empty">Sin conductores todavía.</td></tr> }
+              </tbody>
+            }
+            @case ('vehiculos') {
+              <thead><tr><th>Placa</th><th>Tarjeta de circulación</th><th></th></tr></thead>
+              <tbody>
+                @for (v of vehiculos(); track v.id) {
+                  <tr [class.gr-inactivo]="!v.activo">
+                    <td>{{ v.placa }}</td><td>{{ v.nroCirculacion ?? '—' }}</td>
+                    <td class="gr-acciones">
+                      <button class="lb-btn ghost small" (click)="editarVehiculo(v)">Editar</button>
+                      <button class="lb-btn ghost small" (click)="alternarActivo('vehiculo', v)">{{ v.activo ? 'Desactivar' : 'Activar' }}</button>
+                    </td>
+                  </tr>
+                } @empty { <tr><td colspan="3" class="lb-empty">Sin vehículos todavía.</td></tr> }
+              </tbody>
+            }
+            @default {
+              <thead><tr><th>Transportista</th><th>RUC</th><th>MTC</th><th></th></tr></thead>
+              <tbody>
+                @for (t of transportistas(); track t.id) {
+                  <tr [class.gr-inactivo]="!t.activo">
+                    <td>{{ t.razonSocial }}</td><td>{{ t.ruc }}</td><td>{{ t.nroMtc ?? '—' }}</td>
+                    <td class="gr-acciones">
+                      <button class="lb-btn ghost small" (click)="editarTransportista(t)">Editar</button>
+                      <button class="lb-btn ghost small" (click)="alternarActivo('transportista', t)">{{ t.activo ? 'Desactivar' : 'Activar' }}</button>
+                    </td>
+                  </tr>
+                } @empty { <tr><td colspan="4" class="lb-empty">Sin transportistas todavía.</td></tr> }
+              </tbody>
+            }
+          }
+        </table>
+      } @else {
+        @switch (maestroTab()) {
+          @case ('conductores') {
+            <div class="gr-form-grid">
+              <div class="abril-field"><label class="abril-field-label">Apellidos</label><input class="abril-field-input" [(ngModel)]="fConductor.apellidos" /></div>
+              <div class="abril-field"><label class="abril-field-label">Nombres</label><input class="abril-field-input" [(ngModel)]="fConductor.nombres" /></div>
+            </div>
+            <div class="gr-form-grid">
+              <div class="abril-field"><label class="abril-field-label">DNI</label><input class="abril-field-input" maxlength="8" [(ngModel)]="fConductor.numDoc" /></div>
+              <div class="abril-field"><label class="abril-field-label">Licencia de conducir</label><input class="abril-field-input" [(ngModel)]="fConductor.licencia" placeholder="Ej: P41713102" /></div>
+            </div>
+          }
+          @case ('vehiculos') {
+            <div class="gr-form-grid">
+              <div class="abril-field"><label class="abril-field-label">Placa</label><input class="abril-field-input" maxlength="8" [(ngModel)]="fVehiculo.placa" placeholder="Ej: AKY719" /></div>
+              <div class="abril-field"><label class="abril-field-label">Tarjeta de circulación (opcional)</label><input class="abril-field-input" [(ngModel)]="fVehiculo.nroCirculacion" /></div>
+            </div>
+          }
+          @default {
+            <div class="gr-form-grid">
+              <div class="abril-field"><label class="abril-field-label">RUC</label><input class="abril-field-input" maxlength="11" [(ngModel)]="fTransportista.ruc" /></div>
+              <div class="abril-field"><label class="abril-field-label">Razón social</label><input class="abril-field-input" [(ngModel)]="fTransportista.razonSocial" /></div>
+            </div>
+            <div class="abril-field"><label class="abril-field-label">Registro MTC (opcional)</label><input class="abril-field-input" [(ngModel)]="fTransportista.nroMtc" /></div>
+          }
+        }
+        @if (maestroError()) { <p class="gr-error">{{ maestroError() }}</p> }
+        <div class="gr-form-actions">
+          <button class="lb-btn ghost" (click)="maestroEditando.set(null)">Volver</button>
+          <button class="lb-btn" [disabled]="maestroGuardando()" (click)="guardarMaestro()">{{ maestroGuardando() ? 'Guardando...' : 'Guardar' }}</button>
         </div>
       }
     </app-base-modal>

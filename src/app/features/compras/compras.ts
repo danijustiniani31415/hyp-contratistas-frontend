@@ -354,8 +354,10 @@ export class Compras implements OnInit {
         <input id="swal-dev-peso" type="number" class="swal2-input" style="margin:0" min="0" step="0.01">
         <label style="display:block;text-align:left;font-size:12px;margin:8px 0 2px">Placa del vehículo</label>
         <input id="swal-dev-placa" type="text" class="swal2-input" style="margin:0">
-        <label style="display:block;text-align:left;font-size:12px;margin:8px 0 2px">Nombres del conductor</label>
+        <label style="display:block;text-align:left;font-size:12px;margin:8px 0 2px">Apellidos y nombres del conductor</label>
         <input id="swal-dev-conductor" type="text" class="swal2-input" style="margin:0">
+        <label style="display:block;text-align:left;font-size:12px;margin:8px 0 2px">DNI del conductor</label>
+        <input id="swal-dev-dni" type="text" maxlength="8" class="swal2-input" style="margin:0">
         <label style="display:block;text-align:left;font-size:12px;margin:8px 0 2px">Licencia del conductor</label>
         <input id="swal-dev-licencia" type="text" class="swal2-input" style="margin:0">
       `,
@@ -370,6 +372,7 @@ export class Compras implements OnInit {
         const vehiculoPlaca = (document.getElementById('swal-dev-placa') as HTMLInputElement).value;
         const conductorNombres = (document.getElementById('swal-dev-conductor') as HTMLInputElement).value;
         const conductorLicencia = (document.getElementById('swal-dev-licencia') as HTMLInputElement).value;
+        const conductorDni = (document.getElementById('swal-dev-dni') as HTMLInputElement).value.trim();
         if (!cantidad || cantidad <= 0 || cantidad > cantidadRecibida) {
           Swal.showValidationMessage(`La cantidad debe estar entre 0.01 y ${cantidadRecibida}`);
           return false;
@@ -378,7 +381,11 @@ export class Compras implements OnInit {
           Swal.showValidationMessage('Completa fecha, peso, placa y datos del conductor — SUNAT los exige para la guía.');
           return false;
         }
-        return { cantidad, fechaTraslado, pesoBrutoTotal, vehiculoPlaca, conductorNombres, conductorLicencia };
+        if (!/^\d{8}$/.test(conductorDni)) {
+          Swal.showValidationMessage('El DNI del conductor debe tener 8 dígitos.');
+          return false;
+        }
+        return { cantidad, fechaTraslado, pesoBrutoTotal, vehiculoPlaca, conductorNombres, conductorLicencia, conductorDni };
       },
     }).then((res) => {
       if (!res.isConfirmed || !res.value) return;
@@ -393,6 +400,7 @@ export class Compras implements OnInit {
           vehiculoPlaca: v.vehiculoPlaca,
           conductorNombres: v.conductorNombres,
           conductorLicencia: v.conductorLicencia,
+          conductorDni: v.conductorDni,
         })
         .subscribe({
           next: (r) => {
