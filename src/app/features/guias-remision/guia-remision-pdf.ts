@@ -122,7 +122,10 @@ export async function generarPdfGuia(d: GuiaRemisionDetalle): Promise<void> {
   y = Math.max(y + 6, 235);
   if (numero && emitida) {
     const emision = d.enviadoEn ? new Date(d.enviadoEn).toLocaleDateString('en-CA', { timeZone: 'America/Lima' }) : '';
-    const qr = await QRCode.toDataURL(`${d.emisorRuc}|09|${d.serie}|${numero}|${emision}`, { margin: 1, width: 300 });
+    // El QR oficial es el enlace que SUNAT emite al aceptar la guía; mientras no lo entregue, uno provisional
+    // con los datos con los que SUNAT permite sustentar el traslado (RUC, serie y número).
+    const contenidoQr = d.qrUrl ?? `${d.emisorRuc}|09|${d.serie}|${numero}|${emision}`;
+    const qr = await QRCode.toDataURL(contenidoQr, { margin: 1, width: 300 });
     pdf.addImage(qr, 'PNG', M, y, 32, 32);
   }
   pdf.setFont('helvetica', 'normal').setFontSize(8);
@@ -131,6 +134,15 @@ export async function generarPdfGuia(d: GuiaRemisionDetalle): Promise<void> {
       ? `Estado SUNAT: ACEPTADA${d.cdrCodigoRespuesta ? ` (código ${d.cdrCodigoRespuesta})` : ''}.`
       : `Estado SUNAT: ${d.estado}. Esta guía todavía no es válida para el traslado.`;
   pdf.text(constancia, M + 36, y + 6);
+  if (numero && emitida) {
+    pdf.text(
+      d.qrUrl
+        ? 'Código QR: enlace oficial emitido por SUNAT.'
+        : 'Código QR provisional: SUNAT aún no entregó el enlace oficial; para sustentar el traslado indique RUC, serie y número.',
+      M + 36,
+      y + 10,
+    );
+  }
   pdf.text(
     pdf.splitTextToSize(
       'Esta es una representación impresa sin valor tributario de la Guía de Remisión Electrónica. ' +
@@ -138,7 +150,7 @@ export async function generarPdfGuia(d: GuiaRemisionDetalle): Promise<void> {
       W - M * 2 - 40,
     ),
     M + 36,
-    y + 12,
+    y + 16,
   );
 
   pdf.save(`${d.emisorRuc}-09-${d.serie}-${numero || d.id}.pdf`);

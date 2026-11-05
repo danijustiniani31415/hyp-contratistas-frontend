@@ -208,6 +208,12 @@
                     (valueChange)="f.productoId = $event; onProductoCargaCambiado(f)"
                     placeholder="No — crear nuevo"
                   />
+                  @if (f.sugerido && !f.productoId) {
+                    <div class="am-sugerencia">
+                      ¿Será «{{ f.sugerido.nombre }}» ({{ f.sugerido.porcentaje }}%)?
+                      <button type="button" class="lb-btn ghost small" (click)="usarSugeridoCarga(f)">Sí, usar</button>
+                    </div>
+                  }
                 </td>
                 <td>
                   <select class="abril-field-input" [(ngModel)]="f.unidad" [disabled]="!!f.productoId">

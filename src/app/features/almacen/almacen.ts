@@ -19,7 +19,7 @@ import { LbAuthService } from '../../core/services/lb-auth.service';
 import Swal from 'sweetalert2';
 import { Categoria } from '../../core/services/catalogo.service';
 import { CargaMasivaFila } from '../../core/services/almacen.service';
-import { adivinarTipoTalla, adivinarUnidad, extraerTalla, leerExcel, mejorCoincidencia } from '../guias-remision/guia-excel-import';
+import { adivinarTipoTalla, adivinarUnidad, buscarProducto, extraerTalla, leerExcel } from '../guias-remision/guia-excel-import';
 
 /** Fila del Excel de stock, antes de cargarla al almacén. */
 interface FilaCarga {
@@ -31,6 +31,8 @@ interface FilaCarga {
   unidad: string;
   tipoTalla: '' | 'ROPA' | 'CALZADO' | 'GUANTES';
   costo: number | null;
+  /** Producto parecido (no idéntico) del catálogo: se ofrece, pero no se asigna solo. */
+  sugerido: { id: number; nombre: string; porcentaje: number } | null;
 }
 
 /** [REVISADO] Estado en signals — mismo motivo que personas.ts (Zone.js no parcha fetch()). */
@@ -87,7 +89,7 @@ export class AlmacenComponent implements OnInit {
       this.cargaFilas.set(
         filas.map((f) => {
           const { base, talla } = extraerTalla(f.descripcion);
-          const productoId = mejorCoincidencia(base, catalogo);
+          const { exacto: productoId, sugerido } = buscarProducto(base, catalogo);
           const existente = catalogo.find((p) => p.id === productoId);
           return {
             incluir: true,
@@ -98,6 +100,7 @@ export class AlmacenComponent implements OnInit {
             unidad: existente?.unidadMedida ?? adivinarUnidad(base),
             tipoTalla: adivinarTipoTalla(base, talla),
             costo: null,
+            sugerido,
           } as FilaCarga;
         }),
       );
@@ -123,6 +126,13 @@ export class AlmacenComponent implements OnInit {
 
   get cargaIncluidas(): number {
     return this.cargaFilas().filter((f) => f.incluir).length;
+  }
+
+  usarSugeridoCarga(f: FilaCarga): void {
+    if (!f.sugerido) return;
+    f.productoId = f.sugerido.id;
+    f.sugerido = null;
+    this.onProductoCargaCambiado(f);
   }
 
   onProductoCargaCambiado(f: FilaCarga): void {

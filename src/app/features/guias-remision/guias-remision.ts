@@ -23,7 +23,7 @@ import { PedidosService, PendienteDespacho } from '../../core/services/pedidos.s
 import { LbAuthService } from '../../core/services/lb-auth.service';
 import { generarPdfGuia } from './guia-remision-pdf';
 import { AlmacenService, StockListItem } from '../../core/services/almacen.service';
-import { extraerTalla, leerExcel, mejorCoincidencia } from './guia-excel-import';
+import { buscarProducto, extraerTalla, leerExcel } from './guia-excel-import';
 
 /** Fila del listado importado desde Excel, antes de pasar a la guía. */
 interface FilaImport {
@@ -34,6 +34,8 @@ interface FilaImport {
   productoId: number | null;
   libre: boolean;
   disponible: number | null;
+  /** Producto parecido (no idéntico) del catálogo: se ofrece pero no se asigna solo. */
+  sugerido: { id: number; nombre: string; porcentaje: number } | null;
 }
 
 const ESTADOS = ['BORRADOR', 'ENVIADA', 'ACEPTADA', 'RECHAZADA', 'ANULADA'];
@@ -397,10 +399,10 @@ export class GuiasRemision implements OnInit {
     this.importFilas.set(
       filas.map((f) => {
         const { base, talla } = extraerTalla(f.descripcion);
-        const productoId = mejorCoincidencia(base, catalogo);
+        const { exacto: productoId, sugerido } = buscarProducto(base, catalogo);
         const fila: FilaImport = {
           incluir: true, cantidad: f.cantidad, descripcion: f.descripcion, talla,
-          productoId, libre: productoId === null, disponible: null,
+          productoId, libre: productoId === null, disponible: null, sugerido,
         };
         this.actualizarDisponible(fila);
         return fila;
@@ -419,6 +421,13 @@ export class GuiasRemision implements OnInit {
     f.disponible = this.stockOrigen
       .filter((s) => s.productoId === f.productoId && (s.talla || '') === talla && !s.color)
       .reduce((acc, s) => acc + s.cantidadActual, 0);
+  }
+
+  usarSugerido(f: FilaImport): void {
+    if (!f.sugerido) return;
+    f.productoId = f.sugerido.id;
+    f.sugerido = null;
+    this.onProductoImportCambiado(f);
   }
 
   onProductoImportCambiado(f: FilaImport): void {

@@ -18,6 +18,9 @@ export interface GuiaRemisionItemCreate {
   pedidoItemId?: number | null;
 }
 
+export interface ConductorSecundario { numDoc: string; nombres: string; apellidos: string; licencia: string }
+export interface VehiculoSecundario { placa: string; nroCirculacion?: string | null }
+
 export interface GuiaRemisionCreate {
   motivoTraslado: string;
   modalidadTraslado: string;
@@ -36,6 +39,9 @@ export interface GuiaRemisionCreate {
   conductorLicencia?: string;
   conductorDni?: string;
   conductorApellidos?: string;
+  vehiculoNroCirculacion?: string;
+  conductoresSecundarios: ConductorSecundario[];
+  vehiculosSecundarios: VehiculoSecundario[];
   observacion?: string;
   items: GuiaRemisionItemCreate[];
 }
@@ -105,6 +111,14 @@ export interface GuiaRemisionDetalle {
   conductorLicencia: string | null;
   conductorDni: string | null;
   conductorApellidos: string | null;
+  vehiculoNroCirculacion: string | null;
+  conductoresSecundarios: ConductorSecundario[];
+  vehiculosSecundarios: VehiculoSecundario[];
+  /** Enlace del QR oficial de SUNAT, o null si no lo entregó. */
+  qrUrl: string | null;
+  anulacionMotivo: string | null;
+  anulacionConstancia: string | null;
+  anuladaEn: string | null;
   emisorRuc: string;
   emisorRazonSocial: string;
   almacenOrigenDireccion: string | null;
@@ -191,8 +205,8 @@ export class GuiasRemisionService {
       : this.http.post<Conductor>(url, dto, { headers: this.headers() });
   }
 
-  anular(id: number): Observable<unknown> {
-    return this.http.post(`${this.apiUrl}/${id}/anular`, {}, { headers: this.headers() });
+  anular(id: number, dto: { motivo: string; constanciaBaja: string }): Observable<unknown> {
+    return this.http.post(`${this.apiUrl}/${id}/anular`, dto, { headers: this.headers() });
   }
 
   consultarEstado(id: number): Observable<GuiaRemisionDetalle> {

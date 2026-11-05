@@ -473,6 +473,10 @@
                     (valueChange)="f.productoId = $event; onProductoImportCambiado(f)"
                     placeholder="Sin coincidencia"
                   />
+                  @if (f.sugerido && !f.productoId) {
+                    <span class="gr-tag tercero">¿Será «{{ f.sugerido.nombre }}» ({{ f.sugerido.porcentaje }}%)?</span>
+                    <button type="button" class="lb-btn ghost small" (click)="usarSugerido(f)">Sí, usar</button>
+                  }
                 </td>
                 <td><input type="checkbox" [(ngModel)]="f.libre" [disabled]="!f.productoId" /></td>
                 <td>
