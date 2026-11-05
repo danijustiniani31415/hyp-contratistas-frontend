@@ -208,7 +208,10 @@
                 </td>
                 <td><input class="abril-field-input am-carga-nombre" [(ngModel)]="f.nombre" (ngModelChange)="reevaluarFila(f)" [disabled]="!!f.productoId" [title]="f.nombre" /></td>
                 <td><input class="abril-field-input am-carga-marca" [(ngModel)]="f.marca" (ngModelChange)="onMarcaCargaCambiada(f)" [disabled]="!!f.productoId" placeholder="Sin marca" /></td>
-                <td><input class="abril-field-input am-carga-talla" [(ngModel)]="f.talla" /></td>
+                <td>
+                  <input class="abril-field-input am-carga-talla" [(ngModel)]="f.talla" />
+                  @if (tallaIgnorada(f)) { <div class="am-sugerencia">Este producto no maneja talla: no se guardará. Actívala en Catálogo.</div> }
+                </td>
                 <td>
                   <select class="abril-field-input am-carga-color" [(ngModel)]="f.color">
                     <option value="">—</option>

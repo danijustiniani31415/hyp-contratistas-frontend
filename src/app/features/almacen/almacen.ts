@@ -191,6 +191,12 @@ export class AlmacenComponent implements OnInit {
     return !!p && !p.requiereColor && !!f.color;
   }
 
+  /** La fila trae talla pero el producto elegido no la maneja: esa talla se perdería y el stock entraría sin talla. */
+  tallaIgnorada(f: FilaCarga): boolean {
+    const p = f.productoId ? this.productos().find((x) => x.id === f.productoId) : undefined;
+    return !!p && !p.requiereTalla && !!f.talla.trim();
+  }
+
   usarSugeridoCarga(f: FilaCarga): void {
     if (!f.sugerido) return;
     f.productoId = f.sugerido.id;
