@@ -22,6 +22,19 @@ import { CatalogoService, ProductoListItem } from '../../core/services/catalogo.
 import { PedidosService, PendienteDespacho } from '../../core/services/pedidos.service';
 import { LbAuthService } from '../../core/services/lb-auth.service';
 import { generarPdfGuia } from './guia-remision-pdf';
+import { AlmacenService, StockListItem } from '../../core/services/almacen.service';
+import { extraerTalla, leerExcel, mejorCoincidencia } from './guia-excel-import';
+
+/** Fila del listado importado desde Excel, antes de pasar a la guía. */
+interface FilaImport {
+  incluir: boolean;
+  cantidad: number;
+  descripcion: string;
+  talla: string;
+  productoId: number | null;
+  libre: boolean;
+  disponible: number | null;
+}
 
 const ESTADOS = ['BORRADOR', 'ENVIADA', 'ACEPTADA', 'RECHAZADA', 'ANULADA'];
 const MOTIVOS = [
@@ -79,6 +92,7 @@ export class GuiasRemision implements OnInit {
     private personasService: PersonasService,
     private catalogoService: CatalogoService,
     private pedidosService: PedidosService,
+    private almacenService: AlmacenService,
     public authService: LbAuthService,
   ) {}
 
@@ -119,7 +133,43 @@ export class GuiasRemision implements OnInit {
 
   elegirVehiculo(id: number | null): void {
     const v = this.vehiculos().find((x) => x.id === id);
-    if (v) this.form.vehiculoPlaca = v.placa;
+    if (!v) return;
+    this.form.vehiculoPlaca = v.placa;
+    this.form.vehiculoNroCirculacion = v.nroCirculacion ?? '';
+  }
+
+  // ── Conductores y vehículos adicionales (la guía admite principal + secundarios) ──
+  secConductorSel: number | null = null;
+  secVehiculoSel: number | null = null;
+
+  agregarConductorSec(): void {
+    const c = this.conductores().find((x) => x.id === this.secConductorSel);
+    if (!c) return;
+    if (c.numDoc === this.form.conductorDni || this.form.conductoresSecundarios.some((s) => s.numDoc === c.numDoc)) {
+      Swal.fire({ icon: 'info', title: 'Ese conductor ya está en la guía' });
+      return;
+    }
+    this.form.conductoresSecundarios.push({ numDoc: c.numDoc, nombres: c.nombres, apellidos: c.apellidos, licencia: c.licencia });
+    this.secConductorSel = null;
+  }
+
+  quitarConductorSec(i: number): void {
+    this.form.conductoresSecundarios.splice(i, 1);
+  }
+
+  agregarVehiculoSec(): void {
+    const v = this.vehiculos().find((x) => x.id === this.secVehiculoSel);
+    if (!v) return;
+    if (v.placa === this.form.vehiculoPlaca || this.form.vehiculosSecundarios.some((s) => s.placa === v.placa)) {
+      Swal.fire({ icon: 'info', title: 'Ese vehículo ya está en la guía' });
+      return;
+    }
+    this.form.vehiculosSecundarios.push({ placa: v.placa, nroCirculacion: v.nroCirculacion });
+    this.secVehiculoSel = null;
+  }
+
+  quitarVehiculoSec(i: number): void {
+    this.form.vehiculosSecundarios.splice(i, 1);
   }
 
   elegirConductor(id: number | null): void {
@@ -289,12 +339,110 @@ export class GuiasRemision implements OnInit {
       this.form.conductorLicencia = '';
       this.form.conductorDni = '';
       this.form.conductorApellidos = '';
-      this.vehiculoSel = this.conductorSel = null;
+      this.form.vehiculoNroCirculacion = '';
+      this.form.conductoresSecundarios = [];
+      this.form.vehiculosSecundarios = [];
+      this.vehiculoSel = this.conductorSel = this.secConductorSel = this.secVehiculoSel = null;
     } else {
       this.transportistaSel = null;
       this.form.transportistaRuc = '';
       this.form.transportistaRazonSocial = '';
     }
+  }
+
+  // ── Importar el listado desde Excel ──────────────────────────────────
+  showImport = signal(false);
+  importFilas = signal<FilaImport[]>([]);
+  importCargando = signal(false);
+  private stockOrigen: StockListItem[] = [];
+
+  async onExcelElegido(ev: Event): Promise<void> {
+    const input = ev.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    input.value = ''; // permite volver a elegir el mismo archivo
+    if (!archivo) return;
+    if (!this.form.almacenOrigenId) {
+      Swal.fire({ icon: 'info', title: 'Elige primero el almacén de origen', text: 'Hace falta para comprobar el stock de cada producto.' });
+      return;
+    }
+    this.importCargando.set(true);
+    try {
+      const filas = leerExcel(await archivo.arrayBuffer());
+      if (!filas.length) {
+        Swal.fire({ icon: 'warning', title: 'No encontré productos', text: 'El Excel debe tener una columna de cantidad y otra con la descripción del producto.' });
+        return;
+      }
+      this.almacenService.listStock(this.form.almacenOrigenId, '', 1, 5000).subscribe({
+        next: (r) => this.prepararImport(filas, r.data),
+        error: () => this.prepararImport(filas, []),
+      });
+    } catch {
+      Swal.fire({ icon: 'error', title: 'No se pudo leer el Excel', text: 'Verifica que sea un archivo .xlsx válido.' });
+    } finally {
+      this.importCargando.set(false);
+    }
+  }
+
+  private prepararImport(filas: { cantidad: number; descripcion: string }[], stock: StockListItem[]): void {
+    this.stockOrigen = stock;
+    const catalogo = this.productos();
+    this.importFilas.set(
+      filas.map((f) => {
+        const { base, talla } = extraerTalla(f.descripcion);
+        const productoId = mejorCoincidencia(base, catalogo);
+        const fila: FilaImport = {
+          incluir: true, cantidad: f.cantidad, descripcion: f.descripcion, talla,
+          productoId, libre: productoId === null, disponible: null,
+        };
+        this.actualizarDisponible(fila);
+        return fila;
+      }),
+    );
+    this.showImport.set(true);
+  }
+
+  private actualizarDisponible(f: FilaImport): void {
+    if (!f.productoId) {
+      f.disponible = null;
+      return;
+    }
+    const p = this.productos().find((x) => x.id === f.productoId);
+    const talla = p?.requiereTalla ? f.talla : '';
+    f.disponible = this.stockOrigen
+      .filter((s) => s.productoId === f.productoId && (s.talla || '') === talla && !s.color)
+      .reduce((acc, s) => acc + s.cantidadActual, 0);
+  }
+
+  onProductoImportCambiado(f: FilaImport): void {
+    f.libre = f.productoId === null;
+    this.actualizarDisponible(f);
+    this.importFilas.update((l) => [...l]);
+  }
+
+  get importIncluidas(): number {
+    return this.importFilas().filter((f) => f.incluir).length;
+  }
+
+  cerrarImport(): void {
+    this.showImport.set(false);
+  }
+
+  agregarImportadas(): void {
+    const unidad = (um: string | undefined) => (um === 'KG' || um === 'KGM' ? 'KGM' : 'NIU');
+    const nuevas: GuiaRemisionCreate['items'] = [];
+    for (const f of this.importFilas().filter((x) => x.incluir && x.cantidad > 0)) {
+      const p = f.productoId ? this.productos().find((x) => x.id === f.productoId) : undefined;
+      if (f.libre || !p) {
+        nuevas.push({ productoId: null, libre: true, descripcion: f.descripcion, esBienTercero: false, talla: '', color: '', cantidad: f.cantidad, unidadMedida: 'NIU' });
+      } else {
+        nuevas.push({ productoId: p.id, talla: p.requiereTalla ? f.talla : '', color: '', cantidad: f.cantidad, unidadMedida: unidad(p.unidadMedida) });
+      }
+    }
+    if (!nuevas.length) return;
+    // Si la guía solo tenía la fila vacía inicial, se reemplaza.
+    const soloVacia = this.form.items.length === 1 && !this.form.items[0].productoId && !this.form.items[0].libre && !this.form.items[0].pedidoItemId;
+    this.form.items = soloVacia ? nuevas : [...this.form.items, ...nuevas];
+    this.showImport.set(false);
   }
 
   agregarLineaLibre(): void {
@@ -409,6 +557,8 @@ export class GuiasRemision implements OnInit {
       pesoBrutoUnidad: 'KGM',
       almacenOrigenId: 0,
       observacion: '',
+      conductoresSecundarios: [],
+      vehiculosSecundarios: [],
       items: [{ productoId: 0, talla: '', color: '', cantidad: 1, unidadMedida: 'NIU' }],
     };
   }
@@ -498,18 +648,36 @@ export class GuiasRemision implements OnInit {
     if (!id) return;
     Swal.fire({
       icon: 'warning',
-      title: '¿Anular esta guía?',
-      html:
-        'Se devuelve el stock y el avance del pedido, y la guía queda <b>ANULADA</b> (no se borra).<br><br>' +
-        'Recuerda dar también la <b>baja ante SUNAT</b> en SOL: Empresas → Guía de Remisión electrónica → Baja de GRE. ' +
-        'Este botón solo lo refleja en el sistema.',
+      title: 'Anular guía',
+      html: `
+        <p style="font-size:12.5px;text-align:left;margin:0 0 8px">
+          <b>Primero</b> da la baja en SUNAT (SOL → Empresas → Guía de Remisión electrónica → Baja de GRE).
+          SUNAT no permite hacerla desde el sistema ni verificarla, así que acá se registra con la constancia que te entregue.
+        </p>
+        <p style="font-size:12.5px;text-align:left;margin:0 0 8px">
+          Al anular se devuelve el stock y el avance del pedido; la guía queda <b>ANULADA</b> y no se borra.
+        </p>
+        <label style="display:block;text-align:left;font-size:12px;margin:8px 0 2px">N.º de constancia de baja de SOL</label>
+        <input id="swal-anu-constancia" type="text" class="swal2-input" style="margin:0" maxlength="60">
+        <label style="display:block;text-align:left;font-size:12px;margin:8px 0 2px">Motivo de la anulación</label>
+        <input id="swal-anu-motivo" type="text" class="swal2-input" style="margin:0" maxlength="300">`,
+      focusConfirm: false,
       showCancelButton: true,
-      confirmButtonText: 'Sí, anular',
+      confirmButtonText: 'Anular guía',
       cancelButtonText: 'Volver',
+      preConfirm: () => {
+        const constanciaBaja = (document.getElementById('swal-anu-constancia') as HTMLInputElement).value.trim();
+        const motivo = (document.getElementById('swal-anu-motivo') as HTMLInputElement).value.trim();
+        if (constanciaBaja.length < 3 || motivo.length < 5) {
+          Swal.showValidationMessage('Completa la constancia de baja y el motivo (mínimo 5 caracteres).');
+          return false;
+        }
+        return { constanciaBaja, motivo };
+      },
     }).then((res) => {
-      if (!res.isConfirmed) return;
+      if (!res.isConfirmed || !res.value) return;
       this.eliminando.set(true);
-      this.service.anular(id).subscribe({
+      this.service.anular(id, res.value).subscribe({
         next: () => {
           this.eliminando.set(false);
           this.showDetalle.set(false);

@@ -49,3 +49,11 @@
 .gr-tabs button.activo { background: #0F172A; color: #fff; border-color: #0F172A; }
 .gr-acciones { white-space: nowrap; text-align: right; }
 .gr-inactivo td { opacity: .5; }
+
+.gr-sec { margin: 4px 0 8px; }
+.gr-sec-fila { display: flex; align-items: flex-end; gap: 8px; }
+.gr-sec-fila app-search-select { flex: 1; }
+.gr-sec-item { font-size: 12.5px; margin: 4px 0; display: flex; align-items: center; gap: 8px; }
+
+.gr-import-wrap { max-height: 55vh; overflow: auto; }
+.gr-tag.ok { background: #DDF3E4; color: #17653A; }

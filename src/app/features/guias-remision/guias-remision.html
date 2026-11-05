@@ -207,6 +207,42 @@
           </div>
         </div>
         <p class="gr-hint">SUNAT exige apellidos y nombres por separado, DNI y licencia del conductor. Guarda los que usas seguido en «Datos de transporte».</p>
+
+        <!-- Conductores y vehículos adicionales: se eligen de los datos guardados -->
+        <div class="gr-sec">
+          <div class="gr-sec-fila">
+            <app-search-select
+              [options]="conductorOpts()"
+              displayField="label"
+              [(value)]="secConductorSel"
+              label="Conductor adicional"
+              placeholder="Elige un conductor guardado"
+            />
+            <button type="button" class="lb-btn ghost small" [disabled]="!secConductorSel" (click)="agregarConductorSec()">+ Agregar</button>
+          </div>
+          @for (c of form.conductoresSecundarios; track c.numDoc; let i = $index) {
+            <p class="gr-sec-item">
+              Secundario {{ i + 1 }}: {{ c.apellidos }} {{ c.nombres }} — DNI {{ c.numDoc }} — Lic. {{ c.licencia }}
+              <button type="button" class="lb-item-quitar" (click)="quitarConductorSec(i)">✕</button>
+            </p>
+          }
+          <div class="gr-sec-fila">
+            <app-search-select
+              [options]="vehiculoOpts()"
+              displayField="label"
+              [(value)]="secVehiculoSel"
+              label="Vehículo adicional (remolque)"
+              placeholder="Elige un vehículo guardado"
+            />
+            <button type="button" class="lb-btn ghost small" [disabled]="!secVehiculoSel" (click)="agregarVehiculoSec()">+ Agregar</button>
+          </div>
+          @for (v of form.vehiculosSecundarios; track v.placa; let i = $index) {
+            <p class="gr-sec-item">
+              Vehículo adicional {{ i + 1 }}: {{ v.placa }}
+              <button type="button" class="lb-item-quitar" (click)="quitarVehiculoSec(i)">✕</button>
+            </p>
+          }
+        </div>
       }
 
       <div class="abril-field">
@@ -223,6 +259,10 @@
             }
             <button type="button" class="lb-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
             <button type="button" class="lb-btn ghost small" (click)="agregarLineaLibre()">+ Línea libre</button>
+            <input #fileExcel type="file" accept=".xlsx,.xls" hidden (change)="onExcelElegido($event)" />
+            <button type="button" class="lb-btn ghost small" [disabled]="importCargando()" (click)="fileExcel.click()">
+              {{ importCargando() ? 'Leyendo...' : 'Importar Excel' }}
+            </button>
           </div>
         </div>
 
@@ -318,7 +358,12 @@
           <button class="lb-btn" (click)="descargarPdf()">Descargar PDF con QR</button>
         </div>
       }
-      @if (d.estado === 'ACEPTADA' && !d.items[0]?.confirmadoEn && authService.hasPermiso('GUIA_REMISION_CREAR')) {
+      @if (d.estado === 'ANULADA' && d.anulacionMotivo) {
+        <p class="gr-detalle-meta">
+          Anulada el {{ d.anuladaEn | slice:0:10 }} — constancia de baja SOL: {{ d.anulacionConstancia }} — {{ d.anulacionMotivo }}
+        </p>
+      }
+      @if (d.estado === 'ACEPTADA' && !d.items[0]?.confirmadoEn && authService.hasPermiso('GUIA_REMISION_ENVIAR')) {
         <div class="gr-form-actions">
           <button class="lb-btn ghost" [disabled]="eliminando()" (click)="anular()">
             {{ eliminando() ? 'Anulando...' : 'Anular guía' }}
@@ -390,6 +435,53 @@
           </button>
         </div>
       }
+    </app-base-modal>
+  }
+
+  <!-- Modal: revisar el listado importado desde Excel -->
+  @if (showImport()) {
+    <app-base-modal title="Importar productos desde Excel" width="w-[900px]" (closeModal)="cerrarImport()">
+      <p class="gr-hint">
+        Revisa cada fila antes de agregarla. Lo que coincide con tu catálogo mueve el stock al aceptar la guía;
+        lo demás se agrega como <b>línea libre</b> (solo describe el bien, no toca el kardex).
+        Si un producto de tu catálogo no tiene stock suficiente, registra primero el ingreso en Almacén o márcalo «Sin inventario».
+      </p>
+      <div class="gr-import-wrap">
+        <table class="lb-table">
+          <thead>
+            <tr><th></th><th>Cant.</th><th>Descripción en el Excel</th><th>Producto del catálogo</th><th>Sin inventario</th><th>Stock</th></tr>
+          </thead>
+          <tbody>
+            @for (f of importFilas(); track $index) {
+              <tr [class.gr-inactivo]="!f.incluir">
+                <td><input type="checkbox" [(ngModel)]="f.incluir" /></td>
+                <td><input class="abril-field-input lb-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="f.cantidad" /></td>
+                <td>{{ f.descripcion }}@if (f.talla) { <span class="gr-tag">talla {{ f.talla }}</span> }</td>
+                <td>
+                  <app-search-select
+                    [options]="productos()"
+                    displayField="nombre"
+                    [showLabel]="false"
+                    [value]="f.productoId"
+                    (valueChange)="f.productoId = $event; onProductoImportCambiado(f)"
+                    placeholder="Sin coincidencia"
+                  />
+                </td>
+                <td><input type="checkbox" [(ngModel)]="f.libre" [disabled]="!f.productoId" /></td>
+                <td>
+                  @if (f.libre || !f.productoId) { <span class="gr-tag">—</span> }
+                  @else if (f.disponible !== null && f.disponible < f.cantidad) { <span class="gr-tag tercero">hay {{ f.disponible }}</span> }
+                  @else { <span class="gr-tag ok">hay {{ f.disponible }}</span> }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="gr-form-actions">
+        <button class="lb-btn ghost" (click)="cerrarImport()">Cancelar</button>
+        <button class="lb-btn" [disabled]="!importIncluidas" (click)="agregarImportadas()">Agregar {{ importIncluidas }} líneas a la guía</button>
+      </div>
     </app-base-modal>
   }
 
