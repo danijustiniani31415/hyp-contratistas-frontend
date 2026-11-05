@@ -2,6 +2,10 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import QRCode from 'qrcode';
 import { GuiaRemisionDetalle } from '../../core/services/guias-remision.service';
+import { nombreUbigeo } from './ubigeos';
+
+/** «ATE - LIMA - LIMA» si se conoce; si no, el código para que al menos quede el dato. */
+const ubigeoTexto = (u: string | null | undefined): string => (u ? (nombreUbigeo(u) ? `- ${nombreUbigeo(u)}` : `(ubigeo ${u})`) : '');
 
 const MOTIVOS: Record<string, string> = {
   '04': 'Traslado entre establecimientos de la misma empresa',
@@ -63,10 +67,10 @@ export async function generarPdfGuia(d: GuiaRemisionDetalle): Promise<void> {
   fila('Fecha de inicio de traslado:', soloFecha(d.fechaTraslado));
   fila('Motivo de traslado:', MOTIVOS[d.motivoTraslado] ?? d.motivoTraslado);
 
-  const partida = [d.almacenOrigenDireccion, d.almacenOrigenUbigeo ? `(ubigeo ${d.almacenOrigenUbigeo})` : '']
+  const partida = [d.almacenOrigenDireccion, ubigeoTexto(d.almacenOrigenUbigeo)]
     .filter(Boolean).join(' ');
   const llegada = d.almacenDestinoNombre
-    ? [d.almacenDestinoDireccion, d.almacenDestinoUbigeo ? `(ubigeo ${d.almacenDestinoUbigeo})` : '']
+    ? [d.almacenDestinoDireccion, ubigeoTexto(d.almacenDestinoUbigeo)]
         .filter(Boolean).join(' ')
     : '—';
   fila('Punto de partida:', partida);
