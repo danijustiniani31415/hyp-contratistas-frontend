@@ -196,7 +196,7 @@
           </div>
           <div class="abril-field">
             <label class="abril-field-label">DNI del conductor <span class="gr-required">*</span></label>
-            <input class="abril-field-input" maxlength="8" [(ngModel)]="form.conductorDni" placeholder="8 dígitos" />
+            <input class="abril-field-input" maxlength="8" [(ngModel)]="form.conductorDni" (ngModelChange)="onDniConductorGuia($event)" placeholder="8 dígitos: busca en RENIEC" />
           </div>
         </div>
         <div class="gr-form-grid gr-form-grid-3">
@@ -213,6 +213,8 @@
             <input class="abril-field-input" [(ngModel)]="form.conductorLicencia" />
           </div>
         </div>
+        @if (reniecBuscando()) { <p class="gr-hint">Consultando RENIEC...</p> }
+        @else if (reniecAviso()) { <p class="gr-hint">{{ reniecAviso() }}</p> }
         <p class="gr-hint">SUNAT exige apellidos y nombres por separado, DNI y licencia del conductor. Guarda los que usas seguido en «Datos de transporte».</p>
 
         <!-- Conductores y vehículos adicionales: se eligen de los datos guardados -->
@@ -562,9 +564,11 @@
               <div class="abril-field"><label class="abril-field-label">Nombres</label><input class="abril-field-input" [(ngModel)]="fConductor.nombres" /></div>
             </div>
             <div class="gr-form-grid">
-              <div class="abril-field"><label class="abril-field-label">DNI</label><input class="abril-field-input" maxlength="8" [(ngModel)]="fConductor.numDoc" /></div>
+              <div class="abril-field"><label class="abril-field-label">DNI</label><input class="abril-field-input" maxlength="8" [(ngModel)]="fConductor.numDoc" (ngModelChange)="onDniConductorMaestro($event)" placeholder="8 dígitos: busca en RENIEC" /></div>
               <div class="abril-field"><label class="abril-field-label">Licencia de conducir</label><input class="abril-field-input" [(ngModel)]="fConductor.licencia" placeholder="Ej: P41713102" /></div>
             </div>
+            @if (reniecBuscando()) { <p class="gr-hint">Consultando RENIEC...</p> }
+            @else if (reniecAviso()) { <p class="gr-hint">{{ reniecAviso() }}</p> }
           }
           @case ('vehiculos') {
             <div class="gr-form-grid">

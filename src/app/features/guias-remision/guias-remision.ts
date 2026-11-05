@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
@@ -96,7 +96,49 @@ export class GuiasRemision implements OnInit {
     private pedidosService: PedidosService,
     private almacenService: AlmacenService,
     public authService: LbAuthService,
+    private cdr: ChangeDetectorRef,
   ) {}
+
+  // ── Consulta RENIEC por DNI (la misma que usa Personas): rellena apellidos y nombres del conductor ──
+  reniecBuscando = signal(false);
+  reniecAviso = signal('');
+
+  /** Al completar los 8 dígitos consulta RENIEC; si no responde, quedan los campos para escribirlos a mano. */
+  private consultarReniec(dni: string, aplicar: (apellidos: string, nombres: string) => void): void {
+    if (!/^\d{8}$/.test(dni)) {
+      this.reniecAviso.set('');
+      return;
+    }
+    this.reniecBuscando.set(true);
+    this.reniecAviso.set('');
+    this.personasService.buscarPorDni(dni).subscribe({
+      next: (p) => {
+        aplicar(p.apellidos.trim().toUpperCase(), p.nombres.trim().toUpperCase());
+        this.reniecBuscando.set(false);
+        this.reniecAviso.set('Datos obtenidos de RENIEC.');
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.reniecBuscando.set(false);
+        this.reniecAviso.set('No se pudo consultar RENIEC: escribe los apellidos y nombres.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  onDniConductorGuia(dni: string): void {
+    this.consultarReniec(dni, (apellidos, nombres) => {
+      this.form.conductorApellidos = apellidos;
+      this.form.conductorNombres = nombres;
+    });
+  }
+
+  onDniConductorMaestro(dni: string): void {
+    this.consultarReniec(dni, (apellidos, nombres) => {
+      this.fConductor.apellidos = apellidos;
+      this.fConductor.nombres = nombres;
+    });
+  }
 
   ngOnInit(): void {
     this.cargar();
