@@ -350,6 +350,14 @@ export class GuiasRemision implements OnInit {
     }
   }
 
+  /** Dirección, ubigeo y código de establecimiento SUNAT del almacén elegido (vacío si falta alguno). */
+  textoAlmacen(id: number | null | undefined): string {
+    const a = this.almacenes().find((x) => x.id === id);
+    if (!a) return '';
+    if (!a.direccion || !a.ubigeo) return `${a.nombre}: falta la dirección o el ubigeo (Almacén / Kardex → Gestionar almacenes)`;
+    return `${a.direccion} · ubigeo ${a.ubigeo} · establecimiento ${a.codigoEstablecimientoSunat ?? '0000'}`;
+  }
+
   // ── Importar el listado desde Excel ──────────────────────────────────
   showImport = signal(false);
   importFilas = signal<FilaImport[]>([]);

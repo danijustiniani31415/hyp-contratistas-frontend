@@ -38,6 +38,10 @@ export interface RolCatalogoItem extends CatalogoItem {
 
 export interface AlmacenCatalogoItem extends CatalogoItem {
   proyectoId: number | null;
+  /** Lo que SUNAT ve de este almacén en la guía de remisión. */
+  direccion?: string | null;
+  ubigeo?: string | null;
+  codigoEstablecimientoSunat?: string;
 }
 
 export interface TipoVinculoCatalogoItem extends CatalogoItem {

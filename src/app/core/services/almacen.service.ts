@@ -83,6 +83,22 @@ export interface AjustarUmbrales {
   stockMaximo?: number | null;
 }
 
+export interface CargaMasivaFila {
+  productoId?: number | null;
+  nuevoProducto?: { nombre: string; categoriaId: number; unidadMedida: string; requiereTalla: boolean; tipoTalla?: string | null } | null;
+  talla: string;
+  color: string;
+  cantidad: number;
+  costoUnitario?: number | null;
+}
+
+export interface CargaMasivaResultado {
+  registradas: number;
+  productosCreados: number;
+  fallidas: number;
+  filas: { fila: number; ok: boolean; mensaje: string | null; productoId: number | null; productoCreado: boolean }[];
+}
+
 export interface AlmacenGestion {
   id: number;
   codigo: string;
@@ -130,6 +146,10 @@ export class AlmacenService {
 
   ajustarUmbrales(dto: AjustarUmbrales): Observable<any> {
     return this.http.post(`${this.apiUrl}/umbrales`, dto, { headers: this.headers() });
+  }
+
+  cargaMasiva(almacenId: number, filas: CargaMasivaFila[]): Observable<CargaMasivaResultado> {
+    return this.http.post<CargaMasivaResultado>(`${this.almacenesUrl}/carga-masiva`, { almacenId, filas }, { headers: this.headers() });
   }
 
   listAlmacenes(): Observable<AlmacenGestion[]> {

@@ -16,6 +16,22 @@ import {
 import { PersonasService, AlmacenCatalogoItem } from '../../core/services/personas.service';
 import { CatalogoService, ProductoListItem } from '../../core/services/catalogo.service';
 import { LbAuthService } from '../../core/services/lb-auth.service';
+import Swal from 'sweetalert2';
+import { Categoria } from '../../core/services/catalogo.service';
+import { CargaMasivaFila } from '../../core/services/almacen.service';
+import { adivinarTipoTalla, adivinarUnidad, extraerTalla, leerExcel, mejorCoincidencia } from '../guias-remision/guia-excel-import';
+
+/** Fila del Excel de stock, antes de cargarla al almacén. */
+interface FilaCarga {
+  incluir: boolean;
+  cantidad: number;
+  nombre: string;
+  talla: string;
+  productoId: number | null;
+  unidad: string;
+  tipoTalla: '' | 'ROPA' | 'CALZADO' | 'GUANTES';
+  costo: number | null;
+}
 
 /** [REVISADO] Estado en signals — mismo motivo que personas.ts (Zone.js no parcha fetch()). */
 @Component({
@@ -44,6 +60,155 @@ export class AlmacenComponent implements OnInit {
   error = signal('');
   guardando = signal(false);
   form: RegistrarMovimiento = this.formVacio();
+
+  // ── Cargar stock desde Excel (crea los productos que falten y registra los ingresos) ──
+  showCarga = signal(false);
+  cargaFilas = signal<FilaCarga[]>([]);
+  categorias = signal<Categoria[]>([]);
+  cargaAlmacenId: number | null = null;
+  cargaCategoriaId: number | null = null;
+  cargaLeyendo = signal(false);
+  cargaEnviando = signal(false);
+  unidadesCarga = ['UND', 'PAR', 'KG', 'GAL', 'M', 'M2', 'M3', 'L', 'ROLLO', 'CAJA'];
+
+  async onExcelStockElegido(ev: Event): Promise<void> {
+    const input = ev.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    input.value = '';
+    if (!archivo) return;
+    this.cargaLeyendo.set(true);
+    try {
+      const filas = leerExcel(await archivo.arrayBuffer());
+      if (!filas.length) {
+        Swal.fire({ icon: 'warning', title: 'No encontré productos', text: 'El Excel debe tener una columna de cantidad y otra con la descripción del producto.' });
+        return;
+      }
+      const catalogo = this.productos();
+      this.cargaFilas.set(
+        filas.map((f) => {
+          const { base, talla } = extraerTalla(f.descripcion);
+          const productoId = mejorCoincidencia(base, catalogo);
+          const existente = catalogo.find((p) => p.id === productoId);
+          return {
+            incluir: true,
+            cantidad: f.cantidad,
+            nombre: base,
+            talla,
+            productoId,
+            unidad: existente?.unidadMedida ?? adivinarUnidad(base),
+            tipoTalla: adivinarTipoTalla(base, talla),
+            costo: null,
+          } as FilaCarga;
+        }),
+      );
+      this.cargaAlmacenId = this.almacenFiltro;
+      this.cargaCategoriaId = null;
+      this.categoriasCargar();
+      this.showCarga.set(true);
+    } catch {
+      Swal.fire({ icon: 'error', title: 'No se pudo leer el Excel', text: 'Verifica que sea un archivo .xlsx válido.' });
+    } finally {
+      this.cargaLeyendo.set(false);
+    }
+  }
+
+  private categoriasCargar(): void {
+    if (this.categorias().length) return;
+    this.catalogoService.listCategorias().subscribe((c) => this.categorias.set(c));
+  }
+
+  get cargaNuevos(): number {
+    return this.cargaFilas().filter((f) => f.incluir && !f.productoId).length;
+  }
+
+  get cargaIncluidas(): number {
+    return this.cargaFilas().filter((f) => f.incluir).length;
+  }
+
+  onProductoCargaCambiado(f: FilaCarga): void {
+    const p = this.productos().find((x) => x.id === f.productoId);
+    if (p) f.unidad = p.unidadMedida;
+    this.cargaFilas.update((l) => [...l]);
+  }
+
+  cerrarCarga(): void {
+    this.showCarga.set(false);
+  }
+
+  confirmarCarga(): void {
+    const filas = this.cargaFilas().filter((f) => f.incluir);
+    if (!this.cargaAlmacenId) {
+      Swal.fire({ icon: 'info', title: 'Elige el almacén al que ingresan' });
+      return;
+    }
+    if (this.cargaNuevos > 0 && !this.cargaCategoriaId) {
+      Swal.fire({ icon: 'info', title: 'Elige la categoría', text: `Hay ${this.cargaNuevos} productos nuevos y hace falta una categoría para crearlos.` });
+      return;
+    }
+    const invalida = filas.find((f) => f.cantidad <= 0 || (!f.productoId && !f.nombre.trim()) || (f.tipoTalla && !f.talla.trim()));
+    if (invalida) {
+      Swal.fire({ icon: 'warning', title: 'Revisa las filas', text: `Hay una fila con datos incompletos: «${invalida.nombre || '(sin nombre)'}» (cantidad, nombre o talla).` });
+      return;
+    }
+    const nombreAlmacen = this.almacenes().find((a) => a.id === this.cargaAlmacenId)?.nombre ?? '';
+    Swal.fire({
+      icon: 'question',
+      title: `¿Cargar ${filas.length} productos?`,
+      html: `Se registrará un <b>ingreso</b> en <b>${nombreAlmacen}</b> por cada fila` +
+        (this.cargaNuevos ? ` y se crearán <b>${this.cargaNuevos}</b> productos nuevos en el catálogo.` : '.') +
+        '<br><br>Si cargas el mismo Excel dos veces, el stock se suma dos veces.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cargar',
+      cancelButtonText: 'Volver',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      const payload: CargaMasivaFila[] = filas.map((f) => ({
+        productoId: f.productoId,
+        nuevoProducto: f.productoId
+          ? null
+          : {
+              nombre: f.nombre.trim(),
+              categoriaId: this.cargaCategoriaId!,
+              unidadMedida: f.unidad,
+              requiereTalla: !!f.tipoTalla,
+              tipoTalla: f.tipoTalla || null,
+            },
+        talla: f.talla.trim(),
+        color: '',
+        cantidad: f.cantidad,
+        costoUnitario: f.costo,
+      }));
+      this.cargaEnviando.set(true);
+      this.service.cargaMasiva(this.cargaAlmacenId!, payload).subscribe({
+        next: (r) => {
+          this.cargaEnviando.set(false);
+          const errores = r.filas.filter((x) => !x.ok);
+          if (errores.length) {
+            // Se quedan en pantalla solo las filas que fallaron, para corregirlas y reintentar sin duplicar el resto.
+            const fallidas = new Set(errores.map((e) => e.fila - 1));
+            this.cargaFilas.set(filas.filter((_, i) => fallidas.has(i)));
+            Swal.fire({
+              icon: 'warning',
+              title: `${r.registradas} cargadas, ${r.fallidas} con error`,
+              html: errores.slice(0, 8).map((e) => `Fila ${e.fila}: ${e.mensaje}`).join('<br>') +
+                (errores.length > 8 ? `<br>… y ${errores.length - 8} más` : '') +
+                '<br><br>Las filas con error siguen en pantalla; las cargadas no se repetirán.',
+            });
+          } else {
+            this.showCarga.set(false);
+            Swal.fire({ icon: 'success', title: `${r.registradas} productos cargados`, text: r.productosCreados ? `${r.productosCreados} productos nuevos creados en el catálogo.` : undefined });
+          }
+          this.catalogoService.listProductos('', 1, 5000).subscribe((p) => this.productos.set(p.data));
+          this.cargar();
+          this.cargarMovimientos();
+        },
+        error: (err) => {
+          this.cargaEnviando.set(false);
+          Swal.fire({ icon: 'error', title: 'No se pudo cargar', text: err?.error?.message ?? 'Error del servidor.' });
+        },
+      });
+    });
+  }
 
   // ── Gestionar almacenes (datos que SUNAT ve en la guía de remisión) ──
   showAlmacenes = signal(false);

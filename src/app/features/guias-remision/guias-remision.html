@@ -92,6 +92,13 @@
         }
       </div>
 
+      @if (textoAlmacen(form.almacenOrigenId)) {
+        <p class="gr-hint">Punto de partida (lo que verá SUNAT): {{ textoAlmacen(form.almacenOrigenId) }}</p>
+      }
+      @if (esTrasladoPropio && textoAlmacen(form.almacenDestinoId)) {
+        <p class="gr-hint">Punto de llegada (lo que verá SUNAT): {{ textoAlmacen(form.almacenDestinoId) }}</p>
+      }
+
       @if (!esTrasladoPropio) {
         <div class="abril-field">
           <label class="abril-field-label">Razón social destinatario</label>

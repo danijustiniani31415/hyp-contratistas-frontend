@@ -20,6 +20,10 @@
     </div>
     @if (authService.hasPermiso('ALMACEN_AJUSTAR')) {
       <button class="lb-btn ghost" (click)="abrirAlmacenes()">Gestionar almacenes</button>
+      <input #fileStock type="file" accept=".xlsx,.xls" hidden (change)="onExcelStockElegido($event)" />
+      <button class="lb-btn ghost" [disabled]="cargaLeyendo()" (click)="fileStock.click()">
+        {{ cargaLeyendo() ? 'Leyendo...' : 'Cargar stock desde Excel' }}
+      </button>
     }
   </app-lb-page-header>
 
@@ -152,6 +156,82 @@
         <button class="lb-btn ghost" (click)="cerrarModal()">Cancelar</button>
         <button class="lb-btn" [disabled]="guardando() || !form.almacenId || !form.productoId || !form.cantidad" (click)="guardar()">
           {{ guardando() ? 'Guardando...' : 'Registrar' }}
+        </button>
+      </div>
+    </app-base-modal>
+  }
+
+  <!-- Modal: cargar stock desde Excel -->
+  @if (showCarga()) {
+    <app-base-modal title="Cargar stock desde Excel" width="w-[1000px]" (closeModal)="cerrarCarga()">
+      <p class="am-hint">
+        Revisa cada fila: lo que coincide con tu catálogo suma stock a ese producto; lo demás se <b>crea como producto nuevo</b>
+        con el nombre que ves (la talla se detecta de textos como «T/39»). Marca, medida o modelo van dentro del nombre,
+        porque cada uno es un producto distinto con su propio stock.
+      </p>
+      <div class="am-form-grid">
+        <app-search-select
+          [options]="almacenes()"
+          displayField="nombre"
+          [(value)]="cargaAlmacenId"
+          label="Ingresa al almacén"
+          placeholder="Selecciona almacén"
+        />
+        @if (cargaNuevos > 0) {
+          <app-search-select
+            [options]="categorias()"
+            displayField="nombre"
+            [(value)]="cargaCategoriaId"
+            label="Categoría de los productos nuevos"
+            placeholder="Selecciona categoría"
+          />
+        }
+      </div>
+      <div class="am-carga-wrap">
+        <table class="lb-table">
+          <thead>
+            <tr><th></th><th>Cant.</th><th>Nombre del producto</th><th>Talla</th><th>¿Ya existe en el catálogo?</th><th>Unidad</th><th>Tipo de talla</th><th>Costo unit.</th></tr>
+          </thead>
+          <tbody>
+            @for (f of cargaFilas(); track $index) {
+              <tr [style.opacity]="f.incluir ? 1 : 0.45">
+                <td><input type="checkbox" [(ngModel)]="f.incluir" /></td>
+                <td><input class="abril-field-input am-carga-cant" type="number" min="0.01" step="0.01" [(ngModel)]="f.cantidad" /></td>
+                <td><input class="abril-field-input" [(ngModel)]="f.nombre" [disabled]="!!f.productoId" /></td>
+                <td><input class="abril-field-input am-carga-talla" [(ngModel)]="f.talla" /></td>
+                <td>
+                  <app-search-select
+                    [options]="productos()"
+                    displayField="nombre"
+                    [showLabel]="false"
+                    [value]="f.productoId"
+                    (valueChange)="f.productoId = $event; onProductoCargaCambiado(f)"
+                    placeholder="No — crear nuevo"
+                  />
+                </td>
+                <td>
+                  <select class="abril-field-input" [(ngModel)]="f.unidad" [disabled]="!!f.productoId">
+                    @for (u of unidadesCarga; track u) { <option [value]="u">{{ u }}</option> }
+                  </select>
+                </td>
+                <td>
+                  <select class="abril-field-input" [(ngModel)]="f.tipoTalla" [disabled]="!!f.productoId">
+                    <option value="">Sin talla</option>
+                    <option value="ROPA">Ropa</option>
+                    <option value="CALZADO">Calzado</option>
+                    <option value="GUANTES">Guantes</option>
+                  </select>
+                </td>
+                <td><input class="abril-field-input am-carga-cant" type="number" min="0" step="0.01" [(ngModel)]="f.costo" placeholder="opc." /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="am-form-actions">
+        <button class="lb-btn ghost" (click)="cerrarCarga()">Cancelar</button>
+        <button class="lb-btn" [disabled]="cargaEnviando() || !cargaIncluidas" (click)="confirmarCarga()">
+          {{ cargaEnviando() ? 'Cargando...' : 'Cargar ' + cargaIncluidas + ' productos' }}
         </button>
       </div>
     </app-base-modal>

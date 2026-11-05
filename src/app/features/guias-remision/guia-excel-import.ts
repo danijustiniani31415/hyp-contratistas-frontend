@@ -81,7 +81,24 @@ export function extraerTalla(descripcion: string): { base: string; talla: string
   return { base: descripcion, talla: '' };
 }
 
-const PALABRAS_VACIAS = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'para', 'con', 'y', 'en', 'por', 'un', 'una']);
+/** Unidad de medida probable: calzado y guantes se cuentan por par, el resto por unidad. */
+export function adivinarUnidad(nombre: string): string {
+  return /\b(bota|botas|guante|guantes|zapato|zapatos|zapatilla)\b/i.test(normalizar(nombre)) ? 'PAR' : 'UND';
+}
+
+/**
+ * Catálogo de tallas que corresponde: calzado y guantes tienen el suyo; el resto usa ROPA.
+ * Devuelve '' si el texto no trae talla (el producto no la necesita).
+ */
+export function adivinarTipoTalla(nombre: string, talla: string): '' | 'ROPA' | 'CALZADO' | 'GUANTES' {
+  if (!talla) return '';
+  const n = normalizar(nombre);
+  if (/\b(bota|botas|zapato|zapatos|zapatilla)\b/.test(n)) return 'CALZADO';
+  if (/\bguante|guantes\b/.test(n)) return 'GUANTES';
+  return 'ROPA';
+}
+
+const PALABRAS_VACIAS =new Set(['de', 'del', 'la', 'el', 'los', 'las', 'para', 'con', 'y', 'en', 'por', 'un', 'una']);
 const tokens = (s: string) => new Set(normalizar(s).split(' ').filter((t) => t.length > 1 && !PALABRAS_VACIAS.has(t)));
 
 /**
