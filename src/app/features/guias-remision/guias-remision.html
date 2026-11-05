@@ -264,10 +264,10 @@
           </button>
         </div>
       }
-      @if (d.estado === 'BORRADOR' && authService.hasPermiso('GUIA_REMISION_CREAR')) {
+      @if ((d.estado === 'BORRADOR' || d.estado === 'RECHAZADA') && authService.hasPermiso('GUIA_REMISION_CREAR')) {
         <div class="gr-form-actions">
           <button class="lb-btn ghost" [disabled]="eliminando() || enviando()" (click)="eliminar()">
-            {{ eliminando() ? 'Eliminando...' : 'Eliminar borrador' }}
+            {{ eliminando() ? 'Eliminando...' : (d.estado === 'BORRADOR' ? 'Eliminar borrador' : 'Eliminar guía rechazada') }}
           </button>
         </div>
       }

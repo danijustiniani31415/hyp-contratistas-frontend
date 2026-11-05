@@ -296,8 +296,8 @@ export class GuiasRemision implements OnInit {
     if (!id) return;
     Swal.fire({
       icon: 'warning',
-      title: '¿Eliminar este borrador?',
-      text: 'Se devuelve el stock que movió la guía y se borra el borrador. No se puede deshacer.',
+      title: '¿Eliminar esta guía?',
+      text: 'Se devuelve el stock que movió la guía y se borra. No se puede deshacer.',
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Volver',
@@ -309,7 +309,7 @@ export class GuiasRemision implements OnInit {
           this.eliminando.set(false);
           this.showDetalle.set(false);
           this.cargar();
-          Swal.fire({ icon: 'success', title: 'Borrador eliminado' });
+          Swal.fire({ icon: 'success', title: 'Guía eliminada' });
         },
         error: (err) => {
           this.eliminando.set(false);

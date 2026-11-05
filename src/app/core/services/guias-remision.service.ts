@@ -75,7 +75,7 @@ export interface ConfirmarRecepcionItem {
 export interface GuiaRemisionDetalle {
   id: number;
   serie: string;
-  numero: number;
+  numero: number | null;
   codigo: string;
   estado: string;
   motivoTraslado: string;
