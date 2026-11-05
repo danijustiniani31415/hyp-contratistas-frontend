@@ -18,6 +18,7 @@ import { PersonasService, AlmacenCatalogoItem } from '../../core/services/person
 import { CatalogoService, ProductoListItem } from '../../core/services/catalogo.service';
 import { PedidosService, PendienteDespacho } from '../../core/services/pedidos.service';
 import { LbAuthService } from '../../core/services/lb-auth.service';
+import { generarPdfGuia } from './guia-remision-pdf';
 
 const ESTADOS = ['BORRADOR', 'ENVIADA', 'ACEPTADA', 'RECHAZADA', 'ANULADA'];
 const MOTIVOS = [
@@ -142,10 +143,18 @@ export class GuiasRemision implements OnInit {
       this.form.vehiculoPlaca = '';
       this.form.conductorNombres = '';
       this.form.conductorLicencia = '';
+      this.form.conductorDni = '';
     } else {
       this.form.transportistaRuc = '';
       this.form.transportistaRazonSocial = '';
     }
+  }
+
+  agregarLineaLibre(): void {
+    this.form.items.push({
+      productoId: null, libre: true, descripcion: '', esBienTercero: false,
+      talla: '', color: '', cantidad: 1, unidadMedida: 'NIU',
+    });
   }
 
   agregarItem(): void {
@@ -212,15 +221,25 @@ export class GuiasRemision implements OnInit {
   /** SUNAT exige transportista (público) o vehículo+conductor (privado) para que la guía sea válida. */
   get formValido(): boolean {
     if (!this.form.almacenOrigenId || !this.form.items.length || !this.form.fechaTraslado) return false;
+    const itemsOk = this.form.items.every((i) =>
+      i.cantidad > 0 && (i.libre ? !!i.descripcion?.trim() : !!i.productoId));
+    if (!itemsOk) return false;
     if (this.form.modalidadTraslado === '01') return !!this.form.transportistaRuc;
-    return !!this.form.vehiculoPlaca && !!this.form.conductorNombres && !!this.form.conductorLicencia;
+    return !!this.form.vehiculoPlaca && !!this.form.conductorNombres && !!this.form.conductorLicencia
+      && /^\d{8}$/.test(this.form.conductorDni ?? '');
   }
 
   guardar(): void {
     if (!this.formValido) return;
     this.error.set('');
     this.guardando.set(true);
-    this.service.crear(this.form).subscribe({
+    // Las líneas libres viajan sin producto: el backend las trata como "sin inventario".
+    const payload: GuiaRemisionCreate = {
+      ...this.form,
+      items: this.form.items.map((i) =>
+        i.libre ? { ...i, productoId: null, talla: '', color: '' } : { ...i, descripcion: undefined, esBienTercero: false }),
+    };
+    this.service.crear(payload).subscribe({
       next: () => {
         this.guardando.set(false);
         this.showModal.set(false);
@@ -291,6 +310,14 @@ export class GuiasRemision implements OnInit {
     });
   }
 
+  descargarPdf(): void {
+    const d = this.detalle();
+    if (!d) return;
+    generarPdfGuia(d).catch(() =>
+      Swal.fire({ icon: 'error', title: 'No se pudo generar el PDF', text: 'Intenta de nuevo.' }),
+    );
+  }
+
   eliminar(): void {
     const id = this.detalle()?.id;
     if (!id) return;
@@ -314,6 +341,37 @@ export class GuiasRemision implements OnInit {
         error: (err) => {
           this.eliminando.set(false);
           Swal.fire({ icon: 'error', title: 'No se pudo eliminar', text: err?.error?.message ?? 'Error del servidor.' });
+        },
+      });
+    });
+  }
+
+  anular(): void {
+    const id = this.detalle()?.id;
+    if (!id) return;
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Anular esta guía?',
+      html:
+        'Se devuelve el stock y el avance del pedido, y la guía queda <b>ANULADA</b> (no se borra).<br><br>' +
+        'Recuerda dar también la <b>baja ante SUNAT</b> en SOL: Empresas → Guía de Remisión electrónica → Baja de GRE. ' +
+        'Este botón solo lo refleja en el sistema.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, anular',
+      cancelButtonText: 'Volver',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.eliminando.set(true);
+      this.service.anular(id).subscribe({
+        next: () => {
+          this.eliminando.set(false);
+          this.showDetalle.set(false);
+          this.cargar();
+          Swal.fire({ icon: 'success', title: 'Guía anulada' });
+        },
+        error: (err) => {
+          this.eliminando.set(false);
+          Swal.fire({ icon: 'error', title: 'No se pudo anular', text: err?.error?.message ?? 'Error del servidor.' });
         },
       });
     });

@@ -8,6 +8,7 @@ import { Paginator } from '../../shared/components/paginator/paginator';
 import { LbPageHeader } from '../../shared/components/lb-page-header/lb-page-header';
 import {
   AlmacenService,
+  AlmacenGestion,
   StockListItem,
   MovimientoListItem,
   RegistrarMovimiento,
@@ -43,6 +44,14 @@ export class AlmacenComponent implements OnInit {
   error = signal('');
   guardando = signal(false);
   form: RegistrarMovimiento = this.formVacio();
+
+  // ── Gestionar almacenes (datos que SUNAT ve en la guía de remisión) ──
+  showAlmacenes = signal(false);
+  almacenesGestion = signal<AlmacenGestion[]>([]);
+  almacenEditando = signal<AlmacenGestion | null>(null);
+  formAlmacen = { direccion: '', ubigeo: '', codigoEstablecimientoSunat: '0000' };
+  guardandoAlmacen = signal(false);
+  errorAlmacen = signal('');
 
   constructor(
     private service: AlmacenService,
@@ -122,6 +131,45 @@ export class AlmacenComponent implements OnInit {
       error: (err) => {
         this.guardando.set(false);
         this.error.set(err?.error?.message ?? 'No se pudo registrar el movimiento.');
+      },
+    });
+  }
+
+  abrirAlmacenes(): void {
+    this.almacenEditando.set(null);
+    this.errorAlmacen.set('');
+    this.service.listAlmacenes().subscribe((a) => this.almacenesGestion.set(a));
+    this.showAlmacenes.set(true);
+  }
+
+  cerrarAlmacenes(): void {
+    this.showAlmacenes.set(false);
+  }
+
+  editarAlmacen(a: AlmacenGestion): void {
+    this.almacenEditando.set(a);
+    this.errorAlmacen.set('');
+    this.formAlmacen = {
+      direccion: a.direccion ?? '',
+      ubigeo: a.ubigeo ?? '',
+      codigoEstablecimientoSunat: a.codigoEstablecimientoSunat,
+    };
+  }
+
+  guardarAlmacen(): void {
+    const a = this.almacenEditando();
+    if (!a) return;
+    this.errorAlmacen.set('');
+    this.guardandoAlmacen.set(true);
+    this.service.actualizarAlmacen(a.id, this.formAlmacen).subscribe({
+      next: (actualizado) => {
+        this.guardandoAlmacen.set(false);
+        this.almacenesGestion.update((lista) => lista.map((x) => (x.id === actualizado.id ? actualizado : x)));
+        this.almacenEditando.set(null);
+      },
+      error: (err) => {
+        this.guardandoAlmacen.set(false);
+        this.errorAlmacen.set(err?.error?.message ?? 'No se pudo guardar el almacén.');
       },
     });
   }

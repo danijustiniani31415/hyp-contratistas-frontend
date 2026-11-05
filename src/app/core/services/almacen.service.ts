@@ -83,9 +83,27 @@ export interface AjustarUmbrales {
   stockMaximo?: number | null;
 }
 
+export interface AlmacenGestion {
+  id: number;
+  codigo: string;
+  nombre: string;
+  tipo: string;
+  activo: boolean;
+  direccion: string | null;
+  ubigeo: string | null;
+  codigoEstablecimientoSunat: string;
+}
+
+export interface AlmacenActualizar {
+  direccion: string;
+  ubigeo: string;
+  codigoEstablecimientoSunat: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AlmacenService {
   private readonly apiUrl = `${environment.apiUrl}api/v1/almacen`;
+  private readonly almacenesUrl = `${environment.apiUrl}api/v1/almacenes`;
 
   constructor(private http: HttpClient, private authService: LbAuthService) {}
 
@@ -112,6 +130,14 @@ export class AlmacenService {
 
   ajustarUmbrales(dto: AjustarUmbrales): Observable<any> {
     return this.http.post(`${this.apiUrl}/umbrales`, dto, { headers: this.headers() });
+  }
+
+  listAlmacenes(): Observable<AlmacenGestion[]> {
+    return this.http.get<AlmacenGestion[]>(this.almacenesUrl, { headers: this.headers() });
+  }
+
+  actualizarAlmacen(id: number, dto: AlmacenActualizar): Observable<AlmacenGestion> {
+    return this.http.put<AlmacenGestion>(`${this.almacenesUrl}/${id}`, dto, { headers: this.headers() });
   }
 
   listReposicionSugerida(almacenId?: number | null): Observable<ReposicionSugerida[]> {

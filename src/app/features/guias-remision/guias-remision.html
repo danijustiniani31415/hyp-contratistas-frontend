@@ -155,15 +155,21 @@
             <input class="abril-field-input" [(ngModel)]="form.vehiculoPlaca" placeholder="ABC-123" />
           </div>
           <div class="abril-field">
-            <label class="abril-field-label">Nombres del conductor <span class="gr-required">*</span></label>
-            <input class="abril-field-input" [(ngModel)]="form.conductorNombres" />
+            <label class="abril-field-label">Apellidos y nombres del conductor <span class="gr-required">*</span></label>
+            <input class="abril-field-input" [(ngModel)]="form.conductorNombres" placeholder="Ej: FLORES VILCA MELVIN NEBER" />
           </div>
+          <div class="abril-field">
+            <label class="abril-field-label">DNI del conductor <span class="gr-required">*</span></label>
+            <input class="abril-field-input" maxlength="8" [(ngModel)]="form.conductorDni" placeholder="8 dígitos" />
+          </div>
+        </div>
+        <div class="gr-form-grid">
           <div class="abril-field">
             <label class="abril-field-label">Licencia del conductor <span class="gr-required">*</span></label>
             <input class="abril-field-input" [(ngModel)]="form.conductorLicencia" />
           </div>
         </div>
-        <p class="gr-hint">SUNAT exige nombre y licencia del conductor para que la guía en modalidad privada sea válida.</p>
+        <p class="gr-hint">SUNAT exige apellidos y nombres, DNI y licencia del conductor para que la guía en modalidad privada sea válida.</p>
       }
 
       <div class="abril-field">
@@ -179,19 +185,28 @@
               <button type="button" class="lb-btn ghost small" (click)="abrirDespacharPedido()">Despachar pedido</button>
             }
             <button type="button" class="lb-btn ghost small" (click)="agregarItem()">+ Agregar producto</button>
+            <button type="button" class="lb-btn ghost small" (click)="agregarLineaLibre()">+ Línea libre</button>
           </div>
         </div>
 
         @for (item of form.items; track $index; let i = $index) {
           <div class="lb-item-row">
-            <app-search-select
-              [options]="productos()"
-              displayField="nombre"
-              [(value)]="item.productoId"
-              placeholder="Producto"
-            />
-            <input class="abril-field-input lb-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
-            <input class="abril-field-input lb-item-talla" [(ngModel)]="item.color" placeholder="Color" />
+            @if (item.libre) {
+              <input class="abril-field-input" [(ngModel)]="item.descripcion"
+                placeholder="Descripción (ej. ROPA DE TRABAJO LAVADA - 12 piezas)" />
+              <label class="gr-tercero" title="No es de la empresa (ej. de un trabajador)">
+                <input type="checkbox" [(ngModel)]="item.esBienTercero" /> De tercero
+              </label>
+            } @else {
+              <app-search-select
+                [options]="productos()"
+                displayField="nombre"
+                [(value)]="item.productoId"
+                placeholder="Producto"
+              />
+              <input class="abril-field-input lb-item-talla" [(ngModel)]="item.talla" placeholder="Talla" />
+              <input class="abril-field-input lb-item-talla" [(ngModel)]="item.color" placeholder="Color" />
+            }
             <input class="abril-field-input lb-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidad" placeholder="Cant." />
             <select class="abril-field-input lb-item-unidad" [(ngModel)]="item.unidadMedida">
               @for (u of unidades; track u) { <option [value]="u">{{ u }}</option> }
@@ -233,7 +248,11 @@
         <tbody>
           @for (it of d.items; track it.id) {
             <tr>
-              <td>{{ it.productoNombre }} {{ it.talla ? '(' + it.talla + ')' : '' }} {{ it.color ? '[' + it.color + ']' : '' }}</td>
+              <td>
+                {{ it.productoNombre }} {{ it.talla ? '(' + it.talla + ')' : '' }} {{ it.color ? '[' + it.color + ']' : '' }}
+                @if (it.esLineaLibre) { <span class="gr-tag">sin inventario</span> }
+                @if (it.esBienTercero) { <span class="gr-tag tercero">de tercero</span> }
+              </td>
               <td>{{ it.pedidoCodigo ?? '—' }}</td>
               <td>{{ it.cantidad }}</td>
               <td>
@@ -257,6 +276,18 @@
         <p class="gr-detalle-meta">Recepción confirmada por {{ d.items[0].confirmadoPorNombre }} el {{ d.items[0].confirmadoEn | slice:0:10 }}</p>
       }
 
+      @if (d.estado === 'ACEPTADA' || d.estado === 'ENVIADA') {
+        <div class="gr-form-actions">
+          <button class="lb-btn" (click)="descargarPdf()">Descargar PDF con QR</button>
+        </div>
+      }
+      @if (d.estado === 'ACEPTADA' && !d.items[0]?.confirmadoEn && authService.hasPermiso('GUIA_REMISION_CREAR')) {
+        <div class="gr-form-actions">
+          <button class="lb-btn ghost" [disabled]="eliminando()" (click)="anular()">
+            {{ eliminando() ? 'Anulando...' : 'Anular guía' }}
+          </button>
+        </div>
+      }
       @if ((d.estado === 'BORRADOR' || d.estado === 'RECHAZADA') && authService.hasPermiso('GUIA_REMISION_ENVIAR')) {
         <div class="gr-form-actions">
           <button class="lb-btn" [disabled]="enviando()" (click)="enviar()">

@@ -5,7 +5,12 @@ import { environment } from '../../../environments/environment';
 import { LbAuthService } from './lb-auth.service';
 
 export interface GuiaRemisionItemCreate {
-  productoId: number;
+  /** null = línea libre (sin inventario): requiere `descripcion` y no mueve stock. */
+  productoId: number | null;
+  descripcion?: string;
+  esBienTercero?: boolean;
+  /** Solo del formulario (no se guarda): distingue línea libre de producto sin elegir todavía. */
+  libre?: boolean;
   talla: string;
   color: string;
   cantidad: number;
@@ -29,6 +34,7 @@ export interface GuiaRemisionCreate {
   vehiculoPlaca?: string;
   conductorNombres?: string;
   conductorLicencia?: string;
+  conductorDni?: string;
   observacion?: string;
   items: GuiaRemisionItemCreate[];
 }
@@ -54,6 +60,9 @@ export interface GuiaRemisionListResponse {
 
 export interface GuiaRemisionItemDetalle {
   id: number;
+  productoId: number | null;
+  esLineaLibre: boolean;
+  esBienTercero: boolean;
   productoNombre: string;
   productoCodigo: string | null;
   talla: string;
@@ -93,6 +102,13 @@ export interface GuiaRemisionDetalle {
   vehiculoPlaca: string | null;
   conductorNombres: string | null;
   conductorLicencia: string | null;
+  conductorDni: string | null;
+  emisorRuc: string;
+  emisorRazonSocial: string;
+  almacenOrigenDireccion: string | null;
+  almacenOrigenUbigeo: string | null;
+  almacenDestinoDireccion: string | null;
+  almacenDestinoUbigeo: string | null;
   observacion: string | null;
   creadoPorNombre: string;
   creadoEn: string;
@@ -137,6 +153,10 @@ export class GuiasRemisionService {
 
   eliminar(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers: this.headers() });
+  }
+
+  anular(id: number): Observable<unknown> {
+    return this.http.post(`${this.apiUrl}/${id}/anular`, {}, { headers: this.headers() });
   }
 
   consultarEstado(id: number): Observable<GuiaRemisionDetalle> {

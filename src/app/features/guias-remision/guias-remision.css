@@ -39,3 +39,7 @@
 .co-pendientes-table { width: 100%; margin: 10px 0; font-size: 13px; }
 .co-pendientes-table th, .co-pendientes-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid #E2E8F0; }
 .co-pendientes-table input[type="checkbox"] { cursor: pointer; }
+
+.gr-tercero { display: flex; align-items: center; gap: 4px; font-size: 12px; white-space: nowrap; }
+.gr-tag { font-size: 10.5px; padding: 1px 6px; border-radius: 8px; background: #E8EEF5; color: #3A4A5E; margin-left: 4px; }
+.gr-tag.tercero { background: #FCEBD5; color: #8A5200; }

@@ -18,6 +18,9 @@
         (ngModelChange)="onSearchInput()"
       />
     </div>
+    @if (authService.hasPermiso('ALMACEN_AJUSTAR')) {
+      <button class="lb-btn ghost" (click)="abrirAlmacenes()">Gestionar almacenes</button>
+    }
   </app-lb-page-header>
 
   <div class="lb-table-wrap">
@@ -151,6 +154,61 @@
           {{ guardando() ? 'Guardando...' : 'Registrar' }}
         </button>
       </div>
+    </app-base-modal>
+  }
+
+  <!-- Modal: gestionar almacenes (dirección, ubigeo y código de establecimiento que ve SUNAT) -->
+  @if (showAlmacenes()) {
+    <app-base-modal title="Almacenes" width="w-[680px]" (closeModal)="cerrarAlmacenes()">
+      <p class="am-hint">
+        Estos datos salen en la guía de remisión como punto de partida y de llegada. Deben coincidir con los
+        establecimientos registrados en tu Ficha RUC de SUNAT.
+      </p>
+
+      @if (!almacenEditando()) {
+        <table class="lb-table">
+          <thead>
+            <tr><th>Almacén</th><th>Dirección</th><th>Ubigeo</th><th>Cód. SUNAT</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (a of almacenesGestion(); track a.id) {
+              <tr>
+                <td>{{ a.nombre }}</td>
+                <td>{{ a.direccion ?? '—' }}</td>
+                <td>{{ a.ubigeo ?? '—' }}</td>
+                <td>{{ a.codigoEstablecimientoSunat }}</td>
+                <td><button class="lb-btn ghost" (click)="editarAlmacen(a)">Editar</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="am-hint"><strong>{{ almacenEditando()!.nombre }}</strong></p>
+        <div class="abril-field">
+          <label class="abril-field-label">Dirección</label>
+          <input class="abril-field-input" [(ngModel)]="formAlmacen.direccion" placeholder="Ej: Calle 1 Mz B Lt 13 Urb. La Merced, Ate" />
+        </div>
+        <div class="am-form-grid">
+          <div class="abril-field">
+            <label class="abril-field-label">Ubigeo (6 dígitos)</label>
+            <input class="abril-field-input" maxlength="6" [(ngModel)]="formAlmacen.ubigeo" placeholder="Ej: 150103" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Código de establecimiento SUNAT</label>
+            <input class="abril-field-input" maxlength="4" [(ngModel)]="formAlmacen.codigoEstablecimientoSunat" placeholder="0000" />
+          </div>
+        </div>
+        <p class="am-hint">El código lo ves en SOL, en «Mis datos del RUC», lista de establecimientos anexos (0000 es el domicilio fiscal).</p>
+
+        @if (errorAlmacen()) { <p class="am-error">{{ errorAlmacen() }}</p> }
+
+        <div class="am-form-actions">
+          <button class="lb-btn ghost" (click)="almacenEditando.set(null)">Volver</button>
+          <button class="lb-btn" [disabled]="guardandoAlmacen()" (click)="guardarAlmacen()">
+            {{ guardandoAlmacen() ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      }
     </app-base-modal>
   }
 
