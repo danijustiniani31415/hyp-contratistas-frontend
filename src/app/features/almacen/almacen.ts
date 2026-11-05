@@ -224,7 +224,9 @@ export class AlmacenComponent implements OnInit {
   showAlmacenes = signal(false);
   almacenesGestion = signal<AlmacenGestion[]>([]);
   almacenEditando = signal<AlmacenGestion | null>(null);
-  formAlmacen = { direccion: '', ubigeo: '', codigoEstablecimientoSunat: '0000' };
+  almacenNuevo = signal(false);
+  formAlmacen: { nombre: string; tipo: 'CENTRAL' | 'PROYECTO'; direccion: string; ubigeo: string; codigoEstablecimientoSunat: string } =
+    { nombre: '', tipo: 'PROYECTO', direccion: '', ubigeo: '', codigoEstablecimientoSunat: '' };
   guardandoAlmacen = signal(false);
   errorAlmacen = signal('');
 
@@ -312,6 +314,7 @@ export class AlmacenComponent implements OnInit {
 
   abrirAlmacenes(): void {
     this.almacenEditando.set(null);
+    this.almacenNuevo.set(false);
     this.errorAlmacen.set('');
     this.service.listAlmacenes().subscribe((a) => this.almacenesGestion.set(a));
     this.showAlmacenes.set(true);
@@ -321,31 +324,69 @@ export class AlmacenComponent implements OnInit {
     this.showAlmacenes.set(false);
   }
 
+  nuevoAlmacen(): void {
+    this.almacenEditando.set(null);
+    this.errorAlmacen.set('');
+    this.formAlmacen = { nombre: '', tipo: 'PROYECTO', direccion: '', ubigeo: '', codigoEstablecimientoSunat: '' };
+    this.almacenNuevo.set(true);
+  }
+
   editarAlmacen(a: AlmacenGestion): void {
+    this.almacenNuevo.set(false);
     this.almacenEditando.set(a);
     this.errorAlmacen.set('');
     this.formAlmacen = {
+      nombre: a.nombre,
+      tipo: a.tipo === 'CENTRAL' ? 'CENTRAL' : 'PROYECTO',
       direccion: a.direccion ?? '',
       ubigeo: a.ubigeo ?? '',
       codigoEstablecimientoSunat: a.codigoEstablecimientoSunat,
     };
   }
 
+  volverAlmacenes(): void {
+    this.almacenEditando.set(null);
+    this.almacenNuevo.set(false);
+  }
+
+  /** Refresca la lista y también los selectores de la pantalla, para ver el cambio sin recargar. */
+  private refrescarAlmacenes(): void {
+    this.service.listAlmacenes().subscribe((a) => this.almacenesGestion.set(a));
+    this.personasService.getCatalogos().subscribe((c) => this.almacenes.set(c.almacenes));
+  }
+
   guardarAlmacen(): void {
-    const a = this.almacenEditando();
-    if (!a) return;
     this.errorAlmacen.set('');
     this.guardandoAlmacen.set(true);
-    this.service.actualizarAlmacen(a.id, this.formAlmacen).subscribe({
-      next: (actualizado) => {
+    const fin = {
+      next: () => {
         this.guardandoAlmacen.set(false);
-        this.almacenesGestion.update((lista) => lista.map((x) => (x.id === actualizado.id ? actualizado : x)));
-        this.almacenEditando.set(null);
+        this.volverAlmacenes();
+        this.refrescarAlmacenes();
       },
-      error: (err) => {
+      error: (err: { error?: { message?: string } }) => {
         this.guardandoAlmacen.set(false);
         this.errorAlmacen.set(err?.error?.message ?? 'No se pudo guardar el almacén.');
       },
+    };
+    const f = this.formAlmacen;
+    const a = this.almacenEditando();
+    if (a) {
+      this.service.actualizarAlmacen(a.id, {
+        nombre: f.nombre, direccion: f.direccion, ubigeo: f.ubigeo, codigoEstablecimientoSunat: f.codigoEstablecimientoSunat,
+      }).subscribe(fin);
+    } else {
+      this.service.crearAlmacen(f).subscribe(fin);
+    }
+  }
+
+  /** Desactivar no borra: el almacén conserva su historial de movimientos y guías. */
+  alternarActivoAlmacen(a: AlmacenGestion): void {
+    this.service.actualizarAlmacen(a.id, {
+      direccion: a.direccion ?? '', ubigeo: a.ubigeo ?? '', codigoEstablecimientoSunat: a.codigoEstablecimientoSunat, activo: !a.activo,
+    }).subscribe({
+      next: () => this.refrescarAlmacenes(),
+      error: (err) => this.errorAlmacen.set(err?.error?.message ?? 'No se pudo cambiar el estado.'),
     });
   }
 

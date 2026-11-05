@@ -251,25 +251,44 @@
         establecimientos registrados en tu Ficha RUC de SUNAT.
       </p>
 
-      @if (!almacenEditando()) {
+      @if (!almacenEditando() && !almacenNuevo()) {
+        <div class="am-form-actions" style="margin: 0 0 8px"><button class="lb-btn" (click)="nuevoAlmacen()">+ Nuevo almacén</button></div>
         <table class="lb-table">
           <thead>
             <tr><th>Almacén</th><th>Dirección</th><th>Ubigeo</th><th>Cód. SUNAT</th><th></th></tr>
           </thead>
           <tbody>
             @for (a of almacenesGestion(); track a.id) {
-              <tr>
-                <td>{{ a.nombre }}</td>
+              <tr [style.opacity]="a.activo ? 1 : 0.5">
+                <td>{{ a.nombre }}@if (!a.activo) { <span class="am-tag">inactivo</span> }</td>
                 <td>{{ a.direccion ?? '—' }}</td>
                 <td>{{ a.ubigeo ?? '—' }}</td>
                 <td>{{ a.codigoEstablecimientoSunat }}</td>
-                <td><button class="lb-btn ghost" (click)="editarAlmacen(a)">Editar</button></td>
+                <td class="am-acciones">
+                  <button class="lb-btn ghost" (click)="editarAlmacen(a)">Editar</button>
+                  <button class="lb-btn ghost" (click)="alternarActivoAlmacen(a)">{{ a.activo ? 'Desactivar' : 'Activar' }}</button>
+                </td>
               </tr>
             }
           </tbody>
         </table>
+        @if (errorAlmacen()) { <p class="am-error">{{ errorAlmacen() }}</p> }
       } @else {
-        <p class="am-hint"><strong>{{ almacenEditando()!.nombre }}</strong></p>
+        <div class="am-form-grid">
+          <div class="abril-field">
+            <label class="abril-field-label">Nombre del almacén (interno)</label>
+            <input class="abril-field-input" [(ngModel)]="formAlmacen.nombre" placeholder="Ej: Unidad Esperanza" />
+          </div>
+          @if (almacenNuevo()) {
+            <div class="abril-field">
+              <label class="abril-field-label">Tipo</label>
+              <select class="abril-field-input" [(ngModel)]="formAlmacen.tipo">
+                <option value="PROYECTO">Proyecto / unidad</option>
+                <option value="CENTRAL">Central</option>
+              </select>
+            </div>
+          }
+        </div>
         <div class="abril-field">
           <label class="abril-field-label">Dirección</label>
           <input class="abril-field-input" [(ngModel)]="formAlmacen.direccion" placeholder="Ej: Calle 1 Mz B Lt 13 Urb. La Merced, Ate" />
@@ -284,14 +303,17 @@
             <input class="abril-field-input" maxlength="4" [(ngModel)]="formAlmacen.codigoEstablecimientoSunat" placeholder="0000" />
           </div>
         </div>
-        <p class="am-hint">El código lo ves en SOL, en «Mis datos del RUC», lista de establecimientos anexos (0000 es el domicilio fiscal).</p>
+        <p class="am-hint">
+          Copia los datos tal como figuran en SOL → Mis datos del RUC → Ficha RUC → Establecimientos Anexos
+          (0000 es el domicilio fiscal; los demás locales tienen su propio código). Cada local debe tener un código distinto.
+        </p>
 
         @if (errorAlmacen()) { <p class="am-error">{{ errorAlmacen() }}</p> }
 
         <div class="am-form-actions">
-          <button class="lb-btn ghost" (click)="almacenEditando.set(null)">Volver</button>
+          <button class="lb-btn ghost" (click)="volverAlmacenes()">Volver</button>
           <button class="lb-btn" [disabled]="guardandoAlmacen()" (click)="guardarAlmacen()">
-            {{ guardandoAlmacen() ? 'Guardando...' : 'Guardar' }}
+            {{ guardandoAlmacen() ? 'Guardando...' : (almacenNuevo() ? 'Crear almacén' : 'Guardar') }}
           </button>
         </div>
       }

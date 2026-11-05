@@ -111,6 +111,18 @@ export interface AlmacenGestion {
 }
 
 export interface AlmacenActualizar {
+  /** Si viene, renombra el almacén (el nombre es interno: SUNAT no lo ve). */
+  nombre?: string;
+  direccion: string;
+  ubigeo: string;
+  codigoEstablecimientoSunat: string;
+  /** Si viene, activa o desactiva el almacén (no se borra: tiene historial). */
+  activo?: boolean;
+}
+
+export interface AlmacenCrear {
+  nombre: string;
+  tipo: 'CENTRAL' | 'PROYECTO';
   direccion: string;
   ubigeo: string;
   codigoEstablecimientoSunat: string;
@@ -154,6 +166,10 @@ export class AlmacenService {
 
   listAlmacenes(): Observable<AlmacenGestion[]> {
     return this.http.get<AlmacenGestion[]>(this.almacenesUrl, { headers: this.headers() });
+  }
+
+  crearAlmacen(dto: AlmacenCrear): Observable<AlmacenGestion> {
+    return this.http.post<AlmacenGestion>(this.almacenesUrl, dto, { headers: this.headers() });
   }
 
   actualizarAlmacen(id: number, dto: AlmacenActualizar): Observable<AlmacenGestion> {
