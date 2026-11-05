@@ -89,7 +89,8 @@ export async function generarPdfGuia(d: GuiaRemisionDetalle): Promise<void> {
       if (it.talla && it.talla !== '—') partes.push(`TALLA ${it.talla}`);
       if (it.color && it.color !== '—') partes.push(`COLOR ${it.color}`);
       if (it.esBienTercero) partes.push('BIEN DE TERCERO');
-      return [String(i + 1), partes.join(' - '), it.unidadMedida, it.cantidad.toFixed(2)];
+      const unidades: Record<string, string> = { NIU: 'UNIDAD (NIU)', PR: 'PAR', KGM: 'KILOGRAMO (KGM)', MTR: 'METRO (MTR)', LTR: 'LITRO (LTR)', GLL: 'GALÓN (GLL)', BX: 'CAJA (BX)' };
+      return [String(i + 1), partes.join(' - '), unidades[it.unidadMedida] ?? it.unidadMedida, it.cantidad.toFixed(2)];
     }),
     styles: { fontSize: 8.5, cellPadding: 1.6 },
     headStyles: { fillColor: [40, 40, 40] },
