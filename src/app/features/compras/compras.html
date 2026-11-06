@@ -13,6 +13,7 @@
       @for (e of estados; track e) { <option [value]="e">{{ e }}</option> }
     </select>
     @if (authService.hasPermiso('COMPRA_CREAR')) {
+      <button type="button" class="lb-btn" (click)="showComprobante.set(true)">Cargar comprobante (IA)</button>
       <button type="button" class="lb-btn ghost" (click)="abrirPendientes()">Pendientes de compra</button>
       <button type="button" class="lb-btn ghost" (click)="abrirNuevoProveedor()">+ Nuevo proveedor</button>
     }
@@ -57,6 +58,16 @@
 
   @if (authService.hasPermiso('COMPRA_CREAR')) {
     <app-fab label="Nueva orden de compra" (clicked)="abrirNuevo()" />
+  }
+
+  @if (showComprobante()) {
+    <app-comprobante-carga
+      [proveedores]="proveedores()"
+      [almacenes]="almacenes()"
+      [productos]="productos()"
+      (cerrar)="showComprobante.set(false)"
+      (guardado)="showComprobante.set(false); cargarProveedores()"
+    />
   }
 
   <!-- Modal: nuevo proveedor -->

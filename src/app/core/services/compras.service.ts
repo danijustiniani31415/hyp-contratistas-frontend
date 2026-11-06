@@ -143,6 +143,101 @@ export interface OrdenCompraDetalle {
   items: OrdenCompraItemDetalle[];
 }
 
+/** Línea tal como la leyó la IA; la persona la confirma o corrige antes de guardar. */
+export interface ComprobanteLeidoItem {
+  descripcion: string;
+  cantidad: number;
+  unidad: string | null;
+  precioUnitario: number;
+  total: number;
+  /** BIEN, SERVICIO, PASAJE_VIATICO, ACTIVO u OTRO. */
+  categoria: string;
+}
+
+export interface ComprobanteLeido {
+  tipo: string;
+  emisorRuc: string | null;
+  emisorRazonSocial: string | null;
+  clienteRuc: string | null;
+  clienteRazonSocial: string | null;
+  serie: string | null;
+  numero: string | null;
+  fechaEmision: string | null;
+  fechaVencimiento: string | null;
+  moneda: string;
+  formaPago: string | null;
+  subtotal: number;
+  igv: number;
+  total: number;
+  detraccionMonto: number | null;
+  detraccionPorcentaje: number | null;
+  ordenCompraRef: string | null;
+  guiaRef: string | null;
+  observacion: string | null;
+  confianza: number;
+  items: ComprobanteLeidoItem[];
+}
+
+export interface ComprobanteAdvertencia {
+  nivel: 'INFO' | 'AVISO' | 'ERROR';
+  mensaje: string;
+}
+
+export interface ComprobanteLectura {
+  lectura: ComprobanteLeido;
+  advertencias: ComprobanteAdvertencia[];
+  modeloUsado: string;
+  archivoUrl: string | null;
+  proveedorId: number | null;
+  duplicadoDeId: number | null;
+}
+
+export interface ComprobanteGuardarItem {
+  descripcion: string;
+  cantidad: number;
+  unidad: string | null;
+  precioUnitario: number;
+  total: number;
+  /** STOCK, GASTO, ACTIVO o RENDICION. */
+  destino: string;
+  productoId: number | null;
+  talla: string;
+  color: string;
+  categoriaGasto?: string | null;
+}
+
+export interface ComprobanteGuardar {
+  proveedorId: number | null;
+  proveedorRuc: string | null;
+  proveedorRazonSocial: string | null;
+  almacenId: number | null;
+  tipo: string;
+  serie: string;
+  numero: string;
+  fechaEmision: string;
+  moneda: string;
+  tipoCambio: number | null;
+  subtotal: number;
+  igv: number;
+  total: number;
+  formaPago: string | null;
+  detraccionMonto: number | null;
+  ordenCompraRef: string | null;
+  guiaRef: string | null;
+  archivoUrl: string | null;
+  observacion: string | null;
+  modeloIa: string | null;
+  items: ComprobanteGuardarItem[];
+}
+
+export interface ComprobanteGuardado {
+  id: number;
+  estado: string;
+  lineasAStock: number;
+  lineasGasto: number;
+  avisos: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class ComprasService {
   private readonly apiUrl = `${environment.apiUrl}api/v1/compras`;
@@ -197,6 +292,17 @@ export class ComprasService {
 
   cancelar(id: number): Observable<OrdenCompraDetalle> {
     return this.http.post<OrdenCompraDetalle>(`${this.apiUrl}/ordenes/${id}/cancelar`, {}, { headers: this.headers() });
+  }
+
+  /** Sube el PDF/foto y devuelve lo que leyó la IA + avisos. No guarda nada. */
+  leerComprobante(archivo: File): Observable<ComprobanteLectura> {
+    const fd = new FormData();
+    fd.append('archivo', archivo);
+    return this.http.post<ComprobanteLectura>(`${this.apiUrl}/comprobantes/leer`, fd, { headers: this.headers() });
+  }
+
+  guardarComprobante(dto: ComprobanteGuardar): Observable<ComprobanteGuardado> {
+    return this.http.post<ComprobanteGuardado>(`${this.apiUrl}/comprobantes`, dto, { headers: this.headers() });
   }
 
   devolverItem(ordenId: number, itemId: number, dto: DevolverItem): Observable<DevolverItemResultado> {

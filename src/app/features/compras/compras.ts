@@ -22,6 +22,7 @@ import { CatalogoService, ProductoListItem } from '../../core/services/catalogo.
 import { PedidosService } from '../../core/services/pedidos.service';
 import { AlmacenService, ReposicionSugerida } from '../../core/services/almacen.service';
 import { LbAuthService } from '../../core/services/lb-auth.service';
+import { ComprobanteCarga } from './comprobante-carga/comprobante-carga';
 
 const ESTADOS = ['PENDIENTE', 'RECIBIDA_PARCIAL', 'RECIBIDA', 'CANCELADA'];
 
@@ -29,7 +30,7 @@ const ESTADOS = ['PENDIENTE', 'RECIBIDA_PARCIAL', 'RECIBIDA', 'CANCELADA'];
 @Component({
   selector: 'app-compras',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, BaseModal, FabButton, Paginator, LbPageHeader],
+  imports: [CommonModule, FormsModule, SearchSelect, BaseModal, FabButton, Paginator, LbPageHeader, ComprobanteCarga],
   templateUrl: './compras.html',
   styleUrl: './compras.css',
 })
@@ -49,6 +50,7 @@ export class Compras implements OnInit {
   productos = signal<ProductoListItem[]>([]);
 
   showModal = signal(false);
+  showComprobante = signal(false);
   error = signal('');
   guardando = signal(false);
   form: OrdenCompraCreate = this.formVacio();

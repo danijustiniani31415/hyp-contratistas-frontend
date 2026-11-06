@@ -1,0 +1,192 @@
+<app-base-modal title="Cargar comprobante con IA" width="w-[1120px]" (closeModal)="cerrar.emit()">
+  @if (!lectura()) {
+    <div class="cc-subir">
+      <p class="cc-ayuda">
+        Sube la factura, boleta o nota (PDF o foto). La IA lee los datos y tú los confirmas antes de guardar.
+      </p>
+      @if (leyendo()) {
+        <div class="cc-leyendo">Leyendo el documento… puede tardar unos segundos.</div>
+      } @else {
+        <label class="lb-btn cc-boton-archivo">
+          Elegir PDF o foto
+          <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic" capture="environment" (change)="onArchivo($event)" hidden />
+        </label>
+        <p class="cc-nota">También funciona desde el celular: toma la foto directamente.</p>
+      }
+      @if (error()) { <p class="cc-error">{{ error() }}</p> }
+    </div>
+  } @else {
+    @if (advertencias().length) {
+      <div class="cc-avisos">
+        @for (a of advertencias(); track $index) {
+          <div class="cc-aviso" [class]="'cc-aviso ' + a.nivel.toLowerCase()">{{ a.mensaje }}</div>
+        }
+      </div>
+    }
+
+    <div class="cc-grid">
+      <div class="abril-field">
+        <label class="abril-field-label">Tipo de documento</label>
+        <select class="abril-field-input" [(ngModel)]="cab.tipo" (ngModelChange)="cambioTipo()">
+          @for (t of tipos; track t.id) { <option [value]="t.id">{{ t.nombre }}</option> }
+        </select>
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Serie</label>
+        <input class="abril-field-input" [(ngModel)]="cab.serie" />
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Número</label>
+        <input class="abril-field-input" [(ngModel)]="cab.numero" />
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Fecha de emisión</label>
+        <input class="abril-field-input" type="date" [(ngModel)]="cab.fechaEmision" />
+      </div>
+    </div>
+
+    <div class="cc-grid">
+      <app-search-select
+        [options]="proveedores"
+        displayField="razonSocial"
+        [(value)]="cab.proveedorId"
+        label="Proveedor"
+        placeholder="Buscar empresa..."
+      />
+      @if (!cab.proveedorId) {
+        <div class="abril-field">
+          <label class="abril-field-label">RUC (proveedor nuevo)</label>
+          <input class="abril-field-input" [(ngModel)]="cab.proveedorRuc" maxlength="11" />
+        </div>
+        <div class="abril-field cc-doble">
+          <label class="abril-field-label">Razón social (proveedor nuevo)</label>
+          <input class="abril-field-input" [(ngModel)]="cab.proveedorRazon" />
+        </div>
+      }
+    </div>
+
+    <div class="cc-grid">
+      <div class="abril-field">
+        <label class="abril-field-label">Moneda</label>
+        <select class="abril-field-input" [(ngModel)]="cab.moneda">
+          <option value="PEN">Soles</option>
+          <option value="USD">Dólares</option>
+        </select>
+      </div>
+      @if (cab.moneda === 'USD') {
+        <div class="abril-field">
+          <label class="abril-field-label">Tipo de cambio</label>
+          <input class="abril-field-input" type="number" step="0.001" min="0" [(ngModel)]="cab.tipoCambio" />
+        </div>
+      }
+      <div class="abril-field">
+        <label class="abril-field-label">Subtotal (sin IGV)</label>
+        <input class="abril-field-input" type="number" step="0.01" [(ngModel)]="cab.subtotal" />
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">IGV</label>
+        <input class="abril-field-input" type="number" step="0.01" [(ngModel)]="cab.igv" />
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Total</label>
+        <input class="abril-field-input" type="number" step="0.01" [(ngModel)]="cab.total" />
+      </div>
+      @if (hayStock) {
+        <app-search-select
+          [options]="almacenes"
+          displayField="nombre"
+          [(value)]="cab.almacenId"
+          label="Almacén de ingreso"
+          placeholder="Selecciona almacén"
+        />
+      }
+    </div>
+
+    <div class="cc-tabla-wrap">
+      <table class="lb-table cc-tabla">
+        <thead>
+          <tr>
+            <th>Descripción en el comprobante</th>
+            <th>Va a</th>
+            <th>Producto del catálogo</th>
+            <th>Talla</th>
+            <th>Color</th>
+            <th>Cant.</th>
+            <th>P. unit.</th>
+            <th>Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of filas(); track $index; let i = $index) {
+            <tr>
+              <td class="cc-desc"><input class="abril-field-input" [(ngModel)]="f.descripcion" /></td>
+              <td>
+                <select class="abril-field-input" [(ngModel)]="f.destino">
+                  <option value="STOCK" [disabled]="sinStock">Ingresa al almacén</option>
+                  <option value="GASTO">Gasto / servicio</option>
+                  <option value="ACTIVO">Activo / equipo</option>
+                  <option value="RENDICION">Pasaje / viático</option>
+                </select>
+              </td>
+              <td class="cc-prod">
+                @if (f.destino === 'STOCK') {
+                  <app-search-select
+                    [options]="productos"
+                    displayField="nombre"
+                    [(value)]="f.productoId"
+                    (valueChange)="f.sugerido = null; ajustarVariantes(f)"
+                    placeholder="Producto"
+                  />
+                  @if (f.sugerido) {
+                    <button type="button" class="cc-sugerido" (click)="aceptarSugerido(f)">
+                      ¿Es «{{ f.sugerido.nombre }}»? ({{ f.sugerido.porcentaje }}%{{ f.sugerido.otraMarca ? ', otra marca' : '' }}) — usar
+                    </button>
+                  }
+                } @else {
+                  <span class="cc-nota">—</span>
+                }
+              </td>
+              <td>
+                @if (f.destino === 'STOCK' && producto(f)?.requiereTalla) {
+                  <input class="abril-field-input cc-corto" [(ngModel)]="f.talla" />
+                }
+              </td>
+              <td>
+                @if (f.destino === 'STOCK' && producto(f)?.requiereColor) {
+                  <input class="abril-field-input cc-corto" [(ngModel)]="f.color" />
+                }
+              </td>
+              <td><input class="abril-field-input cc-num" type="number" step="0.001" min="0" [(ngModel)]="f.cantidad" /></td>
+              <td><input class="abril-field-input cc-num" type="number" step="0.0001" min="0" [(ngModel)]="f.precioUnitario" /></td>
+              <td><input class="abril-field-input cc-num" type="number" step="0.01" min="0" [(ngModel)]="f.total" /></td>
+              <td><button type="button" class="cc-quitar" title="Quitar línea" (click)="quitar(i)">✕</button></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cc-cuadre" [class.mal]="!cuadra">
+      Suma de líneas: {{ sumaLineas | number: '1.2-2' }}
+      @if (cuadra) { · cuadra con el comprobante ✓ } @else { · NO cuadra con el comprobante: revisa cantidades y precios }
+    </div>
+
+    @if (cab.tipo === 'BOLETA') {
+      <p class="cc-nota">Boleta: se ingresa con el precio que incluye IGV, porque no da crédito fiscal.</p>
+    }
+    @if (error()) { <p class="cc-error">{{ error() }}</p> }
+  }
+
+  <div class="cc-footer">
+    @if (lectura()) {
+      <button type="button" class="lb-btn ghost" (click)="otroArchivo()">Subir otro archivo</button>
+      <span class="cc-pendiente">{{ pendiente }}</span>
+      <button type="button" class="lb-btn" [disabled]="!!pendiente || guardando()" (click)="guardar()">
+        {{ guardando() ? 'Guardando…' : 'Confirmar y registrar' }}
+      </button>
+    } @else {
+      <button type="button" class="lb-btn ghost" (click)="cerrar.emit()">Cancelar</button>
+    }
+  </div>
+</app-base-modal>
