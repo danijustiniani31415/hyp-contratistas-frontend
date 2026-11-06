@@ -10,6 +10,7 @@
 }
 .pd-estado.pendiente { border-color: #B45309; color: #B45309; }
 .pd-estado.pendiente_gerente { border-color: #7C3AED; color: #7C3AED; }
+.pd-estado.visado { border-color: #0E7490; color: #0E7490; }
 .pd-estado.aprobado { border-color: #1B6B3A; color: #1B6B3A; }
 .pd-estado.rechazado { border-color: #C0392B; color: #C0392B; }
 .pd-estado.entregado { border-color: #1E3A5F; color: #1E3A5F; }
@@ -35,3 +36,5 @@
 .pd-detalle-table { margin: 12px 0; }
 .pd-item-color { font-size: 12px; color: #64748B; }
 .pd-item-obs { font-size: 12px; color: #64748B; font-style: italic; }
+
+.pd-decision-toggle { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #39536B; white-space: nowrap; }

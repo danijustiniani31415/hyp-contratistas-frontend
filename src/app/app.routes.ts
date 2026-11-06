@@ -332,6 +332,14 @@ export const routes: Routes = [
           .then(m => m.Pedidos)
       },
       {
+        path: 'pedidos/contratos-partidas',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['PEDIDO_CREAR', 'PEDIDO_APROBAR'] },
+        loadComponent: () =>
+          import('./features/pedidos/contratos-partidas/contratos-partidas')
+          .then(m => m.PedidosContratosPartidas)
+      },
+      {
         path: 'epp',
         canActivate: [lbPermisoGuard],
         data: { lbPermisos: ['EPP_ENTREGAR'] },

@@ -25,13 +25,78 @@ export interface PedidoItemCreate {
   color: string;
   observacion?: string;
   cantidadSolicitada: number;
+  partidaId?: number | null;
 }
 
 export interface PedidoCreate {
   proyectoId: number;
   almacenId: number;
+  contratoId?: number | null;
   observacion?: string;
   items: PedidoItemCreate[];
+}
+
+export interface Contrato {
+  id: number;
+  proyectoId: number;
+  codigo: string;
+  descripcion: string | null;
+  vigenteDesde: string;
+  vigenteHasta: string | null;
+  activo: boolean;
+}
+
+export interface ContratoCreate {
+  proyectoId: number;
+  codigo: string;
+  descripcion?: string;
+  vigenteDesde: string;
+  vigenteHasta?: string | null;
+}
+
+export interface Partida {
+  id: number;
+  proyectoId: number;
+  codigo: string;
+  nombre: string;
+  activo: boolean;
+  monedaId: number | null;
+  monedaCodigo: string | null;
+  montoPresupuestado: number | null;
+}
+
+export interface PartidaCreate {
+  proyectoId: number;
+  codigo: string;
+  nombre: string;
+  monedaId?: number | null;
+  montoPresupuestado?: number | null;
+}
+
+export interface Moneda {
+  id: number;
+  codigo: string;
+  nombre: string;
+}
+
+export interface ConsumoPartida {
+  partidaId: number;
+  partidaCodigo: string;
+  partidaNombre: string;
+  monedaCodigo: string | null;
+  montoPresupuestado: number | null;
+  consumido: number;
+  saldo: number | null;
+  porcentajeConsumido: number | null;
+}
+
+/** Decisión sobre un ítem puntual en Visar/Aprobar — o se aprueba (completo o con cantidad
+ * reducida) o se rechaza con motivo; el resto de ítems del pedido sigue su flujo normal. */
+export interface PedidoItemDecision {
+  pedidoItemId: number;
+  rechazado: boolean;
+  cantidadAprobada?: number | null;
+  motivoRechazo?: string | null;
 }
 
 export interface PedidoListItem {
@@ -62,6 +127,11 @@ export interface PedidoItemDetalle {
   color: string;
   observacion: string | null;
   cantidadSolicitada: number;
+  cantidadAprobada: number | null;
+  estado: 'PENDIENTE' | 'VISADO' | 'APROBADO' | 'RECHAZADO';
+  motivoRechazo: string | null;
+  partidaId: number | null;
+  partidaNombre: string | null;
   cantidadEntregada: number | null;
   cantidadEnCompra: number;
   cantidadRecibidaAlmacen: number;
@@ -74,6 +144,8 @@ export interface PedidoDetalle {
   codigo: string;
   proyectoNombre: string;
   almacenNombre: string;
+  contratoId: number | null;
+  contratoCodigo: string | null;
   solicitanteUsuarioSistemaId: number;
   solicitanteNombre: string;
   estado: string;
@@ -87,6 +159,19 @@ export interface PedidoDetalle {
   entregadoEn: string | null;
   creadoEn: string;
   items: PedidoItemDetalle[];
+}
+
+export interface PedidoItemHistorial {
+  id: number;
+  pedidoItemId: number;
+  productoNombre: string;
+  etapa: 'VISADO' | 'APROBACION';
+  usuarioNombre: string;
+  estadoResultante: 'VISADO' | 'APROBADO' | 'RECHAZADO';
+  cantidadSolicitada: number;
+  cantidadAprobada: number | null;
+  motivoRechazo: string | null;
+  creadoEn: string;
 }
 
 export interface PedidoDestinatarios {
@@ -120,20 +205,26 @@ export class PedidosService {
     return this.http.get<PedidoDetalle>(`${this.apiUrl}/${id}`, { headers: this.headers() });
   }
 
-  visar(id: number): Observable<PedidoDetalle> {
-    return this.http.post<PedidoDetalle>(`${this.apiUrl}/${id}/visar`, {}, { headers: this.headers() });
+  /** decisiones: una por cada ítem en PENDIENTE (todos los del pedido en su primera visita). */
+  visar(id: number, decisiones: PedidoItemDecision[]): Observable<PedidoDetalle> {
+    return this.http.post<PedidoDetalle>(
+      `${this.apiUrl}/${id}/visar`,
+      { items: decisiones },
+      { headers: this.headers() },
+    );
   }
 
-  rechazarVisado(id: number, motivoRechazo: string): Observable<PedidoDetalle> {
-    return this.http.post<PedidoDetalle>(`${this.apiUrl}/${id}/rechazar-visado`, { motivoRechazo }, { headers: this.headers() });
+  /** decisiones: una por cada ítem en VISADO (los que el Residente ya rechazó no se incluyen). */
+  aprobar(id: number, decisiones: PedidoItemDecision[]): Observable<PedidoDetalle> {
+    return this.http.post<PedidoDetalle>(
+      `${this.apiUrl}/${id}/aprobar`,
+      { items: decisiones },
+      { headers: this.headers() },
+    );
   }
 
-  aprobar(id: number): Observable<PedidoDetalle> {
-    return this.http.post<PedidoDetalle>(`${this.apiUrl}/${id}/aprobar`, {}, { headers: this.headers() });
-  }
-
-  rechazar(id: number, motivoRechazo: string): Observable<PedidoDetalle> {
-    return this.http.post<PedidoDetalle>(`${this.apiUrl}/${id}/rechazar`, { motivoRechazo }, { headers: this.headers() });
+  getHistorial(id: number): Observable<PedidoItemHistorial[]> {
+    return this.http.get<PedidoItemHistorial[]>(`${this.apiUrl}/${id}/historial`, { headers: this.headers() });
   }
 
   entregar(id: number): Observable<PedidoDetalle> {
@@ -156,5 +247,33 @@ export class PedidosService {
     return this.http.get<PedidoDestinatarios>(`${this.apiUrl}/destinatarios?proyectoId=${proyectoId}`, {
       headers: this.headers(),
     });
+  }
+
+  listContratos(proyectoId: number): Observable<Contrato[]> {
+    return this.http.get<Contrato[]>(`${this.apiUrl}/contratos?proyectoId=${proyectoId}`, {
+      headers: this.headers(),
+    });
+  }
+
+  crearContrato(dto: ContratoCreate): Observable<Contrato> {
+    return this.http.post<Contrato>(`${this.apiUrl}/contratos`, dto, { headers: this.headers() });
+  }
+
+  listPartidas(proyectoId: number): Observable<Partida[]> {
+    return this.http.get<Partida[]>(`${this.apiUrl}/partidas?proyectoId=${proyectoId}`, {
+      headers: this.headers(),
+    });
+  }
+
+  crearPartida(dto: PartidaCreate): Observable<Partida> {
+    return this.http.post<Partida>(`${this.apiUrl}/partidas`, dto, { headers: this.headers() });
+  }
+
+  listMonedas(): Observable<Moneda[]> {
+    return this.http.get<Moneda[]>(`${this.apiUrl}/monedas`, { headers: this.headers() });
+  }
+
+  getConsumoPartida(partidaId: number): Observable<ConsumoPartida> {
+    return this.http.get<ConsumoPartida>(`${this.apiUrl}/partidas/${partidaId}/consumo`, { headers: this.headers() });
   }
 }

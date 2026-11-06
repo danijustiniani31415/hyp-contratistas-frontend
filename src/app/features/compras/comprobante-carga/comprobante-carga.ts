@@ -136,18 +136,51 @@ export class ComprobanteCarga implements OnInit {
     }
     this.error.set('');
     this.leyendo.set(true);
-    this.service.leerComprobante(archivo).subscribe({
-      next: (res) => {
-        this.aplicar(res);
-        this.leyendo.set(false);
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.leyendo.set(false);
-        this.error.set(err?.error?.message ?? 'No se pudo leer el documento.');
-        this.cdr.detectChanges();
-      },
-    });
+    this.reducirFoto(archivo).then((listo) =>
+      this.service.leerComprobante(listo).subscribe({
+        next: (res) => {
+          this.aplicar(res);
+          this.leyendo.set(false);
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.leyendo.set(false);
+          this.error.set(
+            err?.error?.message ??
+              (err?.status === 413 ? 'El archivo es demasiado pesado para subirlo.' : 'No se pudo leer el documento.'),
+          );
+          this.cdr.detectChanges();
+        },
+      }),
+    );
+  }
+
+  /**
+   * Las fotos del celular pesan varios MB y no hace falta tanto para leer un comprobante: se reducen a
+   * un máximo de 2000 px de lado en JPEG (unos 300–800 KB) antes de subirlas. Los PDF se suben tal cual.
+   */
+  private async reducirFoto(archivo: File): Promise<File> {
+    const LIMITE = 900 * 1024;
+    if (!archivo.type.startsWith('image/') || archivo.size <= LIMITE) return archivo;
+    try {
+      const bmp = await createImageBitmap(archivo);
+      const escala = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(bmp.width * escala);
+      canvas.height = Math.round(bmp.height * escala);
+      canvas.getContext('2d')!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      bmp.close();
+      let ultimo: Blob | null = null;
+      for (const calidad of [0.82, 0.7, 0.55]) {
+        ultimo = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', calidad));
+        if (ultimo && ultimo.size <= LIMITE) break;
+      }
+      if (!ultimo || ultimo.size >= archivo.size) return archivo;
+      return new File([ultimo], archivo.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+    } catch {
+      // Formato que el navegador no puede abrir (p. ej. HEIC en algunos equipos): se sube el original.
+      return archivo;
+    }
   }
 
   private aplicar(res: ComprobanteLectura): void {

@@ -66,6 +66,13 @@
           label="Almacén de despacho"
           placeholder="Selecciona almacén"
         />
+        <app-search-select
+          [options]="contratos()"
+          displayField="codigo"
+          [(value)]="form.contratoId"
+          label="Contrato (opcional)"
+          placeholder="Selecciona contrato"
+        />
       </div>
 
       @if (destinatarios(); as dest) {
@@ -110,6 +117,12 @@
               </select>
             }
             <input class="abril-field-input lb-item-cant" type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidadSolicitada" placeholder="Cant." />
+            @if (partidas().length) {
+              <select class="abril-field-input lb-item-talla" [(ngModel)]="item.partidaId">
+                <option [ngValue]="null">Partida (opcional)</option>
+                @for (p of partidas(); track p.id) { <option [ngValue]="p.id">{{ p.codigo }} — {{ p.nombre }}</option> }
+              </select>
+            }
             <button
               type="button"
               class="lb-item-obs-btn"
@@ -147,36 +160,81 @@
       <p class="pd-detalle-meta">Solicitado por {{ d.solicitanteNombre }} el {{ d.creadoEn | slice:0:10 }}</p>
       @if (d.observacion) { <p class="pd-detalle-obs">"{{ d.observacion }}"</p> }
 
-      <table class="lb-table pd-detalle-table">
-        <thead>
-          @if (d.estado === 'APROBADO' || d.estado === 'ENTREGADO') {
-            <tr><th>Producto</th><th>Talla</th><th>Solicitado</th><th>En compra</th><th>En almacén</th><th>Despachado</th><th>Confirmado mina</th></tr>
-          } @else {
-            <tr><th>Producto</th><th>Talla</th><th>Cant.</th></tr>
-          }
-        </thead>
-        <tbody>
-          @for (it of d.items; track it.id) {
-            <tr>
-              <td>
-                {{ it.productoNombre }}
-                @if (it.color) { <span class="pd-item-color">· {{ it.color }}</span> }
-                @if (it.observacion) { <br /><span class="pd-item-obs">{{ it.observacion }}</span> }
-              </td>
-              <td>{{ it.talla || '—' }}</td>
-              @if (d.estado === 'APROBADO' || d.estado === 'ENTREGADO') {
-                <td>{{ it.cantidadSolicitada }} {{ it.unidadMedida }}</td>
-                <td>{{ it.cantidadEnCompra }}</td>
-                <td>{{ it.cantidadRecibidaAlmacen }}</td>
-                <td>{{ it.cantidadDespachada }}</td>
-                <td>{{ it.cantidadConfirmadaMina }}</td>
-              } @else {
-                <td>{{ it.cantidadSolicitada }} {{ it.unidadMedida }}</td>
+      @if (etapaActual(d); as etapa) {
+        <!-- Decisión por ítem: el Residente (Visar) o Gerencia (Aprobar) aprueba completo,
+             reduce la cantidad, o rechaza cada producto sin tumbar el resto del pedido. -->
+        <table class="lb-table pd-detalle-table">
+          <thead>
+            <tr><th>Producto</th><th>Talla</th><th>Solicitado</th><th>Decisión</th><th>Cantidad / Motivo</th></tr>
+          </thead>
+          <tbody>
+            @for (it of d.items; track it.id) {
+              @if (it.estado === (etapa === 'VISAR' ? 'PENDIENTE' : 'VISADO')) {
+                @for (f of decisiones(); track f.itemId) {
+                  @if (f.itemId === it.id) {
+                    <tr>
+                      <td>
+                        {{ it.productoNombre }}
+                        @if (it.color) { <span class="pd-item-color">· {{ it.color }}</span> }
+                        @if (it.partidaNombre) { <br /><span class="pd-item-obs">Partida: {{ it.partidaNombre }}</span> }
+                      </td>
+                      <td>{{ it.talla || '—' }}</td>
+                      <td>{{ f.tope }} {{ it.unidadMedida }}</td>
+                      <td>
+                        <label class="pd-decision-toggle">
+                          <input type="checkbox" [(ngModel)]="f.rechazado" />
+                          Rechazar
+                        </label>
+                      </td>
+                      <td>
+                        @if (f.rechazado) {
+                          <input class="abril-field-input" type="text" placeholder="Motivo de rechazo" [(ngModel)]="f.motivoRechazo" />
+                        } @else {
+                          <input class="abril-field-input lb-item-cant" type="number" min="0.01" [max]="f.tope" step="0.01" [(ngModel)]="f.cantidadAprobada" />
+                        }
+                      </td>
+                    </tr>
+                  }
+                }
               }
-            </tr>
-          }
-        </tbody>
-      </table>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <table class="lb-table pd-detalle-table">
+          <thead>
+            @if (d.estado === 'APROBADO' || d.estado === 'ENTREGADO') {
+              <tr><th>Producto</th><th>Talla</th><th>Aprobado</th><th>En compra</th><th>En almacén</th><th>Despachado</th><th>Confirmado mina</th></tr>
+            } @else {
+              <tr><th>Producto</th><th>Talla</th><th>Solicitado</th><th>Estado</th></tr>
+            }
+          </thead>
+          <tbody>
+            @for (it of d.items; track it.id) {
+              <tr>
+                <td>
+                  {{ it.productoNombre }}
+                  @if (it.color) { <span class="pd-item-color">· {{ it.color }}</span> }
+                  @if (it.observacion) { <br /><span class="pd-item-obs">{{ it.observacion }}</span> }
+                  @if (it.partidaNombre) { <br /><span class="pd-item-obs">Partida: {{ it.partidaNombre }}</span> }
+                  @if (it.estado === 'RECHAZADO' && it.motivoRechazo) { <br /><span class="pd-error">Rechazado: {{ it.motivoRechazo }}</span> }
+                </td>
+                <td>{{ it.talla || '—' }}</td>
+                @if (d.estado === 'APROBADO' || d.estado === 'ENTREGADO') {
+                  <td>{{ it.cantidadAprobada ?? it.cantidadSolicitada }} {{ it.unidadMedida }}</td>
+                  <td>{{ it.cantidadEnCompra }}</td>
+                  <td>{{ it.cantidadRecibidaAlmacen }}</td>
+                  <td>{{ it.cantidadDespachada }}</td>
+                  <td>{{ it.cantidadConfirmadaMina }}</td>
+                } @else {
+                  <td>{{ it.cantidadSolicitada }} {{ it.unidadMedida }}</td>
+                  <td><span class="pd-estado" [class]="it.estado.toLowerCase()">{{ it.estado }}</span></td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
 
       @if (d.motivoRechazo) {
         <p class="pd-error">Rechazado: {{ d.motivoRechazo }}</p>
@@ -191,17 +249,50 @@
         <p class="pd-detalle-meta">Entregado por {{ d.entregadoPorNombre }} el {{ d.entregadoEn | slice:0:10 }}</p>
       }
 
+      @if (d.visadoPorNombre || d.aprobadoPorNombre) {
+        <button type="button" class="lb-btn ghost small" (click)="toggleHistorial()">
+          {{ showHistorial() ? 'Ocultar historial' : 'Ver historial de decisiones por ítem' }}
+        </button>
+      }
+      @if (showHistorial()) {
+        <table class="lb-table pd-detalle-table">
+          <thead>
+            <tr><th>Producto</th><th>Etapa</th><th>Quién</th><th>Resultado</th><th>Cuándo</th></tr>
+          </thead>
+          <tbody>
+            @if (!historial().length) {
+              <tr><td colspan="5" class="lb-empty">Cargando...</td></tr>
+            } @else {
+              @for (h of historial(); track h.id) {
+                <tr>
+                  <td>{{ h.productoNombre }}</td>
+                  <td>{{ h.etapa === 'VISADO' ? 'Visado' : 'Aprobación' }}</td>
+                  <td>{{ h.usuarioNombre }}</td>
+                  <td>
+                    <span class="pd-estado" [class]="h.estadoResultante.toLowerCase()">{{ h.estadoResultante }}</span>
+                    @if (h.estadoResultante === 'RECHAZADO' && h.motivoRechazo) {
+                      <br /><span class="pd-item-obs">{{ h.motivoRechazo }}</span>
+                    } @else if (h.cantidadAprobada !== null && h.cantidadAprobada !== h.cantidadSolicitada) {
+                      <br /><span class="pd-item-obs">Reducido de {{ h.cantidadSolicitada }} a {{ h.cantidadAprobada }}</span>
+                    }
+                  </td>
+                  <td>{{ h.creadoEn | slice:0:10 }} {{ h.creadoEn | slice:11:16 }}</td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      }
+
       <div class="pd-form-actions">
         @if (d.estado === 'PENDIENTE' && esMiPedido) {
           <button class="lb-btn ghost danger" [disabled]="accionando()" (click)="cancelar()">Cancelar pedido</button>
         }
-        @if (d.estado === 'PENDIENTE' && authService.hasPermiso('PEDIDO_VISAR')) {
-          <button class="lb-btn ghost danger" [disabled]="accionando()" (click)="rechazarVisado()">Rechazar</button>
-          <button class="lb-btn" [disabled]="accionando()" (click)="visar()">Visar</button>
+        @if (etapaActual(d) === 'VISAR') {
+          <button class="lb-btn" [disabled]="accionando()" (click)="guardarDecision()">Guardar visado</button>
         }
-        @if (d.estado === 'PENDIENTE_GERENTE' && authService.hasPermiso('PEDIDO_APROBAR')) {
-          <button class="lb-btn ghost danger" [disabled]="accionando()" (click)="rechazar()">Rechazar</button>
-          <button class="lb-btn" [disabled]="accionando()" (click)="aprobar()">Aprobar</button>
+        @if (etapaActual(d) === 'APROBAR') {
+          <button class="lb-btn" [disabled]="accionando()" (click)="guardarDecision()">Guardar aprobación</button>
         }
         @if (d.estado === 'APROBADO' && authService.hasPermiso('PEDIDO_ENTREGAR')) {
           <button class="lb-btn" [disabled]="accionando()" (click)="entregar()">Marcar como entregado</button>
