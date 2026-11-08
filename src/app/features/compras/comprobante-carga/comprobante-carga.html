@@ -1,4 +1,4 @@
-<app-base-modal title="Cargar comprobante con IA" width="w-[1120px]" (closeModal)="cerrar.emit()">
+<app-base-modal title="Cargar comprobante con IA" width="w-[1120px]" (closeModal)="pedirCierre()">
   @if (!lectura()) {
     <div class="cc-subir">
       <p class="cc-ayuda">
@@ -6,8 +6,26 @@
       </p>
       @if (leyendo()) {
         <div class="cc-leyendo">Leyendo el documento… puede tardar unos segundos.</div>
+      } @else if (camaraAbierta()) {
+        <div class="cc-camara">
+          @if (camaras().length > 1) {
+            <select class="abril-field-input cc-camara-sel" [ngModel]="camaraId" (ngModelChange)="cambiarCamara($event)">
+              @for (c of camaras(); track c.deviceId; let i = $index) {
+                <option [value]="c.deviceId">{{ c.label || 'Cámara ' + (i + 1) }}</option>
+              }
+            </select>
+          }
+          <video #video class="cc-video" playsinline muted></video>
+          @if (camaraError()) { <p class="cc-error">{{ camaraError() }}</p> }
+          <p class="cc-nota">Pon el documento plano, bien iluminado y que ocupe todo el cuadro.</p>
+          <div class="cc-camara-acciones">
+            <button type="button" class="lb-btn" (click)="capturar()" [disabled]="!!camaraError()">Capturar y leer</button>
+            <button type="button" class="lb-btn cc-sec" (click)="cerrarCamara()">Cancelar</button>
+          </div>
+        </div>
       } @else {
-        <label class="lb-btn cc-boton-archivo">
+        <button type="button" class="lb-btn" (click)="abrirCamara()">Escanear con cámara</button>
+        <label class="lb-btn cc-sec cc-boton-archivo">
           Elegir PDF o foto
           <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic" capture="environment" (change)="onArchivo($event)" hidden />
         </label>
@@ -42,6 +60,7 @@
       <div class="abril-field">
         <label class="abril-field-label">Fecha de emisión</label>
         <input class="abril-field-input" type="date" [(ngModel)]="cab.fechaEmision" />
+      @if (avisoFecha) { <p class="cc-aviso aviso">{{ avisoFecha }}</p> }
       </div>
     </div>
 
@@ -180,13 +199,13 @@
 
   <div class="cc-footer">
     @if (lectura()) {
-      <button type="button" class="lb-btn ghost" (click)="otroArchivo()">Subir otro archivo</button>
+      <button type="button" class="lb-btn ghost" (click)="otroArchivo()">Escanear o subir otro</button>
       <span class="cc-pendiente">{{ pendiente }}</span>
       <button type="button" class="lb-btn" [disabled]="!!pendiente || guardando()" (click)="guardar()">
         {{ guardando() ? 'Guardando…' : 'Confirmar y registrar' }}
       </button>
     } @else {
-      <button type="button" class="lb-btn ghost" (click)="cerrar.emit()">Cancelar</button>
+      <button type="button" class="lb-btn ghost" (click)="pedirCierre()">Cancelar</button>
     }
   </div>
 </app-base-modal>

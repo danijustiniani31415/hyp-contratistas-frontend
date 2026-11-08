@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
@@ -60,6 +60,15 @@ const TIPOS = [
   { id: 'OTRO', nombre: 'Otro' },
 ];
 
+/** Dígito verificador del RUC peruano (módulo 11). */
+function rucValido(ruc: string): boolean {
+  if (!/^\d{11}$/.test(ruc)) return false;
+  const pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  const suma = pesos.reduce((s, p, i) => s + p * Number(ruc[i]), 0);
+  const r = 11 - (suma % 11);
+  return (r === 10 ? 0 : r === 11 ? 1 : r) === Number(ruc[10]);
+}
+
 const SIN_STOCK = ['NOTA_CREDITO', 'NOTA_DEBITO', 'GUIA_REMISION'];
 
 /**
@@ -73,7 +82,7 @@ const SIN_STOCK = ['NOTA_CREDITO', 'NOTA_DEBITO', 'GUIA_REMISION'];
   templateUrl: './comprobante-carga.html',
   styleUrl: './comprobante-carga.css',
 })
-export class ComprobanteCarga implements OnInit {
+export class ComprobanteCarga implements OnInit, OnDestroy {
   @Input() proveedores: Proveedor[] = [];
   @Input() almacenes: AlmacenCatalogoItem[] = [];
   @Input() productos: ProductoListItem[] = [];
@@ -81,6 +90,14 @@ export class ComprobanteCarga implements OnInit {
   @Output() guardado = new EventEmitter<void>();
 
   tipos = TIPOS;
+
+  // ── Escáner con cámara (webcam o celular) ────────────────────────────
+  @ViewChild('video') private videoRef?: ElementRef<HTMLVideoElement>;
+  camaraAbierta = signal(false);
+  camaraError = signal('');
+  camaras = signal<MediaDeviceInfo[]>([]);
+  camaraId = '';
+  private stream: MediaStream | null = null;
   leyendo = signal(false);
   guardando = signal(false);
   error = signal('');
@@ -124,12 +141,89 @@ export class ComprobanteCarga implements OnInit {
     this.catalogoService.listAlias().subscribe((a) => (this.alias = a));
   }
 
-  // ── Paso 1: subir y leer ─────────────────────────────────────────────
+  ngOnDestroy(): void {
+    this.detenerCamara();
+  }
+
+  // ── Paso 1: subir o escanear, y leer ─────────────────────────────────
+  async abrirCamara(deviceId?: string): Promise<void> {
+    this.error.set('');
+    this.camaraError.set('');
+    if (!navigator.mediaDevices?.getUserMedia) {
+      this.error.set('Este navegador no permite usar la cámara (requiere https o localhost).');
+      return;
+    }
+    this.detenerCamara();
+    this.camaraAbierta.set(true);
+    this.cdr.detectChanges();
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        video: deviceId
+          ? { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+          : { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false,
+      });
+      const video = this.videoRef!.nativeElement;
+      video.srcObject = this.stream;
+      await video.play();
+      this.camaraId = this.stream.getVideoTracks()[0]?.getSettings().deviceId ?? '';
+      // Las etiquetas de las cámaras solo están disponibles después de conceder el permiso.
+      const todas = await navigator.mediaDevices.enumerateDevices();
+      this.camaras.set(todas.filter((d) => d.kind === 'videoinput'));
+    } catch (err: any) {
+      this.camaraError.set(
+        err?.name === 'NotAllowedError'
+          ? 'Se denegó el permiso de cámara. Habilítalo en el navegador e intenta de nuevo.'
+          : err?.name === 'NotFoundError'
+            ? 'No se encontró ninguna cámara.'
+            : err?.name === 'NotReadableError'
+              ? 'La cámara está siendo usada por otra aplicación.'
+              : 'No se pudo abrir la cámara.',
+      );
+    }
+    this.cdr.detectChanges();
+  }
+
+  cambiarCamara(id: string): void {
+    this.abrirCamara(id);
+  }
+
+  cerrarCamara(): void {
+    this.detenerCamara();
+    this.camaraAbierta.set(false);
+  }
+
+  private detenerCamara(): void {
+    this.stream?.getTracks().forEach((t) => t.stop());
+    this.stream = null;
+  }
+
+  /** Congela el cuadro actual, lo convierte en JPEG y lo manda por el mismo camino que un archivo subido. */
+  async capturar(): Promise<void> {
+    const video = this.videoRef?.nativeElement;
+    if (!video || video.readyState < 2 || !video.videoWidth) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d')!.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.92));
+    if (!blob) {
+      this.camaraError.set('No se pudo capturar la imagen. Intenta de nuevo.');
+      return;
+    }
+    this.cerrarCamara();
+    this.procesar(new File([blob], `escaneo-${Date.now()}.jpg`, { type: 'image/jpeg' }));
+  }
+
   onArchivo(ev: Event): void {
     const input = ev.target as HTMLInputElement;
     const archivo = input.files?.[0];
     input.value = '';
     if (!archivo) return;
+    this.procesar(archivo);
+  }
+
+  private procesar(archivo: File): void {
     if (archivo.size > 15 * 1024 * 1024) {
       this.error.set('El archivo pesa más de 15 MB.');
       return;
@@ -299,8 +393,14 @@ export class ComprobanteCarga implements OnInit {
   /** Lo que falta para poder guardar; vacío = listo. */
   get pendiente(): string {
     if (this.duplicado) return 'Este comprobante ya fue cargado.';
+    // Solo bloquea lo que no se corrige en pantalla: el comprobante está a nombre de otro cliente.
+    if (this.advertencias().some((a) => a.nivel.toUpperCase() === 'ERROR' && a.mensaje.startsWith('El comprobante está a nombre')))
+      return 'No se puede registrar: el comprobante está a nombre de otro RUC. Si la lectura salió mal, vuelve a escanear.';
+    if (!this.cab.proveedorId && this.cab.proveedorRuc.trim() && !rucValido(this.cab.proveedorRuc.trim()))
+      return 'El RUC del proveedor no es válido: corrígelo según el documento.';
     if (!this.cab.serie.trim() || !this.cab.numero.trim()) return 'Falta la serie o el número.';
     if (!this.cab.fechaEmision) return 'Falta la fecha de emisión.';
+    if (this.cab.fechaEmision > this.hoy()) return 'La fecha de emisión está en el futuro: corrígela.';
     if (!this.filas().length) return 'No hay líneas.';
     if (!this.cab.proveedorId && !this.cab.proveedorRazon.trim()) return 'Falta el proveedor.';
     if (this.cab.moneda === 'USD' && !(this.cab.tipoCambio && this.cab.tipoCambio > 0)) return 'Indica el tipo de cambio (dólares).';
@@ -312,6 +412,21 @@ export class ComprobanteCarga implements OnInit {
     const sinColor = this.filas().find((f) => f.destino === 'STOCK' && this.producto(f)?.requiereColor && !f.color);
     if (sinColor) return `Falta el color de «${sinColor.descripcion}».`;
     return '';
+  }
+
+  private hoy(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  /** Aviso en vivo (también cuando la fecha se corrige a mano): una fecha vieja suele ser un año mal leído. */
+  get avisoFecha(): string {
+    const f = this.cab.fechaEmision;
+    if (!f) return '';
+    if (f > this.hoy()) return 'La fecha está en el futuro.';
+    const limite = new Date();
+    limite.setDate(limite.getDate() - 90);
+    return new Date(f + 'T00:00:00') < limite ? 'La fecha tiene más de 3 meses: confírmala en el documento.' : '';
   }
 
   // ── Guardar ──────────────────────────────────────────────────────────
@@ -368,6 +483,22 @@ export class ComprobanteCarga implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  /** Cierra el modal; si ya hay una lectura sin guardar pide confirmación para no perderla por un clic de más. */
+  async pedirCierre(): Promise<void> {
+    if (this.lectura() && !this.guardando()) {
+      const r = await Swal.fire({
+        icon: 'question',
+        title: '¿Salir sin guardar?',
+        text: 'Se descartará lo leído de este comprobante.',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, salir',
+        cancelButtonText: 'Seguir aquí',
+      });
+      if (!r.isConfirmed) return;
+    }
+    this.cerrar.emit();
   }
 
   otroArchivo(): void {
