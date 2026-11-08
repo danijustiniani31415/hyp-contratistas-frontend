@@ -119,6 +119,12 @@ export interface CpeDetalle {
   tieneCdr: boolean;
   /** Beta o Produccion: a qué SUNAT apunta el servidor. */
   ambiente: string;
+  emisorRuc: string;
+  emisorRazonSocial: string;
+  emisorDireccion: string | null;
+  xmlHashFirma: string | null;
+  totalEnLetras: string;
+  contratoCodigo: string | null;
   items: CpeItemDetalle[];
   avisos: CpeAviso[];
 }

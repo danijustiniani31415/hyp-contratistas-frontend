@@ -182,6 +182,20 @@
             <label class="abril-field-label">Guía de remisión (ej. T001-123)</label>
             <input class="abril-field-input" [(ngModel)]="form.guiaRef" />
           </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Proyecto (opcional)</label>
+            <select class="abril-field-input" [ngModel]="form.proyectoId" (ngModelChange)="onProyecto($event)">
+              <option [ngValue]="null">Sin proyecto</option>
+              @for (p of proyectos(); track p.id) { <option [ngValue]="p.id">{{ p.nombre }}</option> }
+            </select>
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Contrato (opcional)</label>
+            <select class="abril-field-input" [(ngModel)]="form.contratoId" [disabled]="!form.proyectoId">
+              <option [ngValue]="null">Sin contrato</option>
+              @for (c of contratos(); track c.id) { <option [ngValue]="c.id">{{ c.codigo }}{{ c.descripcion ? ' · ' + c.descripcion : '' }}</option> }
+            </select>
+          </div>
           <div class="abril-field fe-ancho2">
             <label class="abril-field-label">Observación</label>
             <input class="abril-field-input" [(ngModel)]="form.observacion" />
@@ -330,6 +344,7 @@
         <span class="fe-meta">Emisión {{ d.fechaEmision | slice:0:10 }}</span>
       </div>
 
+      @if (d.contratoCodigo) { <p class="fe-meta">Contrato: <b>{{ d.contratoCodigo }}</b></p> }
       <p class="fe-meta"><b>{{ d.clienteRazon }}</b> · {{ d.clienteNumeroDoc }}@if (d.clienteDireccion) { · {{ d.clienteDireccion }} }</p>
       @if (d.motivoDescripcion) { <p class="fe-meta">Motivo {{ d.motivoCodigo }}: {{ d.motivoDescripcion }}</p> }
 
@@ -377,6 +392,7 @@
       }
 
       <div class="fe-acciones">
+        <button type="button" class="lb-btn ghost" (click)="imprimir(d)">PDF</button>
         @if (d.tieneXml) { <button type="button" class="lb-btn ghost" (click)="descargar(d, 'xml')">XML firmado</button> }
         @if (d.tieneCdr) { <button type="button" class="lb-btn ghost" (click)="descargar(d, 'cdr')">Constancia (CDR)</button> }
 

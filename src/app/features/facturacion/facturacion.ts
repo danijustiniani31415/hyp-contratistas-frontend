@@ -15,6 +15,9 @@ import {
   CpeSerie,
   FacturacionService,
 } from '../../core/services/facturacion.service';
+import { generarPdfCpe } from './cpe-pdf';
+import { PersonasService } from '../../core/services/personas.service';
+import { Contrato, PedidosService } from '../../core/services/pedidos.service';
 import { DocumentosService } from '../../core/services/documentos.service';
 import { LbAuthService } from '../../core/services/lb-auth.service';
 
@@ -189,12 +192,26 @@ export class Facturacion implements OnInit {
   constructor(
     private service: FacturacionService,
     private documentosService: DocumentosService,
+    private personasService: PersonasService,
+    private pedidosService: PedidosService,
     public authService: LbAuthService,
     private cdr: ChangeDetectorRef,
   ) {}
 
+  proyectos = signal<{ id: number; nombre: string }[]>([]);
+  contratos = signal<Contrato[]>([]);
+
   ngOnInit(): void {
     this.cargar();
+    this.personasService.getCatalogos().subscribe((c) => this.proyectos.set(c.proyectos.map((p: any) => ({ id: p.id, nombre: p.nombre }))));
+  }
+
+  /** Al elegir proyecto se cargan sus contratos; el contrato es opcional y permite luego cruzar facturación con costos. */
+  onProyecto(id: number | null): void {
+    this.form.proyectoId = id;
+    this.form.contratoId = null;
+    this.contratos.set([]);
+    if (id) this.pedidosService.listContratos(id).subscribe((c) => this.contratos.set(c.filter((x) => x.activo)));
   }
 
   // ── Lista ───────────────────────────────────────────────────────────────
@@ -249,6 +266,7 @@ export class Facturacion implements OnInit {
     this.error.set('');
     this.avisosForm.set([]);
     this.rucAviso.set('');
+    this.contratos.set([]);
     this.showForm.set(true);
   }
 
@@ -298,6 +316,8 @@ export class Facturacion implements OnInit {
     this.avisosForm.set(d.avisos);
     this.rucAviso.set('');
     this.showDetalle.set(false);
+    this.contratos.set([]);
+    if (d.proyectoId) this.pedidosService.listContratos(d.proyectoId).subscribe((c) => this.contratos.set(c.filter((x) => x.activo)));
     this.showForm.set(true);
   }
 
@@ -644,6 +664,10 @@ export class Facturacion implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  imprimir(d: CpeDetalle): void {
+    generarPdfCpe(d);
   }
 
   descargar(d: CpeDetalle, que: 'xml' | 'cdr'): void {
