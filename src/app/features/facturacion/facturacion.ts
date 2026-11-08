@@ -350,6 +350,9 @@ export class Facturacion implements OnInit {
     this.refIdentificador = d.identificador;
     this.error.set('');
     this.avisosForm.set([]);
+    this.rucAviso.set('');
+    this.rucBuscando.set(false);
+    this.contratos.set([]);
     this.showDetalle.set(false);
     this.showForm.set(true);
   }
