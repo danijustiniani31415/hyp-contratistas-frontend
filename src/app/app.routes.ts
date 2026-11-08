@@ -371,6 +371,14 @@ export const routes: Routes = [
           import('./features/guias-remision/guias-remision')
           .then(m => m.GuiasRemision)
       },
+      {
+        path: 'facturacion',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['FACTURACION_VER', 'FACTURACION_CREAR', 'FACTURACION_EMITIR'] },
+        loadComponent: () =>
+          import('./features/facturacion/facturacion')
+          .then(m => m.Facturacion)
+      },
     ]
   },
 

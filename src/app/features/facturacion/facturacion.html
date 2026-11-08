@@ -1,0 +1,453 @@
+<div class="lb-page lb-page-fill">
+  <app-lb-page-header titulo="Facturación electrónica" subtitulo="Facturas y notas de crédito o débito emitidas a SUNAT">
+    <div class="lb-search">
+      <input
+        type="text"
+        placeholder="Buscar por cliente, RUC o número..."
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput()"
+      />
+    </div>
+    <select class="abril-field-input fe-filtro" [(ngModel)]="tipoFiltro" (ngModelChange)="onFiltroChange()">
+      <option value="">Todos los tipos</option>
+      @for (t of tipos; track t.id) { <option [value]="t.id">{{ t.nombre }}</option> }
+    </select>
+    <select class="abril-field-input fe-filtro" [(ngModel)]="estadoFiltro" (ngModelChange)="onFiltroChange()">
+      <option value="">Todos los estados</option>
+      @for (e of estados; track e.id) { <option [value]="e.id">{{ e.nombre }}</option> }
+    </select>
+    @if (puedeEmitir) {
+      <button class="lb-btn ghost" (click)="abrirSeries()">Series y correlativos</button>
+    }
+  </app-lb-page-header>
+
+  <div class="lb-table-wrap">
+    <table class="lb-table">
+      <thead>
+        <tr>
+          <th>Comprobante</th>
+          <th>Tipo</th>
+          <th>Cliente</th>
+          <th>Fecha</th>
+          <th class="fe-der">Total</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="6" class="lb-empty">Cargando...</td></tr>
+        } @else if (!comprobantes().length) {
+          <tr><td colspan="6" class="lb-empty">Sin comprobantes todavía.</td></tr>
+        } @else {
+          @for (c of comprobantes(); track c.id) {
+            <tr class="fe-row" (click)="verDetalle(c.id)">
+              <td><b>{{ c.identificador }}</b></td>
+              <td>{{ nombreTipo(c.tipoDocumento) }}</td>
+              <td>{{ c.clienteRazon }}<span class="fe-sub">{{ c.clienteNumeroDoc }}</span></td>
+              <td>{{ c.fechaEmision | slice:0:10 }}</td>
+              <td class="fe-der">{{ c.moneda === 'USD' ? 'US$' : 'S/' }} {{ c.total | number:'1.2-2' }}</td>
+              <td><span class="fe-estado" [class]="c.estado.toLowerCase()">{{ nombreEstado(c.estado) }}</span></td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <app-paginator [totalRecords]="totalRecords()" [currentPage]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+  }
+
+  @if (puedeCrear) {
+    <app-fab label="Nueva factura" (clicked)="abrirNuevo()" />
+  }
+
+  <!-- ───────── Formulario: factura o nota ───────── -->
+  @if (showForm()) {
+    <app-base-modal
+      [title]="esNota ? (form.tipoDocumento === '07' ? 'Nota de crédito' : 'Nota de débito') : (editandoId ? 'Editar factura' : 'Nueva factura')"
+      width="w-[1120px]"
+      [preventCloseWhenDirty]="true"
+      (closeModal)="cerrarForm()"
+    >
+      @if (esNota) {
+        <p class="fe-ref">Modifica el comprobante <b>{{ refIdentificador }}</b> · cliente y moneda tomados de él.</p>
+      }
+
+      @if (avisosForm().length) {
+        <div class="fe-avisos">
+          @for (a of avisosForm(); track $index) {
+            <div class="fe-aviso" [class.error]="esError(a)">{{ a.mensaje }}</div>
+          }
+        </div>
+      }
+
+      <h3 class="fe-seccion">Cliente</h3>
+      <div class="fe-grid">
+        @if (!esNota) {
+          <div class="abril-field">
+            <label class="abril-field-label">Tipo de operación</label>
+            <select class="abril-field-input" [(ngModel)]="form.tipoOperacion" (ngModelChange)="cambioTipoOperacion()">
+              <option value="0101">Venta interna</option>
+              <option value="0200">Exportación</option>
+            </select>
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Documento del cliente</label>
+            <select class="abril-field-input" [(ngModel)]="form.clienteTipoDoc" [disabled]="!esExportacion">
+              @for (t of tiposDocCliente; track t.id) {
+                @if (esExportacion ? t.id !== '6' : t.id === '6') { <option [value]="t.id">{{ t.nombre }}</option> }
+              }
+            </select>
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">{{ form.clienteTipoDoc === '6' ? 'RUC' : 'Número de documento' }}</label>
+            <input class="abril-field-input" maxlength="15" [(ngModel)]="form.clienteNumeroDoc" (ngModelChange)="onRucCliente($event)" placeholder="11 dígitos: busca en SUNAT" />
+          </div>
+          <div class="abril-field fe-ancho2">
+            <label class="abril-field-label">Razón social</label>
+            <input class="abril-field-input" [(ngModel)]="form.clienteRazon" />
+          </div>
+          <div class="abril-field fe-ancho2">
+            <label class="abril-field-label">Dirección</label>
+            <input class="abril-field-input" [(ngModel)]="form.clienteDireccion" />
+          </div>
+          @if (esExportacion) {
+            <div class="abril-field">
+              <label class="abril-field-label">País (2 letras)</label>
+              <input class="abril-field-input" maxlength="2" [(ngModel)]="form.clientePais" placeholder="CL, US..." />
+            </div>
+          }
+        } @else {
+          <div class="abril-field fe-ancho2">
+            <label class="abril-field-label">Cliente</label>
+            <input class="abril-field-input" [value]="form.clienteRazon + ' · ' + form.clienteNumeroDoc" disabled />
+          </div>
+        }
+      </div>
+      @if (rucBuscando()) { <p class="fe-hint">Consultando SUNAT...</p> }
+      @else if (rucAviso()) { <p class="fe-hint">{{ rucAviso() }}</p> }
+
+      <h3 class="fe-seccion">Documento</h3>
+      <div class="fe-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Fecha de emisión</label>
+          <input type="date" class="abril-field-input" [(ngModel)]="form.fechaEmision" />
+        </div>
+        @if (!esNota) {
+          <div class="abril-field">
+            <label class="abril-field-label">Vencimiento</label>
+            <input type="date" class="abril-field-input" [(ngModel)]="form.fechaVencimiento" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Moneda</label>
+            <select class="abril-field-input" [(ngModel)]="form.moneda">
+              <option value="PEN">Soles</option>
+              <option value="USD">Dólares</option>
+            </select>
+          </div>
+          @if (form.moneda === 'USD') {
+            <div class="abril-field">
+              <label class="abril-field-label">Tipo de cambio</label>
+              <input type="number" step="0.001" min="0" class="abril-field-input" [(ngModel)]="form.tipoCambio" />
+            </div>
+          }
+        }
+        <div class="abril-field">
+          <label class="abril-field-label">Serie (opcional)</label>
+          <input class="abril-field-input" maxlength="4" [(ngModel)]="form.serie" placeholder="Automática" />
+        </div>
+        @if (esNota) {
+          <div class="abril-field">
+            <label class="abril-field-label">Motivo</label>
+            <select class="abril-field-input" [(ngModel)]="form.motivoCodigo">
+              <option [ngValue]="null">Elige el motivo</option>
+              @for (m of motivos; track m.id) { <option [value]="m.id">{{ m.id }} · {{ m.nombre }}</option> }
+            </select>
+          </div>
+          <div class="abril-field fe-ancho2">
+            <label class="abril-field-label">Descripción del motivo</label>
+            <input class="abril-field-input" [(ngModel)]="form.motivoDescripcion" />
+          </div>
+        }
+      </div>
+
+      @if (!esNota) {
+        <div class="fe-grid">
+          <div class="abril-field">
+            <label class="abril-field-label">Orden de compra del cliente</label>
+            <input class="abril-field-input" [(ngModel)]="form.ordenCompraRef" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Guía de remisión (ej. T001-123)</label>
+            <input class="abril-field-input" [(ngModel)]="form.guiaRef" />
+          </div>
+          <div class="abril-field fe-ancho2">
+            <label class="abril-field-label">Observación</label>
+            <input class="abril-field-input" [(ngModel)]="form.observacion" />
+          </div>
+        </div>
+      }
+
+      <h3 class="fe-seccion">
+        Líneas
+        <label class="fe-check"><input type="checkbox" [(ngModel)]="form.preciosIncluyenIgv" /> Los precios ya incluyen IGV</label>
+      </h3>
+      <div class="fe-tabla-wrap">
+        <table class="fe-lineas">
+          <thead>
+            <tr>
+              <th>Descripción</th>
+              <th>Unidad</th>
+              <th>Cant.</th>
+              <th>Precio unit.</th>
+              <th>Desc.</th>
+              <th>IGV</th>
+              <th class="fe-der">Valor venta</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (it of form.items; track $index) {
+              <tr>
+                <td><input class="abril-field-input fe-desc" [(ngModel)]="it.descripcion" /></td>
+                <td>
+                  <select class="abril-field-input" [(ngModel)]="it.unidadMedida">
+                    @for (u of unidades; track u.id) { <option [value]="u.id">{{ u.nombre }}</option> }
+                  </select>
+                </td>
+                <td><input type="number" min="0" step="any" class="abril-field-input fe-num" [(ngModel)]="it.cantidad" /></td>
+                <td><input type="number" min="0" step="any" class="abril-field-input fe-num" [(ngModel)]="it.precioUnitario" /></td>
+                <td><input type="number" min="0" step="any" class="abril-field-input fe-num" [(ngModel)]="it.descuento" /></td>
+                <td>
+                  <select class="abril-field-input" [(ngModel)]="it.afectacionIgv" [disabled]="esExportacion">
+                    @for (a of afectaciones; track a.id) {
+                      @if (esExportacion ? a.id === '40' : a.id !== '40') { <option [value]="a.id">{{ a.nombre }}</option> }
+                    }
+                  </select>
+                </td>
+                <td class="fe-der">{{ linea(it).valorVenta | number:'1.2-2' }}</td>
+                <td><button type="button" class="fe-quitar" (click)="quitarLinea($index)" [disabled]="form.items.length === 1" title="Quitar línea">✕</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <button type="button" class="lb-btn ghost" (click)="agregarLinea()">+ Agregar línea</button>
+
+      <div class="fe-totales">
+        @if (resumen.gravado) { <div><span>Gravado</span><b>{{ resumen.gravado | number:'1.2-2' }}</b></div> }
+        @if (resumen.exonerado) { <div><span>Exonerado</span><b>{{ resumen.exonerado | number:'1.2-2' }}</b></div> }
+        @if (resumen.inafecto) { <div><span>Inafecto</span><b>{{ resumen.inafecto | number:'1.2-2' }}</b></div> }
+        @if (resumen.exportacion) { <div><span>Exportación</span><b>{{ resumen.exportacion | number:'1.2-2' }}</b></div> }
+        <div><span>IGV 18%</span><b>{{ resumen.igv | number:'1.2-2' }}</b></div>
+        <div class="fe-total"><span>Total {{ form.moneda === 'USD' ? 'US$' : 'S/' }}</span><b>{{ resumen.total | number:'1.2-2' }}</b></div>
+      </div>
+
+      @if (!esNota) {
+        <h3 class="fe-seccion">Pago</h3>
+        <div class="fe-grid">
+          <div class="abril-field">
+            <label class="abril-field-label">Forma de pago</label>
+            <select class="abril-field-input" [(ngModel)]="form.formaPago" (ngModelChange)="cambioFormaPago()">
+              <option value="CONTADO">Contado</option>
+              <option value="CREDITO">Crédito</option>
+            </select>
+          </div>
+          <div class="abril-field fe-fila-check">
+            <label class="fe-check">
+              <input type="checkbox" [ngModel]="!!form.detraccionCodigo" (ngModelChange)="cambioDetraccion($event)" />
+              Sujeta a detracción
+            </label>
+          </div>
+        </div>
+
+        @if (form.formaPago === 'CREDITO') {
+          <div class="fe-cuotas">
+            <p class="fe-hint">Monto a pagar a crédito: <b>{{ montoCredito | number:'1.2-2' }}</b> · cuotas sumadas: <b [class.fe-mal]="totalCuotas !== montoCredito">{{ totalCuotas | number:'1.2-2' }}</b></p>
+            @for (c of form.cuotas; track $index) {
+              <div class="fe-cuota">
+                <span>Cuota {{ $index + 1 }}</span>
+                <input type="number" min="0" step="any" class="abril-field-input fe-num" [(ngModel)]="c.monto" />
+                <input type="date" class="abril-field-input" [(ngModel)]="c.fecha" />
+                <button type="button" class="fe-quitar" (click)="quitarCuota($index)">✕</button>
+              </div>
+            }
+            <div class="fe-cuota-acciones">
+              <button type="button" class="lb-btn ghost" (click)="cuotaUnica(30)">Una cuota a 30 días</button>
+              <button type="button" class="lb-btn ghost" (click)="cuotaUnica(15)">Una cuota a 15 días</button>
+              <button type="button" class="lb-btn ghost" (click)="agregarCuota()">+ Cuota</button>
+            </div>
+          </div>
+        }
+
+        @if (form.detraccionCodigo) {
+          <div class="fe-grid">
+            <div class="abril-field fe-ancho2">
+              <label class="abril-field-label">Bien o servicio (catálogo 54)</label>
+              <select class="abril-field-input" [ngModel]="form.detraccionCodigo" (ngModelChange)="elegirDetraccion($event)">
+                @for (d of detracciones; track d.codigo) { <option [value]="d.codigo">{{ d.codigo }} · {{ d.nombre }}</option> }
+              </select>
+            </div>
+            <div class="abril-field">
+              <label class="abril-field-label">Porcentaje</label>
+              <input type="number" min="0" step="0.01" class="abril-field-input" [(ngModel)]="form.detraccionPorcentaje" />
+            </div>
+            <div class="abril-field">
+              <label class="abril-field-label">Cuenta de detracciones (Banco de la Nación)</label>
+              <input class="abril-field-input" [(ngModel)]="form.detraccionCuenta" />
+            </div>
+          </div>
+          <p class="fe-hint">Depósito estimado: <b>S/ {{ resumen.detraccion ?? 0 | number:'1.0-0' }}</b>. Confirma el código y el porcentaje en los anexos vigentes de SUNAT.</p>
+        }
+      }
+
+      @if (error()) { <p class="fe-error">{{ error() }}</p> }
+
+      <div class="fe-acciones">
+        <button type="button" class="lb-btn ghost" (click)="cerrarForm()">Cancelar</button>
+        <button type="button" class="lb-btn ghost" (click)="guardar(false)" [disabled]="guardando()">Guardar borrador</button>
+        @if (puedeEmitir) {
+          <button type="button" class="lb-btn" (click)="guardar(true)" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando...' : 'Guardar y emitir' }}
+          </button>
+        }
+      </div>
+    </app-base-modal>
+  }
+
+  <!-- ───────── Detalle ───────── -->
+  @if (showDetalle() && detalle(); as d) {
+    <app-base-modal [title]="nombreTipo(d.tipoDocumento) + ' ' + d.identificador" width="w-[900px]" (closeModal)="cerrarDetalle()">
+      <div class="fe-banner" [class.prod]="d.ambiente === 'Produccion'">
+        @if (d.ambiente === 'Produccion') { Ambiente de PRODUCCIÓN: los comprobantes emitidos tienen valor tributario. }
+        @else { Ambiente de PRUEBAS (Beta de SUNAT): los comprobantes emitidos no tienen valor tributario. }
+      </div>
+
+      <div class="fe-cab">
+        <span class="fe-estado" [class]="d.estado.toLowerCase()">{{ nombreEstado(d.estado) }}</span>
+        @if (d.refIdentificador) { <span class="fe-meta">Modifica {{ d.refIdentificador }}</span> }
+        <span class="fe-meta">Emisión {{ d.fechaEmision | slice:0:10 }}</span>
+      </div>
+
+      <p class="fe-meta"><b>{{ d.clienteRazon }}</b> · {{ d.clienteNumeroDoc }}@if (d.clienteDireccion) { · {{ d.clienteDireccion }} }</p>
+      @if (d.motivoDescripcion) { <p class="fe-meta">Motivo {{ d.motivoCodigo }}: {{ d.motivoDescripcion }}</p> }
+
+      @if (d.avisos.length) {
+        <div class="fe-avisos">
+          @for (a of d.avisos; track $index) { <div class="fe-aviso" [class.error]="esError(a)">{{ a.mensaje }}</div> }
+        </div>
+      }
+
+      @if (d.sunatDescripcion) {
+        <div class="fe-sunat" [class.mal]="d.estado === 'RECHAZADO'">
+          <b>SUNAT{{ d.sunatCodigo ? ' (' + d.sunatCodigo + ')' : '' }}:</b> {{ d.sunatDescripcion }}
+        </div>
+      }
+      @if (d.bajaMotivo) { <p class="fe-meta">Baja: {{ d.bajaMotivo }}@if (d.bajaTicket) { · ticket {{ d.bajaTicket }} }</p> }
+
+      <table class="lb-table fe-det-tabla">
+        <thead><tr><th>Descripción</th><th class="fe-der">Cant.</th><th class="fe-der">Valor unit.</th><th class="fe-der">Valor venta</th><th class="fe-der">IGV</th></tr></thead>
+        <tbody>
+          @for (i of d.items; track $index) {
+            <tr>
+              <td>{{ i.descripcion }}<span class="fe-sub">{{ i.unidadMedida }}</span></td>
+              <td class="fe-der">{{ i.cantidad | number:'1.0-4' }}</td>
+              <td class="fe-der">{{ i.valorUnitario | number:'1.2-4' }}</td>
+              <td class="fe-der">{{ i.valorVenta | number:'1.2-2' }}</td>
+              <td class="fe-der">{{ i.igv | number:'1.2-2' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <div class="fe-totales">
+        @if (d.totalGravado) { <div><span>Gravado</span><b>{{ d.totalGravado | number:'1.2-2' }}</b></div> }
+        @if (d.totalExonerado) { <div><span>Exonerado</span><b>{{ d.totalExonerado | number:'1.2-2' }}</b></div> }
+        @if (d.totalInafecto) { <div><span>Inafecto</span><b>{{ d.totalInafecto | number:'1.2-2' }}</b></div> }
+        @if (d.totalExportacion) { <div><span>Exportación</span><b>{{ d.totalExportacion | number:'1.2-2' }}</b></div> }
+        <div><span>IGV</span><b>{{ d.igv | number:'1.2-2' }}</b></div>
+        <div class="fe-total"><span>Total {{ d.moneda === 'USD' ? 'US$' : 'S/' }}</span><b>{{ d.total | number:'1.2-2' }}</b></div>
+      </div>
+      @if (d.detraccionMonto) { <p class="fe-meta">Detracción {{ d.detraccionCodigo }} ({{ d.detraccionPorcentaje }}%): depositar S/ {{ d.detraccionMonto | number:'1.0-0' }} en {{ d.detraccionCuenta }}.</p> }
+      @if (d.formaPago === 'CREDITO') {
+        <p class="fe-meta">Crédito:
+          @for (c of d.cuotas; track $index) { <span class="fe-cuota-tag">{{ c.monto | number:'1.2-2' }} el {{ c.fecha | slice:0:10 }}</span> }
+        </p>
+      }
+
+      <div class="fe-acciones">
+        @if (d.tieneXml) { <button type="button" class="lb-btn ghost" (click)="descargar(d, 'xml')">XML firmado</button> }
+        @if (d.tieneCdr) { <button type="button" class="lb-btn ghost" (click)="descargar(d, 'cdr')">Constancia (CDR)</button> }
+
+        @if ((d.estado === 'BORRADOR' || d.estado === 'RECHAZADO') && puedeCrear) {
+          <button type="button" class="lb-btn ghost" (click)="abrirEditar(d)">Editar</button>
+        }
+        @if (d.estado === 'BORRADOR' && !d.numero && puedeCrear) {
+          <button type="button" class="lb-btn ghost" (click)="eliminar(d)">Eliminar</button>
+        }
+        @if ((d.estado === 'BORRADOR' || d.estado === 'RECHAZADO') && puedeEmitir) {
+          <button type="button" class="lb-btn" (click)="emitir(d)" [disabled]="trabajando()">{{ d.estado === 'RECHAZADO' ? 'Reenviar a SUNAT' : 'Emitir a SUNAT' }}</button>
+        }
+
+        @if ((d.estado === 'ACEPTADO' || d.estado === 'ACEPTADO_OBS') && puedeCrear) {
+          @if (d.tipoDocumento === '01') {
+            <button type="button" class="lb-btn ghost" (click)="abrirNota(d, '07')">Nota de crédito</button>
+            <button type="button" class="lb-btn ghost" (click)="abrirNota(d, '08')">Nota de débito</button>
+          }
+        }
+        @if ((d.estado === 'ACEPTADO' || d.estado === 'ACEPTADO_OBS') && puedeEmitir) {
+          <button type="button" class="lb-btn ghost" (click)="darDeBaja(d)" [disabled]="trabajando()">Dar de baja</button>
+        }
+        @if (d.estado === 'BAJA_PENDIENTE' && puedeEmitir) {
+          <button type="button" class="lb-btn" (click)="consultarBaja(d)" [disabled]="trabajando()">Consultar baja</button>
+        }
+      </div>
+    </app-base-modal>
+  }
+
+  <!-- ───────── Series y correlativos ───────── -->
+  @if (showSeries()) {
+    <app-base-modal title="Series y correlativos" width="w-[680px]" (closeModal)="showSeries.set(false)">
+      <p class="fe-hint">
+        El <b>último número</b> es el último que ya se emitió por cualquier medio; el sistema continúa desde el siguiente.
+        Antes de emitir de verdad, ponlo igual al último comprobante real de cada serie. No puede bajar de lo ya emitido aquí.
+      </p>
+      <table class="lb-table">
+        <thead><tr><th>Tipo</th><th>Serie</th><th>Último número</th><th>Activa</th><th></th></tr></thead>
+        <tbody>
+          @for (s of series(); track s.id) {
+            <tr>
+              <td>{{ nombreTipo(s.tipoDocumento) }}</td>
+              <td><b>{{ s.serie }}</b></td>
+              <td><input type="number" min="0" class="abril-field-input fe-num" [(ngModel)]="s.ultimoNumero" /></td>
+              <td><input type="checkbox" [(ngModel)]="s.activa" /></td>
+              <td><button type="button" class="lb-btn ghost" (click)="guardarSerie(s)">Guardar</button></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <h3 class="fe-seccion">Nueva serie</h3>
+      <div class="fe-grid">
+        <div class="abril-field">
+          <label class="abril-field-label">Tipo</label>
+          <select class="abril-field-input" [(ngModel)]="serieNueva.tipoDocumento">
+            @for (t of tipos; track t.id) { <option [value]="t.id">{{ t.nombre }}</option> }
+          </select>
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Serie (empieza con F)</label>
+          <input class="abril-field-input" maxlength="4" [(ngModel)]="serieNueva.serie" placeholder="F002" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Último número</label>
+          <input type="number" min="0" class="abril-field-input" [(ngModel)]="serieNueva.ultimoNumero" />
+        </div>
+      </div>
+      @if (errorSeries()) { <p class="fe-error">{{ errorSeries() }}</p> }
+      <div class="fe-acciones">
+        <button type="button" class="lb-btn" (click)="guardarSerie(serieNueva)" [disabled]="!serieNueva.serie">Crear serie</button>
+      </div>
+    </app-base-modal>
+  }
+</div>

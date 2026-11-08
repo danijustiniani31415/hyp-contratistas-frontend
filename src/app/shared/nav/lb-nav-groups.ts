@@ -49,6 +49,14 @@ export const LB_NAV_GROUPS: LbNavGroup[] = [
     ],
   },
   {
+    key: 'finanzas',
+    label: 'Finanzas',
+    icon: 'ti-receipt',
+    items: [
+      { label: 'Facturación', route: '/facturacion', icon: 'ti-file-invoice', permisos: ['FACTURACION_VER', 'FACTURACION_CREAR', 'FACTURACION_EMITIR'] },
+    ],
+  },
+  {
     key: 'configuracion',
     label: 'Configuración',
     icon: 'ti-settings',
