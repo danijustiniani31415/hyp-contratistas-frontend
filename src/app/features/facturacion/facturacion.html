@@ -399,6 +399,9 @@
         @if ((d.estado === 'BORRADOR' || d.estado === 'RECHAZADO') && puedeCrear) {
           <button type="button" class="lb-btn ghost" (click)="abrirEditar(d)">Editar</button>
         }
+        @if (d.estado === 'RECHAZADO' && d.numero && puedeEmitir) {
+          <button type="button" class="lb-btn ghost" (click)="pedirNumeroNuevo(d)" [disabled]="trabajando()">Pedir número nuevo</button>
+        }
         @if (d.estado === 'BORRADOR' && !d.numero && puedeCrear) {
           <button type="button" class="lb-btn ghost" (click)="eliminar(d)">Eliminar</button>
         }

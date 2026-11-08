@@ -605,6 +605,31 @@ export class Facturacion implements OnInit {
     });
   }
 
+  async pedirNumeroNuevo(d: CpeDetalle): Promise<void> {
+    const r = await Swal.fire({
+      icon: 'question',
+      title: '¿Pedir un número nuevo?',
+      html: `SUNAT rechazó <b>${d.identificador}</b>. Se liberará ese número y, al reenviar, el comprobante tomará el <b>siguiente libre</b>.<br><br>Úsalo cuando el rechazo sea porque el número ya existe (otro sistema usa la misma serie). Si fue por un dato mal puesto, mejor corrige y reenvía con el mismo número.`,
+      showCancelButton: true,
+      confirmButtonText: 'Pedir número nuevo',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!r.isConfirmed) return;
+    this.trabajando.set(true);
+    this.service.numeroNuevo(d.id).subscribe({
+      next: (res) => {
+        this.trabajando.set(false);
+        this.cargar();
+        this.abrirDetalleDe(res);
+      },
+      error: (err) => {
+        this.trabajando.set(false);
+        Swal.fire({ icon: 'error', title: 'No se pudo', text: this.msg(err, 'Intenta de nuevo.') });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   async eliminar(d: CpeDetalle): Promise<void> {
     const r = await Swal.fire({
       icon: 'question',

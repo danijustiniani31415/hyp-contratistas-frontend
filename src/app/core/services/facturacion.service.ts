@@ -202,6 +202,11 @@ export class FacturacionService {
     return this.http.post<CpeDetalle>(`${this.apiUrl}/${id}/emitir`, {}, { headers: this.headers() });
   }
 
+  /** Libera el número de un comprobante rechazado: al reenviarlo toma el siguiente correlativo libre. */
+  numeroNuevo(id: number): Observable<CpeDetalle> {
+    return this.http.post<CpeDetalle>(`${this.apiUrl}/${id}/numero-nuevo`, {}, { headers: this.headers() });
+  }
+
   baja(id: number, motivo: string): Observable<CpeDetalle> {
     return this.http.post<CpeDetalle>(`${this.apiUrl}/${id}/baja`, { motivo }, { headers: this.headers() });
   }
