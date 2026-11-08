@@ -12,6 +12,8 @@
 .fe-estado.borrador { border-color: #b45309; color: #b45309; }
 .fe-estado.aceptado, .fe-estado.aceptado_obs { border-color: #1b6b3a; color: #1b6b3a; }
 .fe-estado.rechazado { border-color: #c0392b; color: #c0392b; }
+.fe-estado.por_enviar, .fe-estado.baja_solicitada { border-color: #b45309; color: #b45309; }
+.fe-estado.en_resumen { border-color: #1e3a5f; color: #1e3a5f; }
 .fe-estado.baja_pendiente { border-color: #1e3a5f; color: #1e3a5f; }
 .fe-estado.anulado { border-color: #64748b; color: #64748b; }
 
@@ -63,5 +65,6 @@
 .fe-cab { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
 .fe-meta { font-size: 12.5px; color: #64748b; margin: 4px 0; }
 .fe-sunat { font-size: 12.5px; padding: 8px 12px; border-radius: 6px; margin: 8px 0; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+.fe-sunat.info { background: #e0f2fe; color: #075985; border-color: #bae6fd; }
 .fe-sunat.mal { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
 .fe-det-tabla { margin: 10px 0; }

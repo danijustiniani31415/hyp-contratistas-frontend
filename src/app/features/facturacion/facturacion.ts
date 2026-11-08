@@ -12,6 +12,8 @@ import {
   CpeDetalle,
   CpeItem,
   CpeListItem,
+  CpePendienteResumen,
+  CpeResumen,
   CpeSerie,
   FacturacionService,
 } from '../../core/services/facturacion.service';
@@ -23,15 +25,19 @@ import { LbAuthService } from '../../core/services/lb-auth.service';
 
 const ESTADOS = [
   { id: 'BORRADOR', nombre: 'Borrador' },
+  { id: 'POR_ENVIAR', nombre: 'Por informar (boleta)' },
+  { id: 'EN_RESUMEN', nombre: 'En resumen' },
   { id: 'ACEPTADO', nombre: 'Aceptado' },
   { id: 'ACEPTADO_OBS', nombre: 'Aceptado con observaciones' },
   { id: 'RECHAZADO', nombre: 'Rechazado' },
+  { id: 'BAJA_SOLICITADA', nombre: 'Anulación solicitada' },
   { id: 'BAJA_PENDIENTE', nombre: 'Baja pendiente' },
   { id: 'ANULADO', nombre: 'Anulado' },
 ];
 
 const TIPOS = [
   { id: '01', nombre: 'Factura' },
+  { id: '03', nombre: 'Boleta' },
   { id: '07', nombre: 'Nota de crédito' },
   { id: '08', nombre: 'Nota de débito' },
 ];
@@ -155,6 +161,7 @@ export class Facturacion implements OnInit {
   readonly afectaciones = AFECTACIONES;
   readonly detracciones = DETRACCIONES;
   readonly tiposDocCliente = TIPOS_DOC_CLIENTE;
+  readonly tiposDocBoleta = TIPOS_DOC_CLIENTE.filter((t) => ['1', '0', '6'].includes(t.id));
 
   comprobantes = signal<CpeListItem[]>([]);
   loading = signal(false);
@@ -182,6 +189,12 @@ export class Facturacion implements OnInit {
   showDetalle = signal(false);
   detalle = signal<CpeDetalle | null>(null);
   trabajando = signal(false);
+
+  // Resumen diario de boletas
+  showResumen = signal(false);
+  pendientesResumen = signal<CpePendienteResumen[]>([]);
+  resumenes = signal<CpeResumen[]>([]);
+  enviandoResumen = signal(false);
 
   // Series
   showSeries = signal(false);
@@ -361,6 +374,28 @@ export class Facturacion implements OnInit {
     this.showForm.set(false);
   }
 
+  get esBoleta(): boolean {
+    return this.form.tipoDocumento === '03';
+  }
+
+  /** Boleta: se emite en soles, al contado, sin detracción; el cliente puede ser DNI o sin documento. */
+  abrirNuevaBoleta(): void {
+    this.abrirNuevo();
+    this.form.tipoDocumento = '03';
+    this.form.clienteTipoDoc = '1';
+    this.form.moneda = 'PEN';
+  }
+
+  cambioDocBoleta(): void {
+    this.rucAviso.set('');
+    if (this.form.clienteTipoDoc === '0') {
+      this.form.clienteNumeroDoc = '';
+      if (!this.form.clienteRazon) this.form.clienteRazon = 'CLIENTES VARIOS';
+    } else if (this.form.clienteRazon === 'CLIENTES VARIOS') {
+      this.form.clienteRazon = '';
+    }
+  }
+
   get esNota(): boolean {
     return this.form.tipoDocumento === '07' || this.form.tipoDocumento === '08';
   }
@@ -462,6 +497,32 @@ export class Facturacion implements OnInit {
     const d = DETRACCIONES.find((x) => x.codigo === codigo);
     this.form.detraccionCodigo = codigo;
     if (d) this.form.detraccionPorcentaje = d.porcentaje;
+  }
+
+  /** DNI de una boleta: se busca el nombre (trabajadores registrados o RENIEC). */
+  onDniCliente(dni: string): void {
+    if (this.form.clienteTipoDoc !== '1' || !/^\d{8}$/.test(dni)) return;
+    this.rucBuscando.set(true);
+    this.rucAviso.set('');
+    this.documentosService.buscarDni(dni).subscribe({
+      next: (p) => {
+        const nombre = `${(p.apellidos ?? '').trim()} ${(p.nombres ?? '').trim()}`.trim().toUpperCase();
+        if (nombre) this.form.clienteRazon = nombre;
+        this.rucBuscando.set(false);
+        this.rucAviso.set(nombre ? 'Nombre obtenido por DNI.' : 'No se encontró el DNI: escribe el nombre.');
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.rucBuscando.set(false);
+        this.rucAviso.set('No se pudo consultar el DNI: escribe el nombre.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  onDocumentoCliente(valor: string): void {
+    if (this.form.clienteTipoDoc === '1') this.onDniCliente(valor);
+    else this.onRucCliente(valor);
   }
 
   onRucCliente(ruc: string): void {
@@ -573,10 +634,13 @@ export class Facturacion implements OnInit {
 
   async emitir(d: CpeDetalle): Promise<void> {
     const prod = d.ambiente === 'Produccion';
+    const boleta = d.tipoDocumento === '03';
     const r = await Swal.fire({
       icon: prod ? 'warning' : 'question',
       title: prod ? 'Emitir comprobante REAL' : 'Emitir en ambiente de pruebas',
-      html: prod
+      html: boleta
+        ? `Se emitirá la <b>boleta</b> por <b>${d.moneda} ${d.total.toFixed(2)}</b>. No se envía sola a SUNAT: se informa en el <b>resumen diario</b> de su fecha.${prod ? '<br><br>Tiene valor tributario cuando SUNAT acepta el resumen.' : ''}`
+        : prod
         ? `Se emitirá <b>${this.nombreTipo(d.tipoDocumento)}</b> por <b>${d.moneda} ${d.total.toFixed(2)}</b> a <b>${d.clienteRazon}</b>.<br><br>Tiene valor tributario y <b>no se puede borrar</b>: solo se anula con baja o nota de crédito.`
         : `Se enviará al <b>Beta de SUNAT</b> (pruebas, sin valor tributario).<br>${this.nombreTipo(d.tipoDocumento)} por ${d.moneda} ${d.total.toFixed(2)}.`,
       showCancelButton: true,
@@ -590,6 +654,10 @@ export class Facturacion implements OnInit {
         this.trabajando.set(false);
         this.cargar();
         this.abrirDetalleDe(res);
+        if (res.estado === 'POR_ENVIAR') {
+          Swal.fire({ icon: 'success', title: `${res.identificador} emitida`, text: 'Quedó pendiente: se informa a SUNAT en el resumen diario.' });
+          return;
+        }
         const ok = res.estado === 'ACEPTADO' || res.estado === 'ACEPTADO_OBS';
         Swal.fire({
           icon: ok ? 'success' : 'error',
@@ -700,6 +768,68 @@ export class Facturacion implements OnInit {
 
   descargar(d: CpeDetalle, que: 'xml' | 'cdr'): void {
     this.service.descargar(d.id, que, d.identificador);
+  }
+
+  // ── Resumen diario de boletas ───────────────────────────────────────────
+  abrirResumen(): void {
+    this.showResumen.set(true);
+    this.cargarResumen();
+  }
+
+  cargarResumen(): void {
+    this.service.pendientesResumen().subscribe((p) => this.pendientesResumen.set(p));
+    this.service.resumenes().subscribe((r) => this.resumenes.set(r));
+  }
+
+  async enviarResumen(p: CpePendienteResumen): Promise<void> {
+    const r = await Swal.fire({
+      icon: 'question',
+      title: `Enviar resumen del ${p.fecha.slice(0, 10).split('-').reverse().join('/')}`,
+      html: `${p.cantidad} boleta(s) por S/ ${p.total.toFixed(2)}${p.bajas ? ` y ${p.bajas} anulación(es)` : ''}.<br>SUNAT lo procesa en unos minutos y responde con un ticket.`,
+      showCancelButton: true,
+      confirmButtonText: 'Enviar resumen',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!r.isConfirmed) return;
+    this.enviandoResumen.set(true);
+    this.service.enviarResumen(p.fecha.slice(0, 10)).subscribe({
+      next: (res) => {
+        this.enviandoResumen.set(false);
+        this.cargarResumen();
+        this.cargar();
+        const ok = res.estado === 'ACEPTADO';
+        Swal.fire({
+          icon: ok ? 'success' : res.estado === 'ENVIADO' ? 'info' : 'error',
+          title: ok ? `${res.identificador} aceptado` : res.estado === 'ENVIADO' ? `${res.identificador} enviado` : `${res.identificador} rechazado`,
+          text: ok ? '' : res.estado === 'ENVIADO' ? 'SUNAT aún lo está procesando. Usa "Consultar" en unos minutos.' : (res.sunatDescripcion ?? ''),
+        });
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.enviandoResumen.set(false);
+        Swal.fire({ icon: 'error', title: 'No se pudo enviar', text: this.msg(err, 'Intenta de nuevo.') });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  consultarResumen(r: CpeResumen): void {
+    this.enviandoResumen.set(true);
+    this.service.consultarResumen(r.id).subscribe({
+      next: (res) => {
+        this.enviandoResumen.set(false);
+        this.cargarResumen();
+        this.cargar();
+        if (res.estado === 'ENVIADO')
+          Swal.fire({ icon: 'info', title: 'SUNAT aún no responde', text: res.sunatDescripcion ?? 'Vuelve a consultar en unos minutos.' });
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.enviandoResumen.set(false);
+        Swal.fire({ icon: 'error', title: 'No se pudo consultar', text: this.msg(err, 'Intenta de nuevo.') });
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   // ── Series ──────────────────────────────────────────────────────────────

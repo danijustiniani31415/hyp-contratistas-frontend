@@ -156,6 +156,27 @@ export interface CpeSerie {
   activa: boolean;
 }
 
+export interface CpeResumen {
+  id: number;
+  identificador: string;
+  fechaReferencia: string;
+  /** ENVIADO, ACEPTADO o RECHAZADO. */
+  estado: string;
+  ticket: string | null;
+  cantidad: number;
+  sunatCodigo: string | null;
+  sunatDescripcion: string | null;
+  creadoEn: string;
+}
+
+/** Boletas emitidas de una fecha que todavía no se informaron a SUNAT. */
+export interface CpePendienteResumen {
+  fecha: string;
+  cantidad: number;
+  bajas: number;
+  total: number;
+}
+
 export interface CpeSerieUpsert {
   tipoDocumento: string;
   serie: string;
@@ -225,6 +246,22 @@ export class FacturacionService {
       a.click();
       URL.revokeObjectURL(url);
     });
+  }
+
+  pendientesResumen(): Observable<CpePendienteResumen[]> {
+    return this.http.get<CpePendienteResumen[]>(`${this.apiUrl}/resumenes/pendientes`, { headers: this.headers() });
+  }
+
+  resumenes(): Observable<CpeResumen[]> {
+    return this.http.get<CpeResumen[]>(`${this.apiUrl}/resumenes`, { headers: this.headers() });
+  }
+
+  enviarResumen(fecha: string): Observable<CpeResumen> {
+    return this.http.post<CpeResumen>(`${this.apiUrl}/resumenes/enviar?fecha=${fecha}`, {}, { headers: this.headers() });
+  }
+
+  consultarResumen(id: number): Observable<CpeResumen> {
+    return this.http.post<CpeResumen>(`${this.apiUrl}/resumenes/${id}/consultar`, {}, { headers: this.headers() });
   }
 
   series(): Observable<CpeSerie[]> {

@@ -17,7 +17,11 @@
       @for (e of estados; track e.id) { <option [value]="e.id">{{ e.nombre }}</option> }
     </select>
     @if (puedeEmitir) {
+      <button class="lb-btn ghost" (click)="abrirResumen()">Resumen diario</button>
       <button class="lb-btn ghost" (click)="abrirSeries()">Series y correlativos</button>
+    }
+    @if (puedeCrear) {
+      <button class="lb-btn ghost" (click)="abrirNuevaBoleta()">Nueva boleta</button>
     }
   </app-lb-page-header>
 
@@ -65,7 +69,7 @@
   <!-- ───────── Formulario: factura o nota ───────── -->
   @if (showForm()) {
     <app-base-modal
-      [title]="esNota ? (form.tipoDocumento === '07' ? 'Nota de crédito' : 'Nota de débito') : (editandoId ? 'Editar factura' : 'Nueva factura')"
+      [title]="esNota ? (form.tipoDocumento === '07' ? 'Nota de crédito' : 'Nota de débito') : esBoleta ? (editandoId ? 'Editar boleta' : 'Nueva boleta') : (editandoId ? 'Editar factura' : 'Nueva factura')"
       width="w-[1120px]"
       [preventCloseWhenDirty]="true"
       (closeModal)="cerrarForm()"
@@ -84,7 +88,24 @@
 
       <h3 class="fe-seccion">Cliente</h3>
       <div class="fe-grid">
-        @if (!esNota) {
+        @if (esBoleta) {
+          <div class="abril-field">
+            <label class="abril-field-label">Documento del cliente</label>
+            <select class="abril-field-input" [(ngModel)]="form.clienteTipoDoc" (ngModelChange)="cambioDocBoleta()">
+              @for (t of tiposDocBoleta; track t.id) { <option [value]="t.id">{{ t.id === '0' ? 'Sin documento (hasta S/ 700)' : t.nombre }}</option> }
+            </select>
+          </div>
+          @if (form.clienteTipoDoc !== '0') {
+            <div class="abril-field">
+              <label class="abril-field-label">{{ form.clienteTipoDoc === '1' ? 'DNI' : 'RUC' }}</label>
+              <input class="abril-field-input" maxlength="11" [(ngModel)]="form.clienteNumeroDoc" (ngModelChange)="onDocumentoCliente($event)" placeholder="Busca el nombre al completar" />
+            </div>
+          }
+          <div class="abril-field fe-ancho2">
+            <label class="abril-field-label">{{ form.clienteTipoDoc === '0' ? 'Nombre (opcional)' : 'Nombre o razón social' }}</label>
+            <input class="abril-field-input" [(ngModel)]="form.clienteRazon" />
+          </div>
+        } @else if (!esNota) {
           <div class="abril-field">
             <label class="abril-field-label">Tipo de operación</label>
             <select class="abril-field-input" [(ngModel)]="form.tipoOperacion" (ngModelChange)="cambioTipoOperacion()">
@@ -134,7 +155,7 @@
           <label class="abril-field-label">Fecha de emisión</label>
           <input type="date" class="abril-field-input" [(ngModel)]="form.fechaEmision" />
         </div>
-        @if (!esNota) {
+        @if (!esNota && !esBoleta) {
           <div class="abril-field">
             <label class="abril-field-label">Vencimiento</label>
             <input type="date" class="abril-field-input" [(ngModel)]="form.fechaVencimiento" />
@@ -258,7 +279,7 @@
         <div class="fe-total"><span>Total {{ form.moneda === 'USD' ? 'US$' : 'S/' }}</span><b>{{ resumen.total | number:'1.2-2' }}</b></div>
       </div>
 
-      @if (!esNota) {
+      @if (!esNota && !esBoleta) {
         <h3 class="fe-seccion">Pago</h3>
         <div class="fe-grid">
           <div class="abril-field">
@@ -354,6 +375,12 @@
         </div>
       }
 
+      @if (d.estado === 'POR_ENVIAR') {
+        <div class="fe-sunat info">Boleta emitida. Se informa a SUNAT en el <b>resumen diario</b> de su fecha (botón "Resumen diario" de la lista).</div>
+      }
+      @if (d.estado === 'BAJA_SOLICITADA') {
+        <div class="fe-sunat info">Anulación solicitada: irá en el próximo resumen diario de la fecha de la boleta.</div>
+      }
       @if (d.sunatDescripcion) {
         <div class="fe-sunat" [class.mal]="d.estado === 'RECHAZADO'">
           <b>SUNAT{{ d.sunatCodigo ? ' (' + d.sunatCodigo + ')' : '' }}:</b> {{ d.sunatDescripcion }}
@@ -406,7 +433,7 @@
           <button type="button" class="lb-btn ghost" (click)="eliminar(d)">Eliminar</button>
         }
         @if ((d.estado === 'BORRADOR' || d.estado === 'RECHAZADO') && puedeEmitir) {
-          <button type="button" class="lb-btn" (click)="emitir(d)" [disabled]="trabajando()">{{ d.estado === 'RECHAZADO' ? 'Reenviar a SUNAT' : 'Emitir a SUNAT' }}</button>
+          <button type="button" class="lb-btn" (click)="emitir(d)" [disabled]="trabajando()">{{ d.tipoDocumento === '03' ? 'Emitir boleta' : d.estado === 'RECHAZADO' ? 'Reenviar a SUNAT' : 'Emitir a SUNAT' }}</button>
         }
 
         @if ((d.estado === 'ACEPTADO' || d.estado === 'ACEPTADO_OBS') && puedeCrear) {
@@ -422,6 +449,56 @@
           <button type="button" class="lb-btn" (click)="consultarBaja(d)" [disabled]="trabajando()">Consultar baja</button>
         }
       </div>
+    </app-base-modal>
+  }
+
+  <!-- ───────── Resumen diario de boletas ───────── -->
+  @if (showResumen()) {
+    <app-base-modal title="Resumen diario de boletas" width="w-[820px]" (closeModal)="showResumen.set(false)">
+      <p class="fe-hint">Las boletas no se envían una por una: se agrupan por fecha en un resumen. Envía el de cada día; SUNAT responde con un ticket y las boletas quedan aceptadas.</p>
+
+      <h3 class="fe-seccion">Pendientes de informar</h3>
+      @if (!pendientesResumen().length) {
+        <p class="fe-hint">No hay boletas pendientes.</p>
+      } @else {
+        <table class="lb-table">
+          <thead><tr><th>Fecha</th><th class="fe-der">Boletas</th><th class="fe-der">Anulaciones</th><th class="fe-der">Total</th><th></th></tr></thead>
+          <tbody>
+            @for (p of pendientesResumen(); track p.fecha) {
+              <tr>
+                <td>{{ p.fecha | slice:0:10 }}</td>
+                <td class="fe-der">{{ p.cantidad }}</td>
+                <td class="fe-der">{{ p.bajas }}</td>
+                <td class="fe-der">S/ {{ p.total | number:'1.2-2' }}</td>
+                <td><button type="button" class="lb-btn" (click)="enviarResumen(p)" [disabled]="enviandoResumen()">Enviar resumen</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+      <h3 class="fe-seccion">Resúmenes enviados</h3>
+      @if (!resumenes().length) {
+        <p class="fe-hint">Todavía no se envió ningún resumen.</p>
+      } @else {
+        <table class="lb-table">
+          <thead><tr><th>Resumen</th><th>Fecha</th><th class="fe-der">Boletas</th><th>Estado</th><th></th></tr></thead>
+          <tbody>
+            @for (r of resumenes(); track r.id) {
+              <tr>
+                <td><b>{{ r.identificador }}</b><span class="fe-sub">{{ r.ticket ? 'ticket ' + r.ticket : '' }}</span></td>
+                <td>{{ r.fechaReferencia | slice:0:10 }}</td>
+                <td class="fe-der">{{ r.cantidad }}</td>
+                <td>
+                  <span class="fe-estado" [class]="r.estado === 'ENVIADO' ? 'baja_pendiente' : r.estado.toLowerCase()">{{ r.estado === 'ENVIADO' ? 'En proceso' : r.estado === 'ACEPTADO' ? 'Aceptado' : 'Rechazado' }}</span>
+                  @if (r.sunatDescripcion) { <span class="fe-sub">{{ r.sunatDescripcion }}</span> }
+                </td>
+                <td>@if (r.estado === 'ENVIADO') { <button type="button" class="lb-btn ghost" (click)="consultarResumen(r)" [disabled]="enviandoResumen()">Consultar</button> }</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
     </app-base-modal>
   }
 

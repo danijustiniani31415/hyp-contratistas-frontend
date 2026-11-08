@@ -5,6 +5,7 @@ import { CpeDetalle } from '../../core/services/facturacion.service';
 
 const TITULOS: Record<string, string> = {
   '01': 'FACTURA ELECTRÓNICA',
+  '03': 'BOLETA DE VENTA ELECTRÓNICA',
   '07': 'NOTA DE CRÉDITO ELECTRÓNICA',
   '08': 'NOTA DE DÉBITO ELECTRÓNICA',
 };
