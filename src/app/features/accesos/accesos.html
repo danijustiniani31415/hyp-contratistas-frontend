@@ -1,0 +1,116 @@
+<div class="lb-page">
+  <app-lb-page-header titulo="Accesos" subtitulo="Quién entra al sistema y a qué. Da un rol a una persona y elige si ve toda la empresa o solo un proyecto.">
+    <div class="lb-search">
+      <input type="text" placeholder="Buscar persona, correo, rol o proyecto..." [ngModel]="search()" (ngModelChange)="search.set($event)" />
+    </div>
+    <button class="lb-btn" (click)="abrir()">Dar acceso</button>
+  </app-lb-page-header>
+
+  <div class="lb-table-wrap">
+    <table class="lb-table">
+      <thead>
+        <tr>
+          <th>Persona</th>
+          <th>Correo de acceso</th>
+          <th>Roles y alcance</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="5" class="lb-empty">Cargando...</td></tr>
+        } @else if (!filtrados().length) {
+          <tr><td colspan="5" class="lb-empty">Sin usuarios para mostrar.</td></tr>
+        } @else {
+          @for (u of filtrados(); track u.personaId) {
+            <tr>
+              <td>{{ u.nombre }} <span class="ac-sub">{{ u.documento }}</span></td>
+              <td>{{ u.emailLogin }}</td>
+              <td>
+                @if (!u.asignaciones.length) {
+                  <span class="ac-vacio">Sin roles: no puede entrar a nada</span>
+                }
+                @for (a of u.asignaciones; track a.id) {
+                  <span class="ac-chip" [class.proyecto]="a.proyectoId">
+                    {{ chip(a) }}
+                    <button type="button" class="ac-x" title="Quitar este acceso" (click)="quitar(u, a)">×</button>
+                  </span>
+                }
+              </td>
+              <td><span class="ac-estado" [class.inactivo]="u.estado !== 'ACTIVO'">{{ u.estado === 'ACTIVO' ? 'Activo' : u.estado }}</span></td>
+              <td><button class="lb-btn ghost" (click)="abrir(u.personaId)">Agregar rol</button></td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (showModal()) {
+    <app-base-modal title="Dar acceso" width="w-[640px]" (closeModal)="showModal.set(false)">
+      <div class="ac-form">
+        <p class="ac-paso">1. ¿A quién?</p>
+        @if (personaElegida; as p) {
+          <div class="ac-elegida">
+            <b>{{ p.nombreCompleto }}</b> <span class="ac-sub">{{ p.numeroDocumento }}</span>
+            <button type="button" class="ac-cambiar" (click)="personaId = null">Cambiar</button>
+          </div>
+        } @else {
+          <div class="abril-field">
+            <label class="abril-field-label">Buscar por nombre o DNI</label>
+            <input class="abril-field-input" type="text" [(ngModel)]="personaBusqueda" placeholder="Buscar por nombre o DNI..." />
+          </div>
+          <div class="ac-lista">
+            @for (p of personasFiltradas; track p.id) {
+              <button type="button" class="ac-opcion" (click)="elegirPersona(p)">
+                {{ p.nombreCompleto }} <span class="ac-sub">{{ p.numeroDocumento }} · {{ p.tieneUsuario ? 'ya tiene usuario' : 'sin usuario todavía' }}</span>
+              </button>
+            }
+            @if (!personasFiltradas.length) { <p class="ac-sub">No encuentro a esa persona. Primero créala en Personas.</p> }
+          </div>
+        }
+
+        @if (necesitaCorreo) {
+          <div class="abril-field">
+            <label class="abril-field-label">Correo con el que va a entrar</label>
+            <input class="abril-field-input" type="email" [(ngModel)]="email" placeholder="nombre@empresa.com" />
+          </div>
+          <p class="ac-hint">Se le enviará un correo para activar su cuenta y elegir su contraseña.</p>
+        }
+
+        <p class="ac-paso">2. ¿Qué puesto tiene?</p>
+        <div class="abril-field">
+          <label class="abril-field-label">Rol</label>
+          <select class="abril-field-input" [(ngModel)]="rolId" (ngModelChange)="onRolChange()">
+            <option [ngValue]="null">Selecciona un rol</option>
+            @for (r of roles(); track r.id) { <option [ngValue]="r.id">{{ r.nombre }}</option> }
+          </select>
+        </div>
+        @if (rolElegido?.descripcion) { <p class="ac-hint">{{ rolElegido?.descripcion }}</p> }
+
+        <p class="ac-paso">3. ¿Dónde?</p>
+        <div class="ac-alcance">
+          <label><input type="radio" name="alcance" value="TODA" [(ngModel)]="alcance" /> Toda la empresa</label>
+          <label><input type="radio" name="alcance" value="PROYECTO" [(ngModel)]="alcance" /> Solo un proyecto</label>
+        </div>
+        @if (alcance === 'PROYECTO') {
+          <div class="abril-field">
+            <label class="abril-field-label">Proyecto</label>
+            <select class="abril-field-input" [(ngModel)]="proyectoId">
+              <option [ngValue]="null">Selecciona un proyecto</option>
+              @for (p of proyectos(); track p.id) { <option [ngValue]="p.id">{{ p.nombre }}</option> }
+            </select>
+          </div>
+          <p class="ac-hint">Solo verá lo de ese proyecto (por ejemplo, su almacén y sus pedidos).</p>
+        }
+
+        @if (error()) { <p class="ac-error">{{ error() }}</p> }
+        <div class="ac-acciones">
+          <button class="lb-btn ghost" (click)="showModal.set(false)">Cancelar</button>
+          <button class="lb-btn" [disabled]="!puedeGuardar || guardando()" (click)="guardar()">{{ guardando() ? 'Guardando...' : 'Guardar acceso' }}</button>
+        </div>
+      </div>
+    </app-base-modal>
+  }
+</div>

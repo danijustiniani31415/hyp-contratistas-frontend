@@ -1,0 +1,25 @@
+/* .lb-page/.lb-table/.lb-btn vienen de styles.css; campos con .abril-field*. */
+.ac-sub { font-size: 11px; color: #94a3b8; margin-left: 6px; }
+.ac-vacio { font-size: 12px; color: #b45309; }
+.ac-chip {
+  display: inline-flex; align-items: center; gap: 6px; margin: 2px 6px 2px 0; padding: 3px 4px 3px 10px;
+  border-radius: 20px; font-size: 12px; font-weight: 600; background: #e0f2fe; color: #075985;
+}
+.ac-chip.proyecto { background: #ecfdf5; color: #065f46; }
+.ac-x { border: none; background: transparent; cursor: pointer; font-size: 15px; line-height: 1; color: inherit; opacity: 0.6; padding: 0 6px; }
+.ac-x:hover { opacity: 1; }
+.ac-estado { font-size: 10.5px; font-weight: 700; border-radius: 20px; padding: 3px 10px; border: 1.5px solid #1b6b3a; color: #1b6b3a; }
+.ac-estado.inactivo { border-color: #94a3b8; color: #64748b; }
+
+.ac-form { display: flex; flex-direction: column; gap: 6px; }
+.ac-paso { font-size: 13px; font-weight: 700; color: #39536b; margin: 12px 0 2px; }
+.ac-hint { font-size: 11.5px; color: #64748b; margin: 0 0 4px; }
+.ac-error { color: #c0392b; font-size: 12.5px; margin: 6px 0 0; }
+.ac-elegida { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 7px; background: #f8fafc; }
+.ac-cambiar { margin-left: auto; border: none; background: none; color: var(--color-abril-standard, #0f6e56); cursor: pointer; font-weight: 600; font-size: 12px; }
+.ac-lista { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow: auto; }
+.ac-opcion { text-align: left; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 7px; background: #fff; cursor: pointer; font-size: 13px; }
+.ac-opcion:hover { background: #f1f5f9; }
+.ac-alcance { display: flex; gap: 22px; font-size: 13px; margin-bottom: 4px; }
+.ac-alcance label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.ac-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0; }

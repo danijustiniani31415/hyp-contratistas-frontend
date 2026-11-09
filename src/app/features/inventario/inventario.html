@@ -1,0 +1,164 @@
+<div class="lb-page">
+  <app-lb-page-header titulo="Kardex e Inventario" subtitulo="Kardex valorizado por producto y toma de inventario físico con ajuste al stock.">
+    <button class="lb-btn" [class.ghost]="tab() !== 'kardex'" (click)="tab.set('kardex')">Kardex valorizado</button>
+    <button class="lb-btn" [class.ghost]="tab() !== 'inventario'" (click)="tab.set('inventario')">Toma de inventario</button>
+  </app-lb-page-header>
+
+  <!-- ───────── Kardex valorizado ───────── -->
+  @if (tab() === 'kardex') {
+    <div class="iv-filtros">
+      <app-search-select [options]="almacenes()" displayField="nombre" [(value)]="kAlmacen" label="Almacén" placeholder="Selecciona almacén" />
+      <app-search-select [options]="productos()" displayField="nombre" [(value)]="kProducto" label="Producto" placeholder="Buscar producto..." />
+      <div class="abril-field"><label class="abril-field-label">Talla</label><input class="abril-field-input" [(ngModel)]="kTalla" placeholder="Opcional" /></div>
+      <div class="abril-field"><label class="abril-field-label">Color</label><input class="abril-field-input" [(ngModel)]="kColor" placeholder="Opcional" /></div>
+      <div class="abril-field"><label class="abril-field-label">Desde</label><input class="abril-field-input" type="date" [(ngModel)]="kDesde" /></div>
+      <div class="abril-field"><label class="abril-field-label">Hasta</label><input class="abril-field-input" type="date" [(ngModel)]="kHasta" /></div>
+      <button class="lb-btn" [disabled]="kCargando()" (click)="verKardex()">{{ kCargando() ? 'Cargando...' : 'Ver kardex' }}</button>
+    </div>
+    @if (kError()) { <p class="iv-error">{{ kError() }}</p> }
+
+    @if (kardex(); as k) {
+      <div class="iv-resumen">
+        <div><span>Producto</span><b>{{ k.productoNombre }}</b></div>
+        <div><span>Almacén</span><b>{{ k.almacenNombre }}</b></div>
+        <div><span>Saldo inicial</span><b>{{ k.saldoInicialCantidad | number:'1.0-2' }} {{ k.unidadMedida }} · S/ {{ k.saldoInicialTotal | number:'1.2-2' }}</b></div>
+        <div><span>Entradas</span><b>S/ {{ k.totalEntradas | number:'1.2-2' }}</b></div>
+        <div><span>Salidas</span><b>S/ {{ k.totalSalidas | number:'1.2-2' }}</b></div>
+        <div><span>Saldo final</span><b>{{ k.saldoFinalCantidad | number:'1.0-2' }} {{ k.unidadMedida }} · S/ {{ k.saldoFinalTotal | number:'1.2-2' }}</b></div>
+        <button class="lb-btn ghost" (click)="exportarCsv()">Exportar a Excel (CSV)</button>
+      </div>
+      <div class="lb-table-wrap">
+        <table class="lb-table">
+          <thead>
+            <tr>
+              <th rowspan="2">Fecha</th><th rowspan="2">Movimiento</th>
+              <th colspan="3" class="iv-grupo">Entradas</th><th colspan="3" class="iv-grupo">Salidas</th><th colspan="3" class="iv-grupo">Saldo</th>
+            </tr>
+            <tr>
+              <th class="iv-der">Cant.</th><th class="iv-der">C. unit.</th><th class="iv-der">Total</th>
+              <th class="iv-der">Cant.</th><th class="iv-der">C. unit.</th><th class="iv-der">Total</th>
+              <th class="iv-der">Cant.</th><th class="iv-der">C. unit.</th><th class="iv-der">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (!k.lineas.length) {
+              <tr><td colspan="11" class="lb-empty">Sin movimientos en este periodo.</td></tr>
+            }
+            @for (l of k.lineas; track $index) {
+              <tr>
+                <td>{{ l.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>{{ nombreTipo(l.tipo, l.referencia) }}</td>
+                <td class="iv-der">{{ l.entradaCantidad ? (l.entradaCantidad | number:'1.0-2') : '' }}</td>
+                <td class="iv-der">{{ l.entradaCantidad ? (l.entradaCostoUnitario | number:'1.2-4') : '' }}</td>
+                <td class="iv-der">{{ l.entradaCantidad ? (l.entradaTotal | number:'1.2-2') : '' }}</td>
+                <td class="iv-der">{{ l.salidaCantidad ? (l.salidaCantidad | number:'1.0-2') : '' }}</td>
+                <td class="iv-der">{{ l.salidaCantidad ? (l.salidaCostoUnitario | number:'1.2-4') : '' }}</td>
+                <td class="iv-der">{{ l.salidaCantidad ? (l.salidaTotal | number:'1.2-2') : '' }}</td>
+                <td class="iv-der"><b>{{ l.saldoCantidad | number:'1.0-2' }}</b></td>
+                <td class="iv-der">{{ l.saldoCostoUnitario | number:'1.2-4' }}</td>
+                <td class="iv-der"><b>{{ l.saldoTotal | number:'1.2-2' }}</b></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="lb-empty">Elige un almacén y un producto para ver su kardex.</p>
+    }
+  }
+
+  <!-- ───────── Toma de inventario ───────── -->
+  @if (tab() === 'inventario') {
+    <div class="iv-filtros">
+      <app-search-select [options]="almacenes()" displayField="nombre" [(value)]="invAlmacenFiltro" label="Almacén" placeholder="Todos los almacenes" (valueChange)="cargarInventarios()" />
+      @if (puedeAjustar) { <button class="lb-btn" (click)="abrirNuevo()">Nuevo conteo</button> }
+    </div>
+    <div class="lb-table-wrap">
+      <table class="lb-table">
+        <thead><tr><th>N°</th><th>Fecha</th><th>Almacén</th><th>Avance</th><th>Ajustes</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+          @if (!inventarios().length) { <tr><td colspan="7" class="lb-empty">Todavía no hay conteos.</td></tr> }
+          @for (i of inventarios(); track i.id) {
+            <tr>
+              <td>#{{ i.id }}</td>
+              <td>{{ i.fecha | date:'dd/MM/yyyy' }}</td>
+              <td>{{ i.almacenNombre }}</td>
+              <td>{{ i.contados }} / {{ i.totalItems }} contados</td>
+              <td>{{ i.estado === 'CERRADO' ? i.cantidadAjustes : '—' }}</td>
+              <td><span class="iv-estado" [ngClass]="i.estado.toLowerCase()">{{ i.estado === 'EN_CONTEO' ? 'En conteo' : i.estado === 'CERRADO' ? 'Cerrado' : 'Anulado' }}</span></td>
+              <td><button class="lb-btn ghost" (click)="abrir(i)">{{ i.estado === 'EN_CONTEO' ? 'Continuar' : 'Ver' }}</button></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (showNuevo()) {
+    <app-base-modal title="Nuevo conteo de inventario" width="w-[520px]" (closeModal)="showNuevo.set(false)">
+      <div class="iv-form">
+        <app-search-select [options]="almacenes()" displayField="nombre" [(value)]="nuevoAlmacen" label="Almacén a contar" placeholder="Selecciona almacén" />
+        <div class="abril-field"><label class="abril-field-label">Observación</label><input class="abril-field-input" [(ngModel)]="nuevaObs" placeholder="Ej.: inventario de cierre de mes" /></div>
+        <p class="iv-hint">Se toma una foto del stock actual para que lo contado se compare contra ella. Un almacén tiene un solo conteo abierto a la vez.</p>
+        <div class="iv-acciones">
+          <button class="lb-btn ghost" (click)="showNuevo.set(false)">Cancelar</button>
+          <button class="lb-btn" [disabled]="!nuevoAlmacen || guardando()" (click)="crear()">Abrir conteo</button>
+        </div>
+      </div>
+    </app-base-modal>
+  }
+
+  @if (detalle(); as d) {
+    <app-base-modal [title]="'Inventario #' + d.id + ' · ' + d.almacenNombre" width="w-[1100px]" (closeModal)="cerrarDetalle()">
+      <p class="iv-hint">{{ d.fecha | date:'dd/MM/yyyy' }} · {{ d.observacion || 'Sin observación' }} ·
+        <span class="iv-estado" [ngClass]="d.estado.toLowerCase()">{{ d.estado === 'EN_CONTEO' ? 'En conteo' : d.estado === 'CERRADO' ? 'Cerrado' : 'Anulado' }}</span></p>
+      <div class="iv-tabla-wrap">
+        <table class="lb-table">
+          <thead>
+            <tr><th>Producto</th><th>Talla</th><th>Color</th><th class="iv-der">Sistema</th><th class="iv-der">Contado</th><th class="iv-der">Diferencia</th><th class="iv-der">Valor</th><th>Motivo</th></tr>
+          </thead>
+          <tbody>
+            @for (it of d.items; track it.id) {
+              <tr>
+                <td>{{ it.productoNombre }} <span class="iv-hint">{{ it.productoCodigo }}</span></td>
+                <td>{{ it.talla || '—' }}</td>
+                <td>{{ it.color || '—' }}</td>
+                <td class="iv-der">{{ it.cantidadSistema | number:'1.0-2' }} {{ it.unidadMedida }}</td>
+                <td class="iv-der">
+                  @if (abierto) {
+                    <input class="iv-num" type="number" min="0" step="any" [(ngModel)]="edicion[it.id].contada" />
+                  } @else { {{ it.cantidadContada === null ? '—' : (it.cantidadContada | number:'1.0-2') }} }
+                </td>
+                @if (abierto) {
+                  @let dif = diferencia(it.id, it.cantidadSistema);
+                  <td class="iv-der" [class.iv-falta]="dif !== null && dif < 0" [class.iv-sobra]="dif !== null && dif > 0">{{ dif === null ? '—' : (dif | number:'1.0-2') }}</td>
+                  <td class="iv-der">{{ dif === null ? '' : 'S/ ' + ((dif * it.costoPromedio) | number:'1.2-2') }}</td>
+                  <td><input class="iv-motivo" type="text" maxlength="200" placeholder="Ej.: merma, error de conteo" [(ngModel)]="edicion[it.id].motivo" /></td>
+                } @else {
+                  <td class="iv-der" [class.iv-falta]="(it.cantidadAjuste ?? 0) < 0" [class.iv-sobra]="(it.cantidadAjuste ?? 0) > 0">{{ it.cantidadAjuste === null ? '—' : (it.cantidadAjuste | number:'1.0-2') }}</td>
+                  <td class="iv-der">{{ it.cantidadAjuste === null ? '' : 'S/ ' + ((it.cantidadAjuste * it.costoPromedio) | number:'1.2-2') }}</td>
+                  <td>{{ it.motivo || '' }}</td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (abierto && puedeAjustar) {
+        <div class="iv-agregar">
+          <span class="iv-hint">¿Encontraste algo que el sistema no tiene en este almacén?</span>
+          <app-search-select [options]="productos()" displayField="nombre" [(value)]="addProducto" label="Producto" placeholder="Buscar producto..." />
+          <div class="abril-field"><label class="abril-field-label">Talla</label><input class="abril-field-input" [(ngModel)]="addTalla" /></div>
+          <div class="abril-field"><label class="abril-field-label">Color</label><input class="abril-field-input" [(ngModel)]="addColor" /></div>
+          <button class="lb-btn ghost" [disabled]="!addProducto" (click)="agregar()">Agregar al conteo</button>
+        </div>
+        <div class="iv-acciones">
+          <button class="lb-btn ghost" (click)="anular()">Anular conteo</button>
+          <button class="lb-btn ghost" [disabled]="guardando()" (click)="guardarConteo()">Guardar avance</button>
+          <button class="lb-btn" [disabled]="guardando()" (click)="cerrarConteo()">Cerrar y ajustar stock</button>
+        </div>
+      }
+    </app-base-modal>
+  }
+</div>

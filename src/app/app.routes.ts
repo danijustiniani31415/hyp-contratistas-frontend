@@ -304,6 +304,14 @@ export const routes: Routes = [
           .then(m => m.PlanillaDetalleComponent)
       },
       {
+        path: 'accesos',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['PERSONA_GESTIONAR', 'ROLES_GESTIONAR'] },
+        loadComponent: () =>
+          import('./features/accesos/accesos')
+          .then(m => m.Accesos)
+      },
+      {
         path: 'roles-permisos',
         canActivate: [lbPermisoGuard],
         data: { lbPermisos: ['ROLES_GESTIONAR'] },
@@ -322,6 +330,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/almacen/almacen')
           .then(m => m.AlmacenComponent)
+      },
+      {
+        path: 'inventario',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['ALMACEN_VER', 'ALMACEN_AJUSTAR'] },
+        loadComponent: () =>
+          import('./features/inventario/inventario')
+          .then(m => m.Inventario)
       },
       {
         path: 'pedidos',

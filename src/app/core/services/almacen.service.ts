@@ -132,6 +132,69 @@ export interface AlmacenCrear {
   codigoEstablecimientoSunat: string;
 }
 
+export interface KardexLinea {
+  fecha: string;
+  tipo: string;
+  referencia: string | null;
+  entradaCantidad: number;
+  entradaCostoUnitario: number;
+  entradaTotal: number;
+  salidaCantidad: number;
+  salidaCostoUnitario: number;
+  salidaTotal: number;
+  saldoCantidad: number;
+  saldoCostoUnitario: number;
+  saldoTotal: number;
+}
+
+export interface KardexValorizado {
+  almacenNombre: string;
+  productoNombre: string;
+  unidadMedida: string;
+  talla: string;
+  color: string;
+  saldoInicialCantidad: number;
+  saldoInicialCostoUnitario: number;
+  saldoInicialTotal: number;
+  totalEntradas: number;
+  totalSalidas: number;
+  saldoFinalCantidad: number;
+  saldoFinalTotal: number;
+  lineas: KardexLinea[];
+}
+
+export interface InventarioListItem {
+  id: number;
+  almacenId: number;
+  almacenNombre: string;
+  fecha: string;
+  estado: 'EN_CONTEO' | 'CERRADO' | 'ANULADO';
+  observacion: string | null;
+  totalItems: number;
+  contados: number;
+  cantidadAjustes: number;
+  creadoEn: string;
+}
+
+export interface InventarioItem {
+  id: number;
+  productoId: number;
+  productoNombre: string;
+  productoCodigo: string | null;
+  unidadMedida: string;
+  talla: string;
+  color: string;
+  cantidadSistema: number;
+  cantidadContada: number | null;
+  cantidadAjuste: number | null;
+  costoPromedio: number;
+  motivo: string | null;
+}
+
+export interface InventarioDetalle extends InventarioListItem {
+  items: InventarioItem[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class AlmacenService {
   private readonly apiUrl = `${environment.apiUrl}api/v1/almacen`;
@@ -183,5 +246,41 @@ export class AlmacenService {
   listReposicionSugerida(almacenId?: number | null): Observable<ReposicionSugerida[]> {
     const params = almacenId ? `?almacenId=${almacenId}` : '';
     return this.http.get<ReposicionSugerida[]>(`${this.apiUrl}/reposicion-sugerida${params}`, { headers: this.headers() });
+  }
+
+  kardex(almacenId: number, productoId: number, talla: string, color: string, desde: string, hasta: string): Observable<KardexValorizado> {
+    const params = new URLSearchParams({ almacenId: String(almacenId), productoId: String(productoId), talla, color });
+    if (desde) params.set('desde', desde);
+    if (hasta) params.set('hasta', hasta);
+    return this.http.get<KardexValorizado>(`${this.apiUrl}/kardex?${params}`, { headers: this.headers() });
+  }
+
+  listInventarios(almacenId?: number | null): Observable<InventarioListItem[]> {
+    const params = almacenId ? `?almacenId=${almacenId}` : '';
+    return this.http.get<InventarioListItem[]>(`${this.apiUrl}/inventarios${params}`, { headers: this.headers() });
+  }
+
+  getInventario(id: number): Observable<InventarioDetalle> {
+    return this.http.get<InventarioDetalle>(`${this.apiUrl}/inventarios/${id}`, { headers: this.headers() });
+  }
+
+  crearInventario(almacenId: number, observacion: string): Observable<InventarioDetalle> {
+    return this.http.post<InventarioDetalle>(`${this.apiUrl}/inventarios`, { almacenId, observacion }, { headers: this.headers() });
+  }
+
+  guardarConteo(id: number, items: { itemId: number; cantidadContada: number | null; motivo: string | null }[]): Observable<InventarioDetalle> {
+    return this.http.put<InventarioDetalle>(`${this.apiUrl}/inventarios/${id}/conteo`, items, { headers: this.headers() });
+  }
+
+  agregarItemInventario(id: number, productoId: number, talla: string, color: string): Observable<InventarioDetalle> {
+    return this.http.post<InventarioDetalle>(`${this.apiUrl}/inventarios/${id}/items`, { productoId, talla, color }, { headers: this.headers() });
+  }
+
+  cerrarInventario(id: number): Observable<InventarioDetalle> {
+    return this.http.post<InventarioDetalle>(`${this.apiUrl}/inventarios/${id}/cerrar`, {}, { headers: this.headers() });
+  }
+
+  anularInventario(id: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/inventarios/${id}/anular`, {}, { headers: this.headers() });
   }
 }
