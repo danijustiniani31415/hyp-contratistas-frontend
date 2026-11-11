@@ -42,6 +42,7 @@ export const LB_NAV_GROUPS: LbNavGroup[] = [
       { label: 'Pedidos', route: '/pedidos', icon: 'ti-clipboard-list', permisos: ['PEDIDO_CREAR', 'PEDIDO_APROBAR', 'PEDIDO_ENTREGAR', 'PEDIDO_VER_TODOS', 'PEDIDO_VISAR'] },
       { label: 'Contratos y Partidas', route: '/pedidos/contratos-partidas', icon: 'ti-file-invoice', permisos: ['PEDIDO_CREAR', 'PEDIDO_APROBAR'] },
       { label: 'Compras', route: '/compras', icon: 'ti-shopping-cart', permisos: ['COMPRA_CREAR', 'COMPRA_RECIBIR'] },
+      { label: 'Pagos a proveedores', route: '/pagos-proveedores', icon: 'ti-cash', permisos: ['PAGO_PROVEEDOR_REGISTRAR'] },
       { label: 'EPP', route: '/epp', icon: 'ti-shield-check', permisos: ['EPP_ENTREGAR'] },
       { label: 'Herramientas', route: '/herramientas', icon: 'ti-tools', permisos: ['HERRAMIENTA_PRESTAR', 'HERRAMIENTA_DEVOLVER'] },
       { label: 'Guías de Remisión', route: '/guias-remision', icon: 'ti-truck-delivery', permisos: ['GUIA_REMISION_VER', 'GUIA_REMISION_CREAR', 'GUIA_REMISION_ENVIAR', 'GUIA_REMISION_CONFIRMAR'] },

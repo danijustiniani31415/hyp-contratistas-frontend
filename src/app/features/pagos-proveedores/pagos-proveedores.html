@@ -1,0 +1,124 @@
+<div class="lb-page">
+  <app-lb-page-header titulo="Pagos a proveedores" subtitulo="Qué se debe, qué se pagó y cuánto falta, por cada comprobante de compra.">
+    <div class="lb-search">
+      <input type="text" placeholder="Buscar proveedor, RUC o documento..." [(ngModel)]="search" (ngModelChange)="onSearchInput()" />
+    </div>
+    <select class="abril-field-input pp-filtro" [(ngModel)]="estadoFiltro" (ngModelChange)="onFiltroChange()">
+      <option value="">Todos los estados</option>
+      <option value="PENDIENTE">Pendiente</option>
+      <option value="PARCIAL">Pago parcial</option>
+      <option value="PAGADO">Pagado</option>
+    </select>
+  </app-lb-page-header>
+
+  @if (resumen(); as r) {
+    <div class="pp-resumen">
+      @for (s of r.pendientePorMoneda; track s.moneda) {
+        <div><span>Por pagar ({{ s.moneda }})</span><b>{{ simbolo(s.moneda) }} {{ s.saldo | number:'1.2-2' }}</b></div>
+      }
+      @if (!r.pendientePorMoneda.length) { <div><span>Por pagar</span><b>S/ 0.00</b></div> }
+      <div><span>Documentos pendientes</span><b>{{ r.documentosPendientes }}</b></div>
+      <div><span>Proveedores con deuda</span><b>{{ r.proveedoresConDeuda }}</b></div>
+    </div>
+  }
+
+  <div class="lb-table-wrap">
+    <table class="lb-table">
+      <thead>
+        <tr>
+          <th>Proveedor</th><th>Documento</th><th>Emisión</th><th class="pp-der">Total</th>
+          <th class="pp-der">Pagado</th><th class="pp-der">Saldo</th><th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="7" class="lb-empty">Cargando...</td></tr>
+        } @else if (!cuentas().length) {
+          <tr><td colspan="7" class="lb-empty">No hay comprobantes de compra para pagar. Se cargan desde Compras.</td></tr>
+        } @else {
+          @for (c of cuentas(); track c.comprobanteId) {
+            <tr class="pp-row" (click)="abrir(c)">
+              <td>{{ c.proveedorNombre | titlecase }} <span class="pp-ruc">{{ c.proveedorRuc }}</span></td>
+              <td>{{ c.documento }}</td>
+              <td>{{ c.fechaEmision | date:'dd/MM/yyyy' }}@if (c.estadoPago !== 'PAGADO' && c.diasAntiguedad > 30) { <span class="pp-viejo">{{ c.diasAntiguedad }} días</span> }</td>
+              <td class="pp-der">{{ simbolo(c.moneda) }} {{ c.total | number:'1.2-2' }}</td>
+              <td class="pp-der">{{ c.pagado | number:'1.2-2' }}</td>
+              <td class="pp-der"><b>{{ c.saldo | number:'1.2-2' }}</b></td>
+              <td><span class="pp-estado" [ngClass]="c.estadoPago.toLowerCase()">{{ nombreEstado(c.estadoPago) }}</span></td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginator [totalRecords]="totalRecords()" [currentPage]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+
+  @if (detalle(); as d) {
+    <app-base-modal [title]="d.documento + ' · ' + (d.proveedorNombre | titlecase)" width="w-[720px]" (closeModal)="cerrar()">
+      <div class="pp-cabecera">
+        <div><span>Total</span><b>{{ simbolo(d.moneda) }} {{ d.total | number:'1.2-2' }}</b></div>
+        <div><span>Pagado</span><b>{{ simbolo(d.moneda) }} {{ d.pagado | number:'1.2-2' }}</b></div>
+        <div><span>Saldo</span><b [class.pp-debe]="d.saldo > 0">{{ simbolo(d.moneda) }} {{ d.saldo | number:'1.2-2' }}</b></div>
+        <span class="pp-estado" [ngClass]="d.estadoPago.toLowerCase()">{{ nombreEstado(d.estadoPago) }}</span>
+      </div>
+      @if (d.detraccionMonto > 0) {
+        <p class="pp-hint">Este comprobante tiene detracción de {{ simbolo(d.moneda) }} {{ d.detraccionMonto | number:'1.2-2' }}: ese monto va a la cuenta de detracciones del proveedor.</p>
+      }
+
+      @if (d.saldo > 0) {
+        <h3 class="pp-sub">Registrar un pago</h3>
+        <div class="pp-form">
+          <div class="abril-field">
+            <label class="abril-field-label">Monto ({{ d.moneda }})</label>
+            <input class="abril-field-input" type="number" min="0" step="0.01" [(ngModel)]="monto" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Fecha de pago</label>
+            <input class="abril-field-input" type="date" [(ngModel)]="fechaPago" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Medio de pago</label>
+            <select class="abril-field-input" [(ngModel)]="medio">
+              @for (m of medios; track m.codigo) { <option [value]="m.codigo">{{ m.nombre }}</option> }
+            </select>
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">{{ medio === 'CHEQUE' ? 'N° de cheque' : 'N° de operación' }}{{ medioActual.pideReferencia ? '' : ' (opcional)' }}</label>
+            <input class="abril-field-input" [(ngModel)]="referencia" maxlength="80" />
+          </div>
+          <div class="abril-field pp-ancho">
+            <label class="abril-field-label">Observación (opcional)</label>
+            <input class="abril-field-input" [(ngModel)]="observacion" />
+          </div>
+        </div>
+        @if (error()) { <p class="pp-error">{{ error() }}</p> }
+        <div class="pp-acciones">
+          <button class="lb-btn ghost" (click)="pagarTodo()">Pagar el saldo completo</button>
+          <button class="lb-btn" [disabled]="guardando()" (click)="registrar()">{{ guardando() ? 'Guardando...' : 'Registrar pago' }}</button>
+        </div>
+      }
+
+      <h3 class="pp-sub">Historial de pagos</h3>
+      <table class="lb-table">
+        <thead><tr><th>Fecha</th><th class="pp-der">Monto</th><th>Medio</th><th>Operación</th><th>Registró</th><th></th></tr></thead>
+        <tbody>
+          @if (!d.pagos.length) { <tr><td colspan="6" class="lb-empty">Todavía no hay pagos.</td></tr> }
+          @for (p of d.pagos; track p.id) {
+            <tr [class.pp-anulado]="p.estado === 'ANULADO'">
+              <td>{{ p.fechaPago | date:'dd/MM/yyyy' }}</td>
+              <td class="pp-der">{{ p.monto | number:'1.2-2' }}</td>
+              <td>{{ nombreMedio(p.medio) }}</td>
+              <td>{{ p.referencia || '—' }}</td>
+              <td>{{ p.registradoPorNombre | titlecase }}</td>
+              <td>
+                @if (p.estado === 'VIGENTE') { <button class="lb-btn ghost small danger" (click)="anular(p.id)">Anular</button> }
+                @else { <span class="pp-hint" [title]="p.motivoAnulacion || ''">Anulado</span> }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </app-base-modal>
+  }
+</div>
