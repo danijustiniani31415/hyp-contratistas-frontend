@@ -137,6 +137,8 @@ export interface PedidoItemDetalle {
   cantidadRecibidaAlmacen: number;
   cantidadDespachada: number;
   cantidadConfirmadaMina: number;
+  /** Stock libre en el almacén del pedido (null si el pedido ya no está abierto). */
+  stockLibre?: number | null;
 }
 
 export interface PedidoDetalle {
@@ -227,8 +229,9 @@ export class PedidosService {
     return this.http.get<PedidoItemHistorial[]>(`${this.apiUrl}/${id}/historial`, { headers: this.headers() });
   }
 
-  entregar(id: number): Observable<PedidoDetalle> {
-    return this.http.post<PedidoDetalle>(`${this.apiUrl}/${id}/entregar`, {}, { headers: this.headers() });
+  /** Sin `body` entrega todo lo pendiente; con `items` entrega solo esas cantidades (entrega parcial). */
+  entregar(id: number, body?: { items?: { itemId: number; cantidad: number }[]; cerrarConSaldo?: boolean }): Observable<PedidoDetalle> {
+    return this.http.post<PedidoDetalle>(`${this.apiUrl}/${id}/entregar`, body ?? {}, { headers: this.headers() });
   }
 
   cancelar(id: number): Observable<PedidoDetalle> {

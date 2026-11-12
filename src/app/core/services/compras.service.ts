@@ -86,9 +86,49 @@ export interface OrdenCompraListResponse {
   totalPages: number;
 }
 
+export interface CompraDiferencia {
+  id: number;
+  ordenId: number;
+  ordenCodigo: string;
+  proveedorNombre: string;
+  almacenNombre: string;
+  productoNombre: string;
+  talla: string;
+  tipo: 'FALTANTE' | 'DANADO' | 'SOBRANTE';
+  cantidad: number;
+  motivo: string | null;
+  observacion: string | null;
+  estado: 'ABIERTA' | 'RESUELTA';
+  resolucion: string | null;
+  resolucionNota: string | null;
+  reportadoPorNombre: string | null;
+  creadoEn: string;
+  valorEstimado: number;
+}
+
+export interface CompraDiferenciasResumen {
+  data: CompraDiferencia[];
+  abiertas: number;
+  resueltas: number;
+}
+
+export const MOTIVOS_DANIO_COMPRA = [
+  { v: 'GOLPEADO', n: 'Golpeado' }, { v: 'ROTO', n: 'Roto' }, { v: 'HUMEDAD', n: 'Humedad' },
+  { v: 'VENCIDO', n: 'Vencido' }, { v: 'DEFECTUOSO', n: 'Defectuoso' }, { v: 'OTRO', n: 'Otro' },
+];
+export const MOTIVOS_FALTANTE_COMPRA = [
+  { v: 'NO_ENVIARA', n: 'El proveedor no lo enviará' }, { v: 'SIN_STOCK_PROVEEDOR', n: 'Proveedor sin stock' },
+  { v: 'ANULADO_PROVEEDOR', n: 'Anulado por el proveedor' }, { v: 'OTRO', n: 'Otro' },
+];
+export function nombreMotivoCompra(m: string | null): string {
+  return [...MOTIVOS_DANIO_COMPRA, ...MOTIVOS_FALTANTE_COMPRA].find((x) => x.v === m)?.n ?? (m ?? '—');
+}
+
 export interface OrdenCompraRecepcionDetalle {
   id: number;
   cantidad: number;
+  cantidadDanada: number;
+  motivo: string | null;
   facturaNumero: string | null;
   facturaMonto: number | null;
   recibidoPorNombre: string;
@@ -105,6 +145,8 @@ export interface OrdenCompraItemDetalle {
   costoUnitario: number;
   cantidadRecibida: number;
   cantidadPendiente: number;
+  cantidadFaltante: number;
+  cantidadDanada: number;
   pedidoItemId: number | null;
   pedidoCodigo: string | null;
   recepciones: OrdenCompraRecepcionDetalle[];
@@ -140,6 +182,7 @@ export interface OrdenCompraDetalle {
   estado: string;
   observacion: string | null;
   creadoEn: string;
+  diferenciasAbiertas: number;
   items: OrdenCompraItemDetalle[];
 }
 
@@ -282,12 +325,25 @@ export class ComprasService {
     cantidad: number,
     facturaNumero?: string,
     facturaMonto?: number,
+    control?: { cantidadDanada?: number; motivo?: string; observacion?: string; aceptarSobrante?: boolean },
   ): Observable<OrdenCompraDetalle> {
     return this.http.post<OrdenCompraDetalle>(
       `${this.apiUrl}/ordenes/${ordenId}/items/${itemId}/recibir`,
-      { cantidad, facturaNumero: facturaNumero || null, facturaMonto: facturaMonto ?? null },
+      { cantidad, facturaNumero: facturaNumero || null, facturaMonto: facturaMonto ?? null, ...control },
       { headers: this.headers() },
     );
+  }
+
+  cerrarSaldo(ordenId: number, motivo: string, observacion?: string): Observable<OrdenCompraDetalle> {
+    return this.http.post<OrdenCompraDetalle>(`${this.apiUrl}/ordenes/${ordenId}/cerrar-saldo`, { motivo, observacion: observacion || null }, { headers: this.headers() });
+  }
+
+  listarDiferencias(estado: string): Observable<CompraDiferenciasResumen> {
+    return this.http.get<CompraDiferenciasResumen>(`${this.apiUrl}/diferencias`, { headers: this.headers(), params: estado ? { estado } : {} });
+  }
+
+  resolverDiferencia(id: number, resolucion: string, nota: string): Observable<CompraDiferencia> {
+    return this.http.post<CompraDiferencia>(`${this.apiUrl}/diferencias/${id}/resolver`, { resolucion, nota }, { headers: this.headers() });
   }
 
   cancelar(id: number): Observable<OrdenCompraDetalle> {

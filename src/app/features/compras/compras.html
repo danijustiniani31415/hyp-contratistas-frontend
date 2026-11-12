@@ -180,10 +180,16 @@
         <span class="co-detalle-meta">{{ d.proveedorNombre }} · {{ d.almacenNombre }}</span>
       </div>
       <p class="co-detalle-meta">Solicitado por {{ d.solicitadoPorNombre }} el {{ d.creadoEn | slice:0:10 }}</p>
+      @if (d.diferenciasAbiertas > 0) {
+        <p class="co-aviso">Hay {{ d.diferenciasAbiertas }} diferencia(s) por resolver · <a routerLink="/diferencias-compras">verlas</a></p>
+      }
+      @if ((d.estado === 'PENDIENTE' || d.estado === 'RECIBIDA_PARCIAL') && authService.hasPermiso('COMPRA_RECIBIR')) {
+        <button type="button" class="co-link co-link-danger" (click)="cerrarSaldo()">Cerrar saldo (el proveedor no enviará el resto)</button>
+      }
 
       <table class="lb-table co-detalle-table">
         <thead>
-          <tr><th>Producto</th><th>Pedido origen</th><th>Solicitado</th><th>Recibido</th><th>Pendiente</th><th></th></tr>
+          <tr><th>Producto</th><th>Pedido origen</th><th>Solicitado</th><th>Recibido</th><th>Dañado</th><th>Pendiente</th><th></th></tr>
         </thead>
         <tbody>
           @for (it of d.items; track it.id) {
@@ -192,7 +198,8 @@
               <td>{{ it.pedidoCodigo ?? '—' }}</td>
               <td>{{ it.cantidadSolicitada }}</td>
               <td>{{ it.cantidadRecibida }}</td>
-              <td>{{ it.cantidadPendiente }}</td>
+              <td>{{ it.cantidadDanada || '—' }}</td>
+              <td>{{ it.cantidadPendiente }}@if (it.cantidadFaltante > 0) { <span class="co-faltante"> · faltan {{ it.cantidadFaltante }} (cerrado)</span> }</td>
               <td>
                 @if (it.cantidadPendiente > 0 && d.estado !== 'CANCELADA' && authService.hasPermiso('COMPRA_RECIBIR')) {
                   <button type="button" class="co-link" (click)="recibir(it.id, it.cantidadPendiente)">Recibir</button>
@@ -204,10 +211,10 @@
             </tr>
             @if (it.recepciones.length) {
               <tr>
-                <td colspan="6" class="co-recepciones">
+                <td colspan="7" class="co-recepciones">
                   @for (r of it.recepciones; track r.id) {
                     <div>
-                      {{ r.creadoEn | slice:0:10 }} · {{ r.cantidad }} recibido por {{ r.recibidoPorNombre }}
+                      {{ r.creadoEn | slice:0:10 }} · {{ r.cantidad }} bien@if (r.cantidadDanada > 0) { · {{ r.cantidadDanada }} dañado ({{ r.motivo }}) } · recibió {{ r.recibidoPorNombre }}
                       @if (r.facturaNumero) { · Factura {{ r.facturaNumero }} @if (r.facturaMonto) { (S/ {{ r.facturaMonto }}) } }
                     </div>
                   }

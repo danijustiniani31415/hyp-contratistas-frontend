@@ -177,6 +177,7 @@
                         {{ it.productoNombre }}
                         @if (it.color) { <span class="pd-item-color">· {{ it.color }}</span> }
                         @if (it.partidaNombre) { <br /><span class="pd-item-obs">Partida: {{ it.partidaNombre }}</span> }
+                        @if (it.stockLibre !== null && it.stockLibre !== undefined) { <br /><span class="pd-libre" [class.pd-libre-no]="it.stockLibre < f.tope">{{ it.stockLibre >= f.tope ? 'Hay stock libre: ' + it.stockLibre : 'No alcanza: libre ' + it.stockLibre }}</span> }
                       </td>
                       <td>{{ it.talla || '—' }}</td>
                       <td>{{ f.tope }} {{ it.unidadMedida }}</td>
@@ -217,6 +218,7 @@
                   @if (it.color) { <span class="pd-item-color">· {{ it.color }}</span> }
                   @if (it.observacion) { <br /><span class="pd-item-obs">{{ it.observacion }}</span> }
                   @if (it.partidaNombre) { <br /><span class="pd-item-obs">Partida: {{ it.partidaNombre }}</span> }
+                  @if (it.stockLibre !== null && it.stockLibre !== undefined && it.estado !== 'RECHAZADO') { <br /><span class="pd-libre" [class.pd-libre-no]="it.stockLibre < (it.cantidadAprobada ?? it.cantidadSolicitada) - (it.cantidadEntregada ?? 0)">{{ it.stockLibre >= (it.cantidadAprobada ?? it.cantidadSolicitada) - (it.cantidadEntregada ?? 0) ? 'Hay stock libre: ' + it.stockLibre : 'No alcanza: libre ' + it.stockLibre }}</span> }
                   @if (it.estado === 'RECHAZADO' && it.motivoRechazo) { <br /><span class="pd-error">Rechazado: {{ it.motivoRechazo }}</span> }
                 </td>
                 <td>{{ it.talla || '—' }}</td>
@@ -295,7 +297,7 @@
           <button class="lb-btn" [disabled]="accionando()" (click)="guardarDecision()">Guardar aprobación</button>
         }
         @if (d.estado === 'APROBADO' && authService.hasPermiso('PEDIDO_ENTREGAR')) {
-          <button class="lb-btn" [disabled]="accionando()" (click)="entregar()">Marcar como entregado</button>
+          <button class="lb-btn" [disabled]="accionando()" (click)="entregar()">Entregar</button>
         }
       </div>
     </app-base-modal>

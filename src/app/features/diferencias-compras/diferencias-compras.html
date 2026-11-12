@@ -1,0 +1,88 @@
+<div class="lb-page">
+  <app-lb-page-header titulo="Diferencias de compras" subtitulo="Lo dañado, faltante o sobrante de lo que envían los proveedores, hasta que se resuelve.">
+    <div class="lb-search">
+      <input type="text" placeholder="Buscar orden, producto o proveedor..." [ngModel]="search()" (ngModelChange)="search.set($event); page.set(1)" />
+    </div>
+    <select class="abril-field-input df-filtro" [(ngModel)]="estado" (ngModelChange)="cargar()">
+      <option value="ABIERTA">Por resolver</option>
+      <option value="RESUELTA">Resueltas</option>
+      <option value="">Todas</option>
+    </select>
+  </app-lb-page-header>
+
+  <div class="df-resumen">
+    <div><span>Por resolver</span><b [class.df-rojo]="abiertas() > 0">{{ abiertas() }}</b></div>
+    <div><span>Resueltas</span><b>{{ resueltas() }}</b></div>
+    @if (estado !== 'RESUELTA') { <div><span>Valor estimado por resolver</span><b>S/ {{ valorAbierto() | number:'1.2-2' }}</b></div> }
+  </div>
+
+  <div class="lb-table-wrap">
+    <table class="lb-table">
+      <thead>
+        <tr><th>Orden</th><th>Proveedor</th><th>Producto</th><th>Tipo</th><th class="df-der">Cant.</th><th>Motivo</th><th>Reportó</th><th>Fecha</th><th class="df-der">Valor</th><th>Estado</th><th></th></tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="11" class="lb-empty">Cargando...</td></tr>
+        } @else if (!visibles().length) {
+          <tr><td colspan="11" class="lb-empty">{{ estado === 'ABIERTA' ? 'No hay diferencias por resolver. 👍' : 'No hay diferencias.' }}</td></tr>
+        } @else {
+          @for (d of visibles(); track d.id) {
+            <tr>
+              <td>{{ d.ordenCodigo }}</td>
+              <td>{{ d.proveedorNombre | titlecase }}</td>
+              <td>{{ d.productoNombre | titlecase }} {{ d.talla ? '(' + d.talla + ')' : '' }}</td>
+              <td><span class="df-tipo" [ngClass]="d.tipo.toLowerCase()">{{ d.tipo === 'FALTANTE' ? 'Faltante' : d.tipo === 'SOBRANTE' ? 'Sobrante' : 'Dañado' }}</span></td>
+              <td class="df-der">{{ d.cantidad }}</td>
+              <td>{{ nombreMotivo(d.motivo) }}</td>
+              <td>{{ d.reportadoPorNombre | titlecase }}</td>
+              <td>{{ d.creadoEn | date:'dd/MM/yyyy' }}</td>
+              <td class="df-der">{{ d.valorEstimado ? ('S/ ' + (d.valorEstimado | number:'1.2-2')) : '—' }}</td>
+              <td>
+                @if (d.estado === 'ABIERTA') { <span class="df-estado abierta">Por resolver</span> }
+                @else { <span class="df-estado resuelta" [title]="d.resolucionNota ?? ''">{{ nombreResolucion(d.resolucion) }}</span> }
+              </td>
+              <td>
+                @if (d.estado === 'ABIERTA' && puedeResolver) { <button class="lb-btn small" (click)="abrir(d)">Resolver</button> }
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginator [totalRecords]="filtradas().length" [currentPage]="page()" [totalPages]="totalPages()" (pageChange)="page.set($event)" />
+
+  @if (seleccionada(); as d) {
+    <app-base-modal [title]="'Resolver diferencia · ' + d.ordenCodigo" width="w-[560px]" (closeModal)="cerrar()">
+      <p class="df-hint">
+        <b>{{ d.cantidad }} {{ d.productoNombre | titlecase }}</b> · {{ d.tipo.toLowerCase() }}{{ d.motivo ? ' (' + nombreMotivo(d.motivo) + ')' : '' }} · {{ d.proveedorNombre | titlecase }} → {{ d.almacenNombre }}.
+        @if (d.observacion) { <i>«{{ d.observacion }}»</i> }
+      </p>
+      <div class="df-opciones">
+        @if (d.tipo !== 'SOBRANTE') {
+          <label class="df-op" [class.sel]="resolucion === 'REPOSICION'"><input type="radio" name="res" value="REPOSICION" [(ngModel)]="resolucion" />
+            <span><b>Reposición</b><small>El proveedor lo repone{{ d.tipo === 'FALTANTE' ? ' (la orden se reabre para recibirlo)' : '' }}.</small></span></label>
+        }
+        <label class="df-op" [class.sel]="resolucion === 'RECLAMO'"><input type="radio" name="res" value="RECLAMO" [(ngModel)]="resolucion" />
+          <span><b>Reclamo</b><small>Se reclamó al proveedor.</small></span></label>
+        @if (d.tipo !== 'SOBRANTE') {
+          <label class="df-op" [class.sel]="resolucion === 'NOTA_CREDITO'"><input type="radio" name="res" value="NOTA_CREDITO" [(ngModel)]="resolucion" />
+            <span><b>Nota de crédito</b><small>El proveedor descuenta S/ {{ d.valorEstimado | number:'1.2-2' }}. Avisa a contabilidad.</small></span></label>
+        }
+        <label class="df-op" [class.sel]="resolucion === 'ACEPTADO'"><input type="radio" name="res" value="ACEPTADO" [(ngModel)]="resolucion" />
+          <span><b>Aceptado</b><small>Se acepta tal como llegó.</small></span></label>
+      </div>
+      <div class="abril-field df-nota">
+        <label class="abril-field-label">Nota</label>
+        <input class="abril-field-input" [(ngModel)]="nota" placeholder="Qué se acordó, con quién, número de reclamo o nota de crédito..." />
+      </div>
+      @if (error()) { <p class="df-error">{{ error() }}</p> }
+      <div class="df-acciones">
+        <button class="lb-btn ghost" (click)="cerrar()">Cancelar</button>
+        <button class="lb-btn" [disabled]="guardando()" (click)="resolver()">{{ guardando() ? 'Guardando...' : 'Marcar como resuelta' }}</button>
+      </div>
+    </app-base-modal>
+  }
+</div>

@@ -396,6 +396,14 @@ export const routes: Routes = [
           .then(m => m.DiferenciasRecepcion)
       },
       {
+        path: 'diferencias-compras',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['COMPRA_CREAR', 'COMPRA_RECIBIR', 'PAGO_PROVEEDOR_REGISTRAR'] },
+        loadComponent: () =>
+          import('./features/diferencias-compras/diferencias-compras')
+          .then(m => m.DiferenciasCompras)
+      },
+      {
         path: 'guias-remision',
         canActivate: [lbPermisoGuard],
         data: { lbPermisos: ['GUIA_REMISION_VER', 'GUIA_REMISION_CREAR', 'GUIA_REMISION_ENVIAR', 'GUIA_REMISION_CONFIRMAR'] },

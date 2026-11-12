@@ -35,7 +35,8 @@
           <th>Almacén</th>
           <th>Talla</th>
           <th>Color</th>
-          <th>Cantidad</th>
+          <th>En almacén</th>
+          <th title="Lo que hay menos lo ya prometido a pedidos aprobados">Libre</th>
           <th>Mínimo</th>
           <th>Costo prom.</th>
           <th>Valor total</th>
@@ -43,9 +44,9 @@
       </thead>
       <tbody>
         @if (loading()) {
-          <tr><td colspan="8" class="lb-empty">Cargando...</td></tr>
+          <tr><td colspan="9" class="lb-empty">Cargando...</td></tr>
         } @else if (!stock().length) {
-          <tr><td colspan="8" class="lb-empty">Sin stock registrado todavía.</td></tr>
+          <tr><td colspan="9" class="lb-empty">Sin stock registrado todavía.</td></tr>
         } @else {
           @for (s of stock(); track s.id) {
             <tr [class.bajo]="s.bajoMinimo">
@@ -56,6 +57,10 @@
               <td>
                 {{ s.cantidadActual }} {{ s.unidadMedida }}
                 @if (s.bajoMinimo) { <span class="am-badge-bajo">BAJO MÍNIMO</span> }
+              </td>
+              <td>
+                {{ s.libre }}
+                @if (s.comprometido > 0) { <br /><span class="am-comprometido">{{ s.comprometido }} prometidos a pedidos</span> }
               </td>
               <td>{{ s.stockMinimo }}</td>
               <td>S/ {{ s.costoPromedio | number:'1.2-2' }}</td>

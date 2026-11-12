@@ -337,22 +337,52 @@ export class Pedidos implements OnInit {
   }
 
   entregar(): void {
-    const id = this.detalle()?.id;
-    if (!id) return;
+    const d = this.detalle();
+    if (!d) return;
+    const items = d.items.filter((i) => i.estado === 'APROBADO' && (i.cantidadAprobada ?? 0) - (i.cantidadEntregada ?? 0) > 0);
+    const filas = items
+      .map((i) => {
+        const pend = (i.cantidadAprobada ?? 0) - (i.cantidadEntregada ?? 0);
+        const nombre = `${i.productoNombre}${i.talla ? ' (' + i.talla + ')' : ''}`;
+        return `<tr><td style="text-align:left;padding:4px 6px">${nombre}</td><td style="padding:4px 6px">${pend}</td>
+          <td style="padding:4px 6px"><input class="swal2-input" style="margin:0;width:90px;height:34px" type="number" min="0" max="${pend}" step="0.01" value="${pend}" data-item="${i.id}" data-pend="${pend}"></td></tr>`;
+      })
+      .join('');
     Swal.fire({
-      icon: 'question',
-      title: '¿Entregar este pedido?',
-      text: 'Esto descuenta el stock del almacén de inmediato.',
+      title: 'Entregar pedido',
+      html: `<p style="font-size:13px;color:#64748b;margin:0 0 8px">Descuenta el stock del almacén. Si no hay todo, entrega solo lo que hay: el resto queda pendiente.</p>
+        <table style="width:100%;font-size:13px"><thead><tr><th style="text-align:left">Producto</th><th>Falta</th><th>Entregar ahora</th></tr></thead><tbody>${filas}</tbody></table>
+        <label style="display:flex;gap:8px;align-items:center;justify-content:flex-start;font-size:13px;margin-top:12px"><input id="swal-cerrar" type="checkbox"> Lo que falte ya no se entregará (cerrar el pedido)</label>`,
+      width: 640,
+      focusConfirm: false,
       showCancelButton: true,
       confirmButtonText: 'Entregar',
       cancelButtonText: 'Cancelar',
+      preConfirm: () => {
+        const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[data-item]'));
+        const lista: { itemId: number; cantidad: number }[] = [];
+        for (const inp of inputs) {
+          const cant = Number(inp.value || 0);
+          const pend = Number(inp.dataset['pend']);
+          if (cant < 0 || cant > pend) {
+            Swal.showValidationMessage(`La cantidad debe estar entre 0 y ${pend}`);
+            return false;
+          }
+          if (cant > 0) lista.push({ itemId: Number(inp.dataset['item']), cantidad: cant });
+        }
+        if (!lista.length) {
+          Swal.showValidationMessage('Indica cuánto entregas de al menos un ítem');
+          return false;
+        }
+        return { items: lista, cerrarConSaldo: (document.getElementById('swal-cerrar') as HTMLInputElement).checked };
+      },
     }).then((res) => {
-      if (!res.isConfirmed) return;
+      if (!res.isConfirmed || !res.value) return;
       this.accionando.set(true);
-      this.service.entregar(id).subscribe({
-        next: (d) => {
+      this.service.entregar(d.id, res.value).subscribe({
+        next: (det) => {
           this.accionando.set(false);
-          this.detalle.set(d);
+          this.detalle.set(det);
           this.cargar();
         },
         error: (err) => {

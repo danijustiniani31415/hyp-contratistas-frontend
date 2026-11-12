@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { ChangeDetectorRef, Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -14,8 +15,7 @@ import {
   OrdenCompraListItem,
   OrdenCompraDetalle,
   OrdenCompraCreate,
-  PendienteCompra,
-} from '../../core/services/compras.service';
+  PendienteCompra,  MOTIVOS_DANIO_COMPRA, MOTIVOS_FALTANTE_COMPRA } from '../../core/services/compras.service';
 import { PersonasService, AlmacenCatalogoItem } from '../../core/services/personas.service';
 import { DocumentosService } from '../../core/services/documentos.service';
 import { CatalogoService, ProductoListItem } from '../../core/services/catalogo.service';
@@ -24,13 +24,13 @@ import { AlmacenService, ReposicionSugerida } from '../../core/services/almacen.
 import { LbAuthService } from '../../core/services/lb-auth.service';
 import { ComprobanteCarga } from './comprobante-carga/comprobante-carga';
 
-const ESTADOS = ['PENDIENTE', 'RECIBIDA_PARCIAL', 'RECIBIDA', 'CANCELADA'];
+const ESTADOS = ['PENDIENTE', 'RECIBIDA_PARCIAL', 'RECIBIDA', 'CERRADA', 'CANCELADA'];
 
 /** [REVISADO] Estado en signals — mismo motivo que personas.ts (Zone.js no parcha fetch()). */
 @Component({
   selector: 'app-compras',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, BaseModal, FabButton, Paginator, LbPageHeader, ComprobanteCarga],
+  imports: [CommonModule, FormsModule, RouterLink, SearchSelect, BaseModal, FabButton, Paginator, LbPageHeader, ComprobanteCarga],
   templateUrl: './compras.html',
   styleUrl: './compras.css',
 })
@@ -242,35 +242,66 @@ export class Compras implements OnInit {
   recibir(itemId: number, pendiente: number): void {
     const ordenId = this.detalle()?.id;
     if (!ordenId) return;
+    const opts = MOTIVOS_DANIO_COMPRA.map((m) => `<option value="${m.v}">${m.n}</option>`).join('');
+    const lbl = 'display:block;text-align:left;font-size:12px;margin:8px 0 2px';
     Swal.fire({
       title: 'Registrar recepción',
       html: `
-        <label style="display:block;text-align:left;font-size:12px;margin:8px 0 2px">Cantidad recibida</label>
-        <input id="swal-cantidad" type="number" class="swal2-input" style="margin:0" min="0.01" max="${pendiente}" step="0.01" value="${pendiente}">
-        <label style="display:block;text-align:left;font-size:12px;margin:8px 0 2px">N° de factura (opcional)</label>
+        <p style="font-size:12.5px;color:#64748b;margin:0">Faltan <b>${pendiente}</b> por recibir. Solo lo que llega bien entra al stock.</p>
+        <label style="${lbl}">Llegó bien</label>
+        <input id="swal-cantidad" type="number" class="swal2-input" style="margin:0" min="0" step="0.01" value="${pendiente}">
+        <label style="${lbl}">Llegó dañado (no entra al stock)</label>
+        <input id="swal-danada" type="number" class="swal2-input" style="margin:0" min="0" step="0.01" value="0">
+        <label style="${lbl}">Motivo del daño (si hay dañado)</label>
+        <select id="swal-motivo" class="swal2-select" style="margin:0;width:100%"><option value="">Selecciona motivo</option>${opts}</select>
+        <label style="${lbl}">Observación (opcional)</label>
+        <input id="swal-obs" type="text" class="swal2-input" style="margin:0">
+        <label style="${lbl}">N° de factura (opcional)</label>
         <input id="swal-factura-numero" type="text" class="swal2-input" style="margin:0">
-        <label style="display:block;text-align:left;font-size:12px;margin:8px 0 2px">Monto de factura (opcional)</label>
+        <label style="${lbl}">Monto de factura (opcional)</label>
         <input id="swal-factura-monto" type="number" class="swal2-input" style="margin:0" min="0" step="0.01">
+        <label id="swal-sobrante-box" style="display:none;gap:8px;align-items:center;justify-content:flex-start;font-size:13px;margin-top:10px;color:#b45309"><input id="swal-sobrante" type="checkbox"> Llegó de más: aceptar el sobrante</label>
       `,
       focusConfirm: false,
       showCancelButton: true,
       confirmButtonText: 'Registrar',
       cancelButtonText: 'Cancelar',
+      didOpen: () => {
+        const ok = document.getElementById('swal-cantidad') as HTMLInputElement;
+        ok.addEventListener('input', () => {
+          (document.getElementById('swal-sobrante-box') as HTMLElement).style.display = Number(ok.value) > pendiente ? 'flex' : 'none';
+        });
+      },
       preConfirm: () => {
-        const cantidad = Number((document.getElementById('swal-cantidad') as HTMLInputElement).value);
-        const facturaNumero = (document.getElementById('swal-factura-numero') as HTMLInputElement).value || undefined;
-        const facturaMontoStr = (document.getElementById('swal-factura-monto') as HTMLInputElement).value;
-        const facturaMonto = facturaMontoStr ? Number(facturaMontoStr) : undefined;
-        if (!cantidad || cantidad <= 0 || cantidad > pendiente) {
-          Swal.showValidationMessage(`La cantidad debe estar entre 0.01 y ${pendiente}`);
+        const val = (id: string) => (document.getElementById(id) as HTMLInputElement).value;
+        const cantidad = Number(val('swal-cantidad') || 0);
+        const danada = Number(val('swal-danada') || 0);
+        const motivo = val('swal-motivo');
+        const aceptarSobrante = (document.getElementById('swal-sobrante') as HTMLInputElement).checked;
+        if (cantidad < 0 || danada < 0 || cantidad + danada <= 0) {
+          Swal.showValidationMessage('Indica cuánto llegó bien o cuánto llegó dañado');
           return false;
         }
-        return { cantidad, facturaNumero, facturaMonto };
+        if (danada > 0 && !motivo) {
+          Swal.showValidationMessage('Elige el motivo del daño');
+          return false;
+        }
+        if (cantidad > pendiente && !aceptarSobrante) {
+          Swal.showValidationMessage(`Solo faltan ${pendiente}. Si llegó de más, marca "aceptar el sobrante"`);
+          return false;
+        }
+        const facturaMonto = val('swal-factura-monto');
+        return {
+          cantidad,
+          facturaNumero: val('swal-factura-numero') || undefined,
+          facturaMonto: facturaMonto ? Number(facturaMonto) : undefined,
+          control: { cantidadDanada: danada, motivo: danada > 0 ? motivo : undefined, observacion: val('swal-obs') || undefined, aceptarSobrante },
+        };
       },
     }).then((res) => {
       if (!res.isConfirmed || !res.value) return;
-      const { cantidad, facturaNumero, facturaMonto } = res.value;
-      this.service.recibirItem(ordenId, itemId, cantidad, facturaNumero, facturaMonto).subscribe({
+      const { cantidad, facturaNumero, facturaMonto, control } = res.value;
+      this.service.recibirItem(ordenId, itemId, cantidad, facturaNumero, facturaMonto, control).subscribe({
         next: (d) => {
           this.detalle.set(d);
           this.cargar();
@@ -278,6 +309,40 @@ export class Compras implements OnInit {
         error: (err) => {
           Swal.fire({ icon: 'error', title: 'Error', text: err?.error?.message ?? 'No se pudo registrar la recepción.' });
         },
+      });
+    });
+  }
+
+  /** El proveedor no enviará lo que falta: el saldo pasa a faltante y la orden se cierra. */
+  cerrarSaldo(): void {
+    const d = this.detalle();
+    if (!d) return;
+    const opts = MOTIVOS_FALTANTE_COMPRA.map((m) => `<option value="${m.v}">${m.n}</option>`).join('');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Cerrar el saldo',
+      html: `<p style="font-size:13px;color:#64748b;margin:0 0 8px">Lo que aún no llegó se marcará como faltante y avisaremos a logística y gerencia. Se puede reabrir si el proveedor repone.</p>
+        <select id="swal-motivo-cierre" class="swal2-select" style="margin:0;width:100%"><option value="">Selecciona por qué</option>${opts}</select>
+        <input id="swal-obs-cierre" class="swal2-input" style="margin:8px 0 0" placeholder="Observación (opcional)">`,
+      showCancelButton: true,
+      confirmButtonText: 'Cerrar saldo',
+      cancelButtonText: 'Cancelar',
+      preConfirm: () => {
+        const motivo = (document.getElementById('swal-motivo-cierre') as HTMLSelectElement).value;
+        if (!motivo) {
+          Swal.showValidationMessage('Elige el motivo');
+          return false;
+        }
+        return { motivo, obs: (document.getElementById('swal-obs-cierre') as HTMLInputElement).value };
+      },
+    }).then((res) => {
+      if (!res.isConfirmed || !res.value) return;
+      this.service.cerrarSaldo(d.id, res.value.motivo, res.value.obs).subscribe({
+        next: (det) => {
+          this.detalle.set(det);
+          this.cargar();
+        },
+        error: (err) => Swal.fire({ icon: 'error', title: 'Error', text: err?.error?.message ?? 'No se pudo cerrar el saldo.' }),
       });
     });
   }

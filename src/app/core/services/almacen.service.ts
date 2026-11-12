@@ -20,6 +20,8 @@ export interface StockListItem {
   stockMinimo: number;
   stockMaximo: number | null;
   bajoMinimo: boolean;
+  comprometido: number;
+  libre: number;
 }
 
 export interface ReposicionSugerida {
