@@ -1,0 +1,160 @@
+<div class="lb-page">
+  <app-lb-page-header titulo="Cotizaciones" subtitulo="Compara los precios de varios proveedores antes de comprar. Se piden desde Compras → Pendientes de compra.">
+    <div class="lb-search">
+      <input type="text" placeholder="Buscar código u orden..." [ngModel]="search()" (ngModelChange)="search.set($event); page.set(1)" />
+    </div>
+    <select class="abril-field-input cz-filtro" [(ngModel)]="estado" (ngModelChange)="cargar()">
+      <option value="ABIERTA">Abiertas</option>
+      <option value="ADJUDICADA">Adjudicadas</option>
+      <option value="CANCELADA">Canceladas</option>
+      <option value="">Todas</option>
+    </select>
+  </app-lb-page-header>
+
+  <div class="lb-table-wrap">
+    <table class="lb-table">
+      <thead>
+        <tr><th>Código</th><th>Almacén</th><th>Ítems</th><th>Cotizaciones</th><th>Estado</th><th>Órdenes generadas</th><th>Fecha</th></tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="7" class="lb-empty">Cargando...</td></tr>
+        } @else if (!visibles().length) {
+          <tr><td colspan="7" class="lb-empty">No hay cotizaciones {{ estado === 'ABIERTA' ? 'abiertas' : '' }}. Para pedir una, ve a Compras → Pendientes de compra.</td></tr>
+        } @else {
+          @for (c of visibles(); track c.id) {
+            <tr class="cz-fila" (click)="abrir(c)">
+              <td><b>{{ c.codigo }}</b></td>
+              <td>{{ c.almacenNombre }}</td>
+              <td>{{ c.items }}</td>
+              <td>{{ c.cotizaciones }}</td>
+              <td><span class="cz-estado" [ngClass]="c.estado.toLowerCase()">{{ c.estado === 'ABIERTA' ? 'Abierta' : c.estado === 'ADJUDICADA' ? 'Adjudicada' : 'Cancelada' }}</span></td>
+              <td>{{ c.resumen ?? '—' }}</td>
+              <td>{{ c.creadoEn | date:'dd/MM/yyyy' }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginator [totalRecords]="filtradas().length" [currentPage]="page()" [totalPages]="totalPages()" (pageChange)="page.set($event)" />
+
+  @if (detalle(); as d) {
+    <app-base-modal [title]="d.codigo" width="w-[1040px]" (closeModal)="cerrar()">
+      <p class="cz-meta">
+        <span class="cz-estado" [ngClass]="d.estado.toLowerCase()">{{ d.estado === 'ABIERTA' ? 'Abierta' : d.estado === 'ADJUDICADA' ? 'Adjudicada' : 'Cancelada' }}</span>
+        Para {{ d.almacenNombre }} · pedida por {{ d.creadoPorNombre | titlecase }} el {{ d.creadoEn | date:'dd/MM/yyyy' }}
+      </p>
+
+      @if (modo() === 'comparar') {
+        @if (d.estado === 'ABIERTA' && !d.cotizaciones.length) {
+          <p class="cz-ayuda">Aún no hay cotizaciones. Pulsa <b>Agregar cotización</b> y escribe los precios que te dio cada proveedor.</p>
+        }
+
+        @if (d.cotizaciones.length) {
+          <div class="cz-scroll">
+            <table class="lb-table cz-tabla">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th class="cz-der">Cantidad</th>
+                  @for (c of d.cotizaciones; track c.id) {
+                    <th class="cz-der cz-prov">
+                      {{ c.proveedorNombre | titlecase }}
+                      <small>{{ c.plazoDias !== null ? c.plazoDias + ' días' : 'plazo no indicado' }}{{ c.condicionPago ? ' · ' + c.condicionPago : '' }}</small>
+                      @if (d.estado === 'ABIERTA' && puedeGestionar) { <button class="cz-x" title="Quitar esta cotización" (click)="quitar(c.id, c.proveedorNombre)">✕</button> }
+                    </th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (it of d.items; track it.id) {
+                  <tr>
+                    <td>{{ nombreItem(it) | titlecase }} @if (it.pedidoCodigo) { <small class="cz-ped">· {{ it.pedidoCodigo }}</small> }</td>
+                    <td class="cz-der">{{ it.cantidad }}</td>
+                    @for (c of d.cotizaciones; track c.id) {
+                      <td class="cz-der">
+                        @if (c.precios[it.id] !== undefined) {
+                          <button type="button" class="cz-precio" [class.mejor]="esMejor(d, it.id, c.precios[it.id])" [class.elegido]="seleccion()[it.id] === c.id"
+                                  [disabled]="d.estado !== 'ABIERTA'" (click)="elegir(it.id, c.id)">
+                            S/ {{ c.precios[it.id] | number:'1.2-2' }}
+                          </button>
+                        } @else { <span class="cz-nada">no cotizó</span> }
+                      </td>
+                    }
+                  </tr>
+                }
+                <tr class="cz-total">
+                  <td colspan="2">Total de cada proveedor</td>
+                  @for (c of d.cotizaciones; track c.id) {
+                    <td class="cz-der">S/ {{ c.total | number:'1.2-2' }}@if (!c.completa) { <small class="cz-nada"> (incompleta)</small> }</td>
+                  }
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          @if (d.estado === 'ABIERTA') {
+            <p class="cz-leyenda"><span class="cz-punto mejor"></span> el más barato del ítem &nbsp; <span class="cz-punto elegido"></span> el que vas a comprar (toca un precio para cambiarlo)</p>
+            <div class="cz-resumen">Vas a comprar por <b>S/ {{ totalElegido() | number:'1.2-2' }}</b></div>
+            @if (requiereMotivo()) {
+              <div class="abril-field cz-motivo">
+                <label class="abril-field-label">{{ d.cotizaciones.length < 2 ? 'Motivo (solo hay una cotización)' : 'Motivo (no elegiste lo más barato)' }}</label>
+                <input class="abril-field-input" [(ngModel)]="motivo" placeholder="Ej: entrega más rápida, mejor calidad, único con stock..." />
+              </div>
+            }
+          } @else if (d.estado === 'ADJUDICADA') {
+            <p class="cz-ayuda">Órdenes generadas: <b>{{ d.ordenesGeneradas }}</b>@if (d.motivoAdjudicacion) { · Motivo: <i>{{ d.motivoAdjudicacion }}</i> }</p>
+          }
+        }
+
+        @if (error()) { <p class="cz-error">{{ error() }}</p> }
+
+        @if (d.estado === 'ABIERTA' && puedeGestionar) {
+          <div class="cz-acciones">
+            <button class="lb-btn ghost" (click)="cancelarSolicitud()">Cancelar solicitud</button>
+            <span class="cz-sp"></span>
+            <button class="lb-btn ghost" (click)="abrirCarga()">Agregar cotización</button>
+            <button class="lb-btn" [disabled]="guardando() || !d.cotizaciones.length" (click)="adjudicar()">{{ guardando() ? 'Generando...' : 'Adjudicar y generar órdenes' }}</button>
+          </div>
+        }
+      } @else {
+        <h3 class="cz-sub">Cotización de un proveedor</h3>
+        <div class="cz-grid">
+          <app-search-select [options]="proveedores()" displayField="razonSocial" [value]="form.proveedorId" (valueChange)="alElegirProveedor($event)" label="Proveedor" placeholder="Buscar empresa..." />
+          <div class="abril-field">
+            <label class="abril-field-label">Plazo de entrega (días)</label>
+            <input class="abril-field-input" type="number" min="0" [(ngModel)]="form.plazoDias" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Condición de pago</label>
+            <input class="abril-field-input" [(ngModel)]="form.condicionPago" placeholder="Ej: contado, crédito 30 días" />
+          </div>
+        </div>
+        <table class="lb-table cz-tabla">
+          <thead><tr><th>Producto</th><th class="cz-der">Cantidad</th><th class="cz-der">Precio unitario (S/)</th></tr></thead>
+          <tbody>
+            @for (it of d.items; track it.id) {
+              <tr>
+                <td>{{ nombreItem(it) | titlecase }}</td>
+                <td class="cz-der">{{ it.cantidad }}</td>
+                <td class="cz-der"><input class="abril-field-input cz-num" type="number" min="0" step="0.01" [(ngModel)]="preciosForm[it.id]" placeholder="No cotizó" /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <div class="abril-field cz-motivo">
+          <label class="abril-field-label">Observación (opcional)</label>
+          <input class="abril-field-input" [(ngModel)]="form.observacion" placeholder="Vigencia de la oferta, descuentos, etc." />
+        </div>
+        @if (error()) { <p class="cz-error">{{ error() }}</p> }
+        <div class="cz-acciones">
+          <button class="lb-btn ghost" (click)="modo.set('comparar'); error.set('')">Volver a la comparación</button>
+          <span class="cz-sp"></span>
+          <button class="lb-btn" [disabled]="guardando()" (click)="guardarCotizacion()">{{ guardando() ? 'Guardando...' : 'Guardar cotización' }}</button>
+        </div>
+      }
+    </app-base-modal>
+  }
+</div>

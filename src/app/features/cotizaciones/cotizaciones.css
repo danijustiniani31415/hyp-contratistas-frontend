@@ -1,0 +1,35 @@
+/* .lb-page/.lb-table/.lb-btn vienen de styles.css; campos con .abril-field*. */
+.cz-filtro { width: 150px; }
+.cz-fila { cursor: pointer; }
+.cz-fila:hover { background: #f8fafc; }
+.cz-der { text-align: right; }
+.cz-meta { font-size: 13px; color: #64748b; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cz-ayuda { font-size: 13px; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin: 8px 0; }
+.cz-error { color: #c0392b; font-size: 12.5px; margin: 8px 0; }
+.cz-sub { font-size: 14px; font-weight: 600; margin: 4px 0 10px; }
+.cz-estado { font-size: 10.5px; font-weight: 700; border-radius: 20px; padding: 3px 10px; border: 1.5px solid #94a3b8; color: #64748b; white-space: nowrap; }
+.cz-estado.abierta { border-color: #b45309; color: #b45309; }
+.cz-estado.adjudicada { border-color: #1b6b3a; color: #1b6b3a; }
+.cz-scroll { overflow-x: auto; }
+.cz-tabla th small, .cz-tabla td small { display: block; font-weight: 400; color: #64748b; font-size: 11px; }
+.cz-prov { min-width: 150px; position: relative; padding-right: 26px; }
+.cz-x { position: absolute; top: 4px; right: 4px; border: 0; background: transparent; color: #94a3b8; cursor: pointer; font-size: 12px; }
+.cz-x:hover { color: #c0392b; }
+.cz-ped { display: inline !important; }
+.cz-precio { border: 1.5px solid #e2e8f0; background: #fff; border-radius: 8px; padding: 6px 10px; font-size: 13px; cursor: pointer; min-width: 88px; }
+.cz-precio:disabled { cursor: default; }
+.cz-precio.mejor { background: #ecfdf3; border-color: #86efac; color: #166534; font-weight: 600; }
+.cz-precio.elegido { border-color: #1e3a5f; box-shadow: 0 0 0 2px #1e3a5f33; }
+.cz-nada { color: #94a3b8; font-size: 12px; }
+.cz-total td { font-weight: 600; border-top: 2px solid #e2e8f0; }
+.cz-leyenda { font-size: 12px; color: #64748b; margin: 10px 0 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cz-punto { display: inline-block; width: 12px; height: 12px; border-radius: 4px; border: 1.5px solid #e2e8f0; }
+.cz-punto.mejor { background: #ecfdf3; border-color: #86efac; }
+.cz-punto.elegido { border-color: #1e3a5f; }
+.cz-resumen { font-size: 14px; margin: 8px 0; }
+.cz-motivo { margin-top: 10px; }
+.cz-grid { display: grid; grid-template-columns: 2fr 1fr 1.4fr; gap: 12px; margin-bottom: 12px; }
+.cz-num { width: 130px; text-align: right; }
+.cz-acciones { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+.cz-sp { flex: 1; }
+@media (max-width: 720px) { .cz-grid { grid-template-columns: 1fr; } }

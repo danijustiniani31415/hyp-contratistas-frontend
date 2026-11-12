@@ -351,6 +351,9 @@
 
         <div class="co-form-actions">
           <button class="lb-btn ghost" (click)="cerrarPendientes()">Cancelar</button>
+          <button class="lb-btn ghost" [disabled]="generando() || !haySeleccionados || !generarForm.almacenId" (click)="pedirCotizaciones()" title="Pide precio a varios proveedores y compáralos antes de comprar">
+            Pedir cotizaciones
+          </button>
           <button
             class="lb-btn"
             [disabled]="generando() || !haySeleccionados || !generarForm.proveedorId || !generarForm.almacenId"

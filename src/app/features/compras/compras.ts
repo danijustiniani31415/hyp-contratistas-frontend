@@ -1,4 +1,4 @@
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ChangeDetectorRef, Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -16,6 +16,7 @@ import {
   OrdenCompraDetalle,
   OrdenCompraCreate,
   PendienteCompra,  MOTIVOS_DANIO_COMPRA, MOTIVOS_FALTANTE_COMPRA } from '../../core/services/compras.service';
+import { CotizacionesService } from '../../core/services/cotizaciones.service';
 import { PersonasService, AlmacenCatalogoItem } from '../../core/services/personas.service';
 import { DocumentosService } from '../../core/services/documentos.service';
 import { CatalogoService, ProductoListItem } from '../../core/services/catalogo.service';
@@ -90,6 +91,8 @@ export class Compras implements OnInit {
     private documentosService: DocumentosService,
     private cdr: ChangeDetectorRef,
     public authService: LbAuthService,
+    private cotizacionesService: CotizacionesService,
+    private router: Router,
   ) {}
 
   // ── Reconocimiento del proveedor por RUC: razón social automática (SUNAT, o lo ya registrado) ──
@@ -431,6 +434,30 @@ export class Compras implements OnInit {
         error: (err) => {
           this.generando.set(false);
           this.generarError.set(err?.error?.message ?? 'No se pudo generar la orden de compra.');
+        },
+      });
+  }
+
+  /** En vez de comprar directo, pide precio a varios proveedores sobre lo seleccionado y pasa a compararlos. */
+  pedirCotizaciones(): void {
+    if (!this.generarForm.almacenId || !this.haySeleccionados) return;
+    this.generarError.set('');
+    this.generando.set(true);
+    const reposicion = this.reposiciones()
+      .filter((r) => this.seleccionadosReposicion.has(this.claveReposicion(r)))
+      .map((r) => ({ productoId: r.productoId, talla: r.talla, color: r.color, cantidad: this.cantidadesReposicion[this.claveReposicion(r)] || r.cantidadSugerida }));
+    this.cotizacionesService
+      .crear({ almacenId: this.generarForm.almacenId, observacion: this.generarForm.observacion, pedidoItemIds: Array.from(this.seleccionados), reposicion })
+      .subscribe({
+        next: (d) => {
+          this.generando.set(false);
+          this.showPendientesModal.set(false);
+          Swal.fire({ icon: 'success', title: `Solicitud ${d.codigo} creada`, text: 'Ahora carga los precios de cada proveedor y compáralos.', timer: 2600, showConfirmButton: false });
+          this.router.navigateByUrl('/cotizaciones');
+        },
+        error: (err) => {
+          this.generando.set(false);
+          this.generarError.set(err?.error?.message ?? 'No se pudo crear la solicitud de cotización.');
         },
       });
   }

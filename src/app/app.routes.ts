@@ -396,6 +396,14 @@ export const routes: Routes = [
           .then(m => m.DiferenciasRecepcion)
       },
       {
+        path: 'cotizaciones',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['COMPRA_CREAR'] },
+        loadComponent: () =>
+          import('./features/cotizaciones/cotizaciones')
+          .then(m => m.Cotizaciones)
+      },
+      {
         path: 'diferencias-compras',
         canActivate: [lbPermisoGuard],
         data: { lbPermisos: ['COMPRA_CREAR', 'COMPRA_RECIBIR', 'PAGO_PROVEEDOR_REGISTRAR'] },
