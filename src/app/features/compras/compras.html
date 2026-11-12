@@ -174,7 +174,7 @@
 
   <!-- Modal: detalle / recepción -->
   @if (showDetalle() && detalle(); as d) {
-    <app-base-modal [title]="d.codigo" width="w-[600px]" (closeModal)="cerrarDetalle()">
+    <app-base-modal [title]="d.codigo" width="w-[760px]" (closeModal)="cerrarDetalle()">
       <div class="co-detalle-header">
         <span class="co-estado" [class]="d.estado.toLowerCase()">{{ d.estado }}</span>
         <span class="co-detalle-meta">{{ d.proveedorNombre }} · {{ d.almacenNombre }}</span>
