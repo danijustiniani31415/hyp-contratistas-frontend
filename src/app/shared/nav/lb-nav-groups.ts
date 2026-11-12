@@ -46,6 +46,7 @@ export const LB_NAV_GROUPS: LbNavGroup[] = [
       { label: 'EPP', route: '/epp', icon: 'ti-shield-check', permisos: ['EPP_ENTREGAR'] },
       { label: 'Herramientas', route: '/herramientas', icon: 'ti-tools', permisos: ['HERRAMIENTA_PRESTAR', 'HERRAMIENTA_DEVOLVER'] },
       { label: 'Guías de Remisión', route: '/guias-remision', icon: 'ti-truck-delivery', permisos: ['GUIA_REMISION_VER', 'GUIA_REMISION_CREAR', 'GUIA_REMISION_ENVIAR', 'GUIA_REMISION_CONFIRMAR'] },
+      { label: 'Diferencias de recepción', route: '/diferencias-recepcion', icon: 'ti-alert-triangle', permisos: ['GUIA_REMISION_VER', 'GUIA_REMISION_CREAR', 'GUIA_REMISION_ENVIAR', 'GUIA_REMISION_CONFIRMAR'] },
       { label: 'Almacén / Kardex', route: '/almacen', icon: 'ti-building-warehouse' },
       { label: 'Kardex e Inventario', route: '/inventario', icon: 'ti-clipboard-check', permisos: ['ALMACEN_VER', 'ALMACEN_AJUSTAR'] },
     ],

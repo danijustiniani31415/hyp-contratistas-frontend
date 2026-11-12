@@ -57,3 +57,16 @@
 
 .gr-import-wrap { max-height: 55vh; overflow: auto; }
 .gr-tag.ok { background: #DDF3E4; color: #17653A; }
+
+.gr-recep { display: inline-block; font-size: 10.5px; font-weight: 700; border-radius: 20px; padding: 2px 9px; margin-left: 6px; border: 1.5px solid #94A3B8; color: #64748B; white-space: nowrap; }
+.gr-recep.pendiente { border-color: #B45309; color: #B45309; }
+.gr-recep.parcial { border-color: #1E3A5F; color: #1E3A5F; }
+.gr-recep.completa { border-color: #1B6B3A; color: #1B6B3A; }
+.gr-recep.con_diferencias { border-color: #C0392B; color: #C0392B; }
+.gr-recepcion { font-size: 12.5px; margin: 10px 0; padding: 8px 12px; border-left: 3px solid #D6DEE5; background: #F8FAFC; }
+.gr-recepcion ul { margin: 6px 0 4px 18px; padding: 0; }
+.gr-num { width: 84px; padding: 4px 6px; border: 1px solid #CBD5E1; border-radius: 6px; text-align: right; }
+.gr-sel { padding: 4px 6px; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 12px; }
+.gr-obs { width: 100%; margin-top: 4px; padding: 4px 6px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 12px; }
+.gr-recibir-campo { margin-top: 12px; }
+.gr-error { color: #C0392B; font-size: 12.5px; margin: 8px 0; }

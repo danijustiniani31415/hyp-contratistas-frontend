@@ -41,7 +41,13 @@
               <td>{{ g.almacenOrigenNombre }}</td>
               <td>{{ g.almacenDestinoNombre ?? '—' }}</td>
               <td>{{ g.cantidadItems }}</td>
-              <td><span class="gr-estado" [class]="g.estado.toLowerCase()">{{ g.estado }}</span></td>
+              <td>
+                <span class="gr-estado" [class]="g.estado.toLowerCase()">{{ g.estado }}</span>
+                @if (g.estado === 'ACEPTADA' && g.tieneDestino) {
+                  <span class="gr-recep" [ngClass]="(g.recepcionEstado ?? 'PENDIENTE').toLowerCase()">{{ nombreEstadoRecepcion(g.recepcionEstado) }}</span>
+                }
+                @if ((g.diferenciasAbiertas ?? 0) > 0) { <span class="gr-recep con_diferencias">{{ g.diferenciasAbiertas }} por resolver</span> }
+              </td>
               <td>{{ g.fechaTraslado | slice:0:10 }}</td>
             </tr>
           }
@@ -325,7 +331,7 @@
 
   <!-- Modal: detalle / envío a SUNAT -->
   @if (showDetalle() && detalle(); as d) {
-    <app-base-modal [title]="d.codigo" width="w-[600px]" (closeModal)="cerrarDetalle()">
+    <app-base-modal [title]="d.codigo" width="w-[780px]" (closeModal)="cerrarDetalle()">
       <div class="gr-detalle-header">
         <span class="gr-estado" [class]="d.estado.toLowerCase()">{{ d.estado }}</span>
         <span class="gr-detalle-meta">{{ d.almacenOrigenNombre }} → {{ d.almacenDestinoNombre ?? d.destinatarioRazonSocial ?? '—' }}</span>
@@ -334,7 +340,7 @@
 
       <table class="lb-table gr-detalle-table">
         <thead>
-          <tr><th>Producto</th><th>Pedido</th><th>Despachado</th><th>Confirmado</th><th>Unidad</th></tr>
+          <tr><th>Producto</th><th>Pedido</th><th>Despachado</th>@if (d.almacenDestinoNombre) { <th>Llegó bien</th><th>Dañado</th><th>Faltó</th><th>Por llegar</th> }<th>Unidad</th></tr>
         </thead>
         <tbody>
           @for (it of d.items; track it.id) {
@@ -346,14 +352,12 @@
               </td>
               <td>{{ it.pedidoCodigo ?? '—' }}</td>
               <td>{{ it.cantidad }}</td>
-              <td>
-                @if (it.confirmadoEn) {
-                  {{ it.cantidadConfirmada }}
-                  @if (it.cantidadConfirmada! < it.cantidad) { <span class="gr-discrepancia">(faltó {{ it.cantidad - it.cantidadConfirmada! }})</span> }
-                } @else {
-                  <span class="gr-pendiente-confirmar">Pendiente</span>
-                }
-              </td>
+              @if (d.almacenDestinoNombre) {
+                <td>{{ it.cantidadConfirmada ?? 0 }}</td>
+                <td [class.gr-discrepancia]="it.cantidadDanada > 0">{{ it.cantidadDanada || '' }}</td>
+                <td [class.gr-discrepancia]="it.cantidadFaltante > 0">{{ it.cantidadFaltante || '' }}</td>
+                <td>@if (it.cantidadPendiente > 0 && d.estado === 'ACEPTADA') { <span class="gr-pendiente-confirmar">{{ it.cantidadPendiente }}</span> }</td>
+              }
               <td>{{ it.unidadMedida }}</td>
             </tr>
           }
@@ -363,8 +367,36 @@
       @if (d.estado !== 'BORRADOR') {
         <p class="gr-detalle-meta">CDR SUNAT: {{ d.cdrCodigoRespuesta }} — {{ d.cdrDescripcion }}</p>
       }
-      @if (d.items[0]?.confirmadoEn) {
-        <p class="gr-detalle-meta">Recepción confirmada por {{ d.items[0].confirmadoPorNombre }} el {{ d.items[0].confirmadoEn | slice:0:10 }}</p>
+      @if (d.almacenDestinoNombre && d.estado === 'ACEPTADA') {
+        <p class="gr-detalle-meta">
+          Recepción: <span class="gr-recep" [ngClass]="d.recepcionEstado.toLowerCase()">{{ nombreEstadoRecepcion(d.recepcionEstado) }}</span>
+          @if (d.recepcionEstado === 'PENDIENTE') { — el stock todavía no figura en {{ d.almacenDestinoNombre }}; entra cuando se confirme lo que llegó. }
+        </p>
+      }
+      @for (r of d.recepciones; track r.id) {
+        <div class="gr-recepcion">
+          <b>{{ r.recibidoEn | date:'dd/MM/yyyy HH:mm' }} · {{ r.recibidoPorNombre | titlecase }}</b>
+          {{ r.cierra ? '(cierre)' : '(parcial)' }}
+          @if (r.observacion) { <i> — {{ r.observacion }}</i> }
+          <ul>
+            @for (l of r.items; track $index) {
+              <li>{{ l.productoNombre }} {{ l.talla ? '(' + l.talla + ')' : '' }}:
+                bien <b>{{ l.cantidadOk }}</b>@if (l.cantidadDanada > 0) { · dañado <b class="gr-discrepancia">{{ l.cantidadDanada }}</b> ({{ nombreMotivo(l.motivo) }}) }@if (l.cantidadFaltante > 0) { · faltó <b class="gr-discrepancia">{{ l.cantidadFaltante }}</b> ({{ nombreMotivo(l.motivo) }}) }
+                @if (l.observacion) { <i>— {{ l.observacion }}</i> }
+              </li>
+            }
+          </ul>
+          @for (fid of r.fotoIds; track fid) { <button type="button" class="lb-btn ghost small" (click)="abrirFoto(fid)">Ver foto {{ $index + 1 }}</button> }
+        </div>
+      }
+      @if (d.diferencias.length) {
+        <p class="gr-detalle-meta"><b>Diferencias:</b>
+          @for (x of d.diferencias; track x.id) {
+            <span class="gr-recep" [ngClass]="x.estado === 'ABIERTA' ? 'con_diferencias' : 'completa'" [title]="x.resolucionNota ?? ''">
+              {{ x.cantidad }} {{ x.productoNombre }} · {{ x.tipo === 'FALTANTE' ? 'faltante' : 'dañado' }} · {{ x.estado === 'ABIERTA' ? 'por resolver' : x.resolucion?.toLowerCase() }}
+            </span>
+          }
+        </p>
       }
 
       @if (d.estado === 'ACEPTADA' || d.estado === 'ENVIADA') {
@@ -377,7 +409,7 @@
           Anulada el {{ d.anuladaEn | slice:0:10 }} — constancia de baja SOL: {{ d.anulacionConstancia }} — {{ d.anulacionMotivo }}
         </p>
       }
-      @if (d.estado === 'ACEPTADA' && !d.items[0]?.confirmadoEn && authService.hasPermiso('GUIA_REMISION_ENVIAR')) {
+      @if (d.estado === 'ACEPTADA' && d.recepcionEstado === 'PENDIENTE' && authService.hasPermiso('GUIA_REMISION_ENVIAR')) {
         <div class="gr-form-actions">
           <button class="lb-btn ghost" [disabled]="eliminando()" (click)="anular()">
             {{ eliminando() ? 'Anulando...' : 'Anular guía' }}
@@ -405,13 +437,55 @@
           </button>
         </div>
       }
-      @if (d.confirmacionPendiente && authService.hasPermiso('GUIA_REMISION_CONFIRMAR')) {
+      @if (d.puedeRecibir && authService.hasPermiso('GUIA_REMISION_CONFIRMAR')) {
         <div class="gr-form-actions">
-          <button class="lb-btn" [disabled]="confirmando()" (click)="confirmarRecepcion()">
-            {{ confirmando() ? 'Confirmando...' : 'Confirmar recepción en destino' }}
-          </button>
+          <button class="lb-btn" (click)="abrirRecibir()">{{ d.recepcionEstado === 'PARCIAL' ? 'Registrar lo que llegó ahora' : 'Recibir mercadería' }}</button>
         </div>
       }
+    </app-base-modal>
+  }
+
+  <!-- Modal: recibir mercadería (recepción con control) -->
+  @if (showRecibir() && detalle(); as d) {
+    <app-base-modal [title]="'Recibir ' + d.codigo" width="w-[860px]" (closeModal)="showRecibir.set(false)">
+      <p class="gr-detalle-meta">Escribe lo que <b>llegó bien</b> y lo que llegó <b>dañado</b>. Lo demás queda por llegar: si viene en otro viaje, registra esa parte después; si ya no llegará, usa <b>Cerrar recepción</b>.</p>
+      <table class="lb-table gr-detalle-table">
+        <thead><tr><th>Producto</th><th>Por declarar</th><th>Llegó bien</th><th>Dañado</th><th>Motivo del daño</th><th>Sin llegar</th></tr></thead>
+        <tbody>
+          @for (f of recibirFilas; track f.itemId) {
+            <tr>
+              <td>{{ f.nombre }} {{ f.talla ? '(' + f.talla + ')' : '' }}</td>
+              <td>{{ f.pendiente }} {{ f.unidad }}</td>
+              <td><input class="gr-num" type="number" min="0" step="0.01" [(ngModel)]="f.ok" /></td>
+              <td><input class="gr-num" type="number" min="0" step="0.01" [(ngModel)]="f.danada" /></td>
+              <td>
+                @if ((+f.danada || 0) > 0) {
+                  <select class="gr-sel" [(ngModel)]="f.motivo">
+                    <option value="">Elige...</option>
+                    @for (m of motivosDanio; track m.codigo) { <option [value]="m.codigo">{{ m.nombre }}</option> }
+                  </select>
+                  <input class="gr-obs" [(ngModel)]="f.obs" placeholder="Detalle (opcional)" />
+                }
+              </td>
+              <td [class.gr-discrepancia]="sinLlegar(f) > 0">{{ sinLlegar(f) || '' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="abril-field gr-recibir-campo">
+        <label class="abril-field-label">Observación (opcional)</label>
+        <input class="abril-field-input" [(ngModel)]="recibirObs" placeholder="Ej.: llegó en el camión de la tarde" />
+      </div>
+      <div class="gr-recibir-campo">
+        <label class="gr-detalle-meta">Fotos (opcional, hasta 5) — sirven de evidencia si hay daño o faltante</label>
+        <input type="file" accept="image/*" multiple (change)="onFotos($event)" />
+      </div>
+      @if (recibirError()) { <p class="gr-error">{{ recibirError() }}</p> }
+      <div class="gr-form-actions">
+        <button class="lb-btn ghost" (click)="showRecibir.set(false)">Cancelar</button>
+        <button class="lb-btn ghost" [disabled]="recibiendo()" (click)="enviarRecepcion(false)">Guardar y esperar el resto</button>
+        <button class="lb-btn" [disabled]="recibiendo()" (click)="enviarRecepcion(true)">{{ recibiendo() ? 'Guardando...' : 'Cerrar recepción' }}</button>
+      </div>
     </app-base-modal>
   }
 

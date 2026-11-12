@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit, computed, signal } from '@angular/core';
+import { lastValueFrom } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
@@ -12,7 +13,9 @@ import {
   GuiaRemisionListItem,
   GuiaRemisionDetalle,
   GuiaRemisionCreate,
-  ConfirmarRecepcionItem,
+  MOTIVOS_DANIO,
+  MOTIVOS_FALTANTE,
+  nombreMotivo,
   Transportista,
   Vehiculo,
   Conductor,
@@ -27,6 +30,20 @@ import { extraerTalla, leerExcel } from './guia-excel-import';
 import { AliasProducto, buscarPorAlias, buscarProducto, marcasConocidas, separarColor, separarMarca } from './producto-matching';
 import { DocumentosService } from '../../core/services/documentos.service';
 import { CatalogoValorService } from '../../core/services/catalogo-valor.service';
+
+/** Una línea del formulario de recepción: lo que llegó bien y lo que llegó dañado; el resto queda pendiente o, al cerrar, faltante. */
+interface FilaRecepcion {
+  itemId: number;
+  nombre: string;
+  talla: string;
+  unidad: string;
+  despachado: number;
+  pendiente: number;
+  ok: number;
+  danada: number;
+  motivo: string;
+  obs: string;
+}
 
 /** Fila del listado importado desde Excel, antes de pasar a la guía. */
 interface FilaImport {
@@ -90,7 +107,16 @@ export class GuiasRemision implements OnInit {
   showDetalle = signal(false);
   detalle = signal<GuiaRemisionDetalle | null>(null);
   enviando = signal(false);
-  confirmando = signal(false);
+  // Recepción con control en el almacén de destino
+  showRecibir = signal(false);
+  recibiendo = signal(false);
+  recibirError = signal('');
+  recibirFilas: FilaRecepcion[] = [];
+  recibirObs = '';
+  recibirFotos: File[] = [];
+  motivosDanio = MOTIVOS_DANIO;
+  motivosFaltante = MOTIVOS_FALTANTE;
+  nombreMotivo = nombreMotivo;
   eliminando = signal(false);
 
   // ── Despachar pedido (liga los ítems de la guía a un pedido) ────────
@@ -849,57 +875,110 @@ export class GuiasRemision implements OnInit {
     });
   }
 
-  // ── Confirmación de recepción en destino (mina) ─────────────────────
-  confirmarRecepcion(): void {
+  // ── Recepción con control en destino (mina) ─────────────────────────
+  abrirRecibir(): void {
     const d = this.detalle();
     if (!d) return;
+    this.recibirFilas = d.items
+      .filter((it) => it.cantidadPendiente > 0)
+      .map((it) => ({
+        itemId: it.id,
+        nombre: it.productoNombre,
+        talla: it.talla,
+        unidad: it.unidadMedida,
+        despachado: it.cantidad,
+        pendiente: it.cantidadPendiente,
+        ok: it.cantidadPendiente,
+        danada: 0,
+        motivo: '',
+        obs: '',
+      }));
+    this.recibirObs = '';
+    this.recibirFotos = [];
+    this.recibirError.set('');
+    this.showRecibir.set(true);
+  }
 
-    const camposHtml = d.items
-      .map(
-        (it, idx) => `
-        <label style="display:block;text-align:left;font-size:12px;margin:8px 0 2px">
-          ${it.productoNombre}${it.talla ? ' (' + it.talla + ')' : ''} — despachado: ${it.cantidad}
-        </label>
-        <input id="swal-confirmar-${idx}" type="number" class="swal2-input" style="margin:0" min="0" max="${it.cantidad}" step="0.01" value="${it.cantidad}">
-      `,
-      )
-      .join('');
+  /** Lo que de esta línea no se declara: queda pendiente (viaje parcial) o pasa a faltante (al cerrar). */
+  sinLlegar(f: FilaRecepcion): number {
+    return Math.max(0, Math.round((f.pendiente - (Number(f.ok) || 0) - (Number(f.danada) || 0)) * 100) / 100);
+  }
 
-    Swal.fire({
-      title: 'Confirmar recepción en destino',
-      html: `<p style="font-size:12.5px;color:#64748B;margin-bottom:8px">Indica cuánto llegó realmente de cada ítem — si llega menos, la diferencia se ajusta sola.</p>${camposHtml}`,
-      focusConfirm: false,
-      showCancelButton: true,
-      confirmButtonText: 'Confirmar recepción',
-      cancelButtonText: 'Cancelar',
-      preConfirm: () => {
-        const items: ConfirmarRecepcionItem[] = [];
-        for (let idx = 0; idx < d.items.length; idx++) {
-          const input = document.getElementById(`swal-confirmar-${idx}`) as HTMLInputElement;
-          const cantidadConfirmada = Number(input.value);
-          if (cantidadConfirmada < 0 || cantidadConfirmada > d.items[idx].cantidad) {
-            Swal.showValidationMessage(`La cantidad de "${d.items[idx].productoNombre}" debe estar entre 0 y ${d.items[idx].cantidad}`);
-            return false;
+  onFotos(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    this.recibirFotos = Array.from(input.files ?? []).slice(0, 5);
+  }
+
+  async enviarRecepcion(cierra: boolean): Promise<void> {
+    const d = this.detalle();
+    if (!d) return;
+    for (const f of this.recibirFilas) {
+      const ok = Number(f.ok) || 0;
+      const danada = Number(f.danada) || 0;
+      if (ok < 0 || danada < 0) return this.recibirError.set(`Las cantidades de «${f.nombre}» no pueden ser negativas.`);
+      if (ok + danada > f.pendiente + 0.004) return this.recibirError.set(`De «${f.nombre}» solo quedan ${f.pendiente} por declarar.`);
+      if (danada > 0 && !f.motivo) return this.recibirError.set(`Elige el motivo del daño de «${f.nombre}».`);
+    }
+    const hayAlgo = this.recibirFilas.some((f) => (Number(f.ok) || 0) > 0 || (Number(f.danada) || 0) > 0);
+    const faltan = this.recibirFilas.filter((f) => this.sinLlegar(f) > 0);
+    if (!cierra && !hayAlgo) return this.recibirError.set('Escribe lo que llegó de al menos un producto.');
+    if (!cierra && faltan.length === 0) cierra = true; // todo declarado: la recepción se cierra sola
+    this.recibirError.set('');
+
+    if (cierra && faltan.length > 0) {
+      const lista = faltan.map((f) => `<li>${f.nombre}${f.talla ? ' (' + f.talla + ')' : ''}: <b>${this.sinLlegar(f)}</b></li>`).join('');
+      const r = await Swal.fire({
+        icon: 'warning',
+        title: 'Hay mercadería que no llegó',
+        html: `<p style="font-size:13px">Al cerrar, lo que falta se registra como <b>faltante</b> y se avisa a logística y a gerencia:</p><ul style="text-align:left;font-size:13px">${lista}</ul>`,
+        showCancelButton: true,
+        confirmButtonText: 'Cerrar con faltante',
+        cancelButtonText: 'Volver',
+      });
+      if (!r.isConfirmed) return;
+    }
+
+    this.recibiendo.set(true);
+    this.service
+      .registrarRecepcion(d.id, {
+        cierra,
+        observacion: this.recibirObs.trim() || null,
+        items: this.recibirFilas.map((f) => ({
+          itemId: f.itemId,
+          cantidadOk: Number(f.ok) || 0,
+          cantidadDanada: Number(f.danada) || 0,
+          motivo: f.motivo || null,
+          observacion: f.obs.trim() || null,
+        })),
+      })
+      .subscribe({
+        next: async (res) => {
+          for (const foto of this.recibirFotos) {
+            try { await lastValueFrom(this.service.subirFotoRecepcion(res.recepcionId, foto)); } catch { /* la recepción ya quedó; la foto se puede perder sin bloquear */ }
           }
-          items.push({ itemId: d.items[idx].id, cantidadConfirmada });
-        }
-        return items;
-      },
-    }).then((res) => {
-      if (!res.isConfirmed || !res.value) return;
-      this.confirmando.set(true);
-      this.service.confirmarRecepcion(d.id, res.value).subscribe({
-        next: (detalle) => {
-          this.confirmando.set(false);
-          this.detalle.set(detalle);
+          this.recibiendo.set(false);
+          this.showRecibir.set(false);
+          this.service.getById(d.id).subscribe((nd) => this.detalle.set(nd));
           this.cargar();
-          Swal.fire({ icon: 'success', title: 'Recepción confirmada' });
+          const mensaje =
+            res.recepcionEstado === 'COMPLETA' ? 'La guía llegó completa y el stock ya está en el almacén.'
+            : res.recepcionEstado === 'PARCIAL' ? 'Recepción parcial registrada. Queda pendiente lo que falta por llegar.'
+            : `Recepción cerrada con ${res.diferenciasNuevas} diferencia(s). Se avisó a logística y a gerencia.`;
+          Swal.fire({ icon: res.recepcionEstado === 'CON_DIFERENCIAS' ? 'warning' : 'success', title: 'Recepción registrada', text: mensaje });
         },
         error: (err) => {
-          this.confirmando.set(false);
-          Swal.fire({ icon: 'error', title: 'No se pudo confirmar', text: err?.error?.message ?? 'Error al confirmar la recepción.' });
+          this.recibiendo.set(false);
+          this.recibirError.set(err?.error?.message ?? 'No se pudo registrar la recepción.');
         },
       });
-    });
+  }
+
+  abrirFoto(id: number): void {
+    this.service.verFoto(id).subscribe((blob) => window.open(URL.createObjectURL(blob), '_blank'));
+  }
+
+  nombreEstadoRecepcion(e: string | undefined, tieneDestino = true): string {
+    if (!tieneDestino) return '';
+    return e === 'PENDIENTE' ? 'En camino' : e === 'PARCIAL' ? 'Recepción parcial' : e === 'COMPLETA' ? 'Recibida' : e === 'CON_DIFERENCIAS' ? 'Con diferencias' : '';
   }
 }

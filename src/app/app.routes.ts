@@ -388,6 +388,14 @@ export const routes: Routes = [
           .then(m => m.PagosProveedores)
       },
       {
+        path: 'diferencias-recepcion',
+        canActivate: [lbPermisoGuard],
+        data: { lbPermisos: ['GUIA_REMISION_VER', 'GUIA_REMISION_CREAR', 'GUIA_REMISION_ENVIAR', 'GUIA_REMISION_CONFIRMAR'] },
+        loadComponent: () =>
+          import('./features/diferencias-recepcion/diferencias-recepcion')
+          .then(m => m.DiferenciasRecepcion)
+      },
+      {
         path: 'guias-remision',
         canActivate: [lbPermisoGuard],
         data: { lbPermisos: ['GUIA_REMISION_VER', 'GUIA_REMISION_CREAR', 'GUIA_REMISION_ENVIAR', 'GUIA_REMISION_CONFIRMAR'] },

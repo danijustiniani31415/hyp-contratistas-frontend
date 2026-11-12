@@ -47,6 +47,9 @@ export interface GuiaRemisionCreate {
 }
 
 export interface GuiaRemisionListItem {
+  recepcionEstado?: RecepcionEstado;
+  tieneDestino?: boolean;
+  diferenciasAbiertas?: number;
   id: number;
   codigo: string;
   estado: string;
@@ -78,14 +81,86 @@ export interface GuiaRemisionItemDetalle {
   unidadMedida: string;
   pedidoItemId: number | null;
   pedidoCodigo: string | null;
+  /** Lo que llegó bien (acumulado de todos los viajes). */
   cantidadConfirmada: number | null;
+  cantidadDanada: number;
+  cantidadFaltante: number;
+  /** Lo que todavía no se ha declarado. */
+  cantidadPendiente: number;
   confirmadoEn: string | null;
   confirmadoPorNombre: string | null;
 }
 
-export interface ConfirmarRecepcionItem {
+export type RecepcionEstado = 'PENDIENTE' | 'PARCIAL' | 'COMPLETA' | 'CON_DIFERENCIAS';
+
+export interface RecepcionItemDto {
   itemId: number;
-  cantidadConfirmada: number;
+  cantidadOk: number;
+  cantidadDanada: number;
+  motivo: string | null;
+  observacion: string | null;
+}
+
+export interface RecepcionRegistrar {
+  cierra: boolean;
+  observacion: string | null;
+  items: RecepcionItemDto[];
+}
+
+export interface RecepcionResultado {
+  recepcionId: number;
+  recepcionEstado: RecepcionEstado;
+  diferenciasNuevas: number;
+}
+
+export interface RecepcionHistorial {
+  id: number;
+  recibidoEn: string;
+  recibidoPorNombre: string;
+  cierra: boolean;
+  observacion: string | null;
+  fotoIds: number[];
+  items: { productoNombre: string; talla: string; cantidadOk: number; cantidadDanada: number; cantidadFaltante: number; motivo: string | null; observacion: string | null }[];
+}
+
+export interface Diferencia {
+  id: number;
+  guiaId: number;
+  guiaCodigo: string;
+  almacenDestinoNombre: string | null;
+  productoNombre: string;
+  talla: string;
+  unidadMedida: string;
+  tipo: 'FALTANTE' | 'DANADO';
+  cantidad: number;
+  motivo: string | null;
+  observacion: string | null;
+  estado: 'ABIERTA' | 'RESUELTA';
+  resolucion: string | null;
+  resolucionNota: string | null;
+  reportadoPorNombre: string | null;
+  creadoEn: string;
+  resueltaPorNombre: string | null;
+  resueltaEn: string | null;
+  valorEstimado: number;
+}
+
+export interface DiferenciasResumen {
+  abiertas: number;
+  resueltas: number;
+  data: Diferencia[];
+}
+
+export const MOTIVOS_DANIO: { codigo: string; nombre: string }[] = [
+  { codigo: 'GOLPEADO', nombre: 'Golpeado' }, { codigo: 'ROTO', nombre: 'Roto' }, { codigo: 'HUMEDAD', nombre: 'Humedad' },
+  { codigo: 'VENCIDO', nombre: 'Vencido' }, { codigo: 'DEFECTUOSO', nombre: 'Defectuoso' }, { codigo: 'OTRO', nombre: 'Otro' },
+];
+export const MOTIVOS_FALTANTE: { codigo: string; nombre: string }[] = [
+  { codigo: 'NO_LLEGO', nombre: 'No llegó' }, { codigo: 'LLEGO_INCOMPLETO', nombre: 'Llegó incompleto' },
+  { codigo: 'EXTRAVIADO', nombre: 'Extraviado' }, { codigo: 'OTRO', nombre: 'Otro' },
+];
+export function nombreMotivo(c: string | null): string {
+  return [...MOTIVOS_DANIO, ...MOTIVOS_FALTANTE].find((m) => m.codigo === c)?.nombre ?? '';
 }
 
 export interface GuiaRemisionDetalle {
@@ -134,6 +209,12 @@ export interface GuiaRemisionDetalle {
   enviadoEn: string | null;
   respondidoEn: string | null;
   confirmacionPendiente: boolean;
+  recepcionEstado: RecepcionEstado;
+  /** Aceptada por SUNAT, con destino y sin cerrar la recepción. */
+  puedeRecibir: boolean;
+  diferenciasAbiertas: number;
+  recepciones: RecepcionHistorial[];
+  diferencias: Diferencia[];
   items: GuiaRemisionItemDetalle[];
 }
 
@@ -213,7 +294,26 @@ export class GuiasRemisionService {
     return this.http.post<GuiaRemisionDetalle>(`${this.apiUrl}/${id}/consultar-estado`, {}, { headers: this.headers() });
   }
 
-  confirmarRecepcion(id: number, items: ConfirmarRecepcionItem[]): Observable<GuiaRemisionDetalle> {
-    return this.http.post<GuiaRemisionDetalle>(`${this.apiUrl}/${id}/confirmar-recepcion`, { items }, { headers: this.headers() });
+  registrarRecepcion(id: number, dto: RecepcionRegistrar): Observable<RecepcionResultado> {
+    return this.http.post<RecepcionResultado>(`${this.apiUrl}/${id}/recepciones`, dto, { headers: this.headers() });
+  }
+
+  subirFotoRecepcion(recepcionId: number, foto: File): Observable<{ id: number }> {
+    const fd = new FormData();
+    fd.append('foto', foto);
+    return this.http.post<{ id: number }>(`${this.apiUrl}/recepciones/${recepcionId}/fotos`, fd, { headers: this.headers() });
+  }
+
+  verFoto(fotoId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/recepciones/fotos/${fotoId}`, { headers: this.headers(), responseType: 'blob' });
+  }
+
+  listarDiferencias(estado: string): Observable<DiferenciasResumen> {
+    const q = estado ? `?estado=${estado}` : '';
+    return this.http.get<DiferenciasResumen>(`${this.apiUrl}/diferencias${q}`, { headers: this.headers() });
+  }
+
+  resolverDiferencia(id: number, resolucion: string, nota: string): Observable<Diferencia> {
+    return this.http.post<Diferencia>(`${this.apiUrl}/diferencias/${id}/resolver`, { resolucion, nota }, { headers: this.headers() });
   }
 }
