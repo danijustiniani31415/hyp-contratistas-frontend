@@ -67,7 +67,138 @@ export class Inventario implements OnInit {
     return this.authService.hasPermiso('ALMACEN_AJUSTAR');
   }
 
+  /** Gerencia: aprueba o rechaza ajustes grandes y define desde qué monto se exige aprobación. */
+  get puedeAprobar(): boolean {
+    return this.authService.hasPermiso('INVENTARIO_APROBAR');
+  }
+
+  umbral = signal<number | null>(null);
+
+  estadoTexto(e: string): string {
+    return e === 'EN_CONTEO' ? 'En conteo' : e === 'POR_APROBAR' ? 'Por aprobar' : e === 'CERRADO' ? 'Cerrado' : 'Anulado';
+  }
+
+  /** Faltante y sobrante (en soles, a costo promedio) con lo que se lleva digitado, para avisar antes de cerrar. */
+  get resumenVivo(): { faltante: number; sobrante: number; sinMotivo: number } {
+    const d = this.detalle();
+    let faltante = 0, sobrante = 0, sinMotivo = 0;
+    if (d)
+      for (const it of d.items) {
+        const dif = this.diferencia(it.id, it.cantidadSistema);
+        if (dif === null || dif === 0) continue;
+        const v = Math.abs(dif) * it.costoPromedio;
+        if (dif < 0) faltante += v; else sobrante += v;
+        if (!this.edicion[it.id]?.motivo?.trim()) sinMotivo++;
+      }
+    return { faltante, sobrante, sinMotivo };
+  }
+
+  get irAAprobacion(): boolean {
+    const r = this.resumenVivo;
+    const u = this.umbral() ?? this.detalle()?.umbral ?? 0;
+    return !this.puedeAprobar && r.faltante + r.sobrante > u;
+  }
+
+  /** Diferencia a mostrar cuando el conteo ya no se edita: el ajuste aplicado, o (si espera aprobación) lo contado menos lo del sistema. */
+  difSoloLectura(it: { cantidadAjuste: number | null; cantidadContada: number | null; cantidadSistema: number }): number | null {
+    if (it.cantidadAjuste !== null) return it.cantidadAjuste;
+    return it.cantidadContada === null ? null : it.cantidadContada - it.cantidadSistema;
+  }
+
+  cargarUmbral(): void {
+    this.service.getUmbralInventario().subscribe({ next: (r) => this.umbral.set(r.umbral), error: () => {} });
+  }
+
+  async editarUmbral(): Promise<void> {
+    const actual = this.umbral() ?? 0;
+    const r = await Swal.fire({
+      title: 'Monto desde el que se exige aprobación',
+      html: `<p style="font-size:13px;color:#64748b;margin:0 0 8px">Si lo que falta más lo que sobra en un conteo supera este monto, el ajuste espera la aprobación de gerencia antes de tocar el stock. Con 0, todo conteo con diferencias se aprueba.</p>
+        <input id="swal-umbral" type="number" min="0" step="1" class="swal2-input" style="margin:0" value="${actual}">`,
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      focusConfirm: false,
+      preConfirm: () => {
+        const v = Number((document.getElementById('swal-umbral') as HTMLInputElement).value);
+        if (isNaN(v) || v < 0) {
+          Swal.showValidationMessage('Escribe un monto igual o mayor a 0');
+          return false;
+        }
+        return v;
+      },
+    });
+    if (!r.isConfirmed || r.value === undefined) return;
+    this.service.guardarUmbralInventario(Number(r.value)).subscribe({
+      next: (x) => this.umbral.set(x.umbral),
+      error: (e) => Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: e?.error?.message ?? 'Intenta de nuevo.' }),
+    });
+  }
+
+  async aprobar(): Promise<void> {
+    const d = this.detalle();
+    if (!d) return;
+    const r = await Swal.fire({
+      icon: 'question',
+      title: '¿Aprobar el ajuste?',
+      html: `El stock se ajustará a lo contado: faltan <b>S/ ${d.valorFaltante.toFixed(2)}</b> y sobran <b>S/ ${d.valorSobrante.toFixed(2)}</b>. <b>No se puede deshacer.</b>`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, aprobar y ajustar',
+      cancelButtonText: 'Volver',
+    });
+    if (!r.isConfirmed) return;
+    this.guardando.set(true);
+    this.service.aprobarInventario(d.id).subscribe({
+      next: (nd) => {
+        this.guardando.set(false);
+        this.abrirDetalle(nd);
+        this.cargarInventarios();
+        Swal.fire({ icon: 'success', title: 'Ajuste aprobado', text: `${nd.cantidadAjustes} ajustes registrados en el kardex.`, timer: 2800, showConfirmButton: false });
+      },
+      error: (e) => {
+        this.guardando.set(false);
+        Swal.fire({ icon: 'error', title: 'No se pudo aprobar', text: e?.error?.message ?? 'Intenta de nuevo.' });
+      },
+    });
+  }
+
+  async rechazar(): Promise<void> {
+    const d = this.detalle();
+    if (!d) return;
+    const r = await Swal.fire({
+      icon: 'warning',
+      title: 'Rechazar el ajuste',
+      html: '<p style="font-size:13px;color:#64748b;margin:0 0 8px">El stock no cambia y el conteo se reabre para que lo corrijan. Explícales qué revisar.</p><input id="swal-rechazo" class="swal2-input" style="margin:0" placeholder="Motivo del rechazo">',
+      showCancelButton: true,
+      confirmButtonText: 'Rechazar',
+      cancelButtonText: 'Volver',
+      focusConfirm: false,
+      preConfirm: () => {
+        const v = (document.getElementById('swal-rechazo') as HTMLInputElement).value.trim();
+        if (v.length < 3) {
+          Swal.showValidationMessage('Escribe el motivo');
+          return false;
+        }
+        return v;
+      },
+    });
+    if (!r.isConfirmed || !r.value) return;
+    this.guardando.set(true);
+    this.service.rechazarInventario(d.id, String(r.value)).subscribe({
+      next: (nd) => {
+        this.guardando.set(false);
+        this.abrirDetalle(nd);
+        this.cargarInventarios();
+      },
+      error: (e) => {
+        this.guardando.set(false);
+        Swal.fire({ icon: 'error', title: 'No se pudo rechazar', text: e?.error?.message ?? 'Intenta de nuevo.' });
+      },
+    });
+  }
+
   ngOnInit(): void {
+    this.cargarUmbral();
     this.personasService.getCatalogos().subscribe((c) => this.almacenes.set(c.almacenes));
     this.catalogoService.listProductos('', 1, 5000).subscribe((r) => this.productos.set(r.data));
     this.cargarInventarios();
@@ -235,12 +366,20 @@ export class Inventario implements OnInit {
       return;
     }
     const conDif = d.items.filter((it) => (this.diferencia(it.id, it.cantidadSistema) ?? 0) !== 0).length;
+    const res = this.resumenVivo;
+    if (res.sinMotivo > 0) {
+      Swal.fire({ icon: 'info', title: 'Falta explicar las diferencias', text: `Hay ${res.sinMotivo} producto(s) con diferencia sin motivo. Escribe por qué en la columna "Motivo" de cada uno.` });
+      return;
+    }
+    const enviar = this.irAAprobacion;
     const r = await Swal.fire({
       icon: 'question',
-      title: '¿Cerrar y ajustar el stock?',
-      html: `Se contaron <b>${contados}</b> productos y <b>${conDif}</b> tienen diferencia. Al cerrar, el stock se ajusta a lo contado y queda registrado en el kardex. <b>No se puede deshacer.</b>`,
+      title: enviar ? '¿Enviar a aprobación de gerencia?' : '¿Cerrar y ajustar el stock?',
+      html: enviar
+        ? `Se contaron <b>${contados}</b> productos y <b>${conDif}</b> tienen diferencia: faltan <b>S/ ${res.faltante.toFixed(2)}</b> y sobran <b>S/ ${res.sobrante.toFixed(2)}</b>, más que el monto de aprobación. <b>El stock no cambia</b> hasta que gerencia lo apruebe, y le avisamos por correo.`
+        : `Se contaron <b>${contados}</b> productos y <b>${conDif}</b> tienen diferencia (faltan S/ ${res.faltante.toFixed(2)}, sobran S/ ${res.sobrante.toFixed(2)}). Al cerrar, el stock se ajusta a lo contado y queda registrado en el kardex. <b>No se puede deshacer.</b>`,
       showCancelButton: true,
-      confirmButtonText: 'Sí, cerrar y ajustar',
+      confirmButtonText: enviar ? 'Sí, enviar a aprobación' : 'Sí, cerrar y ajustar',
       cancelButtonText: 'Seguir contando',
     });
     if (!r.isConfirmed) return;
@@ -252,7 +391,9 @@ export class Inventario implements OnInit {
             this.guardando.set(false);
             this.abrirDetalle(nd);
             this.cargarInventarios();
-            Swal.fire({ icon: 'success', title: 'Inventario cerrado', text: `${nd.cantidadAjustes} ajustes registrados en el kardex.`, timer: 3000, showConfirmButton: false });
+            if (nd.estado === 'POR_APROBAR')
+              Swal.fire({ icon: 'info', title: 'Enviado a aprobación', text: 'Gerencia recibió un correo. El stock no cambia hasta que lo apruebe.', timer: 3500, showConfirmButton: false });
+            else Swal.fire({ icon: 'success', title: 'Inventario cerrado', text: `${nd.cantidadAjustes} ajustes registrados en el kardex.`, timer: 3000, showConfirmButton: false });
           },
           error: (e) => {
             this.guardando.set(false);

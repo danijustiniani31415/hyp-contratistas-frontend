@@ -170,12 +170,14 @@ export interface InventarioListItem {
   almacenId: number;
   almacenNombre: string;
   fecha: string;
-  estado: 'EN_CONTEO' | 'CERRADO' | 'ANULADO';
+  estado: 'EN_CONTEO' | 'POR_APROBAR' | 'CERRADO' | 'ANULADO';
   observacion: string | null;
   totalItems: number;
   contados: number;
   cantidadAjustes: number;
   creadoEn: string;
+  valorFaltante: number;
+  valorSobrante: number;
 }
 
 export interface InventarioItem {
@@ -195,6 +197,15 @@ export interface InventarioItem {
 
 export interface InventarioDetalle extends InventarioListItem {
   items: InventarioItem[];
+  /** Desde este monto (faltante + sobrante) el cierre exige aprobación de gerencia. */
+  umbral: number;
+  superaUmbral: boolean;
+  diferenciasSinMotivo: number;
+  solicitadoPorNombre: string | null;
+  solicitadoEn: string | null;
+  decididoPorNombre: string | null;
+  decididoEn: string | null;
+  motivoDecision: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -276,6 +287,22 @@ export class AlmacenService {
 
   agregarItemInventario(id: number, productoId: number, talla: string, color: string): Observable<InventarioDetalle> {
     return this.http.post<InventarioDetalle>(`${this.apiUrl}/inventarios/${id}/items`, { productoId, talla, color }, { headers: this.headers() });
+  }
+
+  aprobarInventario(id: number, motivo?: string): Observable<InventarioDetalle> {
+    return this.http.post<InventarioDetalle>(`${this.apiUrl}/inventarios/${id}/aprobar`, { motivo: motivo || null }, { headers: this.headers() });
+  }
+
+  rechazarInventario(id: number, motivo: string): Observable<InventarioDetalle> {
+    return this.http.post<InventarioDetalle>(`${this.apiUrl}/inventarios/${id}/rechazar`, { motivo }, { headers: this.headers() });
+  }
+
+  getUmbralInventario(): Observable<{ umbral: number }> {
+    return this.http.get<{ umbral: number }>(`${this.apiUrl}/inventarios/configuracion`, { headers: this.headers() });
+  }
+
+  guardarUmbralInventario(umbral: number): Observable<{ umbral: number }> {
+    return this.http.put<{ umbral: number }>(`${this.apiUrl}/inventarios/configuracion`, { umbral }, { headers: this.headers() });
   }
 
   cerrarInventario(id: number): Observable<InventarioDetalle> {

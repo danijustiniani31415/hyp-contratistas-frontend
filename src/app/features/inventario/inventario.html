@@ -72,12 +72,18 @@
     <div class="iv-filtros">
       <app-search-select [options]="almacenes()" displayField="nombre" [(value)]="invAlmacenFiltro" label="Almacén" placeholder="Todos los almacenes" (valueChange)="cargarInventarios()" />
       @if (puedeAjustar) { <button class="lb-btn" (click)="abrirNuevo()">Nuevo conteo</button> }
+      @if (umbral() !== null) {
+        <span class="iv-umbral" title="Si lo que falta más lo que sobra en un conteo supera este monto, el ajuste necesita aprobación de gerencia.">
+          Aprobación desde S/ {{ umbral() | number:'1.0-2' }}
+          @if (puedeAprobar) { <button type="button" class="iv-link" (click)="editarUmbral()">Cambiar</button> }
+        </span>
+      }
     </div>
     <div class="lb-table-wrap">
       <table class="lb-table">
-        <thead><tr><th>N°</th><th>Fecha</th><th>Almacén</th><th>Avance</th><th>Ajustes</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>N°</th><th>Fecha</th><th>Almacén</th><th>Avance</th><th>Ajustes</th><th>Diferencia</th><th>Estado</th><th></th></tr></thead>
         <tbody>
-          @if (!inventarios().length) { <tr><td colspan="7" class="lb-empty">Todavía no hay conteos.</td></tr> }
+          @if (!inventarios().length) { <tr><td colspan="8" class="lb-empty">Todavía no hay conteos.</td></tr> }
           @for (i of inventarios(); track i.id) {
             <tr>
               <td>#{{ i.id }}</td>
@@ -85,8 +91,9 @@
               <td>{{ i.almacenNombre }}</td>
               <td>{{ i.contados }} / {{ i.totalItems }} contados</td>
               <td>{{ i.estado === 'CERRADO' ? i.cantidadAjustes : '—' }}</td>
-              <td><span class="iv-estado" [ngClass]="i.estado.toLowerCase()">{{ i.estado === 'EN_CONTEO' ? 'En conteo' : i.estado === 'CERRADO' ? 'Cerrado' : 'Anulado' }}</span></td>
-              <td><button class="lb-btn ghost" (click)="abrir(i)">{{ i.estado === 'EN_CONTEO' ? 'Continuar' : 'Ver' }}</button></td>
+              <td>@if (i.estado === 'CERRADO' || i.estado === 'POR_APROBAR') { <span class="iv-falta">−S/ {{ i.valorFaltante | number:'1.2-2' }}</span> <span class="iv-sobra">+S/ {{ i.valorSobrante | number:'1.2-2' }}</span> } @else { — }</td>
+              <td><span class="iv-estado" [ngClass]="i.estado.toLowerCase()">{{ estadoTexto(i.estado) }}</span></td>
+              <td><button class="lb-btn ghost" (click)="abrir(i)">{{ i.estado === 'EN_CONTEO' ? 'Continuar' : i.estado === 'POR_APROBAR' && puedeAprobar ? 'Revisar' : 'Ver' }}</button></td>
             </tr>
           }
         </tbody>
@@ -111,7 +118,18 @@
   @if (detalle(); as d) {
     <app-base-modal [title]="'Inventario #' + d.id + ' · ' + d.almacenNombre" width="w-[1100px]" (closeModal)="cerrarDetalle()">
       <p class="iv-hint">{{ d.fecha | date:'dd/MM/yyyy' }} · {{ d.observacion || 'Sin observación' }} ·
-        <span class="iv-estado" [ngClass]="d.estado.toLowerCase()">{{ d.estado === 'EN_CONTEO' ? 'En conteo' : d.estado === 'CERRADO' ? 'Cerrado' : 'Anulado' }}</span></p>
+        <span class="iv-estado" [ngClass]="d.estado.toLowerCase()">{{ estadoTexto(d.estado) }}</span></p>
+
+      @if (d.estado === 'POR_APROBAR') {
+        <div class="iv-aviso">
+          <b>Esperando aprobación de gerencia.</b> {{ d.solicitadoPorNombre | titlecase }} cerró este conteo: faltan <b>S/ {{ d.valorFaltante | number:'1.2-2' }}</b> y sobran <b>S/ {{ d.valorSobrante | number:'1.2-2' }}</b>,
+          más que el monto de aprobación (S/ {{ d.umbral | number:'1.0-2' }}). El stock todavía no cambió.
+        </div>
+      } @else if (d.estado === 'EN_CONTEO' && d.motivoDecision && d.decididoEn) {
+        <div class="iv-aviso iv-aviso-rojo"><b>Gerencia rechazó el ajuste</b> ({{ d.decididoPorNombre | titlecase }}): «{{ d.motivoDecision }}». Corrige el conteo y vuelve a cerrarlo.</div>
+      } @else if (d.estado === 'CERRADO' && d.decididoPorNombre) {
+        <div class="iv-aviso iv-aviso-verde">Ajuste aprobado por {{ d.decididoPorNombre | titlecase }} el {{ d.decididoEn | date:'dd/MM/yyyy' }}.</div>
+      }
       <div class="iv-tabla-wrap">
         <table class="lb-table">
           <thead>
@@ -133,10 +151,11 @@
                   @let dif = diferencia(it.id, it.cantidadSistema);
                   <td class="iv-der" [class.iv-falta]="dif !== null && dif < 0" [class.iv-sobra]="dif !== null && dif > 0">{{ dif === null ? '—' : (dif | number:'1.0-2') }}</td>
                   <td class="iv-der">{{ dif === null ? '' : 'S/ ' + ((dif * it.costoPromedio) | number:'1.2-2') }}</td>
-                  <td><input class="iv-motivo" type="text" maxlength="200" placeholder="Ej.: merma, error de conteo" [(ngModel)]="edicion[it.id].motivo" /></td>
+                  <td><input class="iv-motivo" [class.iv-falta-motivo]="dif !== null && dif !== 0 && !edicion[it.id].motivo?.trim()" type="text" maxlength="200" [placeholder]="dif !== null && dif !== 0 ? 'Obligatorio: ¿por qué?' : 'Ej.: merma, error de conteo'" [(ngModel)]="edicion[it.id].motivo" /></td>
                 } @else {
-                  <td class="iv-der" [class.iv-falta]="(it.cantidadAjuste ?? 0) < 0" [class.iv-sobra]="(it.cantidadAjuste ?? 0) > 0">{{ it.cantidadAjuste === null ? '—' : (it.cantidadAjuste | number:'1.0-2') }}</td>
-                  <td class="iv-der">{{ it.cantidadAjuste === null ? '' : 'S/ ' + ((it.cantidadAjuste * it.costoPromedio) | number:'1.2-2') }}</td>
+                  @let ds = difSoloLectura(it);
+                  <td class="iv-der" [class.iv-falta]="(ds ?? 0) < 0" [class.iv-sobra]="(ds ?? 0) > 0">{{ ds === null ? '—' : (ds | number:'1.0-2') }}</td>
+                  <td class="iv-der">{{ ds === null ? '' : 'S/ ' + ((ds * it.costoPromedio) | number:'1.2-2') }}</td>
                   <td>{{ it.motivo || '' }}</td>
                 }
               </tr>
@@ -153,10 +172,23 @@
           <div class="abril-field"><label class="abril-field-label">Color</label><input class="abril-field-input" [(ngModel)]="addColor" /></div>
           <button class="lb-btn ghost" [disabled]="!addProducto" (click)="agregar()">Agregar al conteo</button>
         </div>
+        @let rv = resumenVivo;
+        <div class="iv-resumen">
+          <span>Faltan <b class="iv-falta">S/ {{ rv.faltante | number:'1.2-2' }}</b></span>
+          <span>Sobran <b class="iv-sobra">S/ {{ rv.sobrante | number:'1.2-2' }}</b></span>
+          @if (rv.sinMotivo > 0) { <span class="iv-falta">Falta el motivo de {{ rv.sinMotivo }} producto(s)</span> }
+          @if (irAAprobacion) { <span class="iv-aprob">Supera S/ {{ (umbral() ?? d.umbral) | number:'1.0-2' }}: al cerrar irá a aprobación de gerencia</span> }
+        </div>
         <div class="iv-acciones">
           <button class="lb-btn ghost" (click)="anular()">Anular conteo</button>
           <button class="lb-btn ghost" [disabled]="guardando()" (click)="guardarConteo()">Guardar avance</button>
-          <button class="lb-btn" [disabled]="guardando()" (click)="cerrarConteo()">Cerrar y ajustar stock</button>
+          <button class="lb-btn" [disabled]="guardando()" (click)="cerrarConteo()">{{ irAAprobacion ? 'Enviar a aprobación' : 'Cerrar y ajustar stock' }}</button>
+        </div>
+      }
+      @if (d.estado === 'POR_APROBAR' && puedeAprobar) {
+        <div class="iv-acciones">
+          <button class="lb-btn ghost" [disabled]="guardando()" (click)="rechazar()">Rechazar</button>
+          <button class="lb-btn" [disabled]="guardando()" (click)="aprobar()">Aprobar y ajustar stock</button>
         </div>
       }
     </app-base-modal>

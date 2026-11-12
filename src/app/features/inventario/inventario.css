@@ -24,3 +24,13 @@
 .iv-agregar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-top: 14px; padding-top: 10px; border-top: 1px dashed #e2e8f0; }
 .iv-agregar app-search-select { min-width: 240px; }
 .iv-acciones { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+
+.iv-umbral { font-size: 12.5px; color: #475569; margin-left: auto; }
+.iv-link { border: 0; background: transparent; color: #1e3a5f; text-decoration: underline; cursor: pointer; font-size: 12.5px; margin-left: 6px; }
+.iv-estado.por_aprobar { border-color: #b45309; color: #b45309; }
+.iv-aviso { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; border-radius: 8px; padding: 10px 12px; font-size: 13px; margin: 8px 0; }
+.iv-aviso-rojo { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.iv-aviso-verde { background: #ecfdf3; border-color: #bbf7d0; color: #166534; }
+.iv-resumen { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; font-size: 13.5px; margin: 12px 0 0; }
+.iv-aprob { color: #9a3412; font-weight: 600; }
+.iv-falta-motivo { border-color: #c0392b !important; }
